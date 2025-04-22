@@ -1,0 +1,98 @@
+Descripción Funcional: XTask - Plataforma de Gestión Empresarial
+XTask es una completa plataforma de gestión empresarial diseñada para optimizar operaciones internas, administrar recursos financieros y humanos, y facilitar la colaboración entre equipos. Con un enfoque centrado en la productividad y la transparencia, XTask integra funcionalidades esenciales para pequeñas y medianas empresas en un único ecosistema digital.
+
+La plataforma se destaca por su capacidad para gestionar el ciclo completo de proyectos, desde la planificación inicial hasta el seguimiento financiero detallado. Su diseño modular permite a las organizaciones controlar presupuestos, administrar equipos, gestionar proveedores y supervisar el rendimiento de los empleados, todo desde una interfaz intuitiva y accesible.
+
+Características Principales:
+Gestión Financiera Robusta: Control total sobre ingresos, gastos y flujos de caja con aprobaciones multinivel y conexión a pasarelas de pago.
+
+Colaboración en Tiempo Real: Tableros Kanban personalizables por proyecto que permiten visualizar el flujo de trabajo y coordinar tareas entre miembros del equipo.
+
+Administración de Recursos Humanos: Gestión completa del ciclo de vida de los empleados con generación automatizada de contratos y firma digital de documentos.
+
+Cadena de Suministro Optimizada: Seguimiento de proveedores, productos y órdenes de compra con conversión automática a gastos de proyecto.
+
+Inteligencia Empresarial: Reportes visuales y analíticas que transforman datos complejos en insights accionables para la toma de decisiones.
+
+Seguridad y Cumplimiento: Sistema de roles y permisos granulares que asegura que la información sensible solo sea accesible por personal autorizado.
+
+Beneficios Empresariales:
+Eficiencia Operativa: Automatización de procesos administrativos repetitivos liberando tiempo para tareas de mayor valor.
+Transparencia Financiera: Visibilidad total sobre los estados financieros de cada proyecto y de la organización.
+Colaboración Mejorada: Herramientas que facilitan la comunicación y coordinación entre departamentos y equipos.
+Toma de Decisiones Informadas: Acceso a datos actualizados para responder ágilmente a cambios en el entorno empresarial.
+Escalabilidad: Arquitectura diseñada para crecer con la organización sin comprometer el rendimiento.
+XTask transforma la manera en que las empresas gestionan sus operaciones, proporcionando un marco estructurado pero flexible que se adapta a las necesidades específicas de cada organización, impulsando la productividad y facilitando el crecimiento sostenible.
+
+Prompt para Reconstruir XTask
+Desarrollar una plataforma de gestión empresarial completa llamada "XTask" utilizando React, TypeScript, Node.js y PostgreSQL con las siguientes características y especificaciones:
+## Tecnologías Base
+- Frontend: React con TypeScript, Framer Motion para animaciones, y Shadcn/UI para componentes
+- Backend: Node.js con Express
+- Base de datos: PostgreSQL con Drizzle ORM
+- Autenticación: Sistema personalizado con JWT o cookies de sesión
+- Validación: Zod para formularios y validación de datos
+- Estado y Caché: TanStack Query (React Query)
+## Módulos Principales a Implementar
+### 1. Gestión de Proyectos
+- CRUD completo de proyectos con presupuestos totales y restantes
+- Asignación de gerente de proyecto
+- Panel de análisis financiero por proyecto
+- Seguimiento de fechas de inicio y finalización
+- Visibilidad controlada según permisos de equipo
+### 2. Gestión Financiera
+- Registro y seguimiento de pagos por proyecto
+- Sistema de aprobación de gastos con múltiples estados (pendiente, aprobado, rechazado)
+- Integración con Stripe para procesar pagos
+- Configuración global de IVA
+- Visualizaciones gráficas de datos financieros con Recharts
+### 3. Gestión de Recursos Humanos
+- Registro completo de información personal y profesional de empleados
+- Sistema de generación automática de contratos desde plantillas predefinidas
+- Firma digital de documentos con almacenamiento seguro
+- Gestión de cuentas de acceso al sistema
+- Notificaciones por email para diferentes eventos relacionados con contratos
+### 4. Gestión de Proveedores
+- Catálogo de proveedores con información completa
+- Registro de productos y servicios por proveedor
+- Sistema de órdenes de compra con múltiples estados
+- Conversión automática de órdenes en gastos de proyecto
+- Seguimiento de pagos a proveedores
+### 5. Kanban (Gestión de Tareas)
+- Tableros Kanban personalizables por proyecto
+- Creación de columnas configurables
+- Asignación de tareas a usuarios específicos
+- Categorización por prioridad, tipo y fecha límite
+- Sistema de comentarios en tareas
+### 6. Autenticación y Seguridad
+- Registro e inicio de sesión de usuarios
+- Recuperación de contraseñas vía email
+- Roles y permisos granulares
+- Protección de rutas según nivel de acceso
+- Encriptación segura de datos sensibles
+### 7. Configuración del Sistema
+- Personalización de apariencia (logo, colores)
+- Configuración de parámetros financieros
+- Administración de roles y permisos globales
+## Requerimientos Especiales
+1. **Experiencia de Usuario:**
+   - Diseño responsive para dispositivos móviles y desktop
+   - Interfaces intuitivas con feedback visual inmediato
+   - Tiempos de carga optimizados con estados de carga apropiados
+2. **Integraciones:**
+   - Sistema de correo electrónico para notificaciones
+   - Pasarela de pago Stripe para procesamiento seguro
+   - Generación y manipulación de documentos PDF
+3. **Almacenamiento:**
+   - Sistema para almacenar y servir archivos adjuntos
+   - Firma digital de documentos con evidencia de aceptación
+   - Versionado de documentos importantes
+4. **Rendimiento y Escalabilidad:**
+   - Optimización de consultas a la base de datos
+   - Estructura modular que permita fácil ampliación
+   - Implementación de caché donde sea apropiado
+5. **Seguridad:**
+   - Protección contra ataques comunes (CSRF, XSS, SQL Injection)
+   - Validación exhaustiva de entradas tanto en cliente como servidor
+   - Manejo seguro de sesiones y autenticación
+El sistema debe priorizar la usabilidad mientras mantiene robustez en la gestión de datos empresariales sensibles, siguiendo mejores prácticas de desarrollo y patrones de diseño modernos.
