@@ -1,38 +1,37 @@
-import { Employee, InsertEmployee } from '@shared/schema';
-import { CrearEmpleadoParams, FiltrosEmpleado, ResultadoPaginadoEmpleados } from '../entities/Empleado';
+import { Employee } from '@shared/schema';
+import { FiltrosEmpleado, ResultadoPaginadoEmpleados, CrearEmpleadoParams } from '../entities/Empleado';
 
 /**
- * Interfaz para el Repositorio de Empleados - sigue el patrón Repository
- * Define las operaciones disponibles para acceder y manipular datos de empleados
+ * Interfaz para el repositorio de empleados
  */
 export interface IEmpleadoRepository {
   /**
-   * Obtiene todos los empleados, con posibles filtros
+   * Obtiene todos los empleados con filtros opcionales
    */
   obtenerEmpleados(filtros?: FiltrosEmpleado): Promise<ResultadoPaginadoEmpleados>;
-
-  /**
-   * Obtiene un empleado específico por su ID
-   */
-  obtenerEmpleadoPorId(id: number): Promise<Employee | undefined>;
   
   /**
-   * Obtiene un empleado por su identificación
+   * Obtiene un empleado por su ID
    */
-  obtenerEmpleadoPorIdentificacion(identificacion: string): Promise<Employee | undefined>;
-
+  obtenerEmpleadoPorId(id: number): Promise<Employee>;
+  
   /**
    * Crea un nuevo empleado
    */
-  crearEmpleado(params: CrearEmpleadoParams): Promise<Employee>;
-
+  crearEmpleado(datos: CrearEmpleadoParams): Promise<Employee>;
+  
   /**
    * Actualiza un empleado existente
    */
-  actualizarEmpleado(id: number, params: Partial<CrearEmpleadoParams>): Promise<Employee | undefined>;
-
+  actualizarEmpleado(id: number, datos: Partial<CrearEmpleadoParams>): Promise<Employee>;
+  
   /**
    * Cambia el estado del contrato de un empleado
    */
-  cambiarEstadoEmpleado(id: number, nuevoEstado: string): Promise<Employee | undefined>;
+  cambiarEstadoEmpleado(id: number, nuevoEstado: string): Promise<Employee>;
+  
+  /**
+   * Elimina un empleado (lo marca como terminado)
+   */
+  eliminarEmpleado(id: number): Promise<{ message: string; empleado: Employee }>;
 }

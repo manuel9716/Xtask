@@ -1,445 +1,326 @@
-import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CalendarIcon, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
-import { CrearEmpleadoDTO } from '../../domain/entities/Empleado';
-import { useCrearEmpleado } from '../../application/useCrearEmpleado';
-
-// Extender el schema de Zod para adaptarlo al formulario
-const formSchema = CrearEmpleadoDTO.extend({
-  // Convertir algunos campos para facilitar el manejo en el formulario
-  salary: z.string().min(1, { message: 'El salario es obligatorio' }),
-  baseBenefits: z.string().optional(),
-  baseDeductions: z.string().optional(),
-  taxRate: z.string().optional(),
-  // Para el caso donde emergencyContact es un JSON string
-  emergencyContactName: z.string().optional(),
-  emergencyContactPhone: z.string().optional(),
-  emergencyContactRelationship: z.string().optional(),
-});
-
-// Tipo para los datos del formulario
-type FormValues = z.infer<typeof formSchema>;
+import { CrearEmpleadoParams, CrearEmpleadoDTO } from '../../domain/entities/Empleado';
+import { useCrearEmpleado, useObtenerUsuarios } from '../../application/useCrearEmpleado';
 
 interface EmpleadoFormProps {
-  onSuccess?: () => void;
+  onSuccess: () => void;
 }
 
 export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
-  const { mutacion, validarDatos } = useCrearEmpleado();
+  const { mutacion } = useCrearEmpleado();
+  const { toast } = useToast();
   const [usuarios, setUsuarios] = useState<any[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-
-  // Inicializar el formulario con valores por defecto
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const [cargandoUsuarios, setCargandoUsuarios] = useState(true);
+  
+  const form = useForm<CrearEmpleadoParams>({
+    resolver: zodResolver(CrearEmpleadoDTO),
     defaultValues: {
-      userId: undefined,
-      position: '',
       department: '',
-      hireDate: new Date(),
-      salary: '',
-      phoneNumber: '',
-      address: '',
+      position: '',
       contractStatus: 'active',
       contractType: 'fulltime',
       identification: '',
+      salary: '',
+      hireDate: new Date(),
+      phoneNumber: '',
+      address: '',
+      emergencyContact: '',
       baseBenefits: '0',
       baseDeductions: '0',
       taxRate: '0',
-      emergencyContactName: '',
-      emergencyContactPhone: '',
-      emergencyContactRelationship: '',
     },
   });
-
-  // Cargar usuarios
+  
+  // Cargar los usuarios para el selector
   useEffect(() => {
-    const fetchUsuarios = async () => {
+    const cargarUsuarios = async () => {
       try {
-        const response = await fetch('/api/users');
-        if (response.ok) {
-          const data = await response.json();
-          setUsuarios(data);
-        } else {
-          console.error('Error al cargar usuarios');
-        }
+        setCargandoUsuarios(true);
+        const data = await useObtenerUsuarios();
+        setUsuarios(data || []);
       } catch (error) {
-        console.error('Error al cargar usuarios:', error);
+        console.error("Error al cargar usuarios:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los usuarios. Por favor, inténtelo de nuevo.",
+          variant: "destructive",
+        });
       } finally {
-        setLoadingUsers(false);
+        setCargandoUsuarios(false);
       }
     };
-
-    fetchUsuarios();
-  }, []);
-
-  // Manejar el envío del formulario
-  const onSubmit = async (data: FormValues) => {
+    
+    cargarUsuarios();
+  }, [toast]);
+  
+  const onSubmit = async (datos: CrearEmpleadoParams) => {
     try {
-      // Preparar los datos para enviar al servidor
-      const emergencyContact = data.emergencyContactName || data.emergencyContactPhone
-        ? JSON.stringify({
-            name: data.emergencyContactName,
-            phone: data.emergencyContactPhone,
-            relationship: data.emergencyContactRelationship,
-          })
-        : undefined;
-
-      // Eliminar campos que no están en el DTO original
-      const { 
-        emergencyContactName, 
-        emergencyContactPhone, 
-        emergencyContactRelationship, 
-        ...restData 
-      } = data;
-
-      // Enviar los datos al servidor
-      await mutacion.mutateAsync({
-        ...restData,
-        emergencyContact,
-      });
-
-      // Resetear el formulario después del éxito
+      await mutacion.mutateAsync(datos);
       form.reset();
-      
-      // Llamar a la función onSuccess si existe
-      if (onSuccess) {
-        onSuccess();
-      }
+      onSuccess();
     } catch (error) {
-      console.error('Error al crear empleado:', error);
+      console.error("Error al crear empleado:", error);
     }
   };
-
+  
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-6 text-primary">Registrar Nuevo Empleado</h2>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Usuario asociado */}
-            <FormField
-              control={form.control}
-              name="userId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Usuario *</FormLabel>
-                  <Select
-                    disabled={loadingUsers}
-                    onValueChange={(value) => field.onChange(parseInt(value))}
-                    value={field.value?.toString()}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar Usuario" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {loadingUsers ? (
-                        <div className="flex items-center justify-center p-2">
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          <span>Cargando usuarios...</span>
-                        </div>
-                      ) : (
-                        usuarios.map((usuario) => (
-                          <SelectItem key={usuario.id} value={usuario.id.toString()}>
-                            {usuario.fullName || usuario.username}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Número de identificación */}
-            <FormField
-              control={form.control}
-              name="identification"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Identificación *</FormLabel>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Usuario Asociado */}
+          <FormField
+            control={form.control}
+            name="userId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Usuario <span className="text-destructive">*</span></FormLabel>
+                <Select 
+                  disabled={cargandoUsuarios} 
+                  onValueChange={(value) => field.onChange(parseInt(value))}
+                  value={field.value?.toString()}
+                >
                   <FormControl>
-                    <Input placeholder="Número de identificación" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Cargo */}
-            <FormField
-              control={form.control}
-              name="position"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cargo *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Cargo del empleado" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Departamento */}
-            <FormField
-              control={form.control}
-              name="department"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Departamento *</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar Departamento" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Administración">Administración</SelectItem>
-                      <SelectItem value="Finanzas">Finanzas</SelectItem>
-                      <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
-                      <SelectItem value="Tecnología">Tecnología</SelectItem>
-                      <SelectItem value="Ventas">Ventas</SelectItem>
-                      <SelectItem value="Operaciones">Operaciones</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Fecha de Contratación */}
-            <FormField
-              control={form.control}
-              name="hireDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Fecha de Contratación *</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: es })
-                          ) : (
-                            <span>Seleccionar fecha</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
-                        locale={es}
-                        initialFocus
+                    <SelectTrigger>
+                      <SelectValue 
+                        placeholder={cargandoUsuarios ? "Cargando usuarios..." : "Seleccione un usuario"} 
                       />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Tipo de Contrato */}
-            <FormField
-              control={form.control}
-              name="contractType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Contrato *</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {usuarios.map((usuario) => (
+                      <SelectItem key={usuario.id} value={usuario.id.toString()}>
+                        {usuario.fullName} ({usuario.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Asocie este empleado con un usuario de la plataforma
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Identificación */}
+          <FormField
+            control={form.control}
+            name="identification"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Identificación <span className="text-destructive">*</span></FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej. 12345678-9" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Número de identificación nacional/fiscal
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Cargo */}
+          <FormField
+            control={form.control}
+            name="position"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cargo <span className="text-destructive">*</span></FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej. Desarrollador Senior" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Cargo o puesto que ocupa en la empresa
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Departamento */}
+          <FormField
+            control={form.control}
+            name="department"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Departamento <span className="text-destructive">*</span></FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un departamento" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Administración">Administración</SelectItem>
+                    <SelectItem value="Finanzas">Finanzas</SelectItem>
+                    <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
+                    <SelectItem value="Tecnología">Tecnología</SelectItem>
+                    <SelectItem value="Ventas">Ventas</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Operaciones">Operaciones</SelectItem>
+                    <SelectItem value="Logística">Logística</SelectItem>
+                    <SelectItem value="Producción">Producción</SelectItem>
+                    <SelectItem value="Legal">Legal</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Departamento al que pertenece
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Fecha de Contratación */}
+          <FormField
+            control={form.control}
+            name="hireDate"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Fecha de Ingreso <span className="text-destructive">*</span></FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar Tipo de Contrato" />
-                      </SelectTrigger>
+                      <Button
+                        variant={"outline"}
+                        className="w-full pl-3 text-left font-normal"
+                      >
+                        {field.value ? (
+                          format(field.value, "dd/MM/yyyy", { locale: es })
+                        ) : (
+                          <span>Seleccione una fecha</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="fulltime">Tiempo Completo</SelectItem>
-                      <SelectItem value="parttime">Medio Tiempo</SelectItem>
-                      <SelectItem value="contractor">Contratista</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Salario */}
-            <FormField
-              control={form.control}
-              name="salary"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Salario Base *</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="text" 
-                      placeholder="Ej: 5000.00" 
-                      {...field} 
-                      onChange={(e) => {
-                        // Permitir solo números y punto decimal
-                        const value = e.target.value.replace(/[^0-9.]/g, '');
-                        field.onChange(value);
-                      }}
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={new Date(field.value)}
+                      onSelect={(date) => field.onChange(date || new Date())}
+                      locale={es}
+                      initialFocus
                     />
-                  </FormControl>
-                  <FormDescription>
-                    Ingrese el monto sin símbolos de moneda
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Teléfono */}
-            <FormField
-              control={form.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Teléfono</FormLabel>
+                  </PopoverContent>
+                </Popover>
+                <FormDescription>
+                  Fecha en que comenzó a trabajar
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Salario */}
+          <FormField
+            control={form.control}
+            name="salary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Salario Base <span className="text-destructive">*</span></FormLabel>
+                <FormControl>
+                  <Input type="text" placeholder="Ej. 3500.00" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Salario mensual base en la moneda local
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Tipo de Contrato */}
+          <FormField
+            control={form.control}
+            name="contractType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo de Contrato <span className="text-destructive">*</span></FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <Input placeholder="Número de teléfono" {...field} />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un tipo" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Beneficios Base */}
-            <FormField
-              control={form.control}
-              name="baseBenefits"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Beneficios Base</FormLabel>
+                  <SelectContent>
+                    <SelectItem value="fulltime">Tiempo Completo</SelectItem>
+                    <SelectItem value="parttime">Tiempo Parcial</SelectItem>
+                    <SelectItem value="contractor">Contratista</SelectItem>
+                    <SelectItem value="temporary">Temporal</SelectItem>
+                    <SelectItem value="internship">Práctica/Pasantía</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Tipo de contrato laboral
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Estado del Contrato */}
+          <FormField
+            control={form.control}
+            name="contractStatus"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estado del Contrato <span className="text-destructive">*</span></FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <Input 
-                      type="text" 
-                      placeholder="Ej: 500.00" 
-                      {...field} 
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9.]/g, '');
-                        field.onChange(value);
-                      }}
-                    />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un estado" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormDescription>
-                    Beneficios fijos mensuales
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Deducciones Base */}
-            <FormField
-              control={form.control}
-              name="baseDeductions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Deducciones Base</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="text" 
-                      placeholder="Ej: 200.00" 
-                      {...field} 
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9.]/g, '');
-                        field.onChange(value);
-                      }}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Deducciones fijas mensuales
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Tasa de Impuestos */}
-            <FormField
-              control={form.control}
-              name="taxRate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tasa de Impuestos (%)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="text" 
-                      placeholder="Ej: 19.0" 
-                      {...field} 
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9.]/g, '');
-                        field.onChange(value);
-                      }}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Tasa de retención de impuestos
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
+                  <SelectContent>
+                    <SelectItem value="active">Activo</SelectItem>
+                    <SelectItem value="inactive">Inactivo</SelectItem>
+                    <SelectItem value="on_leave">Permiso</SelectItem>
+                    <SelectItem value="terminated">Terminado</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Estado actual del contrato
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Teléfono */}
+          <FormField
+            control={form.control}
+            name="phoneNumber"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Teléfono</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej. +1234567890" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Número de contacto del empleado
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           {/* Dirección */}
           <FormField
             control={form.control}
@@ -448,83 +329,96 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
               <FormItem>
                 <FormLabel>Dirección</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    placeholder="Dirección completa del empleado" 
-                    className="resize-none" 
-                    {...field} 
-                  />
+                  <Input placeholder="Dirección completa" {...field} />
                 </FormControl>
+                <FormDescription>
+                  Dirección residencial
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           {/* Contacto de Emergencia */}
-          <div>
-            <h3 className="text-md font-medium mb-2">Contacto de Emergencia</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="emergencyContactName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nombre del contacto" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="emergencyContactPhone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Teléfono</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Teléfono del contacto" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="emergencyContactRelationship"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parentesco</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Parentesco/Relación" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => form.reset()}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={mutacion.isPending}
-            >
-              {mutacion.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Guardar Empleado
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </div>
+          <FormField
+            control={form.control}
+            name="emergencyContact"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contacto de Emergencia</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nombre y teléfono" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Persona a contactar en caso de emergencia
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Tasa de Impuestos */}
+          <FormField
+            control={form.control}
+            name="taxRate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tasa de Impuestos (%)</FormLabel>
+                <FormControl>
+                  <Input type="text" placeholder="Ej. 20" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Porcentaje para cálculo de impuestos
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Beneficios Base */}
+          <FormField
+            control={form.control}
+            name="baseBenefits"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Beneficios Base</FormLabel>
+                <FormControl>
+                  <Input type="text" placeholder="Ej. 100.00" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Beneficios fijos mensuales
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Deducciones Base */}
+          <FormField
+            control={form.control}
+            name="baseDeductions"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Deducciones Base</FormLabel>
+                <FormControl>
+                  <Input type="text" placeholder="Ej. 50.00" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Deducciones fijas mensuales
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="flex justify-end">
+          <Button type="submit" disabled={mutacion.isPending}>
+            {mutacion.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Guardar Empleado
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

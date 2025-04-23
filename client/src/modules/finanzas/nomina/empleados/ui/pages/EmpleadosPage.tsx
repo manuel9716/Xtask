@@ -1,385 +1,423 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { 
-  Download, FileEdit, Loader2, 
-  Plus, Search, UserPlus, Trash2, 
-  Eye, CheckCircle, XCircle, User 
+  Search, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  MoreHorizontal, 
+  FileText, 
+  RefreshCw, 
+  ChevronLeft, 
+  ChevronRight, 
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Table, 
   TableBody, 
-  TableCaption, 
   TableCell, 
   TableHead, 
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
 } from '@/components/ui/dialog';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-
-import { FiltrosEmpleado } from '../../domain/entities/Empleado';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import { EmpleadoForm } from '../forms/EmpleadoForm';
+import { FiltrosEmpleado } from '../../domain/entities/Empleado';
+import { obtenerEmpleados, cambiarEstadoEmpleado, eliminarEmpleado } from '../../api/empleadosApi';
+import { useToast } from '@/hooks/use-toast';
 
 export default function EmpleadosPage() {
+  const [location, setLocation] = useLocation();
+  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [filtros, setFiltros] = useState<FiltrosEmpleado>({
     page: 1,
     pageSize: 10,
+    search: '',
+    contractStatus: '',
+    department: ''
   });
-  const [busqueda, setBusqueda] = useState('');
-
-  // Consulta para obtener los empleados
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
+  
+  // Consulta para obtener empleados
+  const { 
+    data, 
+    isLoading, 
+    isError, 
+    refetch 
   } = useQuery({
     queryKey: ['/api/finanzas/nomina/empleados', filtros],
-    queryFn: async () => {
-      const queryParams = new URLSearchParams();
-      
-      if (filtros.contractStatus) {
-        queryParams.append('contractStatus', filtros.contractStatus);
-      }
-      
-      if (filtros.department) {
-        queryParams.append('department', filtros.department);
-      }
-      
-      if (filtros.page) {
-        queryParams.append('page', filtros.page.toString());
-      }
-      
-      if (filtros.pageSize) {
-        queryParams.append('pageSize', filtros.pageSize.toString());
-      }
-      
-      const url = `/api/finanzas/nomina/empleados?${queryParams.toString()}`;
-      const res = await apiRequest('GET', url);
-      
-      if (!res.ok) {
-        throw new Error('Error al obtener los empleados');
-      }
-      
-      return res.json();
-    },
+    queryFn: () => obtenerEmpleados(filtros),
   });
-
-  // Función para obtener el color del badge según el estado del contrato
-  const getEstadoContractoBadge = (estado: string) => {
+  
+  // Función para cambiar filtros
+  const actualizarFiltro = (key: keyof FiltrosEmpleado, value: string | number) => {
+    setFiltros(prev => ({
+      ...prev,
+      [key]: value,
+      // Si cambiamos cualquier filtro que no sea la página, volvemos a la página 1
+      ...(key !== 'page' ? { page: 1 } : {})
+    }));
+  };
+  
+  // Función para cambiar página
+  const cambiarPagina = (nuevaPagina: number) => {
+    actualizarFiltro('page', nuevaPagina);
+  };
+  
+  // Función para cambiar el estado de un empleado
+  const handleCambiarEstado = async (id: number, nuevoEstado: string) => {
+    try {
+      await cambiarEstadoEmpleado(id, nuevoEstado);
+      refetch();
+      toast({
+        title: 'Estado actualizado',
+        description: 'El estado del empleado ha sido actualizado exitosamente',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Error al actualizar el estado del empleado',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Función para eliminar un empleado
+  const handleEliminarEmpleado = async (id: number) => {
+    try {
+      await eliminarEmpleado(id);
+      refetch();
+      toast({
+        title: 'Empleado eliminado',
+        description: 'El empleado ha sido marcado como terminado',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Error al eliminar el empleado',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  // Estado de contrato como badge
+  const renderEstadoContrato = (estado: string) => {
     switch (estado) {
       case 'active':
         return <Badge className="bg-green-500 hover:bg-green-600">Activo</Badge>;
       case 'inactive':
-        return <Badge variant="secondary">Inactivo</Badge>;
+        return <Badge className="bg-gray-500 hover:bg-gray-600">Inactivo</Badge>;
       case 'on_leave':
         return <Badge className="bg-yellow-500 hover:bg-yellow-600">Permiso</Badge>;
       case 'terminated':
-        return <Badge variant="destructive">Terminado</Badge>;
+        return <Badge className="bg-red-500 hover:bg-red-600">Terminado</Badge>;
       default:
         return <Badge>{estado}</Badge>;
     }
   };
-
-  // Función para cambiar de página
-  const cambiarPagina = (pagina: number) => {
-    setFiltros({
-      ...filtros,
-      page: pagina,
-    });
+  
+  // Tipo de contrato como badge
+  const renderTipoContrato = (tipo: string) => {
+    switch (tipo) {
+      case 'fulltime':
+        return <Badge className="bg-blue-500 hover:bg-blue-600">Tiempo completo</Badge>;
+      case 'parttime':
+        return <Badge className="bg-indigo-500 hover:bg-indigo-600">Tiempo parcial</Badge>;
+      case 'contractor':
+        return <Badge className="bg-purple-500 hover:bg-purple-600">Contratista</Badge>;
+      case 'temporary':
+        return <Badge className="bg-orange-500 hover:bg-orange-600">Temporal</Badge>;
+      case 'internship':
+        return <Badge className="bg-teal-500 hover:bg-teal-600">Pasantía</Badge>;
+      default:
+        return <Badge>{tipo}</Badge>;
+    }
   };
-
-  // Función para manejar el cambio en los filtros
-  const handleFiltroChange = (key: keyof FiltrosEmpleado, value: string | number | undefined) => {
-    setFiltros({
-      ...filtros,
-      [key]: value,
-      page: 1, // Resetear a la primera página al cambiar un filtro
-    });
-  };
-
-  // Función para formatear la fecha
-  const formatFecha = (fecha: string | Date) => {
-    if (!fecha) return 'N/A';
-    return format(new Date(fecha), 'dd MMM yyyy', { locale: es });
-  };
-
+  
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-primary">Gestión de Empleados</h1>
-          <p className="text-muted-foreground mt-1">
-            Administra los datos de empleados para el módulo de nómina
-          </p>
-        </div>
-        
-        <div className="mt-4 lg:mt-0">
+    <div className="container mx-auto py-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-2xl font-bold">Gestión de Empleados</CardTitle>
+            <CardDescription>
+              Administre los empleados registrados en el sistema para cálculo de nómina
+            </CardDescription>
+          </div>
+          
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
+              <Button className="ml-auto">
+                <Plus className="mr-2 h-4 w-4" />
                 Nuevo Empleado
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Registrar Nuevo Empleado</DialogTitle>
+                <DialogTitle>Crear Nuevo Empleado</DialogTitle>
                 <DialogDescription>
-                  Complete el formulario para registrar un nuevo empleado en el sistema.
+                  Complete el formulario para registrar un nuevo empleado en el sistema
                 </DialogDescription>
               </DialogHeader>
-              <EmpleadoForm onSuccess={() => setDialogOpen(false)} />
+              <EmpleadoForm onSuccess={() => {
+                setDialogOpen(false);
+                refetch();
+              }} />
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
-
-      <Tabs defaultValue="lista" className="w-full">
-        <TabsList>
-          <TabsTrigger value="lista">Lista de Empleados</TabsTrigger>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-        </TabsList>
+        </CardHeader>
         
-        <TabsContent value="lista" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Filtros de Búsqueda</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex w-full items-center space-x-2">
-                  <Input
-                    placeholder="Buscar por nombre o identificación"
-                    value={busqueda}
-                    onChange={(e) => setBusqueda(e.target.value)}
-                    className="w-full"
-                  />
-                  <Button variant="outline" size="icon" onClick={() => console.log('Buscar:', busqueda)}>
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <Select
-                  value={filtros.department || ''}
-                  onValueChange={(value) => handleFiltroChange('department', value || undefined)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Departamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todos los departamentos</SelectItem>
-                    <SelectItem value="Administración">Administración</SelectItem>
-                    <SelectItem value="Finanzas">Finanzas</SelectItem>
-                    <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
-                    <SelectItem value="Tecnología">Tecnología</SelectItem>
-                    <SelectItem value="Ventas">Ventas</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select
-                  value={filtros.contractStatus || ''}
-                  onValueChange={(value) => handleFiltroChange('contractStatus', value || undefined)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Estado del Contrato" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todos los estados</SelectItem>
-                    <SelectItem value="active">Activo</SelectItem>
-                    <SelectItem value="inactive">Inactivo</SelectItem>
-                    <SelectItem value="on_leave">Permiso</SelectItem>
-                    <SelectItem value="terminated">Terminado</SelectItem>
-                  </SelectContent>
-                </Select>
+        <CardContent>
+          {/* Filtros */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="col-span-1 md:col-span-2">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nombre o identificación..."
+                  className="pl-8"
+                  value={filtros.search}
+                  onChange={(e) => actualizarFiltro('search', e.target.value)}
+                />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            <div>
+              <Select 
+                value={filtros.contractStatus}
+                onValueChange={(value) => actualizarFiltro('contractStatus', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Estado de contrato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos los estados</SelectItem>
+                  <SelectItem value="active">Activo</SelectItem>
+                  <SelectItem value="inactive">Inactivo</SelectItem>
+                  <SelectItem value="on_leave">Permiso</SelectItem>
+                  <SelectItem value="terminated">Terminado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Select 
+                value={filtros.department}
+                onValueChange={(value) => actualizarFiltro('department', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Departamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos los departamentos</SelectItem>
+                  <SelectItem value="Administración">Administración</SelectItem>
+                  <SelectItem value="Finanzas">Finanzas</SelectItem>
+                  <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
+                  <SelectItem value="Tecnología">Tecnología</SelectItem>
+                  <SelectItem value="Ventas">Ventas</SelectItem>
+                  <SelectItem value="Marketing">Marketing</SelectItem>
+                  <SelectItem value="Operaciones">Operaciones</SelectItem>
+                  <SelectItem value="Logística">Logística</SelectItem>
+                  <SelectItem value="Producción">Producción</SelectItem>
+                  <SelectItem value="Legal">Legal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           
-          <Card>
-            <CardContent className="pt-6">
+          {/* Tabla de Empleados */}
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="ml-2 text-lg text-muted-foreground">Cargando empleados...</span>
+            </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <AlertCircle className="h-8 w-8 text-destructive mb-2" />
+              <h3 className="text-lg font-semibold">Error al cargar los empleados</h3>
+              <p className="text-muted-foreground mb-4">
+                No se pudieron cargar los datos. Por favor, inténtelo de nuevo.
+              </p>
+              <Button onClick={() => refetch()} variant="outline">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reintentar
+              </Button>
+            </div>
+          ) : data?.empleados && data.empleados.length > 0 ? (
+            <div className="rounded-md border">
               <Table>
-                <TableCaption>Lista de empleados registrados en el sistema</TableCaption>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ID</TableHead>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Identificación</TableHead>
                     <TableHead>Cargo</TableHead>
                     <TableHead>Departamento</TableHead>
                     <TableHead>Fecha Ingreso</TableHead>
                     <TableHead>Estado</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
-                        <div className="flex justify-center">
-                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                        <p className="mt-2 text-muted-foreground">Cargando empleados...</p>
+                  {data.empleados.map((empleado) => (
+                    <TableRow key={empleado.id}>
+                      <TableCell className="font-medium">{empleado.fullName}</TableCell>
+                      <TableCell>{empleado.identification}</TableCell>
+                      <TableCell>{empleado.position}</TableCell>
+                      <TableCell>{empleado.department}</TableCell>
+                      <TableCell>
+                        {empleado.hireDate ? 
+                          format(new Date(empleado.hireDate), 'dd/MM/yyyy', {locale: es}) : 
+                          'N/A'
+                        }
+                      </TableCell>
+                      <TableCell>{renderEstadoContrato(empleado.contractStatus)}</TableCell>
+                      <TableCell>{renderTipoContrato(empleado.contractType)}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Abrir menú</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() => setLocation(`/admin/finanzas/nomina/empleados/${empleado.id}`)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setLocation(`/admin/finanzas/nomina/empleados/${empleado.id}/historial`)}
+                            >
+                              <FileText className="mr-2 h-4 w-4" />
+                              Ver historial de pagos
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Cambiar estado</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() => handleCambiarEstado(empleado.id, 'active')}
+                              disabled={empleado.contractStatus === 'active'}
+                            >
+                              Marcar como Activo
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleCambiarEstado(empleado.id, 'inactive')}
+                              disabled={empleado.contractStatus === 'inactive'}
+                            >
+                              Marcar como Inactivo
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleCambiarEstado(empleado.id, 'on_leave')}
+                              disabled={empleado.contractStatus === 'on_leave'}
+                            >
+                              Marcar como En Permiso
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleEliminarEmpleado(empleado.id)}
+                              className="text-destructive"
+                              disabled={empleado.contractStatus === 'terminated'}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ) : isError ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-destructive">
-                        <p>Error al cargar los empleados: {error?.message || 'Error desconocido'}</p>
-                      </TableCell>
-                    </TableRow>
-                  ) : data?.empleados?.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
-                        <p className="text-muted-foreground">No hay empleados registrados</p>
-                        <Button 
-                          variant="outline" 
-                          className="mt-4"
-                          onClick={() => setDialogOpen(true)}
-                        >
-                          <UserPlus className="mr-2 h-4 w-4" />
-                          Registrar Empleado
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    data?.empleados?.map((empleado: any) => (
-                      <TableRow key={empleado.id}>
-                        <TableCell className="font-medium">{empleado.id}</TableCell>
-                        <TableCell>{empleado.fullName || 'N/A'}</TableCell>
-                        <TableCell>{empleado.identification || 'N/A'}</TableCell>
-                        <TableCell>{empleado.position}</TableCell>
-                        <TableCell>{empleado.department}</TableCell>
-                        <TableCell>{formatFecha(empleado.hireDate)}</TableCell>
-                        <TableCell>{getEstadoContractoBadge(empleado.contractStatus)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-1">
-                            <Button variant="ghost" size="icon">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon">
-                              <FileEdit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
+                  ))}
                 </TableBody>
               </Table>
-              
-              {data?.pagination && data.pagination.totalPages > 1 && (
-                <div className="flex justify-between items-center mt-4">
-                  <div className="text-sm text-muted-foreground">
-                    Mostrando {data.pagination.page * data.pagination.pageSize - data.pagination.pageSize + 1} 
-                    - {Math.min(data.pagination.page * data.pagination.pageSize, data.pagination.totalItems)} 
-                    {' '}de {data.pagination.totalItems} empleados
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => cambiarPagina(data.pagination.page - 1)}
-                      disabled={data.pagination.page === 1}
-                    >
-                      Anterior
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => cambiarPagina(data.pagination.page + 1)}
-                      disabled={data.pagination.page === data.pagination.totalPages}
-                    >
-                      Siguiente
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center border rounded-md">
+              <p className="text-lg text-muted-foreground mb-4">
+                No se encontraron empleados con los filtros seleccionados.
+              </p>
+              <Button onClick={() => setFiltros({
+                page: 1,
+                pageSize: 10,
+                search: '',
+                contractStatus: '',
+                department: ''
+              })} variant="outline">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Limpiar filtros
+              </Button>
+            </div>
+          )}
+        </CardContent>
         
-        <TabsContent value="dashboard">
-          <Card>
-            <CardHeader>
-              <CardTitle>Dashboard de Empleados</CardTitle>
-              <CardDescription>
-                Vista general de empleados por departamento y estado
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Total de Empleados</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">
-                      {data?.pagination?.totalItems || 0}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Empleados Activos</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-green-600">
-                      {data?.empleados?.filter((e: any) => e.contractStatus === 'active').length || 0}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Departamentos</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">
-                      {new Set(data?.empleados?.map((e: any) => e.department)).size || 0}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        {data?.pagination && data.pagination.totalPages > 1 && (
+          <CardFooter className="flex justify-between">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {(data.pagination.page - 1) * data.pagination.pageSize + 1} a {
+                Math.min(data.pagination.page * data.pagination.pageSize, data.pagination.totalItems)
+              } de {data.pagination.totalItems} empleados
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => cambiarPagina(data.pagination.page - 1)}
+                disabled={data.pagination.page <= 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Página anterior</span>
+              </Button>
+              
+              <span className="text-sm font-medium">
+                Página {data.pagination.page} de {data.pagination.totalPages}
+              </span>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => cambiarPagina(data.pagination.page + 1)}
+                disabled={data.pagination.page >= data.pagination.totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+                <span className="sr-only">Página siguiente</span>
+              </Button>
+            </div>
+          </CardFooter>
+        )}
+      </Card>
     </div>
   );
 }

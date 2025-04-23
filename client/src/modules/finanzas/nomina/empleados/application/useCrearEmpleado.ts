@@ -1,37 +1,26 @@
-import { UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Employee } from '@shared/schema';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CrearEmpleadoParams, CrearEmpleadoDTO } from '../domain/entities/Empleado';
+import { crearEmpleado } from '../../api/empleadosApi';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 /**
  * Hook para crear un nuevo empleado
  */
-export function useCrearEmpleado(): {
-  mutacion: UseMutationResult<Employee, Error, CrearEmpleadoParams>;
-  validarDatos: (datos: unknown) => {
-    success: boolean;
-    data?: CrearEmpleadoParams;
-    error?: string;
-  };
-} {
-  const { toast } = useToast();
+export function useCrearEmpleado() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
-  const mutacion = useMutation<Employee, Error, CrearEmpleadoParams>({
+  const mutacion = useMutation({
     mutationFn: async (datos: CrearEmpleadoParams) => {
-      const res = await apiRequest(
-        'POST',
-        '/api/finanzas/nomina/empleados',
-        datos
-      );
+      // Validar datos antes de enviar al API
+      const validacion = validarDatos(datos);
       
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al crear el empleado');
+      if (!validacion.success) {
+        throw new Error(validacion.error);
       }
       
-      return res.json();
+      return crearEmpleado(validacion.data as CrearEmpleadoParams);
     },
     onSuccess: () => {
       // Invalidar consultas
