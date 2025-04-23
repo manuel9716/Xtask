@@ -59,7 +59,20 @@ export const budgets = pgTable("budgets", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
-  status: text("status").notNull().default("active"), // active, at_risk, critical, completed
+  status: text("status").notNull().default("ACTIVO"), // ACTIVO, ALERTA, COMPLETADO
+  metadata: text("metadata"), // JSON data serialized
+});
+
+// Gastos de presupuestos
+export const budgetExpenses = pgTable("budget_expenses", {
+  id: serial("id").primaryKey(),
+  budgetId: integer("budget_id").references(() => budgets.id).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
+  date: timestamp("date").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  reference: text("reference"), // Referencia opcional, ej. número de factura
   metadata: text("metadata"), // JSON data serialized
 });
 
@@ -278,6 +291,7 @@ export const insertSettingSchema = createInsertSchema(settings).omit({ id: true,
 
 // Esquemas Zod para el módulo de finanzas
 export const insertBudgetSchema = createInsertSchema(budgets).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertBudgetExpenseSchema = createInsertSchema(budgetExpenses).omit({ id: true, createdAt: true });
 export const insertPayrollSchema = createInsertSchema(payrolls).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertFinancialReportSchema = createInsertSchema(financialReports).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, createdAt: true, updatedAt: true });
@@ -323,6 +337,9 @@ export type InsertSetting = z.infer<typeof insertSettingSchema>;
 // Extendemos el tipo Budget para incluir el campo virtual gastado
 export type Budget = typeof budgets.$inferSelect & { gastado?: number };
 export type InsertBudget = z.infer<typeof insertBudgetSchema>;
+
+export type BudgetExpense = typeof budgetExpenses.$inferSelect;
+export type InsertBudgetExpense = z.infer<typeof insertBudgetExpenseSchema>;
 
 export type Payroll = typeof payrolls.$inferSelect;
 export type InsertPayroll = z.infer<typeof insertPayrollSchema>;
