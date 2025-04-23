@@ -14,7 +14,7 @@ export function useGestionarNomina() {
   // Mutación para marcar una nómina como pagada
   const marcarComoPagada = useMutation({
     mutationFn: async (params: MarcarComoPagadaParams) => {
-      const response = await fetch(`/api/nomina/marcar-pagado/${params.nominaId}`, {
+      const response = await fetch(`/api/finanzas/nomina/marcar-pagado/${params.nominaId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ export function useGestionarNomina() {
   // Mutación para cambiar el estado de una nómina
   const cambiarEstado = useMutation({
     mutationFn: async (params: CambiarEstadoParams) => {
-      const response = await fetch(`/api/nomina/cambiar-estado/${params.nominaId}`, {
+      const response = await fetch(`/api/finanzas/nomina/cambiar-estado/${params.nominaId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

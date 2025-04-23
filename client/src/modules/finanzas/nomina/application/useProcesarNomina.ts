@@ -11,7 +11,7 @@ export function useProcesarNomina() {
   // Mutación para procesar nómina
   const { mutate: procesarNominaMutate, isPending } = useMutation({
     mutationFn: async (params: ProcesarNominaParams) => {
-      const response = await fetch('/api/nomina/procesar', {
+      const response = await fetch('/api/finanzas/nomina/procesar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

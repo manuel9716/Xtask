@@ -12,9 +12,9 @@ export function useEmpleadosNomina() {
     error,
     refetch
   } = useQuery({
-    queryKey: ['/api/nomina/empleados/listar'],
+    queryKey: ['/api/finanzas/nomina/empleados/listar'],
     queryFn: async () => {
-      const response = await fetch('/api/nomina/empleados/listar');
+      const response = await fetch('/api/finanzas/nomina/empleados/listar');
       if (!response.ok) {
         throw new Error('Error al obtener empleados');
       }
