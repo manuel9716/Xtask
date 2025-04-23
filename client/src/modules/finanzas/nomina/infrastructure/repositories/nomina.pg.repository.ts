@@ -1,4 +1,4 @@
-import { db } from '../../../../../../server/db';
+import { db } from '../config/db';
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { 
   Payroll, InsertPayroll, Employee,

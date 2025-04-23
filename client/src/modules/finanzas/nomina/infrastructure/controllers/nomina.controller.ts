@@ -8,9 +8,6 @@ import {
   EstadoNomina
 } from '../../domain/entities/Nomina';
 import { NominaPdfGenerator } from '../pdf/nominaPdfGenerator';
-import { db } from '../../../../../../server/db';
-import { employees, users } from '@shared/schema';
-import { eq } from 'drizzle-orm';
 
 /**
  * Controlador para las operaciones de nómina
@@ -67,29 +64,11 @@ export class NominaController {
       // Obtener las nóminas con los filtros especificados
       const { nominas, total } = await this.repository.obtenerNominas(filtros);
 
-      // Obtener información adicional de los empleados para mostrar nombres
-      const nominasConEmpleados = await Promise.all(
-        nominas.map(async (nomina) => {
-          const empleado = await this.repository.obtenerEmpleadoPorId(nomina.employeeId);
-          let nombreEmpleado = `Empleado #${nomina.employeeId}`;
-          
-          if (empleado && empleado.userId) {
-            // Obtener el nombre del usuario asociado al empleado
-            const [usuario] = await db.select({ fullName: users.fullName })
-              .from(users)
-              .where(eq(users.id, empleado.userId));
-            
-            if (usuario) {
-              nombreEmpleado = usuario.fullName;
-            }
-          }
-          
-          return {
-            ...nomina,
-            nombreEmpleado
-          };
-        })
-      );
+      // Versión simplificada sin consultas adicionales a la BD
+      const nominasConEmpleados = nominas.map(nomina => ({
+        ...nomina,
+        nombreEmpleado: `Empleado #${nomina.employeeId}`
+      }));
 
       res.status(200).json({
         nominas: nominasConEmpleados,
@@ -127,17 +106,8 @@ export class NominaController {
       // Obtener información del empleado
       const empleado = await this.repository.obtenerEmpleadoPorId(nomina.employeeId);
       
-      let nombreEmpleado = `Empleado #${nomina.employeeId}`;
-      if (empleado && empleado.userId) {
-        // Obtener el nombre del usuario asociado al empleado
-        const [usuario] = await db.select({ fullName: users.fullName })
-          .from(users)
-          .where(eq(users.id, empleado.userId));
-        
-        if (usuario) {
-          nombreEmpleado = usuario.fullName;
-        }
-      }
+      // Simplificado para evitar consultas a la BD
+      const nombreEmpleado = `Empleado #${nomina.employeeId}`;
 
       res.status(200).json({
         ...nomina,
@@ -307,17 +277,8 @@ export class NominaController {
         return res.status(404).json({ error: 'Empleado no encontrado' });
       }
 
-      // Obtener el nombre del empleado desde la tabla de usuarios
-      let nombreEmpleado = `Empleado #${empleado.id}`;
-      if (empleado.userId) {
-        const [usuario] = await db.select({ fullName: users.fullName })
-          .from(users)
-          .where(eq(users.id, empleado.userId));
-        
-        if (usuario) {
-          nombreEmpleado = usuario.fullName;
-        }
-      }
+      // Simplificado para evitar consultas a la BD
+      const nombreEmpleado = `Empleado #${empleado.id}`;
 
       // Generar el PDF
       const pdfBuffer = await this.pdfGenerator.generarDesprendible(nomina, empleado, nombreEmpleado);
