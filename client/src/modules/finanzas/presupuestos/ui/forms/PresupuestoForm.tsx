@@ -1,301 +1,276 @@
-import React, { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { z } from 'zod';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { es, enUS } from 'date-fns/locale';
-
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-
-import { 
-  Presupuesto, 
-  PeriodoBudget, 
-  CreatePresupuestoDto, 
-  UpdatePresupuestoDto 
-} from '../../domain/entities/Presupuesto';
-import { 
-  useCrearPresupuesto, 
-  CrearPresupuestoFormData, 
-  crearPresupuestoSchema 
-} from '../../application/useCrearPresupuesto';
-import {
-  useActualizarEstadoPresupuesto,
-  ActualizarPresupuestoFormData,
-  updatePresupuestoSchema
-} from '../../application/useActualizarEstadoPresupuesto';
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useCrearPresupuesto } from "../../application/useCrearPresupuesto";
+import { crearPresupuestoSchema, Presupuesto } from "../../domain/entities/Presupuesto";
 
 interface PresupuestoFormProps {
   presupuesto?: Presupuesto | null;
+  areas?: string[];
   onSuccess?: () => void;
-  onCancel?: () => void;
-  mode: 'create' | 'edit';
 }
 
 /**
  * Formulario para crear o editar presupuestos
  */
-export const PresupuestoForm: React.FC<PresupuestoFormProps> = ({
+export function PresupuestoForm({ 
   presupuesto,
-  onSuccess,
-  onCancel,
-  mode
-}) => {
-  const { t, i18n } = useTranslation();
-  const currentLocale = i18n.language === 'es' ? es : enUS;
-  
-  // Hooks para crear o actualizar presupuesto
-  const {
-    form: createForm,
-    onSubmit: onCreateSubmit,
-    isPending: isCreatePending
-  } = useCrearPresupuesto();
-  
-  const {
-    form: updateForm,
-    onSubmit: onUpdateSubmit,
-    resetForm,
-    isPending: isUpdatePending
-  } = useActualizarEstadoPresupuesto(presupuesto);
-  
-  // Elegir el formulario correcto según el modo
-  const form = mode === 'create' ? createForm : updateForm;
-  const onSubmit = mode === 'create' ? onCreateSubmit : onUpdateSubmit;
-  const isPending = mode === 'create' ? isCreatePending : isUpdatePending;
-  
-  // Resetear el formulario de edición cuando cambia el presupuesto seleccionado
-  useEffect(() => {
-    if (mode === 'edit' && presupuesto) {
-      resetForm();
+  areas = [],
+  onSuccess 
+}: PresupuestoFormProps) {
+  const { crearPresupuesto, isPending } = useCrearPresupuesto();
+
+  // Crear formulario con validación zod
+  const form = useForm<z.infer<typeof crearPresupuestoSchema>>({
+    resolver: zodResolver(crearPresupuestoSchema),
+    defaultValues: {
+      nombre: presupuesto?.nombre || "",
+      monto: presupuesto?.monto || 0,
+      fechaInicio: presupuesto?.fechaInicio || new Date(),
+      fechaFin: presupuesto?.fechaFin || new Date(new Date().setMonth(new Date().getMonth() + 3)),
+      description: presupuesto?.description || "",
+      area: presupuesto?.area || undefined,
+    },
+  });
+
+  // Manejar el envío del formulario
+  const onSubmit = async (data: z.infer<typeof crearPresupuestoSchema>) => {
+    try {
+      const success = await crearPresupuesto(data);
+      if (success && onSuccess) {
+        form.reset();
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error al crear presupuesto:", error);
     }
-  }, [presupuesto, mode, resetForm]);
-  
-  // Traducir las opciones de períodos
-  const periodOptions = Object.values(PeriodoBudget).map(value => ({
-    value,
-    label: t(`finances.budgets.periods.${value.toLowerCase()}`)
-  }));
-  
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-4 p-4"
-    >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Nombre del presupuesto */}
-            <FormField
-              control={form.control}
-              name="nombre"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('finances.budgets.form.name')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder={t('finances.budgets.form.namePlaceholder')} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Monto */}
-            <FormField
-              control={form.control}
-              name="monto"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('finances.budgets.form.amount')}</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min={0} 
-                      step={0.01}
-                      placeholder="0.00" 
-                      {...field}
-                      // Convertir string a número para el input numérico
-                      onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        <FormField
+          control={form.control}
+          name="nombre"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nombre del presupuesto</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Ej. Presupuesto de marketing Q1 2025" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormDescription>
+                Nombre descriptivo del presupuesto
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="monto"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Monto</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="10000.00"
+                  {...field}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  value={field.value}
+                />
+              </FormControl>
+              <FormDescription>
+                Monto total asignado al presupuesto
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="fechaInicio"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Fecha de inicio</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PP")
+                        ) : (
+                          <span>Seleccione fecha</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      initialFocus
                     />
-                  </FormControl>
-                  <FormDescription>
-                    {t('finances.budgets.form.amountDescription')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Área (opcional) */}
-            <FormField
-              control={form.control}
-              name="area"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('finances.budgets.form.area')}</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder={t('finances.budgets.form.areaPlaceholder')}
-                      {...field}
-                      value={field.value || ''}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t('finances.budgets.form.areaDescription')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Período */}
-            {mode === 'create' && (
-              <FormField
-                control={form.control}
-                name="periodo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('finances.budgets.form.period')}</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('finances.budgets.form.periodPlaceholder')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {periodOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
             )}
-            
-            {/* Fecha de inicio */}
-            <FormField
-              control={form.control}
-              name="fechaInicio"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>{t('finances.budgets.form.startDate')}</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className="pl-3 text-left font-normal"
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: currentLocale })
-                          ) : (
-                            <span className="text-muted-foreground">
-                              {t('finances.budgets.form.pickADate')}
-                            </span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date < new Date("1900-01-01")}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Fecha de fin */}
-            <FormField
-              control={form.control}
-              name="fechaFin"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>{t('finances.budgets.form.endDate')}</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className="pl-3 text-left font-normal"
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: currentLocale })
-                          ) : (
-                            <span className="text-muted-foreground">
-                              {t('finances.budgets.form.pickADate')}
-                            </span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date < new Date("1900-01-01")}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          
-          {/* Botones de acción */}
-          <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={isPending}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? t('common.saving') : mode === 'create' 
-                ? t('finances.budgets.form.createButton') 
-                : t('finances.budgets.form.updateButton')
-              }
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </motion.div>
+          />
+
+          <FormField
+            control={form.control}
+            name="fechaFin"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Fecha de fin</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PP")
+                        ) : (
+                          <span>Seleccione fecha</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="area"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Área</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione un área" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="General">General</SelectItem>
+                  {areas.map((area) => (
+                    <SelectItem key={area} value={area}>
+                      {area}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Área o departamento al que pertenece el presupuesto
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descripción</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Descripción detallada del presupuesto y su propósito"
+                  className="resize-none"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Información adicional sobre el presupuesto
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button 
+          type="submit" 
+          className="w-full"
+          disabled={isPending}
+        >
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creando...
+            </>
+          ) : (
+            'Crear Presupuesto'
+          )}
+        </Button>
+      </form>
+    </Form>
   );
-};
+}

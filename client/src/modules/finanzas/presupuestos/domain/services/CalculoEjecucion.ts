@@ -1,7 +1,8 @@
-import { Presupuesto, PresupuestoEstado } from "../entities/Presupuesto";
+import { PresupuestoEstado } from '../entities/Presupuesto';
 
 /**
- * Servicio de dominio para cálculo de ejecución de presupuestos
+ * Servicio de dominio para calcular el porcentaje de ejecución y determinar el estado
+ * del presupuesto basado en los umbrales
  */
 export class CalculoEjecucion {
   /**
@@ -10,21 +11,21 @@ export class CalculoEjecucion {
    * @param monto Monto total del presupuesto
    * @returns Porcentaje de ejecución (0-100)
    */
-  static calcularPorcentajeEjecucion(gastado: number, monto: number): number {
+  calcularPorcentajeEjecucion(gastado: number, monto: number): number {
     if (monto <= 0) return 0;
-    const porcentaje = (gastado / monto) * 100;
-    return Math.min(Math.max(porcentaje, 0), 100); // Limitar entre 0 y 100
+    return (gastado / monto) * 100;
   }
 
   /**
-   * Determina el estado de un presupuesto en base a su porcentaje de ejecución
-   * @param porcentaje Porcentaje de ejecución (0-100)
-   * @returns Estado del presupuesto (ACTIVO, ALERTA, COMPLETADO)
+   * Determina el estado de un presupuesto basado en el porcentaje de ejecución
+   * y las reglas de negocio
+   * @param porcentajeEjecucion Porcentaje de ejecución (0-100)
+   * @returns Estado del presupuesto según las reglas de negocio
    */
-  static determinarEstado(porcentaje: number): PresupuestoEstado {
-    if (porcentaje >= 95) {
+  determinarEstado(porcentajeEjecucion: number): PresupuestoEstado {
+    if (porcentajeEjecucion >= 95) {
       return 'COMPLETADO';
-    } else if (porcentaje >= 80) {
+    } else if (porcentajeEjecucion >= 80) {
       return 'ALERTA';
     } else {
       return 'ACTIVO';
@@ -32,17 +33,17 @@ export class CalculoEjecucion {
   }
 
   /**
-   * Actualiza el estado y porcentaje de ejecución de un presupuesto
-   * @param presupuesto Presupuesto a actualizar
-   * @returns Presupuesto con estado y porcentaje actualizados
+   * Función combinada que calcula el porcentaje y determina el estado
+   * @param gastado Monto gastado
+   * @param monto Monto total del presupuesto
+   * @returns Objeto con el porcentaje de ejecución y el estado
    */
-  static actualizarEstado(presupuesto: Presupuesto): Presupuesto {
-    const porcentaje = this.calcularPorcentajeEjecucion(presupuesto.gastado, presupuesto.monto);
-    const estado = this.determinarEstado(porcentaje);
+  calcularEjecucionYEstado(gastado: number, monto: number): { porcentajeEjecucion: number, estado: PresupuestoEstado } {
+    const porcentajeEjecucion = this.calcularPorcentajeEjecucion(gastado, monto);
+    const estado = this.determinarEstado(porcentajeEjecucion);
     
     return {
-      ...presupuesto,
-      porcentajeEjecucion: porcentaje,
+      porcentajeEjecucion,
       estado
     };
   }

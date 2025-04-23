@@ -1,30 +1,13 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import { useToast } from "@/hooks/use-toast";
-import { CrearPresupuestoDTO } from '../domain/entities/Presupuesto';
 import { presupuestoRepository } from '../infrastructure/repositories/presupuesto.pg.repository';
-
-// Schema de validación para crear presupuestos
-export const crearPresupuestoSchema = z.object({
-  nombre: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
-  monto: z.number().min(1, 'El monto debe ser mayor a 0'),
-  area: z.string().optional(),
-  fechaInicio: z.date({
-    required_error: 'La fecha de inicio es requerida',
-    invalid_type_error: 'Fecha de inicio inválida',
-  }),
-  fechaFin: z.date({
-    required_error: 'La fecha de fin es requerida',
-    invalid_type_error: 'Fecha de fin inválida',
-  }).refine(fechaFin => fechaFin > new Date(), {
-    message: 'La fecha de fin debe ser posterior a hoy',
-  }),
-  description: z.string().optional(),
-}).refine(data => data.fechaFin > data.fechaInicio, {
-  message: 'La fecha de fin debe ser posterior a la fecha de inicio',
-  path: ['fechaFin'],
-});
+import { queryClient } from '@/lib/queryClient';
+import { 
+  CrearPresupuestoDTO, 
+  crearPresupuestoSchema 
+} from '../domain/entities/Presupuesto';
 
 export type CrearPresupuestoFormData = z.infer<typeof crearPresupuestoSchema>;
 
@@ -32,23 +15,16 @@ export type CrearPresupuestoFormData = z.infer<typeof crearPresupuestoSchema>;
  * Hook de aplicación para crear presupuestos
  */
 export function useCrearPresupuesto() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mutation para crear presupuesto
-  const crearPresupuestoMutation = useMutation({
+  const mutation = useMutation({
     mutationFn: async (data: CrearPresupuestoDTO) => {
-      try {
-        setIsSubmitting(true);
-        return await presupuestoRepository.crearPresupuesto(data);
-      } finally {
-        setIsSubmitting(false);
-      }
+      return presupuestoRepository.crearPresupuesto(data);
     },
     onSuccess: () => {
-      // Invalidar la consulta para refrescar la lista de presupuestos
-      queryClient.invalidateQueries({ queryKey: ['presupuestos'] });
+      // Invalidar las consultas relacionadas con presupuestos
+      queryClient.invalidateQueries({ queryKey: ['/api/presupuestos'] });
       
       toast({
         title: "Presupuesto creado",
@@ -70,16 +46,20 @@ export function useCrearPresupuesto() {
    */
   const crearPresupuesto = async (data: CrearPresupuestoFormData) => {
     try {
-      await crearPresupuestoMutation.mutateAsync(data);
+      setIsSubmitting(true);
+      await mutation.mutateAsync(data);
       return true;
     } catch (error) {
+      console.error('Error al crear presupuesto:', error);
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return {
     crearPresupuesto,
     isSubmitting,
-    isPending: crearPresupuestoMutation.isPending
+    isPending: mutation.isPending,
   };
 }
