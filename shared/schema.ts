@@ -50,6 +50,7 @@ export const budgets = pgTable("budgets", {
   name: text("name").notNull(),
   description: text("description"),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  spent: decimal("spent", { precision: 10, scale: 2 }).default("0").notNull(),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   organizationId: integer("organization_id").default(1).notNull(),
@@ -58,11 +59,8 @@ export const budgets = pgTable("budgets", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
-  status: text("status").notNull().default("active"),
+  status: text("status").notNull().default("active"), // active, at_risk, critical, completed
   metadata: text("metadata"), // JSON data serialized
-  // Nota: gastado es un campo virtual que se calculará a partir de las transacciones relacionadas,
-  // pero para esta implementación simplificada, lo añadiremos como parte del objeto Budget 
-  // aunque no sea una columna en la base de datos
 });
 
 // Nómina de empleados

@@ -1,38 +1,43 @@
-import { Presupuesto, CreatePresupuestoDto, UpdatePresupuestoDto } from '../entities/Presupuesto';
+import { Presupuesto, CrearPresupuestoDTO, RegistrarGastoDTO } from "../entities/Presupuesto";
 
 /**
- * Interfaz que define las operaciones disponibles en el repositorio de presupuestos
- * Siguiendo el patrón de Arquitectura Hexagonal, esta interfaz es un puerto que permite
- * comunicar el dominio con la infraestructura, sin generar dependencias directas
+ * Interfaz para el repositorio de presupuestos (Patrón Repository)
  */
 export interface IPresupuestoRepository {
   /**
-   * Obtiene todos los presupuestos
+   * Obtiene una lista de todos los presupuestos
+   * @param organizationId ID de la organización (opcional)
+   * @returns Lista de presupuestos
    */
-  getAll(organizationId: number): Promise<Presupuesto[]>;
+  listarPresupuestos(organizationId?: number): Promise<Presupuesto[]>;
   
   /**
-   * Obtiene un presupuesto por su id
+   * Obtiene un presupuesto por su ID
+   * @param id ID del presupuesto
+   * @returns Presupuesto encontrado o undefined
    */
-  getById(id: number): Promise<Presupuesto | null>;
+  obtenerPresupuestoPorId(id: number): Promise<Presupuesto | undefined>;
   
   /**
    * Crea un nuevo presupuesto
+   * @param presupuesto Datos del presupuesto a crear
+   * @returns Presupuesto creado
    */
-  create(data: CreatePresupuestoDto): Promise<Presupuesto>;
+  crearPresupuesto(presupuesto: CrearPresupuestoDTO): Promise<Presupuesto>;
   
   /**
    * Actualiza un presupuesto existente
+   * @param id ID del presupuesto a actualizar
+   * @param presupuesto Datos parciales a actualizar
+   * @returns Presupuesto actualizado
    */
-  update(id: number, data: UpdatePresupuestoDto): Promise<Presupuesto>;
+  actualizarPresupuesto(id: number, presupuesto: Partial<Presupuesto>): Promise<Presupuesto>;
   
   /**
-   * Registra un gasto en un presupuesto específico
+   * Registra un gasto en un presupuesto
+   * @param id ID del presupuesto
+   * @param gasto Datos del gasto a registrar
+   * @returns Presupuesto actualizado con el gasto registrado
    */
-  registrarGasto(id: number, monto: number): Promise<Presupuesto>;
-  
-  /**
-   * Importa presupuestos desde un archivo CSV
-   */
-  importarDesdeCSV(csvData: string, organizationId: number): Promise<Presupuesto[]>;
+  registrarGasto(id: number, gasto: RegistrarGastoDTO): Promise<Presupuesto>;
 }

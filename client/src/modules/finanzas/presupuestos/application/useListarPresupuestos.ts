@@ -1,98 +1,84 @@
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Presupuesto } from '../domain/entities/Presupuesto';
-import { PresupuestoRepository } from '../infrastructure/repositories/presupuesto.repository';
+import { presupuestoRepository } from '../infrastructure/repositories/presupuesto.pg.repository';
 
 /**
- * Opciones para filtrar presupuestos
+ * Hook de aplicación para listar y filtrar presupuestos
  */
-export interface PresupuestoFilterOptions {
-  estado?: string;
-  area?: string;
-  periodo?: string;
-  search?: string;
-}
-
-/**
- * Hook para obtener y filtrar la lista de presupuestos
- */
-export function useListarPresupuestos(
-  organizationId: number = 1,
-  filterOptions: PresupuestoFilterOptions = {}
-) {
-  const presupuestoRepository = new PresupuestoRepository();
+export function useListarPresupuestos(organizationId?: number) {
+  const [filtroArea, setFiltroArea] = useState<string | null>(null);
+  const [filtroEstado, setFiltroEstado] = useState<string | null>(null);
   
-  // Consultar la lista de presupuestos
-  const { 
-    data: presupuestos,
+  // Query para obtener los presupuestos
+  const {
+    data: presupuestos = [],
     isLoading,
-    isError,
     error,
     refetch
-  } = useQuery<Presupuesto[], Error>({
-    queryKey: ['/api/presupuestos', organizationId, filterOptions],
-    queryFn: async () => {
-      const allPresupuestos = await presupuestoRepository.getAll(organizationId);
-      return filterPresupuestos(allPresupuestos, filterOptions);
-    }
+  } = useQuery({
+    queryKey: ['presupuestos', organizationId],
+    queryFn: () => presupuestoRepository.listarPresupuestos(organizationId),
   });
   
-  /**
-   * Función para aplicar filtros a la lista de presupuestos
-   */
-  function filterPresupuestos(
-    presupuestos: Presupuesto[],
-    filters: PresupuestoFilterOptions
-  ): Presupuesto[] {
-    return presupuestos.filter(presupuesto => {
-      // Filtro por estado
-      if (filters.estado && presupuesto.estado !== filters.estado) {
-        return false;
-      }
-      
-      // Filtro por área
-      if (filters.area && presupuesto.area !== filters.area) {
-        return false;
-      }
-      
-      // Filtro por período
-      if (filters.periodo && presupuesto.periodo !== filters.periodo) {
-        return false;
-      }
-      
-      // Búsqueda por texto
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        const matchesName = presupuesto.nombre.toLowerCase().includes(searchTerm);
-        const matchesArea = presupuesto.area?.toLowerCase().includes(searchTerm);
-        
-        if (!matchesName && !matchesArea) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-  }
-  
-  /**
-   * Obtiene las áreas únicas de los presupuestos para los filtros
-   */
-  const getUniqueAreas = (): string[] => {
-    if (!presupuestos) return [];
+  // Filtrar los presupuestos según los criterios seleccionados
+  const presupuestosFiltrados = useMemo(() => {
+    let resultado = [...presupuestos];
     
-    const areas = presupuestos
-      .filter(p => p.area)
-      .map(p => p.area as string);
-      
-    return [...new Set(areas)].sort();
-  };
+    // Filtrar por área
+    if (filtroArea) {
+      resultado = resultado.filter(p => p.area === filtroArea);
+    }
+    
+    // Filtrar por estado
+    if (filtroEstado) {
+      resultado = resultado.filter(p => p.estado === filtroEstado);
+    }
+    
+    return resultado;
+  }, [presupuestos, filtroArea, filtroEstado]);
+  
+  // Obtener las áreas disponibles para el filtro
+  const areasDisponibles = useMemo(() => {
+    const areas = new Set<string>();
+    presupuestos.forEach(p => {
+      if (p.area) areas.add(p.area);
+    });
+    return Array.from(areas).sort();
+  }, [presupuestos]);
+  
+  // Calcular montos totales para el dashboard
+  const estadisticas = useMemo(() => {
+    const total = presupuestos.reduce((acc, p) => acc + p.monto, 0);
+    const gastado = presupuestos.reduce((acc, p) => acc + p.gastado, 0);
+    const porcentajeGlobal = total > 0 ? (gastado / total) * 100 : 0;
+    
+    const cantidadActivos = presupuestos.filter(p => p.estado === 'ACTIVO').length;
+    const cantidadAlerta = presupuestos.filter(p => p.estado === 'ALERTA').length;
+    const cantidadCompletados = presupuestos.filter(p => p.estado === 'COMPLETADO').length;
+    
+    return {
+      cantidadTotal: presupuestos.length,
+      montoTotal: total,
+      montoGastado: gastado,
+      porcentajeGlobal,
+      cantidadActivos,
+      cantidadAlerta,
+      cantidadCompletados
+    };
+  }, [presupuestos]);
   
   return {
-    presupuestos: presupuestos || [],
+    presupuestos,
+    presupuestosFiltrados,
     isLoading,
-    isError,
     error,
     refetch,
-    getUniqueAreas
+    filtroArea,
+    setFiltroArea,
+    filtroEstado,
+    setFiltroEstado,
+    areasDisponibles,
+    estadisticas
   };
 }
