@@ -13,6 +13,7 @@ export class ValidateBudgetExpenseUseCase {
    * @returns Promise con un booleano que indica si el gasto excede el presupuesto
    */
   async execute(budgetId: number, amount: number): Promise<boolean> {
-    return this.budgetService.checkBudgetOverspending(budgetId, amount);
+    const result = await this.budgetService.validateExpense(budgetId, amount);
+    return !result.valid;
   }
 }
