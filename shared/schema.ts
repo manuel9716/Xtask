@@ -42,6 +42,133 @@ export const transactions = pgTable("transactions", {
   approverId: integer("approver_id").references(() => users.id),
 });
 
+// ========== MÓDULO DE FINANZAS ==========
+
+// Presupuestos empresariales
+export const budgets = pgTable("budgets", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  organizationId: integer("organization_id").default(1).notNull(),
+  departmentId: integer("department_id"),
+  projectId: integer("project_id").references(() => projects.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  status: text("status").notNull().default("active"),
+  metadata: text("metadata") // JSON data serialized
+});
+
+// Nómina de empleados
+export const payrolls = pgTable("payrolls", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").references(() => employees.id).notNull(),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  grossSalary: decimal("gross_salary", { precision: 10, scale: 2 }).notNull(),
+  netSalary: decimal("net_salary", { precision: 10, scale: 2 }).notNull(),
+  deductions: decimal("deductions", { precision: 10, scale: 2 }).notNull(),
+  benefits: decimal("benefits", { precision: 10, scale: 2 }).notNull(),
+  taxes: decimal("taxes", { precision: 10, scale: 2 }).notNull(),
+  status: text("status").notNull().default("pending"), // pending, processing, paid, cancelled
+  paymentDate: timestamp("payment_date"),
+  paymentMethod: text("payment_method"),
+  paymentReference: text("payment_reference"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  calculationDetails: text("calculation_details") // JSON data serialized
+});
+
+// Informes financieros
+export const financialReports = pgTable("financial_reports", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // balance, cash_flow, income_statement
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  organizationId: integer("organization_id").default(1).notNull(),
+  departmentId: integer("department_id"),
+  projectId: integer("project_id").references(() => projects.id),
+  fileUrl: text("file_url"),
+  status: text("status").notNull().default("draft"), // draft, published, archived
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  reportData: text("report_data") // JSON data serialized
+});
+
+// Facturas
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  clientId: integer("client_id").notNull(), // Referencia a la tabla de clientes (que se debe crear)
+  issueDate: timestamp("issue_date").notNull(),
+  dueDate: timestamp("due_date").notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).notNull(),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  status: text("status").notNull().default("pending"), // pending, paid, overdue, cancelled
+  notes: text("notes"),
+  termsAndConditions: text("terms_and_conditions"),
+  paidAmount: decimal("paid_amount", { precision: 10, scale: 2 }).default("0").notNull(),
+  paidDate: timestamp("paid_date"),
+  fileUrl: text("file_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  electronicInvoiceData: text("electronic_invoice_data") // JSON data serialized
+});
+
+// Items de facturas
+export const invoiceItems = pgTable("invoice_items", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").references(() => invoices.id).notNull(),
+  description: text("description").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  taxRate: decimal("tax_rate", { precision: 10, scale: 2 }).notNull(),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).notNull(),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  productId: integer("product_id").references(() => products.id),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+// Categorías financieras
+export const financialCategories = pgTable("financial_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // income, expense
+  parentId: integer("parent_id"),
+  organizationId: integer("organization_id").default(1).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id).notNull()
+});
+
+// Añadimos la relación de forma segura después de definir la tabla
+// Esto solucionará el problema de referencia circular
+// financialCategories.id.references(() => financialCategories.id, { foreignKeyName: "financial_categories_parent_id_fkey" });
+
+// Auditoría financiera
+export const financialAudits = pgTable("financial_audits", {
+  id: serial("id").primaryKey(),
+  entityType: text("entity_type").notNull(), // transaction, invoice, payroll, budget
+  entityId: integer("entity_id").notNull(),
+  action: text("action").notNull(), // create, update, delete, approve, reject
+  previousData: text("previous_data"), // JSON data serialized
+  newData: text("new_data"), // JSON data serialized
+  performedBy: integer("performed_by").references(() => users.id).notNull(),
+  performedAt: timestamp("performed_at").defaultNow().notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  notes: text("notes")
+});
+
 // Tasks (Kanban) table
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
@@ -148,6 +275,15 @@ export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit
 export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems).omit({ id: true });
 export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, updatedAt: true });
 
+// Esquemas Zod para el módulo de finanzas
+export const insertBudgetSchema = createInsertSchema(budgets).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPayrollSchema = createInsertSchema(payrolls).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertFinancialReportSchema = createInsertSchema(financialReports).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertInvoiceItemSchema = createInsertSchema(invoiceItems).omit({ id: true, createdAt: true });
+export const insertFinancialCategorySchema = createInsertSchema(financialCategories).omit({ id: true, createdAt: true });
+export const insertFinancialAuditSchema = createInsertSchema(financialAudits).omit({ id: true, performedAt: true });
+
 // Types for usage in application
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -181,3 +317,25 @@ export type InsertPurchaseOrderItem = z.infer<typeof insertPurchaseOrderItemSche
 
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
+
+// Tipos para el módulo de finanzas
+export type Budget = typeof budgets.$inferSelect;
+export type InsertBudget = z.infer<typeof insertBudgetSchema>;
+
+export type Payroll = typeof payrolls.$inferSelect;
+export type InsertPayroll = z.infer<typeof insertPayrollSchema>;
+
+export type FinancialReport = typeof financialReports.$inferSelect;
+export type InsertFinancialReport = z.infer<typeof insertFinancialReportSchema>;
+
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+
+export type InvoiceItem = typeof invoiceItems.$inferSelect;
+export type InsertInvoiceItem = z.infer<typeof insertInvoiceItemSchema>;
+
+export type FinancialCategory = typeof financialCategories.$inferSelect;
+export type InsertFinancialCategory = z.infer<typeof insertFinancialCategorySchema>;
+
+export type FinancialAudit = typeof financialAudits.$inferSelect;
+export type InsertFinancialAudit = z.infer<typeof insertFinancialAuditSchema>;

@@ -1,0 +1,82 @@
+
+Cada acción de negocio importante debe iniciar en `application`, usar objetos de dominio en `domain`, acceder a datos o servicios en `infrastructure`, y presentar interfaz en `ui`.
+
+---
+
+## 🎯 Funcionalidades por Meta
+
+### 1. **Presupuestos empresariales**
+**Objetivo**: Definir y controlar presupuestos por áreas, proyectos o cuentas.
+
+- CRUD de presupuestos generales y por centro de costo
+- Validación de topes de gasto al registrar egresos
+- Vista resumen: presupuestado vs ejecutado
+- Alertas por exceso de presupuesto
+- Reportes PDF descargables
+
+---
+
+### 2. **Procesamiento de Nómina**
+**Objetivo**: Calcular y pagar nómina con precisión.
+
+- Registro de empleados y condiciones contractuales
+- Cálculo automático de salario, descuentos, aportes y retenciones
+- Generación de desprendibles (PDF)
+- Estado de pago (pendiente, pagado)
+- Conexión opcional con Stripe o webhooks bancarios
+
+---
+
+### 3. **Informes financieros**
+**Objetivo**: Analizar la salud financiera general y por proyecto.
+
+- Balance general, flujo de caja y estado de resultados
+- Visualizaciones con Recharts (mensual, acumulado, comparativo)
+- Filtros por fecha, proyecto, tipo de transacción
+- Exportar en PDF y Excel
+- Almacenamiento de versiones de reportes
+
+---
+
+### 4. **Facturación y cobros**
+**Objetivo**: Emitir facturas a clientes y controlar el estado de pago.
+
+- Registro de productos y servicios
+- Generación de facturas electrónicas (PDF)
+- Envío automático por correo
+- Estado de pago: pendiente, vencido, pagado
+- Seguimiento de cobros con recordatorios por email
+
+---
+
+### 5. **Auditoría y revisión**
+**Objetivo**: Garantizar cumplimiento y detectar irregularidades.
+
+- Registro de todas las transacciones (bitácora con timestamp y usuario)
+- Comparador de movimientos contra presupuestos y autorizaciones
+- Módulo de revisión por auditor con filtros avanzados
+- Alertas por duplicados, montos fuera de política o manipulaciones
+- Historial de ediciones y firma digital
+
+---
+
+## 📌 Requisitos Técnicos Adicionales
+
+- Todas las rutas deben estar protegidas por roles (`admin_finanzas`, `auditor`, `gerente`)
+- Validación estricta en frontend y backend
+- Estado de la UI debe reflejar cargando, éxito o error
+- Escalable para organizaciones multiempresa (scope por organización)
+- Adaptado para móviles y desktop
+
+---
+
+## 🧭 Módulos UI esperados (cada uno una ruta interna del módulo Finanzas)
+
+- `/finanzas/presupuestos`
+- `/finanzas/nomina`
+- `/finanzas/informes`
+- `/finanzas/facturacion`
+- `/finanzas/auditoria`
+
+Cada vista debe tener su propio layout, encabezado, filtros y tabla de datos o formulario, con feedback visual, animaciones suaves y UX profesional.
+
