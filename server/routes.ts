@@ -456,6 +456,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rutas de Nómina (Payroll)
   const nominaRouter = express.Router();
   
+  // Integrar las rutas de empleados al router de nómina
+  nominaRouter.use('/empleados', empleadosRouter);
+  
   // Obtener nóminas con filtros
   nominaRouter.get('/', async (req: Request, res: Response) => {
     try {

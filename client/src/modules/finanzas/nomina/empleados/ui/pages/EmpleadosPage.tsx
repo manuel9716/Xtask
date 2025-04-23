@@ -100,11 +100,11 @@ export default function EmpleadosPage() {
   const getEstadoContractoBadge = (estado: string) => {
     switch (estado) {
       case 'active':
-        return <Badge variant="success">Activo</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-600">Activo</Badge>;
       case 'inactive':
         return <Badge variant="secondary">Inactivo</Badge>;
       case 'on_leave':
-        return <Badge variant="warning">Permiso</Badge>;
+        return <Badge className="bg-yellow-500 hover:bg-yellow-600">Permiso</Badge>;
       case 'terminated':
         return <Badge variant="destructive">Terminado</Badge>;
       default:

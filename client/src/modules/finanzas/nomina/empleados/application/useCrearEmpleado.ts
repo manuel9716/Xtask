@@ -40,7 +40,6 @@ export function useCrearEmpleado(): {
       toast({
         title: 'Empleado creado',
         description: 'El empleado ha sido creado exitosamente',
-        variant: 'success',
       });
     },
     onError: (error) => {
