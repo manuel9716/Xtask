@@ -1,51 +1,51 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ProcesarNominaParams } from '../domain/entities/Nomina';
-import { apiRequest } from '@/lib/queryClient';
+import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { ProcesarNominaParams } from '../domain/entities/Nomina';
 
 /**
  * Hook para procesar nóminas
  */
 export function useProcesarNomina() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
-
-  const { mutate, isPending, isError, error, isSuccess, reset } = useMutation({
+  
+  // Mutación para procesar nómina
+  const procesarNomina = useMutation({
     mutationFn: async (params: ProcesarNominaParams) => {
-      const response = await apiRequest('POST', '/api/nomina/procesar', params);
+      const response = await fetch('/api/nomina/procesar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+      });
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al procesar la nómina');
+        const error = await response.json();
+        throw new Error(error.message || 'Error al procesar la nómina');
       }
+      
       return response.json();
     },
     onSuccess: (data) => {
-      // Mostrar mensaje de éxito
-      toast({
-        title: 'Nómina procesada',
-        description: `Se procesó con éxito la nómina para ${data.nominas.length} empleado(s)`,
-        variant: 'default',
-      });
+      // Extraer cantidad de nóminas procesadas si viene en la respuesta
+      const cantidad = data?.procesadas || data?.length || 'Las';
       
-      // Actualizar caché de nóminas
-      queryClient.invalidateQueries({ queryKey: ['/api/nomina'] });
+      toast({
+        title: "Nóminas procesadas",
+        description: `${cantidad} nóminas han sido procesadas correctamente.`,
+      });
     },
     onError: (error: Error) => {
-      // Mostrar mensaje de error
       toast({
-        title: 'Error',
-        description: error.message || 'Ocurrió un error al procesar la nómina',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "No se pudieron procesar las nóminas",
+        variant: "destructive",
       });
     },
   });
 
   return {
-    procesarNomina: mutate,
-    isPending,
-    isError,
-    error,
-    isSuccess,
-    reset
+    procesarNomina,
+    isPending: procesarNomina.isPending
   };
 }

@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { EstadoNomina } from '../../domain/entities/Nomina';
 
 interface NominasTableProps {
@@ -46,7 +46,7 @@ export function NominasTable({
   onRechazar,
   onDescargarDesprendible
 }: NominasTableProps) {
-  const navigate = useNavigate();
+  const [_, navigate] = useLocation();
 
   // Renderizar estado con un badge de color apropiado
   const renderEstado = (estado: string) => {

@@ -1,77 +1,94 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { MarcarComoPagadaParams, CambiarEstadoNominaParams } from '../domain/entities/Nomina';
+import { 
+  MarcarComoPagadaParams, 
+  CambiarEstadoParams 
+} from '../domain/entities/Nomina';
 
 /**
- * Hook para gestionar operaciones de nómina como marcar pagada o cambiar estado
+ * Hook para gestionar acciones relacionadas con el cambio de estado de nóminas
  */
 export function useGestionarNomina() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Mutación para marcar como pagada
+  // Mutación para marcar una nómina como pagada
   const marcarComoPagada = useMutation({
     mutationFn: async (params: MarcarComoPagadaParams) => {
-      const response = await apiRequest('POST', `/api/nomina/marcar-pagado/${params.nominaId}`, params);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al marcar la nómina como pagada');
-      }
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: 'Nómina pagada',
-        description: 'La nómina ha sido marcada como pagada exitosamente',
-        variant: 'default',
+      const response = await fetch(`/api/nomina/marcar-pagado/${params.nominaId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
       });
       
-      // Actualizar caché
-      queryClient.invalidateQueries({ queryKey: ['/api/nomina'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/nomina/${data.nomina.id}`] });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al marcar la nómina como pagada');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Operación exitosa",
+        description: "La nómina ha sido marcada como pagada correctamente",
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Ocurrió un error al marcar la nómina como pagada',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "No se pudo marcar la nómina como pagada",
+        variant: "destructive",
       });
     },
   });
 
-  // Mutación para cambiar estado
+  // Mutación para cambiar el estado de una nómina
   const cambiarEstado = useMutation({
-    mutationFn: async (params: CambiarEstadoNominaParams) => {
-      const response = await apiRequest('POST', `/api/nomina/cambiar-estado/${params.nominaId}`, params);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al cambiar el estado de la nómina');
-      }
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: 'Estado cambiado',
-        description: `La nómina ha cambiado a estado: ${data.nomina.status}`,
-        variant: 'default',
+    mutationFn: async (params: CambiarEstadoParams) => {
+      const response = await fetch(`/api/nomina/cambiar-estado/${params.nominaId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
       });
       
-      // Actualizar caché
-      queryClient.invalidateQueries({ queryKey: ['/api/nomina'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/nomina/${data.nomina.id}`] });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al cambiar el estado de la nómina');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      const mensajes = {
+        'APROBADO': 'La nómina ha sido aprobada correctamente',
+        'RECHAZADO': 'La nómina ha sido rechazada',
+        'CANCELADO': 'La nómina ha sido cancelada',
+        'PENDIENTE': 'La nómina ha sido marcada como pendiente',
+      };
+      
+      const mensaje = mensajes[variables.nuevoEstado as keyof typeof mensajes] || 
+                     'El estado de la nómina ha sido actualizado';
+      
+      toast({
+        title: "Operación exitosa",
+        description: mensaje,
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Ocurrió un error al cambiar el estado de la nómina',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "No se pudo cambiar el estado de la nómina",
+        variant: "destructive",
       });
     },
   });
 
   return {
     marcarComoPagada,
-    cambiarEstado
+    cambiarEstado,
   };
 }
