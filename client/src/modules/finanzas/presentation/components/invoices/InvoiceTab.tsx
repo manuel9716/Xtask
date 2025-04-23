@@ -11,7 +11,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { AlertTriangle, CalendarIcon, Download, FilePdf, Send } from 'lucide-react';
+import { AlertTriangle, CalendarIcon, Download, FileText, Send } from 'lucide-react';
 
 export const InvoiceTab: React.FC = () => {
   // En una implementación real, estos datos vendrían de los casos de uso
@@ -144,7 +144,7 @@ export const InvoiceTab: React.FC = () => {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon">
-                        <FilePdf className="h-4 w-4" />
+                        <FileText className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon">
                         <Send className="h-4 w-4" />

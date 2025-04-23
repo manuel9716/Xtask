@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tab, Tabs, TabsList, TabsContent, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BudgetTab } from '../components/budgets/BudgetTab';
@@ -56,12 +56,7 @@ export const FinancePage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Se implementará el componente PayrollTab más adelante */}
-              <div className="text-center p-6">
-                <p className="text-muted-foreground">
-                  El módulo de nómina está implementándose utilizando Arquitectura Hexagonal
-                </p>
-              </div>
+              <PayrollTab />
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline">Generar Reportes</Button>
@@ -79,12 +74,7 @@ export const FinancePage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Se implementará el componente InvoiceTab más adelante */}
-              <div className="text-center p-6">
-                <p className="text-muted-foreground">
-                  El módulo de facturación está implementándose utilizando Arquitectura Hexagonal
-                </p>
-              </div>
+              <InvoiceTab />
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline">Ver Facturas Pendientes</Button>
@@ -102,12 +92,7 @@ export const FinancePage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Se implementará el componente ReportsTab más adelante */}
-              <div className="text-center p-6">
-                <p className="text-muted-foreground">
-                  El módulo de informes financieros está implementándose utilizando Arquitectura Hexagonal
-                </p>
-              </div>
+              <ReportsTab />
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline">Exportar a Excel</Button>
