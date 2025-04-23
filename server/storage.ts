@@ -6,7 +6,8 @@ import {
   employees, Employee, InsertEmployee,
   suppliers, Supplier, InsertSupplier,
   products, Product, InsertProduct,
-  purchaseOrders, PurchaseOrder, InsertPurchaseOrder
+  purchaseOrders, PurchaseOrder, InsertPurchaseOrder,
+  budgets, Budget, InsertBudget
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -60,6 +61,12 @@ export interface IStorage {
   createPurchaseOrder(order: InsertPurchaseOrder): Promise<PurchaseOrder>;
   approvePurchaseOrder(id: number, approverId: number): Promise<PurchaseOrder | undefined>;
   
+  // Budgets (Presupuestos)
+  getAllBudgets(organizationId?: number): Promise<Budget[]>;
+  getBudget(id: number): Promise<Budget | undefined>;
+  createBudget(budget: InsertBudget): Promise<Budget>;
+  updateBudget(id: number, budget: Partial<Budget>): Promise<Budget>;
+  
   // Session store for authentication
   sessionStore: session.SessionStore;
 }
@@ -74,6 +81,7 @@ export class MemStorage implements IStorage {
   private suppliersMap: Map<number, Supplier>;
   private productsMap: Map<number, Product>;
   private purchaseOrdersMap: Map<number, PurchaseOrder>;
+  private budgetsMap: Map<number, Budget>;
   
   private userIdCounter: number;
   private projectIdCounter: number;
@@ -83,6 +91,7 @@ export class MemStorage implements IStorage {
   private supplierIdCounter: number;
   private productIdCounter: number;
   private purchaseOrderIdCounter: number;
+  private budgetIdCounter: number;
   
   sessionStore: session.SessionStore;
 
@@ -95,6 +104,7 @@ export class MemStorage implements IStorage {
     this.suppliersMap = new Map();
     this.productsMap = new Map();
     this.purchaseOrdersMap = new Map();
+    this.budgetsMap = new Map();
     
     this.userIdCounter = 1;
     this.projectIdCounter = 1;
@@ -104,6 +114,7 @@ export class MemStorage implements IStorage {
     this.supplierIdCounter = 1;
     this.productIdCounter = 1;
     this.purchaseOrderIdCounter = 1;
+    this.budgetIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // 24h
@@ -384,6 +395,50 @@ export class MemStorage implements IStorage {
     }
     
     return updatedOrder;
+  }
+  
+  // Presupuestos (Budgets) implementation
+  async getAllBudgets(organizationId?: number): Promise<Budget[]> {
+    const budgets = Array.from(this.budgetsMap.values());
+    if (organizationId) {
+      return budgets.filter(budget => budget.organizationId === organizationId);
+    }
+    return budgets;
+  }
+  
+  async getBudget(id: number): Promise<Budget | undefined> {
+    return this.budgetsMap.get(id);
+  }
+  
+  async createBudget(budgetData: InsertBudget): Promise<Budget> {
+    const id = this.budgetIdCounter++;
+    const now = new Date();
+    const budget: Budget = { 
+      ...budgetData, 
+      id, 
+      createdAt: now,
+      updatedAt: now
+    };
+    
+    this.budgetsMap.set(id, budget);
+    return budget;
+  }
+  
+  async updateBudget(id: number, budgetData: Partial<Budget>): Promise<Budget> {
+    const budget = this.budgetsMap.get(id);
+    if (!budget) {
+      throw new Error(`Presupuesto con ID ${id} no encontrado`);
+    }
+    
+    const now = new Date();
+    const updatedBudget = { 
+      ...budget, 
+      ...budgetData,
+      updatedAt: now
+    };
+    
+    this.budgetsMap.set(id, updatedBudget);
+    return updatedBudget;
   }
 }
 

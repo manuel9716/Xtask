@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { z } from 'zod';
 import { CreatePresupuestoDto, PeriodoBudget, UpdatePresupuestoDto } from '../../domain/entities/Presupuesto';
 import { CalculoEjecucionService } from '../../domain/services/CalculoEjecucion';
+// Import storage desde la ruta correcta
 import { storage } from '../../../../../../server/storage';
 
 const router = express.Router();
@@ -45,7 +46,7 @@ router.get('/', async (req: Request, res: Response) => {
     const presupuestos = await storage.getAllBudgets(organizationId);
     
     // Transformar y añadir datos calculados
-    const result = presupuestos.map(presupuesto => {
+    const result = presupuestos.map((presupuesto: any) => {
       const porcentajeEjecucion = calculoService.calcularPorcentajeEjecucion(
         presupuesto.gastado, 
         presupuesto.monto
@@ -237,7 +238,7 @@ router.post('/importar', async (req: Request, res: Response) => {
       const presupuestoData: any = {};
       
       // Mapear valores a propiedades
-      headers.forEach((header, index) => {
+      headers.forEach((header: string, index: number) => {
         let value = values[index]?.trim();
         
         if (header === 'monto') {
@@ -259,14 +260,15 @@ router.post('/importar', async (req: Request, res: Response) => {
         const validatedData = createPresupuestoSchema.parse(presupuestoData);
         const presupuesto = await storage.createBudget(validatedData);
         presupuestosCreados.push(presupuesto);
-      } catch (validationError) {
-        throw new Error(`Error en la línea ${i + 1}: ${validationError.toString()}`);
+      } catch (validationError: unknown) {
+        throw new Error(`Error en la línea ${i + 1}: ${String(validationError)}`);
       }
     }
     
     res.status(201).json(presupuestosCreados);
-  } catch (error) {
-    res.status(500).json({ error: `Error al importar presupuestos: ${error.message}` });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: `Error al importar presupuestos: ${errorMessage}` });
   }
 });
 
