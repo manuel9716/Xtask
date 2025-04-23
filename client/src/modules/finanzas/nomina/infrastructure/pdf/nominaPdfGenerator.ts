@@ -77,8 +77,8 @@ export class NominaPdfGenerator {
             nombre: nombreEmpleado,
             puesto: empleado.position,
             departamento: empleado.department,
-            identificacion: empleado.identification,
-            tipoContrato: empleado.contractType
+            identificacion: empleado.identification || undefined,
+            tipoContrato: empleado.contractType || undefined
           },
           nomina: {
             id: nomina.id,

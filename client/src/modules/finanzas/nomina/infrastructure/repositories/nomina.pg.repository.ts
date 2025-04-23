@@ -1,4 +1,4 @@
-import { db } from '@/server/db';
+import { db } from '../../../../../../server/db';
 import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { 
   Payroll, InsertPayroll, Employee,
@@ -10,12 +10,12 @@ import {
   EstadoNomina, 
   MarcarComoPagadaParams, 
   ProcesarNominaParams 
-} from '@/modules/finanzas/nomina/domain/entities/Nomina';
-import { INominaRepository } from '@/modules/finanzas/nomina/domain/interfaces/INominaRepository';
+} from '../../domain/entities/Nomina';
+import { INominaRepository } from '../../domain/interfaces/INominaRepository';
 import { 
   CalculoPagoEmpleado, 
   ResultadoCalculoPago 
-} from '@/modules/finanzas/nomina/domain/services/CalculoPagoEmpleado';
+} from '../../domain/services/CalculoPagoEmpleado';
 
 /**
  * Implementación PostgreSQL del repositorio de nómina

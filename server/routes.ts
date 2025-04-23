@@ -452,6 +452,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use('/api/presupuestos', presupuestosRouter);
 
+  // Rutas de Nómina (Payroll)
+  const nominaRouter = express.Router();
+  
+  // Obtener nóminas con filtros
+  nominaRouter.get('/', async (req: Request, res: Response) => {
+    try {
+      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
+      const controller = new NominaController();
+      await controller.obtenerNominas(req, res);
+    } catch (error: any) {
+      console.error('Error en la ruta de obtener nóminas:', error);
+      res.status(500).json({ error: 'Error al obtener las nóminas' });
+    }
+  });
+  
+  // Obtener una nómina por ID
+  nominaRouter.get('/:id', async (req: Request, res: Response) => {
+    try {
+      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
+      const controller = new NominaController();
+      await controller.obtenerNominaPorId(req, res);
+    } catch (error: any) {
+      console.error(`Error en la ruta de obtener nómina por ID:`, error);
+      res.status(500).json({ error: 'Error al obtener la nómina' });
+    }
+  });
+  
+  // Procesar la nómina
+  nominaRouter.post('/procesar', async (req: Request, res: Response) => {
+    try {
+      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
+      const controller = new NominaController();
+      await controller.procesarNomina(req, res);
+    } catch (error: any) {
+      console.error('Error en la ruta de procesar nómina:', error);
+      res.status(500).json({ error: 'Error al procesar la nómina' });
+    }
+  });
+  
+  // Marcar una nómina como pagada
+  nominaRouter.post('/marcar-pagado/:id', async (req: Request, res: Response) => {
+    try {
+      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
+      const controller = new NominaController();
+      await controller.marcarComoPagada(req, res);
+    } catch (error: any) {
+      console.error('Error en la ruta de marcar nómina como pagada:', error);
+      res.status(500).json({ error: 'Error al marcar la nómina como pagada' });
+    }
+  });
+  
+  // Cambiar el estado de una nómina
+  nominaRouter.post('/cambiar-estado/:id', async (req: Request, res: Response) => {
+    try {
+      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
+      const controller = new NominaController();
+      await controller.cambiarEstadoNomina(req, res);
+    } catch (error: any) {
+      console.error('Error en la ruta de cambiar estado de nómina:', error);
+      res.status(500).json({ error: 'Error al cambiar el estado de la nómina' });
+    }
+  });
+  
+  // Generar un desprendible de nómina en PDF
+  nominaRouter.get('/:id/desprendible', async (req: Request, res: Response) => {
+    try {
+      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
+      const controller = new NominaController();
+      await controller.generarDesprendible(req, res);
+    } catch (error: any) {
+      console.error('Error en la ruta de generar desprendible de nómina:', error);
+      res.status(500).json({ error: 'Error al generar el desprendible de nómina' });
+    }
+  });
+  
+  // Obtener empleados para nómina
+  nominaRouter.get('/empleados/listar', async (req: Request, res: Response) => {
+    try {
+      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
+      const controller = new NominaController();
+      await controller.obtenerEmpleados(req, res);
+    } catch (error: any) {
+      console.error('Error en la ruta de obtener empleados:', error);
+      res.status(500).json({ error: 'Error al obtener empleados' });
+    }
+  });
+  
+  app.use('/api/finanzas/nomina', nominaRouter);
+
   const httpServer = createServer(app);
 
   return httpServer;

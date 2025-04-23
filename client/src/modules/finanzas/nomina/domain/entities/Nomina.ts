@@ -1,80 +1,106 @@
 import { z } from 'zod';
-import { Payroll, Employee } from '@shared/schema';
 
-// Estados posibles de una nómina
+/**
+ * Enumeración de los estados posibles de una nómina
+ */
 export enum EstadoNomina {
   PENDIENTE = 'pending',
-  PROCESANDO = 'processing',
+  APROBADO = 'approved',
   PAGADO = 'paid',
-  CANCELADO = 'cancelled'
+  CANCELADO = 'canceled',
+  RECHAZADO = 'rejected'
 }
 
-// Tipo que representa una nómina con información del empleado
-export type NominaConEmpleado = Payroll & {
-  empleado?: Employee;
-  nombreEmpleado?: string;
-};
+/**
+ * Enumeración de los métodos de pago
+ */
+export enum MetodoPago {
+  TRANSFERENCIA = 'transfer',
+  CHEQUE = 'check',
+  EFECTIVO = 'cash',
+  ELECTRONICO = 'electronic'
+}
 
-// DTO para procesar una nómina (batch de empleados)
+/**
+ * Parámetros para procesar la nómina
+ */
+export interface ProcesarNominaParams {
+  periodoInicio: Date;
+  periodoFin: Date;
+  empleadoIds?: number[];
+  usuarioId: number;
+  descripcion?: string;
+}
+
+/**
+ * DTO para validar los parámetros de procesado de nómina
+ */
 export const ProcesarNominaDTO = z.object({
-  periodoInicio: z.date({
-    required_error: "La fecha de inicio del período es requerida",
-  }),
-  periodoFin: z.date({
-    required_error: "La fecha de fin del período es requerida",
-  }),
+  periodoInicio: z.coerce.date(),
+  periodoFin: z.coerce.date(),
   empleadoIds: z.array(z.number()).optional(),
-  notasAdicionales: z.string().optional(),
-  // El usuario procesando la nómina
   usuarioId: z.number(),
-});
+  descripcion: z.string().optional()
+}).refine(
+  (data) => data.periodoFin > data.periodoInicio,
+  {
+    message: "La fecha de fin debe ser posterior a la fecha de inicio",
+    path: ["periodoFin"]
+  }
+);
 
-export type ProcesarNominaParams = z.infer<typeof ProcesarNominaDTO>;
+/**
+ * Parámetros para marcar una nómina como pagada
+ */
+export interface MarcarComoPagadaParams {
+  nominaId: number;
+  fechaPago: Date;
+  metodoPago: string;
+  referenciaPago?: string;
+  usuarioId: number;
+  comentarios?: string;
+}
 
-// DTO para registrar un gasto de nómina
-export const RegistrarGastoNominaDTO = z.object({
-  nominaId: z.number(),
-  montoBruto: z.number().positive(),
-  montoNeto: z.number().positive(),
-  deducciones: z.number().min(0),
-  beneficios: z.number().min(0),
-  impuestos: z.number().min(0),
-  fechaPago: z.date(),
-  referenciaPago: z.string().optional(),
-  notas: z.string().optional(),
-});
-
-export type RegistrarGastoNominaParams = z.infer<typeof RegistrarGastoNominaDTO>;
-
-// DTO para marcar una nómina como pagada
+/**
+ * DTO para validar los parámetros de marcado como pagada
+ */
 export const MarcarComoPagadaDTO = z.object({
   nominaId: z.number(),
-  fechaPago: z.date().optional().default(() => new Date()),
-  metodoPago: z.string().optional(),
+  fechaPago: z.coerce.date(),
+  metodoPago: z.nativeEnum(MetodoPago),
   referenciaPago: z.string().optional(),
   usuarioId: z.number(),
+  comentarios: z.string().optional()
 });
 
-export type MarcarComoPagadaParams = z.infer<typeof MarcarComoPagadaDTO>;
+/**
+ * Parámetros para cambiar el estado de una nómina
+ */
+export interface CambiarEstadoNominaParams {
+  nominaId: number;
+  nuevoEstado: string;
+  motivo?: string;
+  usuarioId: number;
+}
 
-// DTO para cambiar el estado de una nómina
+/**
+ * DTO para validar los parámetros de cambio de estado
+ */
 export const CambiarEstadoNominaDTO = z.object({
   nominaId: z.number(),
   nuevoEstado: z.nativeEnum(EstadoNomina),
-  usuarioId: z.number(),
   motivo: z.string().optional(),
+  usuarioId: z.number()
 });
 
-export type CambiarEstadoNominaParams = z.infer<typeof CambiarEstadoNominaDTO>;
-
-// DTO para consultar el historial de nóminas
+/**
+ * DTO para consultar nóminas con filtros
+ */
 export const ConsultarNominasDTO = z.object({
-  periodoInicio: z.date().optional(),
-  periodoFin: z.date().optional(),
   empleadoId: z.number().optional(),
+  mes: z.number().min(1).max(12).optional(),
+  anio: z.number().min(2000).max(2100).optional(),
   estado: z.nativeEnum(EstadoNomina).optional(),
-  page: z.number().optional().default(1),
-  limit: z.number().optional().default(10),
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(10)
 });
-
-export type ConsultarNominasParams = z.infer<typeof ConsultarNominasDTO>;

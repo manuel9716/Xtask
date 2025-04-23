@@ -8,7 +8,7 @@ import {
   EstadoNomina
 } from '../../domain/entities/Nomina';
 import { NominaPdfGenerator } from '../pdf/nominaPdfGenerator';
-import { db } from '@/server/db';
+import { db } from '../../../../../../server/db';
 import { employees, users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 

@@ -1,4 +1,4 @@
-import { Employee } from '@shared/schema';
+import { Employee } from "@shared/schema";
 
 /**
  * Resultado del cálculo de pago a un empleado
@@ -16,6 +16,16 @@ export interface ResultadoCalculoPago {
 }
 
 /**
+ * Parámetros adicionales para el cálculo de pago
+ */
+export interface ParametrosCalculo {
+  deduccionesAdicionales?: number[];
+  beneficiosAdicionales?: number[];
+  horasExtra?: number;
+  tarifaHorasExtra?: number;
+}
+
+/**
  * Servicio de dominio encargado de calcular el pago a un empleado
  * Implementa la lógica de negocio para el cálculo de pagos
  */
@@ -29,85 +39,109 @@ export class CalculoPagoEmpleado {
    */
   calcularPago(
     empleado: Employee,
-    deduccionesAdicionales: { concepto: string; monto: number }[] = [],
-    beneficiosAdicionales: { concepto: string; monto: number }[] = []
+    params?: ParametrosCalculo
   ): ResultadoCalculoPago {
-    if (!empleado.salary) {
-      throw new Error(`El empleado ${empleado.id} no tiene un salario definido`);
+    // Valores por defecto en caso de que no estén definidos en el empleado
+    const salarioBruto = parseFloat(empleado.salary || '0');
+    const deduccionesFijas = parseFloat(empleado.baseDeductions || '0');
+    const beneficiosFijos = parseFloat(empleado.baseBenefits || '0');
+    const tasaImpuestos = parseFloat(empleado.taxRate || '0.16'); // 16% por defecto si no está definido
+    
+    // Deducciones y beneficios adicionales (si se proporcionan)
+    const deduccionesAdicionales = (params?.deduccionesAdicionales || []).reduce(
+      (total, valor) => total + valor,
+      0
+    );
+    
+    const beneficiosAdicionales = (params?.beneficiosAdicionales || []).reduce(
+      (total, valor) => total + valor,
+      0
+    );
+    
+    // Cálculo de horas extra si aplica
+    let pagoHorasExtra = 0;
+    if (params?.horasExtra && params?.horasExtra > 0 && params?.tarifaHorasExtra) {
+      pagoHorasExtra = params.horasExtra * params.tarifaHorasExtra;
     }
-
-    // Convertir el salario a número desde string (decimal en la BD)
-    const sueldoBruto = parseFloat(empleado.salary.toString());
     
-    // Calcular deducciones fijas (si están definidas en el empleado)
-    const deduccionesFijas = 
-      empleado.baseDeductions ? parseFloat(empleado.baseDeductions.toString()) : 0;
+    // Base imponible para impuestos (salario + beneficios - algunas deducciones según normativa)
+    const baseImponible = salarioBruto + pagoHorasExtra;
     
-    // Calcular deducciones adicionales
-    const montoDeduccionesAdicionales = deduccionesAdicionales.reduce(
-      (total, deduccion) => total + deduccion.monto, 0
-    );
+    // Cálculo de impuestos
+    const impuestos = this.calcularImpuestos(baseImponible, tasaImpuestos);
     
-    // Calcular beneficios fijos (si están definidos en el empleado)
-    const beneficiosFijos = 
-      empleado.baseBenefits ? parseFloat(empleado.baseBenefits.toString()) : 0;
+    // Cálculo de deducciones totales
+    const totalDeducciones = deduccionesFijas + deduccionesAdicionales;
     
-    // Calcular beneficios adicionales
-    const montoBeneficiosAdicionales = beneficiosAdicionales.reduce(
-      (total, beneficio) => total + beneficio.monto, 0
-    );
+    // Cálculo de beneficios totales
+    const totalBeneficios = beneficiosFijos + beneficiosAdicionales + pagoHorasExtra;
     
-    // Calcular impuestos basados en la tasa del empleado o una tasa por defecto
-    const tasaImpuestos = empleado.taxRate 
-      ? parseFloat(empleado.taxRate.toString()) 
-      : 0.1; // 10% por defecto
+    // Cálculo del sueldo neto
+    const sueldoNeto = salarioBruto + totalBeneficios - totalDeducciones - impuestos;
     
-    const impuestos = sueldoBruto * tasaImpuestos;
-    
-    // Calcular sueldo neto
-    const sueldoNeto = sueldoBruto - deduccionesFijas - montoDeduccionesAdicionales - impuestos + beneficiosFijos + montoBeneficiosAdicionales;
-    
-    // Crear detalles para mostrar en el PDF
-    const detalles = {
-      conceptos: {
-        ingresos: [
-          { concepto: 'Sueldo Base', monto: sueldoBruto }
-        ],
-        beneficios: [
-          { concepto: 'Beneficios Fijos', monto: beneficiosFijos },
-          ...beneficiosAdicionales
-        ],
-        deducciones: [
-          { concepto: 'Deducciones Fijas', monto: deduccionesFijas },
-          { concepto: 'Impuestos', monto: impuestos },
-          ...deduccionesAdicionales
-        ]
-      },
-      totales: {
-        totalIngresos: sueldoBruto + beneficiosFijos + montoBeneficiosAdicionales,
-        totalDeducciones: deduccionesFijas + montoDeduccionesAdicionales + impuestos,
-        totalNeto: sueldoNeto
-      },
-      empleado: {
-        id: empleado.id,
-        nombre: empleado.userId, // Idealmente deberíamos tener el nombre del empleado
-        puesto: empleado.position,
-        departamento: empleado.department,
-        tipoContrato: empleado.contractType
-      }
+    // Conceptos detallados para mostrar en el PDF
+    const conceptos = {
+      ingresos: [
+        { concepto: 'Sueldo Base', monto: salarioBruto }
+      ],
+      beneficios: [
+        { concepto: 'Beneficios Fijos', monto: beneficiosFijos }
+      ],
+      deducciones: [
+        { concepto: 'Deducciones Fijas', monto: deduccionesFijas },
+        { concepto: 'Impuestos', monto: impuestos }
+      ]
     };
+    
+    // Agregar horas extra si aplica
+    if (pagoHorasExtra > 0) {
+      conceptos.beneficios.push({ 
+        concepto: `Horas Extra (${params?.horasExtra} hrs)`, 
+        monto: pagoHorasExtra 
+      });
+    }
+    
+    // Agregar beneficios adicionales si hay
+    if (beneficiosAdicionales > 0) {
+      conceptos.beneficios.push({ 
+        concepto: 'Beneficios Adicionales', 
+        monto: beneficiosAdicionales 
+      });
+    }
+    
+    // Agregar deducciones adicionales si hay
+    if (deduccionesAdicionales > 0) {
+      conceptos.deducciones.push({ 
+        concepto: 'Deducciones Adicionales', 
+        monto: deduccionesAdicionales 
+      });
+    }
     
     return {
       empleadoId: empleado.id,
-      sueldoBruto,
+      sueldoBruto: salarioBruto,
       deduccionesFijas,
-      deduccionesAdicionales: montoDeduccionesAdicionales,
+      deduccionesAdicionales,
       impuestos,
       beneficiosFijos,
-      beneficiosAdicionales: montoBeneficiosAdicionales,
+      beneficiosAdicionales,
       sueldoNeto,
-      detalles
+      detalles: {
+        conceptos,
+        nombre: empleado.position,
+        departamento: empleado.department,
+        fechaContratacion: empleado.hireDate,
+        tipoContrato: empleado.contractType
+      }
     };
+  }
+  
+  /**
+   * Calcula los impuestos basados en una tasa fija
+   * En una implementación real, esto sería mucho más complejo con tramos impositivos
+   */
+  private calcularImpuestos(baseImponible: number, tasaImpuestos: number): number {
+    return baseImponible * tasaImpuestos;
   }
   
   /**
@@ -120,22 +154,23 @@ export class CalculoPagoEmpleado {
     totalBeneficios: number;
     totalImpuestos: number;
   } {
-    const totalBruto = resultados.reduce((total, r) => total + r.sueldoBruto, 0);
-    const totalNeto = resultados.reduce((total, r) => total + r.sueldoNeto, 0);
-    const totalDeducciones = resultados.reduce(
-      (total, r) => total + r.deduccionesFijas + r.deduccionesAdicionales, 0
+    return resultados.reduce(
+      (acumulado, resultado) => {
+        return {
+          totalBruto: acumulado.totalBruto + resultado.sueldoBruto,
+          totalNeto: acumulado.totalNeto + resultado.sueldoNeto,
+          totalDeducciones: acumulado.totalDeducciones + resultado.deduccionesFijas + resultado.deduccionesAdicionales,
+          totalBeneficios: acumulado.totalBeneficios + resultado.beneficiosFijos + resultado.beneficiosAdicionales,
+          totalImpuestos: acumulado.totalImpuestos + resultado.impuestos
+        };
+      },
+      {
+        totalBruto: 0,
+        totalNeto: 0,
+        totalDeducciones: 0,
+        totalBeneficios: 0,
+        totalImpuestos: 0
+      }
     );
-    const totalBeneficios = resultados.reduce(
-      (total, r) => total + r.beneficiosFijos + r.beneficiosAdicionales, 0
-    );
-    const totalImpuestos = resultados.reduce((total, r) => total + r.impuestos, 0);
-    
-    return {
-      totalBruto,
-      totalNeto,
-      totalDeducciones,
-      totalBeneficios,
-      totalImpuestos
-    };
   }
 }
