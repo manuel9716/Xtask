@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { NominaRepository } from '../repositories/nomina.pg.repository';
+import { NominaMockRepository } from '../repositories/nomina.mock.repository';
 import { 
   ProcesarNominaDTO, 
   MarcarComoPagadaDTO, 
@@ -7,18 +7,18 @@ import {
   ConsultarNominasDTO,
   EstadoNomina
 } from '../../domain/entities/Nomina';
-import { NominaPdfGenerator } from '../pdf/nominaPdfGenerator';
+import { NominaPdfGeneratorMock } from '../pdf/nominaPdfGenerator.mock';
 
 /**
  * Controlador para las operaciones de nómina
  */
 export class NominaController {
-  private repository: NominaRepository;
-  private pdfGenerator: NominaPdfGenerator;
+  private repository: NominaMockRepository;
+  private pdfGenerator: NominaPdfGeneratorMock;
 
   constructor() {
-    this.repository = new NominaRepository();
-    this.pdfGenerator = new NominaPdfGenerator();
+    this.repository = new NominaMockRepository();
+    this.pdfGenerator = new NominaPdfGeneratorMock();
   }
 
   /**
@@ -301,27 +301,11 @@ export class NominaController {
       // Obtener todos los empleados
       const empleados = await this.repository.obtenerEmpleados();
 
-      // Obtener información adicional de los usuarios (nombres)
-      const empleadosConNombres = await Promise.all(
-        empleados.map(async (empleado) => {
-          let nombre = `Empleado #${empleado.id}`;
-          
-          if (empleado.userId) {
-            const [usuario] = await db.select({ fullName: users.fullName })
-              .from(users)
-              .where(eq(users.id, empleado.userId));
-            
-            if (usuario) {
-              nombre = usuario.fullName;
-            }
-          }
-          
-          return {
-            ...empleado,
-            nombre
-          };
-        })
-      );
+      // Versión simplificada sin consultas adicionales a la BD
+      const empleadosConNombres = empleados.map(empleado => ({
+        ...empleado,
+        nombre: `Empleado #${empleado.id}`
+      }));
 
       res.status(200).json(empleadosConNombres);
     } catch (error: any) {
