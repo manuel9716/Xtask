@@ -27,7 +27,7 @@ export class BudgetService {
    */
   async createBudget(budget: InsertBudget): Promise<Budget> {
     // Validar que el monto sea positivo
-    if (budget.amount <= 0) {
+    if (Number(budget.amount) <= 0) {
       throw new Error('El monto del presupuesto debe ser positivo');
     }
 
@@ -50,7 +50,7 @@ export class BudgetService {
     }
 
     // Validar que el monto sea positivo si se está actualizando
-    if (budget.amount !== undefined && budget.amount <= 0) {
+    if (budget.amount !== undefined && Number(budget.amount) <= 0) {
       throw new Error('El monto del presupuesto debe ser positivo');
     }
 

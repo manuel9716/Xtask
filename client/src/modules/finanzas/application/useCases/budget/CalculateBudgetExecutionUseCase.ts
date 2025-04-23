@@ -12,6 +12,6 @@ export class CalculateBudgetExecutionUseCase {
    * @returns Promise con el porcentaje de ejecución
    */
   async execute(id: number): Promise<number> {
-    return this.budgetService.calculateBudgetExecution(id);
+    return this.budgetService.calculateBudgetExecutionPercentage(id);
   }
 }

@@ -244,5 +244,9 @@
     "infrastructureDescription": "Implementaciones técnicas (API, DB, etc.)",
     "presentationLayer": "Capa de Presentación",
     "presentationDescription": "Interfaz de usuario (componentes React)"
+  },
+  "user": {
+    "demoUser": "Usuario Demo",
+    "role": "Administrador"
   }
 }
