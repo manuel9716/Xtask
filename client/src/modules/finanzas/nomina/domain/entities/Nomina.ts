@@ -1,6 +1,7 @@
 /**
  * Definición de entidades y tipos relacionados con la nómina
  */
+import { z } from 'zod';
 
 // Estados posibles de una nómina
 export enum EstadoNomina {
@@ -81,3 +82,40 @@ export interface DetalleBeneficio {
   monto: number;
   descripcion?: string;
 }
+
+// DTO para validación de procesamiento de nómina
+export const ProcesarNominaDTO = z.object({
+  periodoInicio: z.coerce.date(),
+  periodoFin: z.coerce.date(),
+  empleadoIds: z.array(z.number()).optional(),
+  usuarioId: z.number(),
+  descripcion: z.string().optional()
+});
+
+// DTO para validación de marcar nómina como pagada
+export const MarcarComoPagadaDTO = z.object({
+  nominaId: z.number(),
+  fechaPago: z.coerce.date(),
+  metodoPago: z.string(),
+  referenciaPago: z.string().optional(),
+  comentarios: z.string().optional(),
+  usuarioId: z.number()
+});
+
+// DTO para validación de cambio de estado de nómina
+export const CambiarEstadoNominaDTO = z.object({
+  nominaId: z.number(),
+  nuevoEstado: z.string(),
+  motivo: z.string().optional(),
+  usuarioId: z.number()
+});
+
+// DTO para validación de consulta de nóminas
+export const ConsultarNominasDTO = z.object({
+  empleadoId: z.number().optional(),
+  mes: z.number().min(1).max(12).optional(),
+  anio: z.number().min(2000).max(2100).optional(),
+  estado: z.string().optional(),
+  page: z.number().min(1).default(1),
+  pageSize: z.number().min(1).max(100).default(10)
+});

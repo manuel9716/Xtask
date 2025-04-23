@@ -2,7 +2,7 @@ import { Payroll, Employee } from "@shared/schema";
 import { 
   ProcesarNominaParams, 
   MarcarComoPagadaParams, 
-  CambiarEstadoNominaParams 
+  CambiarEstadoParams 
 } from "../entities/Nomina";
 
 /**
@@ -55,7 +55,7 @@ export interface INominaRepository {
   /**
    * Cambia el estado de una nómina
    */
-  cambiarEstadoNomina(params: CambiarEstadoNominaParams): Promise<Payroll>;
+  cambiarEstadoNomina(params: CambiarEstadoParams): Promise<Payroll>;
 
   /**
    * Obtiene el historial de nóminas de un empleado
