@@ -230,11 +230,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Presupuesto no encontrado' });
       }
       
-      // Cálculo porcentaje de ejecución: gastado / monto * 100
-      const porcentajeEjecucion = (presupuesto.gastado / presupuesto.monto) * 100;
+      // En esta versión simplificada, asumimos que gastado es 0 o se encuentra en metadata
+      const gastado = presupuesto.gastado || 0;
+      
+      // Cálculo porcentaje de ejecución: gastado / amount * 100
+      const amount = parseFloat(presupuesto.amount);
+      const porcentajeEjecucion = gastado > 0 ? (gastado / amount) * 100 : 0;
       
       // Determinar estado basado en el porcentaje
-      let estado = 'ACTIVO';
+      let estado = presupuesto.status === 'active' ? 'ACTIVO' : presupuesto.status.toUpperCase();
       if (porcentajeEjecucion >= 100) {
         estado = 'COMPLETADO';
       } else if (porcentajeEjecucion >= 75) {
@@ -242,11 +246,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json({
-        ...presupuesto,
+        id: presupuesto.id,
+        nombre: presupuesto.name,
+        monto: amount,
+        gastado: gastado,
         porcentajeEjecucion,
-        estado
+        estado,
+        area: presupuesto.departmentId ? `Departamento ${presupuesto.departmentId}` : 'General',
+        fechaInicio: presupuesto.startDate,
+        fechaFin: presupuesto.endDate,
+        createdAt: presupuesto.createdAt,
+        updatedAt: presupuesto.updatedAt,
+        createdBy: presupuesto.createdBy,
+        description: presupuesto.description
       });
     } catch (error: any) {
+      console.error('Error al obtener el presupuesto:', error);
       res.status(500).json({ error: 'Error al obtener el presupuesto' });
     }
   });
@@ -300,20 +315,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Presupuesto no encontrado' });
       }
       
-      // Calcular el estado actual para verificar si se puede editar
-      const porcentajeEjecucion = (presupuesto.gastado / presupuesto.monto) * 100;
-      let estado = 'ACTIVO';
-      if (porcentajeEjecucion >= 100) {
-        estado = 'COMPLETADO';
+      // En esta versión simplificada, asumimos que gastado es 0 o se encuentra en metadata
+      const gastado = presupuesto.gastado || 0;
+      
+      // Cálculo porcentaje de ejecución: gastado / amount * 100
+      const amount = parseFloat(presupuesto.amount);
+      const porcentajeEjecucion = gastado > 0 ? (gastado / amount) * 100 : 0;
+      
+      // Verificar si se puede editar
+      if (porcentajeEjecucion >= 100 || presupuesto.status === 'completed') {
         return res.status(400).json({ error: 'No se puede editar un presupuesto COMPLETADO' });
       }
       
+      // Transformar los datos antes de actualizar
+      const updateData: Record<string, any> = {};
+      
+      if (req.body.nombre) updateData.name = req.body.nombre;
+      if (req.body.monto) updateData.amount = String(req.body.monto);
+      if (req.body.area) updateData.departmentId = req.body.area.startsWith('Departamento ') ? 
+        parseInt(req.body.area.replace('Departamento ', '')) : null;
+      if (req.body.fechaInicio) updateData.startDate = new Date(req.body.fechaInicio);
+      if (req.body.fechaFin) updateData.endDate = new Date(req.body.fechaFin);
+      if (req.body.description) updateData.description = req.body.description;
+      
       // Actualizar el presupuesto
-      const updatedPresupuesto = await storage.updateBudget(id, req.body);
+      const updatedPresupuesto = await storage.updateBudget(id, updateData);
       
       // Recalcular con los nuevos valores
-      const newPorcentajeEjecucion = (updatedPresupuesto.gastado / updatedPresupuesto.monto) * 100;
-      let newEstado = 'ACTIVO';
+      const newGastado = updatedPresupuesto.gastado || gastado;
+      const newAmount = parseFloat(updatedPresupuesto.amount);
+      const newPorcentajeEjecucion = newGastado > 0 ? (newGastado / newAmount) * 100 : 0;
+      
+      let newEstado = updatedPresupuesto.status === 'active' ? 'ACTIVO' : updatedPresupuesto.status.toUpperCase();
       if (newPorcentajeEjecucion >= 100) {
         newEstado = 'COMPLETADO';
       } else if (newPorcentajeEjecucion >= 75) {
@@ -321,11 +354,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json({
-        ...updatedPresupuesto,
+        id: updatedPresupuesto.id,
+        nombre: updatedPresupuesto.name,
+        monto: newAmount,
+        gastado: newGastado,
         porcentajeEjecucion: newPorcentajeEjecucion,
-        estado: newEstado
+        estado: newEstado,
+        area: updatedPresupuesto.departmentId ? `Departamento ${updatedPresupuesto.departmentId}` : 'General',
+        fechaInicio: updatedPresupuesto.startDate,
+        fechaFin: updatedPresupuesto.endDate,
+        createdAt: updatedPresupuesto.createdAt,
+        updatedAt: updatedPresupuesto.updatedAt,
+        createdBy: updatedPresupuesto.createdBy,
+        description: updatedPresupuesto.description
       });
     } catch (error: any) {
+      console.error('Error al actualizar el presupuesto:', error);
       res.status(500).json({ error: 'Error al actualizar el presupuesto' });
     }
   });
@@ -346,20 +390,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: 'Presupuesto no encontrado' });
       }
       
+      // En esta versión simplificada, asumimos que gastado es 0 o se encuentra en metadata
+      // En una implementación completa, consultaríamos los gastos de la tabla de transacciones
+      const gastadoActual = presupuesto.gastado || 0;
+      const montoTotal = parseFloat(presupuesto.amount);
+      
       // Validar que no exceda el presupuesto
-      const nuevoGastado = presupuesto.gastado + monto;
-      if (nuevoGastado > presupuesto.monto) {
+      const nuevoGastado = gastadoActual + monto;
+      if (nuevoGastado > montoTotal) {
         return res.status(400).json({ 
           error: 'El gasto excede el presupuesto disponible' 
         });
       }
       
-      // Actualizar el gasto
-      const updatedPresupuesto = await storage.updateBudget(id, { gastado: nuevoGastado });
+      // Crear metadatos actualizados para incluir el campo gastado
+      let metadata = {};
+      try {
+        if (presupuesto.metadata) {
+          metadata = JSON.parse(presupuesto.metadata);
+        }
+      } catch (e) {
+        // Si no se puede parsear, iniciar con un objeto vacío
+      }
       
-      // Calcular nuevo estado
-      const porcentajeEjecucion = (updatedPresupuesto.gastado / updatedPresupuesto.monto) * 100;
-      let estado = 'ACTIVO';
+      // Actualizar el presupuesto con el gasto en metadata
+      const updateData = {
+        gastado: nuevoGastado,
+        // Si el porcentaje es 100% o más, actualizar el estado a "completed"
+        status: nuevoGastado >= montoTotal ? 'completed' : presupuesto.status
+      };
+      
+      const updatedPresupuesto = await storage.updateBudget(id, updateData);
+      
+      // Calcular nuevo estado y porcentaje
+      const porcentajeEjecucion = (nuevoGastado / montoTotal) * 100;
+      let estado = updatedPresupuesto.status === 'active' ? 'ACTIVO' : updatedPresupuesto.status.toUpperCase();
       if (porcentajeEjecucion >= 100) {
         estado = 'COMPLETADO';
       } else if (porcentajeEjecucion >= 75) {
@@ -367,11 +432,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json({
-        ...updatedPresupuesto,
+        id: updatedPresupuesto.id,
+        nombre: updatedPresupuesto.name,
+        monto: montoTotal,
+        gastado: nuevoGastado,
         porcentajeEjecucion,
-        estado
+        estado,
+        area: updatedPresupuesto.departmentId ? `Departamento ${updatedPresupuesto.departmentId}` : 'General',
+        fechaInicio: updatedPresupuesto.startDate,
+        fechaFin: updatedPresupuesto.endDate,
+        createdAt: updatedPresupuesto.createdAt,
+        updatedAt: updatedPresupuesto.updatedAt
       });
     } catch (error: any) {
+      console.error('Error al registrar el gasto:', error);
       res.status(500).json({ error: 'Error al registrar el gasto' });
     }
   });

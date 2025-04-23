@@ -417,7 +417,8 @@ export class MemStorage implements IStorage {
       ...budgetData, 
       id, 
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      gastado: 0 // Inicializar el campo gastado en cero
     };
     
     this.budgetsMap.set(id, budget);

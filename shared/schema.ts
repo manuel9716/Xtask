@@ -59,7 +59,10 @@ export const budgets = pgTable("budgets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   status: text("status").notNull().default("active"),
-  metadata: text("metadata") // JSON data serialized
+  metadata: text("metadata"), // JSON data serialized
+  // Nota: gastado es un campo virtual que se calculará a partir de las transacciones relacionadas,
+  // pero para esta implementación simplificada, lo añadiremos como parte del objeto Budget 
+  // aunque no sea una columna en la base de datos
 });
 
 // Nómina de empleados
@@ -319,7 +322,8 @@ export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 
 // Tipos para el módulo de finanzas
-export type Budget = typeof budgets.$inferSelect;
+// Extendemos el tipo Budget para incluir el campo virtual gastado
+export type Budget = typeof budgets.$inferSelect & { gastado?: number };
 export type InsertBudget = z.infer<typeof insertBudgetSchema>;
 
 export type Payroll = typeof payrolls.$inferSelect;
