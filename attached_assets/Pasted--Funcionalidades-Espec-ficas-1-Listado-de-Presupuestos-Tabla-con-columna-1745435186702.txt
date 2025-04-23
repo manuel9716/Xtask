@@ -1,0 +1,59 @@
+
+---
+
+## 🔧 Funcionalidades Específicas
+
+1. **Listado de Presupuestos**
+   - Tabla con columnas: Nombre, Presupuesto, Gastado, Ejecución, Estado, Acciones
+   - Ejecución = (`gastado / presupuesto`) * 100
+   - Estado visual:
+     - ✅ `Activo` si ejecución < 80%
+     - ⚠️ `En riesgo` si ejecución >= 80% y < 95%
+     - 🔴 `Crítico` si ejecución >= 95%
+   - Opción para ver detalles individuales
+
+2. **Crear Presupuesto**
+   - Formulario con validación Zod
+   - Campos: nombre, monto, área (opcional), período (Q1, Q2, etc.), fecha de inicio y fin
+   - Guardado en PostgreSQL (Drizzle ORM)
+
+3. **Editar Presupuesto**
+   - Solo editable si el estado es `Activo`
+   - Cambio de nombre, monto, fechas
+   - Recalcula ejecución si cambia el monto
+
+4. **Importación de Presupuestos**
+   - Botón `Importar`: subir CSV con validación
+   - Cargar múltiples presupuestos al sistema
+
+5. **Ejecución y Control**
+   - Relación directa con egresos registrados en otros módulos
+   - Cada gasto afecta automáticamente el valor `Gastado`
+   - Recalcula la ejecución y el estado en tiempo real
+
+6. **Indicadores visuales**
+   - Etiquetas de estado codificadas por color
+   - Línea informativa al pie de la tabla: “Lista de presupuestos activos”
+
+7. **Permisos y Seguridad**
+   - Solo usuarios con rol `admin_finanzas` o `analista_finanzas` pueden crear/editar
+   - Protege rutas con middleware de autenticación
+   - Registra auditoría de cambios (usuario, fecha)
+
+8. **Responsividad y UX**
+   - Interfaz responsiva (pantallas pequeñas y escritorio)
+   - Animaciones con Framer Motion para entradas/salidas de formularios
+   - Tooltips explicativos para cada estado
+
+---
+
+## 🧪 Validaciones y Escalabilidad
+- La lógica de ejecución y evaluación de estados debe estar en `domain/services/CalculoEjecucion.ts`
+- Utilizar `React Query` para estado de red y caché
+- Preparado para multiorganización: cada presupuesto debe asociarse a `organization_id`
+
+---
+
+## 🔗 Rutas
+Este submódulo debe vivir bajo `/finanzas/presupuestos` y forma parte del layout general del módulo de Finanzas (`FinanzasLayout.tsx`)
+
