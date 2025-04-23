@@ -2,14 +2,14 @@ import { z } from 'zod';
 
 /**
  * Estados posibles de un presupuesto
- * - ACTIVO: Presupuesto con ejecución menor al 80%
- * - ALERTA: Presupuesto con ejecución entre 80% y 95%
- * - COMPLETADO: Presupuesto con ejecución mayor al 95% o marcado como finalizado
+ * ACTIVO: < 80% de ejecución
+ * ALERTA: Entre 80% y 95% de ejecución
+ * COMPLETADO: >= 95% de ejecución
  */
 export type PresupuestoEstado = 'ACTIVO' | 'ALERTA' | 'COMPLETADO';
 
 /**
- * Entidad de dominio Presupuesto
+ * Entidad Presupuesto que representa un presupuesto en el sistema
  */
 export interface Presupuesto {
   id: number;
@@ -28,7 +28,7 @@ export interface Presupuesto {
 }
 
 /**
- * DTO para crear un nuevo presupuesto
+ * DTO para la creación de un presupuesto
  */
 export interface CrearPresupuestoDTO {
   nombre: string;
@@ -46,43 +46,49 @@ export interface CrearPresupuestoDTO {
  */
 export interface RegistrarGastoDTO {
   monto: number;
-  descripcion?: string;
-  fecha?: Date;
-  usuarioId?: number;
-  categoriaId?: number;
+  concepto: string;
+  fecha: Date;
+  registradoPor: number;
 }
 
 /**
- * Schema Zod para validar datos de creación de presupuesto
+ * Esquema de validación para la creación de presupuestos
  */
 export const crearPresupuestoSchema = z.object({
-  nombre: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
-  monto: z.number().positive('El monto debe ser un número positivo'),
-  fechaInicio: z.date(),
-  fechaFin: z.date(),
+  nombre: z.string()
+    .min(3, "El nombre debe tener al menos 3 caracteres")
+    .max(100, "El nombre no puede exceder los 100 caracteres"),
+  monto: z.number()
+    .positive("El monto debe ser mayor que cero"),
+  fechaInicio: z.date()
+    .refine(date => date instanceof Date && !isNaN(date.getTime()), 
+      { message: "Fecha de inicio inválida" }),
+  fechaFin: z.date()
+    .refine(date => date instanceof Date && !isNaN(date.getTime()), 
+      { message: "Fecha de fin inválida" }),
   description: z.string().optional(),
   area: z.string().optional(),
   createdBy: z.number().optional(),
   organizationId: z.number().optional()
-}).refine(data => {
-  return data.fechaFin > data.fechaInicio;
-}, {
-  message: 'La fecha de fin debe ser posterior a la fecha de inicio',
-  path: ['fechaFin']
-});
+}).refine(
+  data => data.fechaFin > data.fechaInicio,
+  {
+    message: "La fecha de fin debe ser posterior a la fecha de inicio",
+    path: ["fechaFin"]
+  }
+);
 
 /**
- * Schema Zod para validar registro de gastos
+ * Esquema de validación para registrar un gasto
  */
 export const registrarGastoSchema = z.object({
-  monto: z.number().positive('El monto debe ser un número positivo'),
-  descripcion: z.string().optional(),
-  fecha: z.date().default(() => new Date()),
-  usuarioId: z.number().optional(),
-  categoriaId: z.number().optional()
+  monto: z.number()
+    .positive("El monto debe ser mayor que cero"),
+  concepto: z.string()
+    .min(3, "El concepto debe tener al menos 3 caracteres")
+    .max(200, "El concepto no puede exceder los 200 caracteres"),
+  fecha: z.date()
+    .refine(date => date instanceof Date && !isNaN(date.getTime()), 
+      { message: "Fecha inválida" }),
+  registradoPor: z.number()
 });
-
-/**
- * Tipo para los datos del formulario de creación de presupuesto
- */
-export type CrearPresupuestoFormData = z.infer<typeof crearPresupuestoSchema>;

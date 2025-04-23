@@ -248,8 +248,8 @@ export default function FinancesPage() {
             </div>
 
             <Select
-              value={filtroArea || ""}
-              onValueChange={(value) => setFiltroArea(value || null)}
+              value={filtroArea || "all"}
+              onValueChange={(value) => setFiltroArea(value === "all" ? null : value)}
             >
               <SelectTrigger className="w-full sm:w-[180px]">
                 <div className="flex items-center">
@@ -258,7 +258,7 @@ export default function FinancesPage() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas las áreas</SelectItem>
+                <SelectItem value="all">Todas las áreas</SelectItem>
                 {areas.map(area => (
                   <SelectItem key={area} value={area}>{area}</SelectItem>
                 ))}

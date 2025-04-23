@@ -1,15 +1,11 @@
-import { apiRequest } from "@/lib/queryClient";
-import { 
-  Presupuesto, 
-  CrearPresupuestoDTO, 
-  RegistrarGastoDTO, 
-  PresupuestoEstado 
-} from "../../domain/entities/Presupuesto";
-import { IPresupuestoRepository } from "../../domain/interfaces/IPresupuestoRepository";
-import { CalculoEjecucion } from "../../domain/services/CalculoEjecucion";
+import { apiRequest } from '@/lib/queryClient';
+import { Presupuesto, CrearPresupuestoDTO, RegistrarGastoDTO } from '../../domain/entities/Presupuesto';
+import { IPresupuestoRepository } from '../../domain/interfaces/IPresupuestoRepository';
+import { CalculoEjecucion } from '../../domain/services/CalculoEjecucion';
 
 /**
- * Implementación del repositorio de presupuestos que usa PostgreSQL a través de la API
+ * Implementación PostgreSQL del repositorio de presupuestos
+ * Utiliza la API REST para comunicarse con el backend
  */
 export class PresupuestoPgRepository implements IPresupuestoRepository {
   private calculoEjecucion: CalculoEjecucion;
@@ -19,27 +15,11 @@ export class PresupuestoPgRepository implements IPresupuestoRepository {
   }
 
   /**
-   * Obtiene la lista de presupuestos desde la API
-   */
-  async listarPresupuestos(organizationId?: number): Promise<Presupuesto[]> {
-    const endpoint = organizationId 
-      ? `/api/presupuestos?organizationId=${organizationId}`
-      : '/api/presupuestos';
-    
-    const response = await apiRequest('GET', endpoint);
-    
-    if (!response.ok) {
-      throw new Error(`Error al listar presupuestos: ${response.statusText}`);
-    }
-    
-    const presupuestos: Presupuesto[] = await response.json();
-    return presupuestos;
-  }
-
-  /**
    * Obtiene un presupuesto por su ID
+   * @param id ID del presupuesto
+   * @returns Presupuesto encontrado o undefined si no existe
    */
-  async obtenerPresupuestoPorId(id: number): Promise<Presupuesto | undefined> {
+  async obtenerPresupuesto(id: number): Promise<Presupuesto | undefined> {
     try {
       const response = await apiRequest('GET', `/api/presupuestos/${id}`);
       
@@ -50,98 +30,122 @@ export class PresupuestoPgRepository implements IPresupuestoRepository {
         throw new Error(`Error al obtener presupuesto: ${response.statusText}`);
       }
       
-      const presupuesto: Presupuesto = await response.json();
-      return presupuesto;
+      return await response.json();
     } catch (error) {
-      console.error('Error al obtener presupuesto por ID:', error);
-      return undefined;
+      console.error('Error al obtener presupuesto:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Lista todos los presupuestos, opcionalmente filtrados por organización
+   * @param organizationId ID de la organización (opcional)
+   * @returns Array de presupuestos
+   */
+  async listarPresupuestos(organizationId?: number): Promise<Presupuesto[]> {
+    try {
+      const url = organizationId 
+        ? `/api/presupuestos?organizationId=${organizationId}` 
+        : '/api/presupuestos';
+      
+      const response = await apiRequest('GET', url);
+      
+      if (!response.ok) {
+        throw new Error(`Error al listar presupuestos: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error al listar presupuestos:', error);
+      return [];
     }
   }
 
   /**
    * Crea un nuevo presupuesto
+   * @param presupuesto Datos para crear el presupuesto
+   * @returns Presupuesto creado con su ID
    */
-  async crearPresupuesto(presupuestoDto: CrearPresupuestoDTO): Promise<Presupuesto> {
-    // Transformar el DTO al formato esperado por la API
-    const payload = {
-      name: presupuestoDto.nombre,
-      amount: presupuestoDto.monto,
-      startDate: presupuestoDto.fechaInicio,
-      endDate: presupuestoDto.fechaFin,
-      description: presupuestoDto.description,
-      departmentId: presupuestoDto.area ? 
-        // Si el área comienza con "Departamento ", extraer el número
-        parseInt(presupuestoDto.area.replace('Departamento ', '')) : null,
-      createdBy: presupuestoDto.createdBy || 1, // Usuario por defecto
-      organizationId: presupuestoDto.organizationId || 1 // Organización por defecto
-    };
-    
-    const response = await apiRequest('POST', '/api/presupuestos', payload);
-    
-    if (!response.ok) {
-      throw new Error(`Error al crear presupuesto: ${response.statusText}`);
+  async crearPresupuesto(presupuestoDTO: CrearPresupuestoDTO): Promise<Presupuesto> {
+    try {
+      const response = await apiRequest('POST', '/api/presupuestos', presupuestoDTO);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear presupuesto');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error al crear presupuesto:', error);
+      throw error;
     }
-    
-    const presupuesto: Presupuesto = {
-      id: 0,
-      nombre: presupuestoDto.nombre,
-      monto: presupuestoDto.monto,
-      gastado: 0,
-      porcentajeEjecucion: 0,
-      estado: 'ACTIVO',
-      area: presupuestoDto.area || 'General',
-      fechaInicio: presupuestoDto.fechaInicio,
-      fechaFin: presupuestoDto.fechaFin,
-      description: presupuestoDto.description,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: presupuestoDto.createdBy || 1
-    };
-    
-    // Reemplazar con los datos reales de la respuesta
-    const respuestaApi = await response.json();
-    Object.assign(presupuesto, respuestaApi);
-    
-    return presupuesto;
   }
 
   /**
    * Actualiza un presupuesto existente
+   * @param id ID del presupuesto a actualizar
+   * @param presupuesto Datos actualizados
+   * @returns Presupuesto actualizado
    */
-  async actualizarPresupuesto(id: number, presupuestoPartial: Partial<Presupuesto>): Promise<Presupuesto> {
-    // Transformar el objeto parcial al formato esperado por la API
-    const payload: Record<string, any> = {};
-    
-    if (presupuestoPartial.nombre) payload.nombre = presupuestoPartial.nombre;
-    if (presupuestoPartial.monto) payload.monto = presupuestoPartial.monto;
-    if (presupuestoPartial.area) payload.area = presupuestoPartial.area;
-    if (presupuestoPartial.fechaInicio) payload.fechaInicio = presupuestoPartial.fechaInicio;
-    if (presupuestoPartial.fechaFin) payload.fechaFin = presupuestoPartial.fechaFin;
-    if (presupuestoPartial.description) payload.description = presupuestoPartial.description;
-    
-    const response = await apiRequest('PATCH', `/api/presupuestos/${id}`, payload);
-    
-    if (!response.ok) {
-      throw new Error(`Error al actualizar presupuesto: ${response.statusText}`);
+  async actualizarPresupuesto(id: number, presupuesto: Partial<Presupuesto>): Promise<Presupuesto> {
+    try {
+      const response = await apiRequest('PATCH', `/api/presupuestos/${id}`, presupuesto);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar presupuesto');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error al actualizar presupuesto:', error);
+      throw error;
     }
-    
-    const presupuesto: Presupuesto = await response.json();
-    return presupuesto;
   }
 
   /**
    * Registra un gasto en un presupuesto
+   * @param id ID del presupuesto
+   * @param gasto Datos del gasto a registrar
+   * @returns Presupuesto actualizado con el gasto incluido
    */
   async registrarGasto(id: number, gasto: RegistrarGastoDTO): Promise<Presupuesto> {
-    const response = await apiRequest('POST', `/api/presupuestos/${id}/gastos`, gasto);
-    
-    if (!response.ok) {
-      throw new Error(`Error al registrar gasto: ${response.statusText}`);
+    try {
+      const response = await apiRequest('POST', `/api/presupuestos/${id}/gastos`, gasto);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al registrar gasto');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error al registrar gasto:', error);
+      throw error;
     }
-    
-    const presupuesto: Presupuesto = await response.json();
-    return presupuesto;
+  }
+
+  /**
+   * Elimina un presupuesto
+   * @param id ID del presupuesto a eliminar
+   * @returns true si se eliminó correctamente, false si no
+   */
+  async eliminarPresupuesto(id: number): Promise<boolean> {
+    try {
+      const response = await apiRequest('DELETE', `/api/presupuestos/${id}`);
+      
+      if (!response.ok) {
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error al eliminar presupuesto:', error);
+      return false;
+    }
   }
 }
 
+// Exportamos una instancia singleton del repositorio
 export const presupuestoRepository = new PresupuestoPgRepository();

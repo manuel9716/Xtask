@@ -1,56 +1,45 @@
 import React from 'react';
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { PresupuestoEstado } from "../../domain/entities/Presupuesto";
+import { Badge } from '@/components/ui/badge';
+import { PresupuestoEstado } from '../../domain/entities/Presupuesto';
+import { ArrowUpCircle, AlertCircle, CheckCircle } from 'lucide-react';
 
-interface EstadoBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+interface EstadoBadgeProps {
   estado: PresupuestoEstado;
 }
 
 /**
- * Componente que muestra una etiqueta con el estado del presupuesto
- * con un color distintivo según el estado
+ * Componente para mostrar el estado de un presupuesto con un estilo visual adecuado
  */
-export function EstadoBadge({ estado, className, ...props }: EstadoBadgeProps) {
-  const getEstadoConfig = (estado: PresupuestoEstado) => {
-    switch (estado) {
-      case 'ACTIVO':
-        return {
-          label: 'Activo',
-          variant: 'default',
-          className: 'bg-green-500 hover:bg-green-600'
-        };
-      case 'ALERTA':
-        return {
-          label: 'En alerta',
-          variant: 'warning',
-          className: 'bg-yellow-500 hover:bg-yellow-600'
-        };
-      case 'COMPLETADO':
-        return {
-          label: 'Completado',
-          variant: 'destructive',
-          className: 'bg-red-500 hover:bg-red-600'
-        };
-      default:
-        return {
-          label: estado,
-          variant: 'default',
-          className: ''
-        };
-    }
-  };
+export function EstadoBadge({ estado }: EstadoBadgeProps) {
+  let badgeStyle = '';
+  let icon = null;
+  let label = '';
 
-  const config = getEstadoConfig(estado);
+  switch (estado) {
+    case 'ACTIVO':
+      badgeStyle = 'bg-green-100 text-green-800 hover:bg-green-200 border-green-200';
+      icon = <ArrowUpCircle className="h-3 w-3 mr-1" />;
+      label = 'Activo';
+      break;
+    case 'ALERTA':
+      badgeStyle = 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200';
+      icon = <AlertCircle className="h-3 w-3 mr-1" />;
+      label = 'En alerta';
+      break;
+    case 'COMPLETADO':
+      badgeStyle = 'bg-red-100 text-red-800 hover:bg-red-200 border-red-200';
+      icon = <CheckCircle className="h-3 w-3 mr-1" />;
+      label = 'Completado';
+      break;
+    default:
+      badgeStyle = 'bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200';
+      label = 'Desconocido';
+  }
 
   return (
-    <div className={cn("flex items-center", className)} {...props}>
-      <Badge 
-        className={cn(config.className)}
-        variant={config.variant as any}
-      >
-        {config.label}
-      </Badge>
-    </div>
+    <Badge className={`flex items-center font-medium ${badgeStyle}`} variant="outline">
+      {icon}
+      {label}
+    </Badge>
   );
 }
