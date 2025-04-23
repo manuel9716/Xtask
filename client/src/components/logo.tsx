@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import LogoSvg from "@/assets/xtask-logo.svg";
 
 interface LogoProps {
   className?: string;
@@ -8,34 +9,18 @@ interface LogoProps {
 
 export function Logo({ className, textClassName, size = "md" }: LogoProps) {
   const sizeClasses = {
-    sm: {
-      container: "w-6 h-6",
-      text: "text-sm",
-    },
-    md: {
-      container: "w-8 h-8",
-      text: "text-lg",
-    },
-    lg: {
-      container: "w-10 h-10",
-      text: "text-xl",
-    },
+    sm: "h-8",
+    md: "h-10",
+    lg: "h-12",
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      <div
-        className={cn(
-          "bg-primary-600 rounded-md flex items-center justify-center",
-          sizeClasses[size].container,
-          className
-        )}
-      >
-        <span className="text-white font-heading font-bold">X</span>
-      </div>
-      <h1 className={cn("font-heading font-bold text-white", sizeClasses[size].text, textClassName)}>
-        XTask
-      </h1>
+    <div className={cn("flex items-center", className)}>
+      <img 
+        src={LogoSvg} 
+        alt="XTask Logo" 
+        className={cn(sizeClasses[size], "w-auto")} 
+      />
     </div>
   );
 }

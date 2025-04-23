@@ -1,51 +1,63 @@
+@import url('https://fonts.cdnfonts.com/css/gilroy-bold');
+@import url('https://fonts.cdnfonts.com/css/bermont');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-      --background: 0 0% 100%;
---foreground: 20 14.3% 4.1%;
---muted: 60 4.8% 95.9%;
---muted-foreground: 25 5.3% 44.7%;
---popover: 0 0% 100%;
---popover-foreground: 20 14.3% 4.1%;
---card: 0 0% 100%;
---card-foreground: 20 14.3% 4.1%;
---border: 20 5.9% 90%;
---input: 20 5.9% 90%;
---primary: 207 90% 54%;
---primary-foreground: 211 100% 99%;
---secondary: 60 4.8% 95.9%;
---secondary-foreground: 24 9.8% 10%;
---accent: 60 4.8% 95.9%;
---accent-foreground: 24 9.8% 10%;
---destructive: 0 84.2% 60.2%;
---destructive-foreground: 60 9.1% 97.8%;
---ring: 20 14.3% 4.1%;
---radius: 0.5rem;
-  }
-  .dark {
-      --background: 240 10% 3.9%;
---foreground: 0 0% 98%;
---muted: 240 3.7% 15.9%;
---muted-foreground: 240 5% 64.9%;
---popover: 240 10% 3.9%;
---popover-foreground: 0 0% 98%;
---card: 240 10% 3.9%;
---card-foreground: 0 0% 98%;
---border: 240 3.7% 15.9%;
---input: 240 3.7% 15.9%;
---primary: 207 90% 54%;
---primary-foreground: 211 100% 99%;
---secondary: 240 3.7% 15.9%;
---secondary-foreground: 0 0% 98%;
---accent: 240 3.7% 15.9%;
---accent-foreground: 0 0% 98%;
---destructive: 0 62.8% 30.6%;
---destructive-foreground: 0 0% 98%;
---ring: 240 4.9% 83.9%;
---radius: 0.5rem;
-  }
+  /* Colores principales de la paleta XTask */
+  --background: 0 0% 100%;
+  --foreground: 262 48% 19%; /* #251948 - Morado oscuro */
+  --muted: 220 10% 90%;
+  --muted-foreground: 262 48% 40%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 262 48% 19%;
+  --card: 0 0% 100%;
+  --card-foreground: 262 48% 19%;
+  --border: 262 48% 90%;
+  --input: 262 48% 90%;
+  --primary: 262 48% 19%; /* #251948 - Morado oscuro */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 190 98% 46%; /* #02BDEA - Turquesa */
+  --secondary-foreground: 262 48% 19%;
+  --accent: 269 47% 44%; /* #623BA6 - Morado */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 262 48% 19%;
+  --radius: 0.5rem;
+
+  /* Colores específicos de XTask */
+  --xtask-dark-purple: #251948;
+  --xtask-turquoise: #02BDEA;
+  --xtask-light-turquoise: #01E3D5;
+  --xtask-purple: #623BA6;
+  --xtask-orange: #FFA41B;
+}
+
+.dark {
+  --background: 262 48% 19%; /* #251948 - Morado oscuro */
+  --foreground: 0 0% 98%;
+  --muted: 262 48% 16%;
+  --muted-foreground: 262 48% 70%;
+  --popover: 262 48% 19%;
+  --popover-foreground: 0 0% 98%;
+  --card: 262 48% 19%;
+  --card-foreground: 0 0% 98%;
+  --border: 262 48% 30%;
+  --input: 262 48% 30%;
+  --primary: 190 98% 46%; /* #02BDEA - Turquesa */
+  --primary-foreground: 262 48% 19%;
+  --secondary: 262 48% 30%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 269 47% 44%; /* #623BA6 - Morado */
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 262 48% 80%;
+  --radius: 0.5rem;
+}
 
 @layer base {
   * {
@@ -53,7 +65,18 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply antialiased bg-background text-foreground;
+    font-family: 'Gilroy', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'BERMONT', 'Gilroy', system-ui, sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  .font-heading {
+    font-family: 'BERMONT', 'Gilroy', system-ui, sans-serif;
+    letter-spacing: 0.02em;
   }
 }
 
