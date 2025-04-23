@@ -1,17 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
 import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication routes
-  setupAuth(app);
-  
   // Projects routes
   app.get("/api/projects", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const projects = await storage.getAllProjects();
       res.json(projects);
@@ -21,8 +15,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/projects", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const parseResult = insertProjectSchema.safeParse(req.body);
       if (!parseResult.success) {
@@ -37,8 +29,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/projects/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const project = await storage.getProject(parseInt(req.params.id));
       if (!project) {
@@ -52,8 +42,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Tasks routes
   app.get("/api/tasks", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
       const tasks = await storage.getAllTasks(projectId);
@@ -64,8 +52,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/tasks", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const parseResult = insertTaskSchema.safeParse(req.body);
       if (!parseResult.success) {
@@ -80,8 +66,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.patch("/api/tasks/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const task = await storage.updateTask(parseInt(req.params.id), req.body);
       if (!task) {
@@ -95,8 +79,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Employees (HR) routes
   app.get("/api/employees", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const employees = await storage.getAllEmployees();
       res.json(employees);
@@ -106,8 +88,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/employees", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const parseResult = insertEmployeeSchema.safeParse(req.body);
       if (!parseResult.success) {
@@ -123,8 +103,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Suppliers routes
   app.get("/api/suppliers", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const suppliers = await storage.getAllSuppliers();
       res.json(suppliers);
@@ -134,8 +112,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/suppliers", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const parseResult = insertSupplierSchema.safeParse(req.body);
       if (!parseResult.success) {
@@ -151,8 +127,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Financial transactions routes
   app.get("/api/transactions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
       const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
       const transactions = await storage.getAllTransactions(projectId);
@@ -163,12 +137,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/transactions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
+      // Usar el ID 1 como el usuario demo por defecto
       const transaction = await storage.createTransaction({
         ...req.body,
-        requesterId: req.user?.id
+        requesterId: 1
       });
       res.status(201).json(transaction);
     } catch (error: any) {
@@ -177,10 +150,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.patch("/api/transactions/:id/approve", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
-      const transaction = await storage.approveTransaction(parseInt(req.params.id), req.user?.id || 0);
+      // Usar el ID 1 como el usuario demo por defecto
+      const transaction = await storage.approveTransaction(parseInt(req.params.id), 1);
       res.json(transaction);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -188,10 +160,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.patch("/api/transactions/:id/reject", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
     try {
-      const transaction = await storage.rejectTransaction(parseInt(req.params.id), req.user?.id || 0);
+      // Usar el ID 1 como el usuario demo por defecto
+      const transaction = await storage.rejectTransaction(parseInt(req.params.id), 1);
       res.json(transaction);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

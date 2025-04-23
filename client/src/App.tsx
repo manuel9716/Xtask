@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,23 +12,51 @@ import Suppliers from "@/pages/suppliers";
 import Tasks from "@/pages/tasks";
 import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
-import { ProtectedRoute } from "@/lib/protected-route";
+import { MainLayout } from "@/layouts/main-layout";
 
 function Router() {
   return (
     <Switch>
-      {/* Redirect /auth to home page */}
-      <Route path="/auth">
-        <Redirect to="/" />
+      <Route path="/">
+        <MainLayout>
+          <Dashboard />
+        </MainLayout>
       </Route>
-      <ProtectedRoute path="/" component={Dashboard} />
-      <ProtectedRoute path="/projects" component={Projects} />
-      <ProtectedRoute path="/finances" component={Finances} />
-      <ProtectedRoute path="/human-resources" component={HumanResources} />
-      <ProtectedRoute path="/suppliers" component={Suppliers} />
-      <ProtectedRoute path="/tasks" component={Tasks} />
-      <ProtectedRoute path="/user-management" component={UserManagement} />
-      <ProtectedRoute path="/settings" component={Settings} />
+      <Route path="/projects">
+        <MainLayout>
+          <Projects />
+        </MainLayout>
+      </Route>
+      <Route path="/finances">
+        <MainLayout>
+          <Finances />
+        </MainLayout>
+      </Route>
+      <Route path="/human-resources">
+        <MainLayout>
+          <HumanResources />
+        </MainLayout>
+      </Route>
+      <Route path="/suppliers">
+        <MainLayout>
+          <Suppliers />
+        </MainLayout>
+      </Route>
+      <Route path="/tasks">
+        <MainLayout>
+          <Tasks />
+        </MainLayout>
+      </Route>
+      <Route path="/user-management">
+        <MainLayout>
+          <UserManagement />
+        </MainLayout>
+      </Route>
+      <Route path="/settings">
+        <MainLayout>
+          <Settings />
+        </MainLayout>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
