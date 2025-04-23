@@ -3,7 +3,7 @@ import {
 } from '@shared/schema';
 
 import { 
-  CambiarEstadoNominaParams, 
+  CambiarEstadoParams, 
   EstadoNomina, 
   MarcarComoPagadaParams, 
   ProcesarNominaParams 
@@ -362,7 +362,7 @@ export class NominaMockRepository implements INominaRepository {
   /**
    * Cambia el estado de una nómina
    */
-  async cambiarEstadoNomina(params: CambiarEstadoNominaParams): Promise<Payroll> {
+  async cambiarEstadoNomina(params: CambiarEstadoParams): Promise<Payroll> {
     try {
       const index = this.nominas.findIndex(n => n.id === params.nominaId);
       
