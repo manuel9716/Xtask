@@ -3,12 +3,15 @@ import { Input } from "@/components/ui/input";
 import { Bell, HelpCircle, Menu, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "./language-switcher";
 
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const { t } = useTranslation();
   const [hasNotifications] = useState(true);
 
   return (
@@ -29,12 +32,14 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             type="text"
-            placeholder="Search projects, tasks, or documents..."
+            placeholder={t("common.search") + "..."}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
 
         <div className="flex items-center space-x-4">
+          <LanguageSwitcher variant="ghost" />
+          
           <div className="relative">
             <Button
               variant="ghost"
