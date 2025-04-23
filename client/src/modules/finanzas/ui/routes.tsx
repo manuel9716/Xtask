@@ -30,7 +30,7 @@ export const FinanzasRoutes = () => (
 function DetalleNominaRoute() {
   // useRoute de wouter captura el parámetro de ruta correctamente
   const [, params] = useRoute('/finanzas/nomina/:id');
-  const nominaId = params?.id;
+  const nominaId = params?.id || '';
   
   return <DetalleNominaPage nominaId={nominaId} />;
 }

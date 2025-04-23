@@ -84,6 +84,7 @@ function getEstadoIcon(estado: PresupuestoEstado) {
 
 export default function FinancesPage() {
   const [openDialog, setOpenDialog] = useState(false);
+  const [, navigate] = useLocation();
   const {
     presupuestos,
     presupuestosFiltrados,
@@ -128,8 +129,6 @@ export default function FinancesPage() {
       </div>
     );
   }
-
-  const [, navigate] = useLocation();
 
   return (
     <div className="container mx-auto py-8">
