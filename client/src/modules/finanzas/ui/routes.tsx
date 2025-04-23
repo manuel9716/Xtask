@@ -1,7 +1,7 @@
-import { Route } from 'wouter';
+import { Route, useRoute } from 'wouter';
 import { MainLayout } from '@/layouts/main-layout';
 import { PresupuestosPage } from './pages/PresupuestosPage';
-import { ListadoNominaPage } from '../nomina/ui/pages/ListadoNominaPage';
+import { NominaPage } from './pages/NominaPage';
 import { DetalleNominaPage } from '../nomina/ui/pages/DetalleNominaPage';
 
 export const FinanzasRoutes = () => (
@@ -14,11 +14,11 @@ export const FinanzasRoutes = () => (
     
     <Route path="/finanzas/nomina">
       <MainLayout>
-        <ListadoNominaPage />
+        <NominaPage />
       </MainLayout>
     </Route>
     
-    <Route path="/finanzas/nomina/:nominaId">
+    <Route path="/finanzas/nomina/:id">
       <MainLayout>
         <DetalleNominaRoute />
       </MainLayout>
@@ -28,9 +28,9 @@ export const FinanzasRoutes = () => (
 
 // Componente auxiliar para manejar parámetros de ruta
 function DetalleNominaRoute() {
-  // useRoute de wouter captura el parámetro de ruta
-  const [, params] = window.location.pathname.match(/\/finanzas\/nomina\/(\d+)/) || [];
-  const nominaId = params;
+  // useRoute de wouter captura el parámetro de ruta correctamente
+  const [, params] = useRoute('/finanzas/nomina/:id');
+  const nominaId = params?.id;
   
   return <DetalleNominaPage nominaId={nominaId} />;
 }

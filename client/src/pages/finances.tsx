@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
 import {
   Card,
   CardContent,
@@ -32,7 +33,8 @@ import {
   ArrowUpCircle,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  Users
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -127,6 +129,8 @@ export default function FinancesPage() {
     );
   }
 
+  const [, navigate] = useLocation();
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
@@ -134,26 +138,80 @@ export default function FinancesPage() {
           <h1 className="text-3xl font-bold">Finanzas</h1>
           <p className="text-gray-500">Gestión de presupuestos y finanzas</p>
         </div>
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nuevo Presupuesto
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Presupuesto</DialogTitle>
-              <DialogDescription>
-                Complete los detalles para crear un nuevo presupuesto.
-              </DialogDescription>
-            </DialogHeader>
-            <PresupuestoForm
-              areas={areas}
-              onSuccess={handleCreateSuccess}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Nuevo Presupuesto
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Crear Nuevo Presupuesto</DialogTitle>
+                <DialogDescription>
+                  Complete los detalles para crear un nuevo presupuesto.
+                </DialogDescription>
+              </DialogHeader>
+              <PresupuestoForm
+                areas={areas}
+                onSuccess={handleCreateSuccess}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/finanzas/presupuestos')}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md font-medium">Presupuestos</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="flex items-center justify-center">
+              <BarChart3 className="h-12 w-12 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => navigate('/finanzas/nomina')}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md font-medium">Nómina</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="flex items-center justify-center">
+              <Users className="h-12 w-12 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md font-medium">Facturación</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="flex items-center justify-center">
+              <FileBarChart2 className="h-12 w-12 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md font-medium">Reportes</CardTitle>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="flex items-center justify-center">
+              <PieChart className="h-12 w-12 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
