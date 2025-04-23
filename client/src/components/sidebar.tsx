@@ -1,6 +1,5 @@
 import { Logo } from "@/components/logo";
 import { useLocation, Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -11,7 +10,7 @@ import {
   CheckSquare, 
   UserCog, 
   Settings, 
-  LogOut 
+  User
 } from "lucide-react";
 
 interface NavItemProps {
@@ -47,11 +46,6 @@ interface SidebarProps {
 
 export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
   const [location] = useLocation();
-  const { user, logoutMutation } = useAuth();
-
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
 
   const NavItems = [
     { href: "/", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -114,23 +108,16 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
       <div className="p-4 border-t border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-primary-200 flex items-center justify-center text-primary-700 font-medium">
-            {user?.fullName?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+            <User className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">
-              {user?.fullName || 'User'}
+              Demo User
             </p>
             <p className="text-xs text-gray-400 truncate capitalize">
-              {user?.role || 'User'}
+              Administrator
             </p>
           </div>
-          <button
-            className="text-gray-400 hover:text-white"
-            onClick={handleLogout}
-            aria-label="Logout"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
         </div>
       </div>
     </aside>

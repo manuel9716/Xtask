@@ -1,10 +1,9 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
-import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
 import Finances from "@/pages/finances";
@@ -14,12 +13,14 @@ import Tasks from "@/pages/tasks";
 import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import { ProtectedRoute } from "@/lib/protected-route";
-import { AuthProvider } from "@/hooks/use-auth";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/auth" component={AuthPage} />
+      {/* Redirect /auth to home page */}
+      <Route path="/auth">
+        <Redirect to="/" />
+      </Route>
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/projects" component={Projects} />
       <ProtectedRoute path="/finances" component={Finances} />
@@ -36,12 +37,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Router />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

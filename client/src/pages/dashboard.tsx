@@ -5,17 +5,14 @@ import { KanbanBoard } from "@/components/kanban-board";
 import { FinancialSummary } from "@/components/financial-summary";
 import { TeamMembers } from "@/components/team-members";
 import { RecentTransactions } from "@/components/recent-transactions";
-import { useAuth } from "@/hooks/use-auth";
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  
   return (
     <div className="space-y-6">
       {/* Dashboard Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500">Welcome back, {user?.fullName || 'User'}! Here's what's happening with your projects today.</p>
+        <p className="text-gray-500">Welcome to XTask! Here's what's happening with your projects today.</p>
       </div>
 
       {/* KPI Stats Cards */}
