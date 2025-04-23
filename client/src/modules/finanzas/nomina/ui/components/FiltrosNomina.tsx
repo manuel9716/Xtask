@@ -117,7 +117,7 @@ export function FiltrosNomina({ onFiltrar, filtrosActuales }: FiltrosNominaProps
                 <SelectValue placeholder="Todos los empleados" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los empleados</SelectItem>
+                <SelectItem value="todos">Todos los empleados</SelectItem>
                 {empleadosParaSelect.map((emp) => (
                   <SelectItem key={emp.value} value={emp.value}>
                     {emp.label}
@@ -138,7 +138,7 @@ export function FiltrosNomina({ onFiltrar, filtrosActuales }: FiltrosNominaProps
                 <SelectValue placeholder="Todos los meses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los meses</SelectItem>
+                <SelectItem value="todos">Todos los meses</SelectItem>
                 {meses.map((mes) => (
                   <SelectItem key={mes.value} value={mes.value}>
                     {mes.label}
@@ -159,7 +159,7 @@ export function FiltrosNomina({ onFiltrar, filtrosActuales }: FiltrosNominaProps
                 <SelectValue placeholder="Todos los años" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los años</SelectItem>
+                <SelectItem value="todos">Todos los años</SelectItem>
                 {anios.map((anio) => (
                   <SelectItem key={anio} value={anio.toString()}>
                     {anio}
@@ -180,7 +180,7 @@ export function FiltrosNomina({ onFiltrar, filtrosActuales }: FiltrosNominaProps
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los estados</SelectItem>
+                <SelectItem value="todos">Todos los estados</SelectItem>
                 {estadosOptions.map((estado) => (
                   <SelectItem key={estado.value} value={estado.value}>
                     {estado.label}
