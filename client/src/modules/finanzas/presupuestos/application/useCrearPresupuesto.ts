@@ -1,10 +1,25 @@
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { CrearPresupuestoDTO, crearPresupuestoSchema } from '../domain/entities/Presupuesto';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+
+// Este tipo define los datos esperados por el formulario y que enviaremos a la API
+export type CrearPresupuestoDTO = {
+  name: string;
+  amount: number;
+  startDate: Date;
+  endDate: Date;
+  area?: string;
+  description?: string;
+  createdBy?: number;
+  status?: string;
+  organizationId?: number;
+  departmentId?: number | null;
+  projectId?: number | null;
+};
 
 /**
  * Hook de aplicación para crear presupuestos
+ * Se adapta a la API existente en el servidor (/api/presupuestos)
  */
 export function useCrearPresupuesto() {
   const { toast } = useToast();
@@ -18,11 +33,24 @@ export function useCrearPresupuesto() {
   } = useMutation({
     mutationFn: async (data: CrearPresupuestoDTO) => {
       try {
-        const response = await apiRequest('POST', '/api/presupuestos', data);
+        // Preparar datos para la API existente
+        const requestData = {
+          name: data.name,
+          amount: data.amount,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          description: data.description || '',
+          createdBy: data.createdBy || 1, // Usuario por defecto
+          organizationId: data.organizationId || 1,
+          departmentId: data.departmentId || null,
+          projectId: data.projectId || null
+        };
+        
+        const response = await apiRequest('POST', '/api/presupuestos', requestData);
         
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Error al crear el presupuesto');
+          throw new Error(errorData.error || 'Error al crear el presupuesto');
         }
         
         return await response.json();

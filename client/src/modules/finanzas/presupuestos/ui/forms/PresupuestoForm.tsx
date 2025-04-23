@@ -1,150 +1,140 @@
-import React from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useCrearPresupuesto } from "../../application/useCrearPresupuesto";
-import { crearPresupuestoSchema, Presupuesto } from "../../domain/entities/Presupuesto";
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { cn } from '@/lib/utils';
+import { useCrearPresupuesto, CrearPresupuestoDTO } from '../../application/useCrearPresupuesto';
+
+// Schema para validación del formulario
+const formSchema = z.object({
+    name: z.string()
+      .min(3, "El nombre debe tener al menos 3 caracteres")
+      .max(100, "El nombre no puede exceder los 100 caracteres"),
+    amount: z.string()
+      .min(1, "El monto es requerido")
+      .refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+        message: "El monto debe ser un número mayor que cero"
+      }),
+    startDate: z.date()
+      .refine(date => date instanceof Date && !isNaN(date.getTime()), 
+        { message: "Fecha de inicio inválida" }),
+    endDate: z.date()
+      .refine(date => date instanceof Date && !isNaN(date.getTime()), 
+        { message: "Fecha de fin inválida" }),
+    description: z.string().optional(),
+    area: z.string().optional(),
+})
+.refine(
+  data => data.endDate > data.startDate,
+  {
+    message: "La fecha de fin debe ser posterior a la fecha de inicio",
+    path: ["endDate"]
+  }
+);
+
+export type PresupuestoFormValues = z.infer<typeof formSchema>;
 
 interface PresupuestoFormProps {
-  presupuesto?: Presupuesto | null;
-  areas?: string[];
-  onSuccess?: () => void;
+  onSuccess: () => void;
+  onCancel: () => void;
 }
 
-/**
- * Formulario para crear o editar presupuestos
- */
-export function PresupuestoForm({ 
-  presupuesto,
-  areas = [],
-  onSuccess 
-}: PresupuestoFormProps) {
-  const { crearPresupuesto, isPending } = useCrearPresupuesto();
+export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
+  const { crearPresupuesto, isSubmitting } = useCrearPresupuesto();
 
-  // Crear formulario con validación zod
-  const form = useForm<z.infer<typeof crearPresupuestoSchema>>({
-    resolver: zodResolver(crearPresupuestoSchema),
+  // Inicializar el formulario
+  const form = useForm<PresupuestoFormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      nombre: presupuesto?.nombre || "",
-      monto: presupuesto?.monto || 0,
-      fechaInicio: presupuesto?.fechaInicio || new Date(),
-      fechaFin: presupuesto?.fechaFin || new Date(new Date().setMonth(new Date().getMonth() + 3)),
-      description: presupuesto?.description || "",
-      area: presupuesto?.area || undefined,
-    },
+      name: '',
+      amount: '',
+      startDate: new Date(),
+      endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)), // Un mes en el futuro
+      area: 'General',
+      description: ''
+    }
   });
 
-  // Manejar el envío del formulario
-  const onSubmit = async (data: z.infer<typeof crearPresupuestoSchema>) => {
+  // Areas/departamentos disponibles para el presupuesto
+  const areas = ['General', 'Marketing', 'Ventas', 'Tecnología', 'Recursos Humanos', 'Finanzas', 'Operaciones'];
+
+  // Manejar envío del formulario
+  const onSubmit = async (data: PresupuestoFormValues) => {
     try {
-      const success = await crearPresupuesto(data);
-      if (success && onSuccess) {
-        form.reset();
-        onSuccess();
-      }
+      // Transformar datos del formulario a formato esperado por el API
+      const presupuestoData: CrearPresupuestoDTO = {
+        name: data.name,
+        amount: Number(data.amount),
+        startDate: data.startDate,
+        endDate: data.endDate,
+        area: data.area,
+        description: data.description,
+        createdBy: 1,  // Usuario por defecto
+        organizationId: 1 // Organización por defecto
+      };
+      
+      await crearPresupuesto(presupuestoData);
+      onSuccess();
     } catch (error) {
-      console.error("Error al crear presupuesto:", error);
+      console.error('Error al crear presupuesto:', error);
     }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="nombre"
+          name="name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Nombre del presupuesto</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Ej. Presupuesto de marketing Q1 2025" 
-                  {...field} 
-                />
+                <Input {...field} placeholder="Ej: Presupuesto Q2 Marketing 2025" />
               </FormControl>
-              <FormDescription>
-                Nombre descriptivo del presupuesto
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-
+        
         <FormField
           control={form.control}
-          name="monto"
+          name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Monto</FormLabel>
+              <FormLabel>Monto total asignado al presupuesto</FormLabel>
               <FormControl>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="10000.00"
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  value={field.value}
-                />
+                <Input {...field} type="number" placeholder="Ej: 10000" min="1" step="0.01" />
               </FormControl>
-              <FormDescription>
-                Monto total asignado al presupuesto
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="fechaInicio"
+            name="startDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Fecha de inicio</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
+                      <Button 
+                        variant="outline" 
+                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
-                        {field.value ? (
-                          format(field.value, "PP")
-                        ) : (
-                          <span>Seleccione fecha</span>
-                        )}
+                        {field.value ? format(field.value, "PP") : <span>Seleccionar fecha</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -162,28 +152,21 @@ export function PresupuestoForm({
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
-            name="fechaFin"
+            name="endDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Fecha de fin</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
+                      <Button 
+                        variant="outline" 
+                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
-                        {field.value ? (
-                          format(field.value, "PP")
-                        ) : (
-                          <span>Seleccione fecha</span>
-                        )}
+                        {field.value ? format(field.value, "PP") : <span>Seleccionar fecha</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -202,39 +185,30 @@ export function PresupuestoForm({
             )}
           />
         </div>
-
+        
         <FormField
           control={form.control}
           name="area"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Área</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
+              <FormLabel>Área o departamento al que pertenece el presupuesto</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccione un área" />
+                    <SelectValue placeholder="Selecciona un área" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="General">General</SelectItem>
-                  {areas.map((area) => (
-                    <SelectItem key={area} value={area}>
-                      {area}
-                    </SelectItem>
+                  {areas.map(area => (
+                    <SelectItem key={area} value={area}>{area}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <FormDescription>
-                Área o departamento al que pertenece el presupuesto
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-
+        
         <FormField
           control={form.control}
           name="description"
@@ -242,34 +216,26 @@ export function PresupuestoForm({
             <FormItem>
               <FormLabel>Descripción</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Descripción detallada del presupuesto y su propósito"
-                  className="resize-none"
-                  {...field}
+                <Textarea 
+                  {...field} 
+                  placeholder="Información adicional sobre el presupuesto" 
+                  className="resize-none" 
+                  rows={4} 
                 />
               </FormControl>
-              <FormDescription>
-                Información adicional sobre el presupuesto
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        <Button 
-          type="submit" 
-          className="w-full"
-          disabled={isPending}
-        >
-          {isPending ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creando...
-            </>
-          ) : (
-            'Crear Presupuesto'
-          )}
-        </Button>
+        
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Creando...' : 'Crear Presupuesto'}
+          </Button>
+        </div>
       </form>
     </Form>
   );
