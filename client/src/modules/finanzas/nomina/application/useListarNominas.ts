@@ -1,102 +1,107 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Payroll } from '@shared/schema';
+import { FiltrosNomina, ResultadoPaginadoNominas } from '../domain/entities/Nomina';
 
 /**
- * Hook para listar nóminas con filtros y paginación
+ * Hook para listar nóminas con paginación y filtros
  */
 export function useListarNominas() {
-  const [filtros, setFiltros] = useState({
+  // Estado para los filtros
+  const [filtros, setFiltros] = useState<FiltrosNomina>({
     page: 1,
-    limit: 10,
-    empleadoId: undefined as number | undefined,
-    mes: undefined as number | undefined,
-    anio: undefined as number | undefined,
-    estado: undefined as string | undefined,
+    pageSize: 10
   });
-
-  // Crear query string para los filtros
-  const queryParams = new URLSearchParams();
-  queryParams.append('page', filtros.page.toString());
-  queryParams.append('limit', filtros.limit.toString());
   
-  if (filtros.empleadoId) {
-    queryParams.append('empleadoId', filtros.empleadoId.toString());
-  }
+  // Construir URL con los parámetros de filtro
+  const construirURL = () => {
+    const params = new URLSearchParams();
+    
+    if (filtros.empleadoId) {
+      params.append('empleadoId', filtros.empleadoId.toString());
+    }
+    
+    if (filtros.mes) {
+      params.append('mes', filtros.mes.toString());
+    }
+    
+    if (filtros.anio) {
+      params.append('anio', filtros.anio.toString());
+    }
+    
+    if (filtros.estado) {
+      params.append('estado', filtros.estado);
+    }
+    
+    if (filtros.page) {
+      params.append('page', filtros.page.toString());
+    }
+    
+    if (filtros.pageSize) {
+      params.append('pageSize', filtros.pageSize.toString());
+    }
+    
+    return `/api/nomina?${params.toString()}`;
+  };
   
-  if (filtros.mes) {
-    queryParams.append('mes', filtros.mes.toString());
-  }
-  
-  if (filtros.anio) {
-    queryParams.append('anio', filtros.anio.toString());
-  }
-  
-  if (filtros.estado) {
-    queryParams.append('estado', filtros.estado);
-  }
-
-  const queryKey = ['/api/nomina', filtros];
-
-  // Consultar la API de nóminas
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey,
+  // Consulta para obtener las nóminas
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['/api/nomina', filtros],
     queryFn: async () => {
-      const response = await fetch(`/api/nomina?${queryParams.toString()}`);
+      const response = await fetch(construirURL());
+      
       if (!response.ok) {
-        throw new Error('Error al obtener nóminas');
+        throw new Error('Error al obtener las nóminas');
       }
-      return response.json();
-    },
+      
+      return await response.json();
+    }
   });
-
-  // Manejar cambios en los filtros
-  const cambiarFiltros = (nuevosFiltros: Partial<typeof filtros>) => {
+  
+  // Extraer datos de la respuesta
+  const resultado: ResultadoPaginadoNominas = data || {
+    nominas: [],
+    pagination: {
+      page: filtros.page || 1,
+      pageSize: filtros.pageSize || 10,
+      totalItems: 0,
+      totalPages: 0
+    }
+  };
+  
+  // Función para cambiar los filtros
+  const cambiarFiltros = (nuevosFiltros: Partial<FiltrosNomina>) => {
     setFiltros(prev => ({
       ...prev,
       ...nuevosFiltros,
-      // Resetear a página 1 cuando cambian los filtros que no son de paginación
-      page: 'page' in nuevosFiltros ? nuevosFiltros.page || 1 : 1
+      // Si cambian los filtros, volver a la página 1
+      page: Object.keys(nuevosFiltros).some(key => key !== 'page' && key !== 'pageSize') ? 1 : nuevosFiltros.page || prev.page
     }));
   };
-
-  // Funciones para paginación
-  const irAPagina = (page: number) => {
-    cambiarFiltros({ page });
-  };
-
-  const siguientePagina = () => {
-    if (data && data.pagination && filtros.page < data.pagination.totalPages) {
-      irAPagina(filtros.page + 1);
+  
+  // Función para ir a una página específica
+  const irAPagina = (pagina: number) => {
+    if (pagina < 1 || pagina > resultado.pagination.totalPages) {
+      return;
     }
+    
+    cambiarFiltros({ page: pagina });
   };
-
-  const paginaAnterior = () => {
-    if (filtros.page > 1) {
-      irAPagina(filtros.page - 1);
-    }
-  };
-
-  // Extraer datos de respuesta
-  const nominas: Payroll[] = data?.nominas || [];
-  const pagination = data?.pagination || {
-    page: filtros.page,
-    limit: filtros.limit,
-    total: 0,
-    totalPages: 0
-  };
-
+  
   return {
-    nominas,
+    nominas: resultado.nominas,
+    pagination: resultado.pagination,
     isLoading,
     isError,
     error,
     filtros,
     cambiarFiltros,
-    pagination,
     irAPagina,
-    siguientePagina,
-    paginaAnterior,
     refetch
   };
 }

@@ -263,7 +263,7 @@ export function ListadoNominaPage() {
           
           <ProcesarNominaForm 
             onSubmit={(datos) => {
-              procesarNomina.mutate(datos, {
+              procesarNomina(datos, {
                 onSuccess: () => {
                   setShowProcesarForm(false);
                   refetch();

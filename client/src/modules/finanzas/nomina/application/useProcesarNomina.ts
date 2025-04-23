@@ -9,7 +9,7 @@ export function useProcesarNomina() {
   const { toast } = useToast();
   
   // Mutación para procesar nómina
-  const procesarNomina = useMutation({
+  const { mutate: procesarNominaMutate, isPending } = useMutation({
     mutationFn: async (params: ProcesarNominaParams) => {
       const response = await fetch('/api/nomina/procesar', {
         method: 'POST',
@@ -44,8 +44,13 @@ export function useProcesarNomina() {
     },
   });
 
+  // Función para procesar nómina con las mismas opciones que envuelve la mutación
+  const procesarNomina = (params: ProcesarNominaParams, options?: { onSuccess?: () => void }) => {
+    return procesarNominaMutate(params, options);
+  };
+
   return {
     procesarNomina,
-    isPending: procesarNomina.isPending
+    isPending
   };
 }
