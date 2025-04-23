@@ -13,6 +13,7 @@ import Tasks from "@/pages/tasks";
 import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import { MainLayout } from "@/layouts/main-layout";
+import { FinanzasRoutes } from "@/modules/finanzas/ui/routes"; 
 
 function Router() {
   return (
@@ -57,6 +58,10 @@ function Router() {
           <Settings />
         </MainLayout>
       </Route>
+      
+      {/* Rutas de los módulos específicos */}
+      <FinanzasRoutes />
+      
       <Route component={NotFound} />
     </Switch>
   );
