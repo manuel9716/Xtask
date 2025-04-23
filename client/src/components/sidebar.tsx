@@ -12,6 +12,7 @@ import {
   Settings, 
   User
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface NavItemProps {
   href: string;
@@ -46,19 +47,20 @@ interface SidebarProps {
 
 export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
   const [location] = useLocation();
+  const { t } = useTranslation();
 
   const NavItems = [
-    { href: "/", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-    { href: "/projects", label: "Projects", icon: <Briefcase className="h-5 w-5" /> },
-    { href: "/finances", label: "Finances", icon: <DollarSign className="h-5 w-5" /> },
-    { href: "/human-resources", label: "Human Resources", icon: <Users className="h-5 w-5" /> },
-    { href: "/suppliers", label: "Suppliers", icon: <Store className="h-5 w-5" /> },
-    { href: "/tasks", label: "Tasks", icon: <CheckSquare className="h-5 w-5" /> },
+    { href: "/", label: t("navigation.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
+    { href: "/projects", label: t("navigation.projects"), icon: <Briefcase className="h-5 w-5" /> },
+    { href: "/finances", label: t("navigation.finances"), icon: <DollarSign className="h-5 w-5" /> },
+    { href: "/human-resources", label: t("navigation.humanResources"), icon: <Users className="h-5 w-5" /> },
+    { href: "/suppliers", label: t("navigation.suppliers"), icon: <Store className="h-5 w-5" /> },
+    { href: "/tasks", label: t("navigation.tasks"), icon: <CheckSquare className="h-5 w-5" /> },
   ];
 
   const SystemItems = [
-    { href: "/user-management", label: "User Management", icon: <UserCog className="h-5 w-5" /> },
-    { href: "/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
+    { href: "/user-management", label: t("navigation.userManagement"), icon: <UserCog className="h-5 w-5" /> },
+    { href: "/settings", label: t("navigation.settings"), icon: <Settings className="h-5 w-5" /> },
   ];
 
   return (
@@ -75,7 +77,7 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
         <p className="text-secondary text-xs font-medium uppercase tracking-wider mt-6 mb-2 font-heading">
-          Main
+          {t("navigation.mainSection")}
         </p>
 
         {NavItems.map((item) => (
@@ -90,7 +92,7 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
         ))}
 
         <p className="text-secondary text-xs font-medium uppercase tracking-wider mt-6 mb-2 font-heading">
-          System
+          {t("navigation.systemSection")}
         </p>
 
         {SystemItems.map((item) => (
@@ -112,10 +114,10 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">
-              Demo User
+              {t("user.demoUser")}
             </p>
             <p className="text-xs text-secondary truncate capitalize">
-              Administrator
+              {t("user.role")}
             </p>
           </div>
         </div>

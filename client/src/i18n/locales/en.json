@@ -36,7 +36,10 @@
     "humanResources": "Human Resources",
     "suppliers": "Suppliers",
     "settings": "Settings",
-    "users": "Users"
+    "users": "Users",
+    "userManagement": "User Management",
+    "mainSection": "Main",
+    "systemSection": "System"
   },
   "dashboard": {
     "welcome": "Welcome to XTask",
@@ -241,5 +244,9 @@
     "infrastructureDescription": "Technical implementations (API, DB, etc.)",
     "presentationLayer": "Presentation Layer",
     "presentationDescription": "User interface (React components)"
+  },
+  "user": {
+    "demoUser": "Demo User",
+    "role": "Administrator"
   }
 }

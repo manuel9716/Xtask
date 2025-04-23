@@ -36,7 +36,10 @@
     "humanResources": "Recursos Humanos",
     "suppliers": "Proveedores",
     "settings": "Configuración",
-    "users": "Usuarios"
+    "users": "Usuarios",
+    "userManagement": "Gestión de Usuarios",
+    "mainSection": "Principal",
+    "systemSection": "Sistema"
   },
   "dashboard": {
     "welcome": "Bienvenido a XTask",
