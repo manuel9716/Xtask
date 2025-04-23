@@ -1,0 +1,69 @@
+
+---
+
+## 🔧 Funcionalidades obligatorias
+
+### 1. Registro de empleados para nómina
+- Campos: nombre, identificación, salario base, tipo de contrato, aportes, deducciones fijas.
+- Los datos deben almacenarse en PostgreSQL.
+
+### 2. Cálculo de nómina
+- Se genera un registro mensual con: sueldo base, descuentos, aportes, total neto.
+- El cálculo debe hacerse en `CalculoPagoEmpleado.ts` en el dominio.
+- Guarda la nómina con estado: `pendiente` o `pagado`.
+
+### 3. Generación de desprendible
+- Crea PDF de resumen con nombre, salario, descuentos, fecha y total a pagar.
+- Usa PDFKit o librería similar en `infrastructure/pdf`.
+
+### 4. Consulta de nóminas anteriores
+- Tabla con filtros por empleado y mes.
+- Columnas: Empleado, Fecha, Neto a pagar, Estado, Ver PDF.
+
+### 5. Estado de pago
+- Cambio de estado manual (botón para marcar como “Pagado”)
+- Solo usuarios con rol `admin_finanzas` pueden hacerlo
+
+---
+
+## 🔗 Backend (Express)
+
+Rutas requeridas:
+- `POST /api/finanzas/nomina/procesar` – Procesa nómina mensual
+- `GET /api/finanzas/nomina?mes=...&empleado=...` – Consulta nóminas históricas
+- `POST /api/finanzas/nomina/marcar-pagado/:id` – Cambia estado de nómina
+
+---
+
+## 🧑‍💻 Frontend (React)
+
+- Componente `NominaForm.tsx` para registrar empleados (si no se tienen aún)
+- Vista `NominaPage.tsx` con `NominaTable.tsx`
+- Usa React Query (`useQuery`, `useMutation`)
+- Estilos con TailwindCSS + Shadcn/UI
+
+---
+
+## 🧪 Seguridad
+
+- Protege rutas con JWT y middleware `auth.middleware.ts`
+- Valida datos con Zod en backend y frontend
+- Registra auditoría en tabla separada con usuario, acción y fecha
+
+---
+
+## 📌 Ruta del módulo
+
+Vista principal: `/finanzas/nomina`  
+Este submódulo debe estar enlazado en el layout lateral de Finanzas (`SidebarFinanzas.tsx`).
+
+---
+
+## 🎯 Resultado esperado
+
+Una pantalla donde:
+- Se procesa y almacena la nómina mensual de los empleados
+- Se visualiza el historial
+- Se calcula el neto automáticamente
+- Se descargan PDF de desprendibles
+

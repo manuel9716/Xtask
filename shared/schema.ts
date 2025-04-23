@@ -217,6 +217,11 @@ export const employees = pgTable("employees", {
   address: text("address"),
   emergencyContact: text("emergency_contact"),
   contractStatus: text("contract_status").notNull().default("active"), // active, terminated, etc.
+  contractType: text("contract_type").default("fulltime"), // fulltime, parttime, contractor
+  identification: text("identification"), // Número de identificación nacional/fiscal
+  baseBenefits: decimal("base_benefits", { precision: 10, scale: 2 }).default("0"), // Beneficios predefinidos
+  baseDeductions: decimal("base_deductions", { precision: 10, scale: 2 }).default("0"), // Deducciones predefinidas
+  taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("0"), // Tasa de impuestos aplicable al empleado
 });
 
 // Suppliers
