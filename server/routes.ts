@@ -763,6 +763,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Error al obtener los usuarios' });
     }
   });
+  
+  // Datos de ejemplo para proyectos
+  const proyectosEjemplo = [
+    {
+      id: 1,
+      name: 'Desarrollo ERP',
+      description: 'Desarrollo de sistema ERP para empresa manufacturera',
+      startDate: '2025-01-01',
+      endDate: '2025-12-31',
+      budget: 50000,
+      status: 'active'
+    },
+    {
+      id: 2,
+      name: 'Implementación CRM',
+      description: 'Implementación de CRM para departamento de ventas',
+      startDate: '2025-03-15',
+      endDate: '2025-09-30',
+      budget: 35000,
+      status: 'active'
+    },
+    {
+      id: 3,
+      name: 'Rediseño Sitio Web',
+      description: 'Rediseño completo del sitio web corporativo',
+      startDate: '2025-02-01',
+      endDate: '2025-05-31',
+      budget: 15000,
+      status: 'active'
+    }
+  ];
+  
+  // Sobrescribir la ruta de proyectos para retornar datos de ejemplo
+  app.get('/api/projects', async (req, res) => {
+    try {
+      res.json(proyectosEjemplo);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
 
   const httpServer = createServer(app);
 

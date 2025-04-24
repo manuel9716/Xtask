@@ -49,6 +49,11 @@ export interface CrearEmpleadoParams {
   baseBenefits?: string;
   baseDeductions?: string;
   taxRate?: string;
+  projectIds?: number[]; // IDs de los proyectos asignados
+  bankAccount?: string;  // Cuenta bancaria para pagos
+  paymentMethod?: string; // Método de pago (transferencia, cheque, etc.)
+  healthInsurance?: string; // Seguro de salud
+  vacationDays?: number; // Días de vacaciones anuales
 }
 
 /**
@@ -90,7 +95,17 @@ export const CrearEmpleadoDTO = z.object({
   }).min(3, "La identificación debe tener al menos 3 caracteres"),
   baseBenefits: z.string().regex(/^\d+(\.\d{1,2})?$/, "Los beneficios base deben ser un número válido").optional().default("0"),
   baseDeductions: z.string().regex(/^\d+(\.\d{1,2})?$/, "Las deducciones base deben ser un número válido").optional().default("0"),
-  taxRate: z.string().regex(/^\d+(\.\d{1,2})?$/, "La tasa de impuestos debe ser un número válido").optional().default("0")
+  taxRate: z.string().regex(/^\d+(\.\d{1,2})?$/, "La tasa de impuestos debe ser un número válido").optional().default("0"),
+  // Nuevos campos
+  projectIds: z.array(z.number()).optional(),
+  bankAccount: z.string().optional(),
+  paymentMethod: z.string()
+    .refine(val => !val || ['transferencia', 'cheque', 'efectivo', 'otro'].includes(val), {
+      message: "Método de pago inválido"
+    })
+    .optional(),
+  healthInsurance: z.string().optional(),
+  vacationDays: z.number().int().min(0).max(60).optional(),
 });
 
 /**
