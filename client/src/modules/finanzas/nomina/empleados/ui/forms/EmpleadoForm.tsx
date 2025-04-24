@@ -1,9 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, CheckSquare } from 'lucide-react';
+import { Calendar as CalendarIcon, CheckSquare, Upload, AlertCircle, FileText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
@@ -17,9 +17,12 @@ import { Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { CrearEmpleadoParams, CrearEmpleadoDTO } from '../../domain/entities/Empleado';
 import { useCrearEmpleado, useObtenerUsuarios } from '../../application/useCrearEmpleado';
+import { validarFormatoContrato, validarTamanoContrato, subirContrato } from '../../infrastructure/storage/contratoUploader';
 
 interface EmpleadoFormProps {
   onSuccess: () => void;
