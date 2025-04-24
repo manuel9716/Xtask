@@ -403,6 +403,49 @@ empleadosRouter.post('/contrato', upload.single('contrato'), async (req: Request
   }
 });
 
+// Descargar contrato de empleado
+empleadosRouter.get('/:id/contrato/descargar', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Buscar el empleado
+    const [empleado] = await db.select()
+      .from(employees)
+      .where(eq(employees.id, parseInt(id)));
+    
+    if (!empleado) {
+      return res.status(404).json({ error: 'Empleado no encontrado' });
+    }
+    
+    // Verificar que tiene un contrato
+    if (!empleado.contratoUrl) {
+      return res.status(404).json({ error: 'El empleado no tiene un contrato registrado' });
+    }
+    
+    // Construir la ruta completa al archivo
+    const rutaArchivo = path.resolve(`.${empleado.contratoUrl}`);
+    
+    // Verificar que el archivo existe
+    if (!fs.existsSync(rutaArchivo)) {
+      return res.status(404).json({ error: 'El archivo de contrato no se encuentra en el servidor' });
+    }
+    
+    // Obtener el nombre original del archivo desde la URL
+    const nombreArchivo = path.basename(empleado.contratoUrl);
+    
+    // Configurar la descarga del archivo
+    res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    
+    // Enviar el archivo como respuesta
+    const fileStream = fs.createReadStream(rutaArchivo);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error(`Error al descargar contrato del empleado ${req.params.id}:`, error);
+    return res.status(500).json({ error: 'Error al descargar el contrato del empleado' });
+  }
+});
+
 // Actualizar un empleado existente
 empleadosRouter.patch('/:id', async (req: Request, res: Response) => {
   try {

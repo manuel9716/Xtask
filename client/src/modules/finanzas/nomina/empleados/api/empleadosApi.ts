@@ -169,3 +169,12 @@ export const subirContratoEmpleado = async (file: File, empleadoId?: number): Pr
   const data = await response.json();
   return data.url;
 };
+
+/**
+ * Descarga el contrato de un empleado
+ * @param empleadoId ID del empleado
+ */
+export const descargarContratoEmpleado = (empleadoId: number): void => {
+  // Abrimos una nueva ventana del navegador para descargar el archivo
+  window.open(`${BASE_URL}/${empleadoId}/contrato/descargar`, '_blank');
+};

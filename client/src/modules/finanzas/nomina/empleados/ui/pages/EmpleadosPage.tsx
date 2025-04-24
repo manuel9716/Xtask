@@ -14,7 +14,9 @@ import {
   ChevronLeft, 
   ChevronRight, 
   AlertCircle,
-  Loader2
+  Loader2,
+  Download,
+  FileDown
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -54,7 +56,7 @@ import {
 } from '@/components/ui/select';
 import { EmpleadoForm } from '../forms/EmpleadoForm';
 import { FiltrosEmpleado } from '../../domain/entities/Empleado';
-import { obtenerEmpleados, cambiarEstadoEmpleado, eliminarEmpleado } from '../../api/empleadosApi';
+import { obtenerEmpleados, cambiarEstadoEmpleado, eliminarEmpleado, descargarContratoEmpleado } from '../../api/empleadosApi';
 import { useToast } from '@/hooks/use-toast';
 
 export default function EmpleadosPage() {
