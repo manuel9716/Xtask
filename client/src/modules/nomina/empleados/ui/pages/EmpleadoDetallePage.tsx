@@ -884,7 +884,7 @@ export default function EmpleadoDetallePage() {
         <CardFooter className="flex justify-between">
           <Button 
             variant="outline" 
-            onClick={() => setLocation('/admin/finanzas/nomina/empleados')}
+            onClick={() => setLocation('/admin/nomina/empleados')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver a la lista
