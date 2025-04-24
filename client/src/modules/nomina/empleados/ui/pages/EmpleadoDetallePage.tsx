@@ -56,6 +56,8 @@ export default function EmpleadoDetallePage() {
     if (empleado && !editMode) {
       setFormData({
         userId: empleado.userId,
+        firstName: empleado.firstName || '',
+        lastName: empleado.lastName || '',
         position: empleado.position,
         department: empleado.department,
         hireDate: empleado.hireDate ? format(new Date(empleado.hireDate), 'yyyy-MM-dd') : '',
@@ -113,6 +115,8 @@ export default function EmpleadoDetallePage() {
     if (empleado) {
       setFormData({
         userId: empleado.userId,
+        firstName: empleado.firstName || '',
+        lastName: empleado.lastName || '',
         position: empleado.position,
         department: empleado.department,
         hireDate: empleado.hireDate ? format(new Date(empleado.hireDate), 'yyyy-MM-dd') : '',
