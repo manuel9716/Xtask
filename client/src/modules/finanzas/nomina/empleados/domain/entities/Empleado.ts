@@ -129,8 +129,14 @@ export class Empleado {
   baseBenefits: string;
   baseDeductions: string;
   taxRate: string;
+  // Nuevos campos
+  bankAccount?: string;
+  paymentMethod?: string;
+  healthInsurance?: string;
+  vacationDays?: number;
+  projectIds?: number[];
 
-  constructor(data: Employee) {
+  constructor(data: Employee & { fullName?: string, email?: string }) {
     this.id = data.id;
     this.userId = data.userId;
     this.fullName = data.fullName;
@@ -148,6 +154,13 @@ export class Empleado {
     this.baseBenefits = data.baseBenefits || '0';
     this.baseDeductions = data.baseDeductions || '0';
     this.taxRate = data.taxRate || '0';
+    // Inicializar los nuevos campos
+    this.bankAccount = data.bankAccount || undefined;
+    this.paymentMethod = data.paymentMethod || undefined;
+    this.healthInsurance = data.healthInsurance || undefined;
+    this.vacationDays = data.vacationDays || undefined;
+    // Los projectIds no están en el modelo de base de datos, por lo que tendríamos que obtenerlos a través de otra consulta
+    this.projectIds = [];
   }
 
   /**
