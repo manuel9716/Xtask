@@ -59,6 +59,7 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
   const form = useForm<CrearEmpleadoParams>({
     resolver: zodResolver(CrearEmpleadoDTO),
     defaultValues: {
+      userId: undefined, // Esto debe ser seleccionado por el usuario
       department: '',
       position: '',
       contractStatus: 'active',
@@ -80,6 +81,7 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
       tipoPago: 'mensual',
       fechaInicioNomina: new Date(),
     },
+    mode: 'onChange', // Validar al cambiar los campos
   });
   
   // Cargar los usuarios para el selector usando el hook useObtenerUsuarios
