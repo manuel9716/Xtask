@@ -6,11 +6,13 @@ import { z } from 'zod';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+// En entornos de ESM modernos, usamos path.resolve directamente en lugar de __dirname
 
 // Configuración de multer para subida de archivos
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../../uploads/contratos');
+    // Usar path.resolve para crear una ruta absoluta desde la raíz del proyecto
+    const uploadDir = path.resolve('./uploads/contratos');
     // Asegurarnos de que el directorio existe
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
