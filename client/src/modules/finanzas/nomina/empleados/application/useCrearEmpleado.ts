@@ -1,7 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CrearEmpleadoDTO, CrearEmpleadoParams } from '../domain/entities/Empleado';
-import { crearEmpleado } from '../api/empleadosApi';
+import { crearEmpleado, obtenerUsuarios } from '../api/empleadosApi';
 import { useToast } from '@/hooks/use-toast';
+
+/**
+ * Hook para obtener la lista de usuarios para el selector de empleados
+ * @returns Función para obtener la lista de usuarios
+ */
+export const useObtenerUsuarios = () => {
+  // Simplemente retornamos la función directamente, para que pueda ser utilizada en useEffect
+  return obtenerUsuarios;
+};
 
 /**
  * Hook para la creación de empleados

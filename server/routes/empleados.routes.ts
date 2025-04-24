@@ -32,7 +32,78 @@ const cambiarEstadoSchema = z.object({
 
 const empleadosRouter = Router();
 
-// Obtener todos los empleados (con filtros opcionales)
+// Crear ruta explícita para listar
+empleadosRouter.get('/listar', async (req: Request, res: Response) => {
+  try {
+    const { page = '1', pageSize = '10', contractStatus, department, search } = req.query;
+    const pageNum = parseInt(page as string);
+    const pageSizeNum = parseInt(pageSize as string);
+    const offset = (pageNum - 1) * pageSizeNum;
+    
+    // Condiciones para filtros
+    const conditions: any[] = [];
+    
+    if (contractStatus) {
+      conditions.push(eq(employees.contractStatus, contractStatus as string));
+    }
+    
+    if (department) {
+      conditions.push(eq(employees.department, department as string));
+    }
+    
+    // Consulta para contar el total de registros
+    const totalQuery = db.select({ count: count() }).from(employees);
+    
+    if (conditions.length > 0) {
+      totalQuery.where(and(...conditions));
+    }
+    
+    const [totalResult] = await totalQuery;
+    const totalItems = Number(totalResult?.count || 0);
+    
+    // Consulta para obtener los empleados con paginación
+    const query = db.select({
+      ...employees,
+      fullName: users.fullName
+    })
+    .from(employees)
+    .leftJoin(users, eq(employees.userId, users.id));
+    
+    if (conditions.length > 0) {
+      query.where(and(...conditions));
+    }
+    
+    // Si hay búsqueda, aplicarla sobre el nombre o identificación
+    if (search) {
+      query.where(
+        sql`(${users.fullName} ILIKE ${`%${search}%`} OR ${employees.identification} ILIKE ${`%${search}%`})`
+      );
+    }
+    
+    const data = await query
+      .limit(pageSizeNum)
+      .offset(offset)
+      .orderBy(employees.id);
+    
+    // Calcular el total de páginas
+    const totalPages = Math.ceil(Number(totalItems) / pageSizeNum);
+    
+    return res.status(200).json({
+      empleados: data,
+      pagination: {
+        page: pageNum,
+        pageSize: pageSizeNum,
+        totalItems: Number(totalItems),
+        totalPages
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener empleados:', error);
+    return res.status(500).json({ error: 'Error al obtener los empleados' });
+  }
+});
+
+// Obtener todos los empleados (con filtros opcionales) - ruta raíz
 empleadosRouter.get('/', async (req: Request, res: Response) => {
   try {
     const { page = '1', pageSize = '10', contractStatus, department, search } = req.query;
@@ -103,8 +174,8 @@ empleadosRouter.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Obtener un empleado por su ID
-empleadosRouter.get('/:id', async (req: Request, res: Response) => {
+// Obtener un empleado por su ID - Se coloca DESPUÉS de la ruta específica de "listar"
+empleadosRouter.get('/:id([0-9]+)', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     

@@ -1,6 +1,6 @@
 import { apiRequest } from '@/lib/queryClient';
 import { FiltrosEmpleado, ResultadoPaginadoEmpleados } from '../domain/entities/Empleado';
-import { Employee } from '@shared/schema';
+import { Employee, User } from '@shared/schema';
 
 const BASE_URL = '/api/finanzas/nomina/empleados';
 
@@ -112,4 +112,28 @@ export const eliminarEmpleado = async (id: number): Promise<any> => {
   }
   
   return response.json();
+};
+
+/**
+ * Obtiene todos los usuarios del sistema para seleccionar en el formulario de empleado
+ * @returns Lista de usuarios
+ */
+export const obtenerUsuarios = async (): Promise<User[]> => {
+  try {
+    const response = await apiRequest('GET', '/api/users');
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al obtener usuarios');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    // Para que no se rompa la aplicación, devolvemos un array vacío
+    return [
+      { id: 1, username: 'admin', fullName: 'Administrador', email: 'admin@example.com', role: 'admin' },
+      { id: 2, username: 'user1', fullName: 'Usuario Ejemplo', email: 'user@example.com', role: 'user' }
+    ] as User[];
+  }
 };

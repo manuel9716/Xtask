@@ -12,6 +12,7 @@ import Suppliers from "@/pages/suppliers";
 import Tasks from "@/pages/tasks";
 import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
+import NominaDashboard from "@/pages/nomina-dashboard";
 import { MainLayout } from "@/layouts/main-layout";
 import { FinanzasRoutes } from "@/modules/finanzas/ui/routes"; 
 
@@ -56,6 +57,13 @@ function Router() {
       <Route path="/settings">
         <MainLayout>
           <Settings />
+        </MainLayout>
+      </Route>
+      
+      {/* Ruta directa a Nómina */}
+      <Route path="/nomina">
+        <MainLayout>
+          <NominaDashboard />
         </MainLayout>
       </Route>
       

@@ -10,7 +10,8 @@ import {
   CheckSquare, 
   UserCog, 
   Settings, 
-  User
+  User,
+  Receipt
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -53,6 +54,7 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
     { href: "/", label: t("navigation.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
     { href: "/projects", label: t("navigation.projects"), icon: <Briefcase className="h-5 w-5" /> },
     { href: "/finances", label: t("navigation.finances"), icon: <DollarSign className="h-5 w-5" /> },
+    { href: "/nomina", label: "Nómina", icon: <Receipt className="h-5 w-5" /> },
     { href: "/human-resources", label: t("navigation.humanResources"), icon: <Users className="h-5 w-5" /> },
     { href: "/suppliers", label: t("navigation.suppliers"), icon: <Store className="h-5 w-5" /> },
     { href: "/tasks", label: t("navigation.tasks"), icon: <CheckSquare className="h-5 w-5" /> },
