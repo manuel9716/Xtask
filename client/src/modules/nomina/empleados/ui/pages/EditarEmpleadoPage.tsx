@@ -8,10 +8,13 @@ import { EmpleadoForm } from '../forms/EmpleadoForm';
 import { useGetEmpleado } from '../../application/useGetEmpleado';
 
 export default function EditarEmpleadoPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const empleadoId = id ? parseInt(id) : undefined;
+  
+  // Log para depuración
+  console.log("ID del empleado:", id, "empleadoId:", empleadoId);
   
   // Obtener los datos del empleado
   const { data: empleado, isLoading, isError } = useGetEmpleado(empleadoId);
