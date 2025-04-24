@@ -22,7 +22,7 @@ interface EmpleadoFormProps {
 }
 
 export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
-  const { mutacion } = useCrearEmpleado();
+  const mutation = useCrearEmpleado();
   const { toast } = useToast();
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [cargandoUsuarios, setCargandoUsuarios] = useState(true);
@@ -51,7 +51,8 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
     const cargarUsuarios = async () => {
       try {
         setCargandoUsuarios(true);
-        const data = await useObtenerUsuarios();
+        const obtenerUsuariosFunc = useObtenerUsuarios();
+        const data = await obtenerUsuariosFunc();
         setUsuarios(data || []);
       } catch (error) {
         console.error("Error al cargar usuarios:", error);
@@ -70,7 +71,7 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
   
   const onSubmit = async (datos: CrearEmpleadoParams) => {
     try {
-      await mutacion.mutateAsync(datos);
+      await mutation.mutateAsync(datos);
       form.reset();
       onSuccess();
     } catch (error) {
@@ -413,8 +414,8 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
         </div>
         
         <div className="flex justify-end">
-          <Button type="submit" disabled={mutacion.isPending}>
-            {mutacion.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Guardar Empleado
           </Button>
         </div>

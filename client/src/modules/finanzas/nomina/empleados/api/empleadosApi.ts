@@ -119,21 +119,12 @@ export const eliminarEmpleado = async (id: number): Promise<any> => {
  * @returns Lista de usuarios
  */
 export const obtenerUsuarios = async (): Promise<User[]> => {
-  try {
-    const response = await apiRequest('GET', '/api/users');
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al obtener usuarios');
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error al obtener usuarios:', error);
-    // Para que no se rompa la aplicación, devolvemos un array vacío
-    return [
-      { id: 1, username: 'admin', fullName: 'Administrador', email: 'admin@example.com', role: 'admin' },
-      { id: 2, username: 'user1', fullName: 'Usuario Ejemplo', email: 'user@example.com', role: 'user' }
-    ] as User[];
+  const response = await apiRequest('GET', '/api/users');
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Error al obtener usuarios');
   }
+  
+  return await response.json();
 };
