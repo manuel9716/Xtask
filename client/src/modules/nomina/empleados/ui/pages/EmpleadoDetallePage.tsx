@@ -201,7 +201,7 @@ export default function EmpleadoDetallePage() {
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Reintentar
               </Button>
-              <Button onClick={() => setLocation('/admin/finanzas/nomina/empleados')}>
+              <Button onClick={() => setLocation('/admin/nomina/empleados')}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver a la lista
               </Button>
@@ -223,7 +223,7 @@ export default function EmpleadoDetallePage() {
             <p className="text-muted-foreground mb-6">
               No se pudo encontrar el empleado con el ID especificado
             </p>
-            <Button onClick={() => setLocation('/admin/finanzas/nomina/empleados')}>
+            <Button onClick={() => setLocation('/admin/nomina/empleados')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Volver a la lista
             </Button>
@@ -239,7 +239,7 @@ export default function EmpleadoDetallePage() {
         <Button 
           variant="outline" 
           size="icon" 
-          onClick={() => setLocation('/admin/finanzas/nomina/empleados')} 
+          onClick={() => setLocation('/admin/nomina/empleados')} 
           className="mr-4"
         >
           <ArrowLeft className="h-4 w-4" />
