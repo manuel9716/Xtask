@@ -6,13 +6,13 @@ import EditarEmpleadoPage from './pages/EditarEmpleadoPage';
 
 // Componente auxiliar para manejar parámetros de ruta de detalles
 function EmpleadoDetalleRoute() {
-  const [, params] = useRoute('/admin/nomina/empleados/:id');
+  // EmpleadoDetallePage ya usa useParams internamente
   return <EmpleadoDetallePage />;
 }
 
 // Componente auxiliar para manejar parámetros de ruta de edición
 function EditarEmpleadoRoute() {
-  const [, params] = useRoute('/admin/nomina/empleados/:id/editar');
+  // EditarEmpleadoPage ya usa useParams internamente
   return <EditarEmpleadoPage />;
 }
 
