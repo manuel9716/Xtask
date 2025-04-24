@@ -67,7 +67,25 @@ empleadosRouter.get('/listar', async (req: Request, res: Response) => {
     
     // Consulta para obtener los empleados con paginación
     const query = db.select({
-      ...employees,
+      id: employees.id,
+      userId: employees.userId,
+      position: employees.position,
+      department: employees.department,
+      hireDate: employees.hireDate,
+      salary: employees.salary,
+      phoneNumber: employees.phoneNumber,
+      address: employees.address,
+      emergencyContact: employees.emergencyContact,
+      contractStatus: employees.contractStatus,
+      contractType: employees.contractType,
+      identification: employees.identification,
+      baseBenefits: employees.baseBenefits,
+      baseDeductions: employees.baseDeductions,
+      taxRate: employees.taxRate,
+      bankAccount: employees.bankAccount,
+      paymentMethod: employees.paymentMethod,
+      healthInsurance: employees.healthInsurance,
+      vacationDays: employees.vacationDays,
       fullName: users.fullName
     })
     .from(employees)
@@ -138,7 +156,25 @@ empleadosRouter.get('/', async (req: Request, res: Response) => {
     
     // Consulta para obtener los empleados con paginación
     const query = db.select({
-      ...employees,
+      id: employees.id,
+      userId: employees.userId,
+      position: employees.position,
+      department: employees.department,
+      hireDate: employees.hireDate,
+      salary: employees.salary,
+      phoneNumber: employees.phoneNumber,
+      address: employees.address,
+      emergencyContact: employees.emergencyContact,
+      contractStatus: employees.contractStatus,
+      contractType: employees.contractType,
+      identification: employees.identification,
+      baseBenefits: employees.baseBenefits,
+      baseDeductions: employees.baseDeductions,
+      taxRate: employees.taxRate,
+      bankAccount: employees.bankAccount,
+      paymentMethod: employees.paymentMethod,
+      healthInsurance: employees.healthInsurance,
+      vacationDays: employees.vacationDays,
       fullName: users.fullName
     })
     .from(employees)
@@ -184,7 +220,25 @@ empleadosRouter.get('/:id([0-9]+)', async (req: Request, res: Response) => {
     const { id } = req.params;
     
     const [empleado] = await db.select({
-      ...employees,
+      id: employees.id,
+      userId: employees.userId,
+      position: employees.position,
+      department: employees.department,
+      hireDate: employees.hireDate,
+      salary: employees.salary,
+      phoneNumber: employees.phoneNumber,
+      address: employees.address,
+      emergencyContact: employees.emergencyContact,
+      contractStatus: employees.contractStatus,
+      contractType: employees.contractType,
+      identification: employees.identification,
+      baseBenefits: employees.baseBenefits,
+      baseDeductions: employees.baseDeductions,
+      taxRate: employees.taxRate,
+      bankAccount: employees.bankAccount,
+      paymentMethod: employees.paymentMethod,
+      healthInsurance: employees.healthInsurance,
+      vacationDays: employees.vacationDays,
       fullName: users.fullName,
       email: users.email
     })

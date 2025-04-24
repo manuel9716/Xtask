@@ -222,6 +222,10 @@ export const employees = pgTable("employees", {
   baseBenefits: decimal("base_benefits", { precision: 10, scale: 2 }).default("0"), // Beneficios predefinidos
   baseDeductions: decimal("base_deductions", { precision: 10, scale: 2 }).default("0"), // Deducciones predefinidas
   taxRate: decimal("tax_rate", { precision: 5, scale: 2 }).default("0"), // Tasa de impuestos aplicable al empleado
+  bankAccount: text("bank_account"), // Cuenta bancaria para pagos
+  paymentMethod: text("payment_method"), // Método de pago (transferencia, cheque, etc.)
+  healthInsurance: text("health_insurance"), // Seguro de salud
+  vacationDays: integer("vacation_days"), // Días de vacaciones anuales
 });
 
 // Suppliers
