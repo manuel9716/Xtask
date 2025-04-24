@@ -78,7 +78,7 @@ export default function EmpleadosPage() {
     isError, 
     refetch 
   } = useQuery({
-    queryKey: ['/api/finanzas/nomina/empleados', filtros],
+    queryKey: ['/api/nomina/empleados', filtros],
     queryFn: () => obtenerEmpleados(filtros),
   });
   
@@ -111,7 +111,9 @@ export default function EmpleadosPage() {
   // Función para cambiar el estado de un empleado
   const handleCambiarEstado = async (id: number, nuevoEstado: string) => {
     try {
-      await cambiarEstadoEmpleado(id, nuevoEstado);
+      // Convertiría a booleano pero en este caso el API debe estar esperando un string
+      // Verificamos qué espera la API en la implementación
+      await cambiarEstadoEmpleado(id, nuevoEstado === 'active');
       refetch();
       toast({
         title: 'Estado actualizado',
@@ -334,13 +336,13 @@ export default function EmpleadosPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                             <DropdownMenuItem
-                              onClick={() => setLocation(`/admin/finanzas/nomina/empleados/${empleado.id}`)}
+                              onClick={() => setLocation(`/admin/nomina/empleados/${empleado.id}`)}
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => setLocation(`/admin/finanzas/nomina/empleados/${empleado.id}/historial`)}
+                              onClick={() => setLocation(`/admin/nomina/empleados/${empleado.id}/historial`)}
                             >
                               <FileText className="mr-2 h-4 w-4" />
                               Ver historial de pagos
