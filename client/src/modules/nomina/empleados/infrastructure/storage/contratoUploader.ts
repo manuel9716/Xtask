@@ -68,15 +68,35 @@ export const subirContrato = async (file: File, empleadoId?: number): Promise<st
     });
     
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Error al subir el contrato');
+      try {
+        const error = await response.json();
+        throw new Error(error.message || error.error || 'Error al subir el contrato');
+      } catch (jsonError) {
+        // Si la respuesta no es JSON, usar el texto de la respuesta
+        const errorText = await response.text();
+        throw new Error(errorText || `Error ${response.status}: ${response.statusText}`);
+      }
     }
     
-    const data = await response.json();
-    return data.fileUrl;
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      console.error("Error al parsear respuesta como JSON:", jsonError);
+      // Si no podemos parsear como JSON, usar texto
+      const text = await response.text();
+      data = { fileUrl: text };
+    }
+    console.log("Respuesta al subir contrato:", data); // Para depuración
+    // Verificamos todas las posibles propiedades donde podría venir la URL
+    return data.fileUrl || data.url || (typeof data === 'string' ? data : '');
   } catch (error) {
+    console.error("Error en la subida del contrato:", error);
     if (error instanceof Error) {
       throw error;
+    }
+    if (typeof error === 'string') {
+      throw new Error(error);
     }
     throw new Error('Error desconocido al subir el contrato');
   }

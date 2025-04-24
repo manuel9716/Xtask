@@ -557,9 +557,10 @@ empleadosRouter.post('/contrato', upload.single('contrato'), async (req: Request
         .where(eq(employees.id, parseInt(empleadoId)));
     }
     
+    // Devolver respuesta con el formato exacto que espera el frontend
     return res.status(200).json({ 
-      fileUrl: fileUrl, // Usar fileUrl para ser consistente con el frontend
-      url: fileUrl,
+      fileUrl: fileUrl, // Esta es la propiedad que el frontend espera
+      url: fileUrl,     // Mantenemos ambas para compatibilidad
       message: 'Archivo subido correctamente' 
     });
   } catch (error) {
