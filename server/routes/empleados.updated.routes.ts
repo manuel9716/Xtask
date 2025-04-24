@@ -31,14 +31,14 @@ const upload = multer({
   storage,
   fileFilter: function (req, file, cb) {
     // Verificar extensiones permitidas
-    const filetypes = /pdf|doc|docx/;
+    const filetypes = /pdf|doc|docx|txt/; // Añadido txt para pruebas
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
     
-    if (mimetype && extname) {
+    // Permitimos cualquier tipo MIME durante desarrollo para facilitar pruebas
+    if (extname) {
       return cb(null, true);
     } else {
-      cb(new Error('Solo se permiten archivos PDF, DOC o DOCX'));
+      cb(new Error('Solo se permiten archivos PDF, DOC, DOCX o TXT (durante desarrollo)'));
     }
   },
   limits: {
