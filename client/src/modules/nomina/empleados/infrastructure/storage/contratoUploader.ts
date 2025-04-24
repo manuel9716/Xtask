@@ -3,12 +3,12 @@
  */
 
 /**
- * Valida que el archivo tenga un formato correcto (PDF o DOCX)
+ * Valida que el archivo tenga un formato correcto (solo PDF)
  * @param file Archivo a validar
  * @returns True si el archivo es válido, false en caso contrario
  */
 export const validarFormatoContrato = (file: File): boolean => {
-  const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const allowedTypes = ['application/pdf'];
   return allowedTypes.includes(file.type);
 };
 
@@ -33,7 +33,7 @@ export const subirContrato = async (file: File, empleadoId?: number): Promise<st
   try {
     // Validaciones
     if (!validarFormatoContrato(file)) {
-      throw new Error('El formato del archivo no es válido. Por favor, suba un archivo PDF o DOCX.');
+      throw new Error('El formato del archivo no es válido. Por favor, suba un archivo PDF.');
     }
     
     if (!validarTamanoContrato(file)) {
@@ -49,7 +49,7 @@ export const subirContrato = async (file: File, empleadoId?: number): Promise<st
     }
     
     // Enviar el archivo al servidor
-    const response = await fetch('/api/finanzas/nomina/empleados/contrato', {
+    const response = await fetch('/api/nomina/empleados/contrato', {
       method: 'POST',
       body: formData,
     });
