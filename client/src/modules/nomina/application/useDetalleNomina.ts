@@ -15,14 +15,14 @@ export function useDetalleNomina(nominaId: number | undefined) {
     error,
     refetch
   } = useQuery({
-    queryKey: [`/api/nomina/${nominaId}`],
+    queryKey: [`/api/finanzas/nomina/${nominaId}`],
     queryFn: async () => {
       // Si no hay ID, no ejecutar la consulta
       if (!nominaId) {
         throw new Error('ID de nómina no especificado');
       }
       
-      const response = await fetch(`/api/nomina/${nominaId}`);
+      const response = await fetch(`/api/finanzas/nomina/${nominaId}`);
       if (!response.ok) {
         throw new Error('Error al obtener el detalle de la nómina');
       }
@@ -39,7 +39,7 @@ export function useDetalleNomina(nominaId: number | undefined) {
     
     try {
       // Realizar la petición para obtener el PDF
-      const response = await fetch(`/api/nomina/${nominaId}/desprendible`);
+      const response = await fetch(`/api/finanzas/nomina/${nominaId}/desprendible`);
       
       if (!response.ok) {
         throw new Error('Error al descargar el desprendible');

@@ -30,8 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { EmpleadoForm } from '@/modules/finanzas/nomina/empleados/ui/forms/EmpleadoForm';
-import EmpleadosPage from '@/modules/finanzas/nomina/empleados/ui/pages/EmpleadosPage';
+import { EmpleadoForm } from '@/modules/nomina/empleados/ui/forms/EmpleadoForm';
+import EmpleadosPage from '@/modules/nomina/empleados/ui/pages/EmpleadosPage';
 
 export default function NominaDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');

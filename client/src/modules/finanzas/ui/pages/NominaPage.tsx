@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ListadoNominaPage } from '../../nomina/ui/pages/ListadoNominaPage';
+import ListadoNominaPage from '@/modules/nomina/ui/pages/ListadoNominaPage';
 
 export function NominaPage() {
   const [, navigate] = useLocation();
@@ -31,7 +31,7 @@ export function NominaPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => navigate('/finanzas/nomina/empleados')}>
+          <Button onClick={() => navigate('/nomina/empleados')}>
             <UserPlus className="mr-2 h-4 w-4" />
             Nuevo Empleado
           </Button>

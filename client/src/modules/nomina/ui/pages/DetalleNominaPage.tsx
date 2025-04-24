@@ -44,7 +44,7 @@ interface DetalleNominaPageProps {
   nominaId: string;
 }
 
-export default function DetalleNominaPage({ nominaId }: DetalleNominaPageProps) {
+export function DetalleNominaPage({ nominaId }: DetalleNominaPageProps) {
   const [_, navigate] = useLocation();
   const { toast } = useToast();
   

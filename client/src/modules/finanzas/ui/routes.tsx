@@ -2,7 +2,7 @@ import { Route, useRoute } from 'wouter';
 import { MainLayout } from '@/layouts/main-layout';
 import { PresupuestosPage } from './pages/PresupuestosPage';
 import { NominaPage } from './pages/NominaPage';
-import { DetalleNominaPage } from '../nomina/ui/pages/DetalleNominaPage';
+import { DetalleNominaPage } from '@/modules/nomina/ui/pages/DetalleNominaPage';
 
 export const FinanzasRoutes = () => (
   <>

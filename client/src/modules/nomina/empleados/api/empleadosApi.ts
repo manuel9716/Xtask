@@ -62,7 +62,7 @@ export async function obtenerEmpleados(
   
   const response = await apiRequest(
     'GET',
-    `/api/nomina/empleados/listar?${queryParams.toString()}`
+    `/api/finanzas/nomina/empleados/listar?${queryParams.toString()}`
   );
   
   if (!response.ok) {
@@ -80,7 +80,7 @@ export async function obtenerEmpleados(
 export async function obtenerEmpleado(id: number): Promise<Employee> {
   const response = await apiRequest(
     'GET',
-    `/api/nomina/empleados/${id}`
+    `/api/finanzas/nomina/empleados/${id}`
   );
   
   if (!response.ok) {
@@ -98,7 +98,7 @@ export async function obtenerEmpleado(id: number): Promise<Employee> {
 export async function crearEmpleado(empleado: Partial<Employee>): Promise<Employee> {
   const response = await apiRequest(
     'POST',
-    '/api/nomina/empleados',
+    '/api/finanzas/nomina/empleados',
     empleado
   );
   
@@ -118,7 +118,7 @@ export async function crearEmpleado(empleado: Partial<Employee>): Promise<Employ
 export async function actualizarEmpleado(id: number, datos: Partial<Employee>): Promise<Employee> {
   const response = await apiRequest(
     'PATCH',
-    `/api/nomina/empleados/${id}`,
+    `/api/finanzas/nomina/empleados/${id}`,
     datos
   );
   
@@ -137,7 +137,7 @@ export async function actualizarEmpleado(id: number, datos: Partial<Employee>): 
 export async function eliminarEmpleado(id: number): Promise<void> {
   const response = await apiRequest(
     'DELETE',
-    `/api/nomina/empleados/${id}`
+    `/api/finanzas/nomina/empleados/${id}`
   );
   
   if (!response.ok) {
@@ -153,7 +153,7 @@ export async function eliminarEmpleado(id: number): Promise<void> {
 export async function obtenerUrlContrato(id: number): Promise<{ url: string }> {
   const response = await apiRequest(
     'GET',
-    `/api/nomina/empleados/${id}/contrato-url`
+    `/api/finanzas/nomina/empleados/${id}/contrato-url`
   );
   
   if (!response.ok) {
@@ -171,7 +171,7 @@ export async function obtenerUrlContrato(id: number): Promise<{ url: string }> {
 export async function generarDesprendible(datosNomina: ResultadoCalculoNomina): Promise<{ pdfUrl: string, id: number }> {
   const response = await apiRequest(
     'POST',
-    '/api/nomina/desprendible/generar',
+    '/api/finanzas/nomina/desprendible/generar',
     datosNomina
   );
   
@@ -190,7 +190,7 @@ export async function generarDesprendible(datosNomina: ResultadoCalculoNomina): 
 export async function obtenerNominasEmpleado(empleadoId: number): Promise<NominaProcesada[]> {
   const response = await apiRequest(
     'GET',
-    `/api/nomina/empleado/${empleadoId}`
+    `/api/finanzas/nomina/empleado/${empleadoId}`
   );
   
   if (!response.ok) {
@@ -208,7 +208,7 @@ export async function obtenerNominasEmpleado(empleadoId: number): Promise<Nomina
 export async function marcarNominaPagada(nominaId: number): Promise<NominaProcesada> {
   const response = await apiRequest(
     'PATCH',
-    `/api/nomina/${nominaId}/marcar-pagada`
+    `/api/finanzas/nomina/${nominaId}/marcar-pagada`
   );
   
   if (!response.ok) {
@@ -226,7 +226,7 @@ export async function marcarNominaPagada(nominaId: number): Promise<NominaProces
 export async function cancelarNomina(nominaId: number): Promise<NominaProcesada> {
   const response = await apiRequest(
     'PATCH',
-    `/api/nomina/${nominaId}/cancelar`
+    `/api/finanzas/nomina/${nominaId}/cancelar`
   );
   
   if (!response.ok) {
@@ -244,7 +244,7 @@ export async function cancelarNomina(nominaId: number): Promise<NominaProcesada>
 export async function obtenerUrlDesprendible(nominaId: number): Promise<{ pdfUrl: string }> {
   const response = await apiRequest(
     'GET',
-    `/api/nomina/${nominaId}/desprendible-url`
+    `/api/finanzas/nomina/${nominaId}/desprendible-url`
   );
   
   if (!response.ok) {
@@ -282,7 +282,7 @@ export async function descargarContratoEmpleado(id: number, nombreEmpleado?: str
     
     // Crear un elemento <a> temporal
     const link = document.createElement('a');
-    link.href = `/api/nomina/empleados/${id}/contrato`;
+    link.href = `/api/finanzas/nomina/empleados/${id}/contrato`;
     link.setAttribute('download', nombreArchivo);
     
     // Anexar a la página, hacer clic y remover
@@ -308,7 +308,7 @@ export async function descargarContratoEmpleado(id: number, nombreEmpleado?: str
 export async function cambiarEstadoEmpleado(id: number, estado: boolean): Promise<Employee> {
   const response = await apiRequest(
     'PATCH',
-    `/api/nomina/empleados/${id}/estado`,
+    `/api/finanzas/nomina/empleados/${id}/estado`,
     { activo: estado }
   );
   
