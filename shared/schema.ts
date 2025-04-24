@@ -209,6 +209,9 @@ export const taskComments = pgTable("task_comments", {
 export const employees = pgTable("employees", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
+  firstName: text("first_name"), // Nombre del empleado
+  lastName: text("last_name"), // Apellido del empleado
+  skills: text("skills"), // Habilidades del empleado (texto separado por comas o JSON)
   position: text("position").notNull(),
   department: text("department").notNull(),
   hireDate: timestamp("hire_date").notNull(),

@@ -36,6 +36,9 @@ export interface ResultadoPaginadoEmpleados {
  */
 export interface CrearEmpleadoParams {
   userId: number;
+  firstName: string;     // Nombre del empleado
+  lastName: string;      // Apellido del empleado
+  skills?: string;       // Habilidades del empleado
   position: string;
   department: string;
   hireDate: Date;
@@ -69,6 +72,13 @@ export const CrearEmpleadoDTO = z.object({
     required_error: "El usuario es requerido",
     invalid_type_error: "El usuario debe ser un número"
   }),
+  firstName: z.string({ 
+    required_error: "El nombre es requerido" 
+  }).min(2, "El nombre debe tener al menos 2 caracteres"),
+  lastName: z.string({ 
+    required_error: "El apellido es requerido" 
+  }).min(2, "El apellido debe tener al menos 2 caracteres"),
+  skills: z.string().optional(),
   position: z.string({ 
     required_error: "El cargo es requerido" 
   }).min(3, "El cargo debe tener al menos 3 caracteres"),
@@ -127,8 +137,11 @@ export const CrearEmpleadoDTO = z.object({
 export class Empleado {
   id: number;
   userId: number;
+  firstName?: string;
+  lastName?: string;
   fullName?: string;
   email?: string;
+  skills?: string;
   position: string;
   department: string;
   hireDate: Date;
@@ -152,8 +165,11 @@ export class Empleado {
   constructor(data: Employee & { fullName?: string, email?: string }) {
     this.id = data.id;
     this.userId = data.userId;
-    this.fullName = data.fullName;
+    this.firstName = data.firstName;
+    this.lastName = data.lastName;
+    this.fullName = data.fullName || `${data.firstName || ''} ${data.lastName || ''}`.trim() || undefined;
     this.email = data.email;
+    this.skills = data.skills;
     this.position = data.position;
     this.department = data.department;
     this.hireDate = new Date(data.hireDate);
