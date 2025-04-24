@@ -100,7 +100,12 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
         variant: "destructive",
       });
     }
-  }, [usuariosData, cargandoUsuariosData, errorUsuarios, toast]);
+    
+    // Si tenemos usuarios y no hay uno seleccionado, establecer el primer usuario como valor por defecto
+    if (usuariosData.length > 0 && !form.getValues('userId')) {
+      form.setValue('userId', usuariosData[0].id);
+    }
+  }, [usuariosData, cargandoUsuariosData, errorUsuarios, toast, form]);
   
   // Gestionar cambios en proyectos seleccionados
   const toggleProjectSelection = (projectId: number) => {
@@ -171,6 +176,21 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
   
   const onSubmit = async (datos: CrearEmpleadoParams) => {
     try {
+      // Verificar explícitamente que userId tenga un valor válido
+      if (!datos.userId) {
+        // Si no hay usuarios disponibles pero tenemos al menos uno en la lista, usar el primero
+        if (usuarios.length > 0) {
+          datos.userId = usuarios[0].id;
+        } else {
+          toast({
+            title: "Error",
+            description: "Debe seleccionar un usuario para asociar al empleado",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      
       // Asegurar que los projectIds estén incluidos
       datos.projectIds = selectedProjects;
       
@@ -194,7 +214,11 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
         datos.contratoUrl = contratoUrl;
       }
       
+      console.log("Enviando datos:", datos); // Debugging
+      
       await mutation.mutateAsync(datos);
+      
+      // Éxito: limpiar y resetear el formulario
       form.reset();
       setSelectedProjects([]);
       setContrato(null);
@@ -207,7 +231,7 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
       console.error("Error al crear empleado:", error);
       toast({
         title: "Error",
-        description: "Error al guardar los datos del empleado",
+        description: error instanceof Error ? error.message : "Error al guardar los datos del empleado",
         variant: "destructive",
       });
     }
@@ -227,7 +251,8 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
                 <Select 
                   disabled={cargandoUsuarios} 
                   onValueChange={(value) => field.onChange(parseInt(value))}
-                  value={field.value?.toString()}
+                  value={field.value?.toString() || (usuarios[0]?.id.toString() || "")}
+                  defaultValue={usuarios[0]?.id.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -237,11 +262,15 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {usuarios.map((usuario) => (
-                      <SelectItem key={usuario.id} value={usuario.id.toString()}>
-                        {usuario.fullName} ({usuario.email})
-                      </SelectItem>
-                    ))}
+                    {usuarios.length > 0 ? (
+                      usuarios.map((usuario) => (
+                        <SelectItem key={usuario.id} value={usuario.id.toString()}>
+                          {usuario.fullName} ({usuario.email})
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-users">No hay usuarios disponibles</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 <FormDescription>

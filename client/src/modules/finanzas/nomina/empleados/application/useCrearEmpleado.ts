@@ -11,8 +11,11 @@ export const useObtenerUsuarios = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['/api/users'],
     queryFn: obtenerUsuarios,
+    staleTime: 5 * 60 * 1000, // 5 minutos para reducir llamadas repetidas
+    retry: 2, // Intentar 2 veces más en caso de fallo
   });
   
+  // Asegurarse de que siempre devolvemos un array, incluso si hay un error
   return {
     usuarios: data || [],
     isLoading,
