@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -52,7 +52,7 @@ export default function EmpleadoDetallePage() {
   const editarEmpleadoMutation = useEditarEmpleado();
   
   // Inicializar formulario cuando los datos están disponibles
-  useState(() => {
+  useEffect(() => {
     if (empleado && !editMode) {
       setFormData({
         userId: empleado.userId,
