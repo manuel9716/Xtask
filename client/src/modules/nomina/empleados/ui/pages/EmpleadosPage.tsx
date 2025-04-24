@@ -303,7 +303,9 @@ export default function EmpleadosPage() {
                   {data.empleados.map((empleado) => (
                     <TableRow key={empleado.id}>
                       <TableCell className="font-medium">
-                        {(empleado as any).fullName || `Usuario #${empleado.userId}`}
+                        {empleado.firstName && empleado.lastName 
+                          ? `${empleado.firstName} ${empleado.lastName}`
+                          : (empleado as any).fullName || `Usuario #${empleado.userId}`}
                       </TableCell>
                       <TableCell>{empleado.identification}</TableCell>
                       <TableCell>{empleado.position}</TableCell>
