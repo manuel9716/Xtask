@@ -729,6 +729,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   
   app.use('/api/finanzas/nomina', nominaRouter);
+  app.use('/api/finanzas/nomina/empleados', empleadosRouter);
   
   // Ruta para obtener todos los usuarios (necesaria para el formulario de empleados)
   app.get('/api/users', async (req, res) => {

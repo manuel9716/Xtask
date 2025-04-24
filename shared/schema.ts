@@ -226,6 +226,9 @@ export const employees = pgTable("employees", {
   paymentMethod: text("payment_method"), // Método de pago (transferencia, cheque, etc.)
   healthInsurance: text("health_insurance"), // Seguro de salud
   vacationDays: integer("vacation_days"), // Días de vacaciones anuales
+  contratoUrl: text("contrato_url"), // URL del contrato subido
+  tipoPago: text("tipo_pago"), // Tipo de pago (mensual, quincenal, etc.)
+  fechaInicioNomina: timestamp("fecha_inicio_nomina"), // Fecha de inicio para cálculos de nómina
 });
 
 // Suppliers
