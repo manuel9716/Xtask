@@ -23,10 +23,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { CrearEmpleadoParams, CrearEmpleadoDTO } from '../../domain/entities/Empleado';
 import { useCrearEmpleado, useObtenerUsuarios } from '../../application/useCrearEmpleado';
+import { useEditarEmpleado } from '../../application/useEditarEmpleado';
 import { validarFormatoContrato, validarTamanoContrato, subirContrato } from '../../infrastructure/storage/contratoUploader';
 
 interface EmpleadoFormProps {
   onSuccess: () => void;
+  empleadoData?: any; // Datos del empleado para edición
+  isEditing?: boolean; // Indica si estamos en modo edición
 }
 
 interface Proyecto {
@@ -35,15 +38,20 @@ interface Proyecto {
   description: string;
 }
 
-export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
-  const mutation = useCrearEmpleado();
+export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: EmpleadoFormProps) {
+  const crearEmpleadoMutation = useCrearEmpleado();
+  const editarEmpleadoMutation = useEditarEmpleado();
   const { toast } = useToast();
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [cargandoUsuarios, setCargandoUsuarios] = useState(true);
-  const [selectedProjects, setSelectedProjects] = useState<number[]>([]);
+  const [selectedProjects, setSelectedProjects] = useState<number[]>(
+    empleadoData?.projectIds || []
+  );
   const [contrato, setContrato] = useState<File | null>(null);
   const [contratoError, setContratoError] = useState<string | null>(null);
-  const [contratoUrl, setContratoUrl] = useState<string | null>(null);
+  const [contratoUrl, setContratoUrl] = useState<string | null>(
+    empleadoData?.contratoUrl || null
+  );
   const [subiendoContrato, setSubiendoContrato] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -57,34 +65,71 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
     }
   });
   
+  // Crear defaultValues basado en si estamos en modo edición o no
+  const getDefaultValues = () => {
+    if (isEditing && empleadoData) {
+      // Si estamos editando, usar los datos del empleado
+      return {
+        userId: empleadoData.userId,
+        firstName: empleadoData.firstName || '',
+        lastName: empleadoData.lastName || '',
+        skills: empleadoData.skills || '',
+        department: empleadoData.department || '',
+        position: empleadoData.position || '',
+        contractStatus: empleadoData.contractStatus || 'active',
+        contractType: empleadoData.contractType || 'fulltime',
+        identification: empleadoData.identification || '',
+        salary: empleadoData.salary || '',
+        hireDate: empleadoData.hireDate ? new Date(empleadoData.hireDate) : new Date(),
+        phoneNumber: empleadoData.phoneNumber || '',
+        address: empleadoData.address || '',
+        emergencyContact: empleadoData.emergencyContact || '',
+        baseBenefits: empleadoData.baseBenefits || '0',
+        baseDeductions: empleadoData.baseDeductions || '0',
+        taxRate: empleadoData.taxRate || '0',
+        bankAccount: empleadoData.bankAccount || '',
+        paymentMethod: empleadoData.paymentMethod || 'transferencia',
+        healthInsurance: empleadoData.healthInsurance || '',
+        vacationDays: empleadoData.vacationDays || 15,
+        projectIds: empleadoData.projectIds || [],
+        tipoPago: empleadoData.tipoPago || 'mensual',
+        fechaInicioNomina: empleadoData.fechaInicioNomina ? new Date(empleadoData.fechaInicioNomina) : new Date(),
+        contratoUrl: empleadoData.contratoUrl || '',
+      };
+    } else {
+      // Si estamos creando, usar valores por defecto
+      return {
+        userId: undefined,
+        firstName: '',
+        lastName: '',
+        skills: '',
+        department: '',
+        position: '',
+        contractStatus: 'active',
+        contractType: 'fulltime',
+        identification: '',
+        salary: '',
+        hireDate: new Date(),
+        phoneNumber: '',
+        address: '',
+        emergencyContact: '',
+        baseBenefits: '0',
+        baseDeductions: '0',
+        taxRate: '0',
+        bankAccount: '',
+        paymentMethod: 'transferencia',
+        healthInsurance: '',
+        vacationDays: 15,
+        projectIds: [],
+        tipoPago: 'mensual',
+        fechaInicioNomina: new Date(),
+      };
+    }
+  };
+  
   const form = useForm<CrearEmpleadoParams>({
     resolver: zodResolver(CrearEmpleadoDTO),
-    defaultValues: {
-      userId: undefined, // Esto debe ser seleccionado por el usuario
-      firstName: '',     // Nombre del empleado
-      lastName: '',      // Apellido del empleado
-      skills: '',        // Habilidades del empleado
-      department: '',
-      position: '',
-      contractStatus: 'active',
-      contractType: 'fulltime',
-      identification: '',
-      salary: '',
-      hireDate: new Date(),
-      phoneNumber: '',
-      address: '',
-      emergencyContact: '',
-      baseBenefits: '0',
-      baseDeductions: '0',
-      taxRate: '0',
-      bankAccount: '',
-      paymentMethod: 'transferencia',
-      healthInsurance: '',
-      vacationDays: 15,
-      projectIds: [],
-      tipoPago: 'mensual',
-      fechaInicioNomina: new Date(),
-    },
+    defaultValues: getDefaultValues(),
     mode: 'onChange', // Validar al cambiar los campos
   });
   
@@ -218,9 +263,27 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
         datos.contratoUrl = contratoUrl;
       }
       
-      console.log("Enviando datos:", datos); // Debugging
-      
-      await mutation.mutateAsync(datos);
+      // Procesar según el modo (creación o edición)
+      if (isEditing && empleadoData) {
+        // Modo edición: actualizar empleado existente
+        await editarEmpleadoMutation.mutateAsync({
+          id: empleadoData.id,
+          data: datos
+        });
+        
+        toast({
+          title: "Empleado actualizado",
+          description: "Los datos del empleado han sido actualizados exitosamente",
+        });
+      } else {
+        // Modo creación: crear nuevo empleado
+        await crearEmpleadoMutation.mutateAsync(datos);
+        
+        toast({
+          title: "Empleado creado",
+          description: "El empleado ha sido creado exitosamente",
+        });
+      }
       
       // Éxito: limpiar y resetear el formulario
       form.reset();
@@ -230,12 +293,16 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      
+      // Ejecutar callback de éxito
       onSuccess();
     } catch (error) {
-      console.error("Error al crear empleado:", error);
+      console.error(`Error al ${isEditing ? 'actualizar' : 'crear'} empleado:`, error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Error al guardar los datos del empleado",
+        description: error instanceof Error 
+          ? error.message 
+          : `Error al ${isEditing ? 'actualizar' : 'crear'} el empleado`,
         variant: "destructive",
       });
     }
