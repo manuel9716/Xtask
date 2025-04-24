@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema } from "@shared/schema";
 import express from "express";
 import empleadosRouter from "./routes/empleados.fixed.routes";
+import nominaRouter from "./routes/nomina.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Projects routes
