@@ -9,7 +9,7 @@ import { Employee } from '@shared/schema';
  */
 export const useGetEmpleado = (id: number | undefined) => {
   return useQuery<Employee, Error>({
-    queryKey: ['/api/finanzas/nomina/empleados', id],
+    queryKey: ['/api/nomina/empleados', id],
     queryFn: () => {
       if (!id) {
         throw new Error('ID de empleado no proporcionado');
