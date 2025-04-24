@@ -46,28 +46,23 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
     },
   });
   
-  // Cargar los usuarios para el selector
+  // Cargar los usuarios para el selector usando el hook useObtenerUsuarios
+  const { usuarios: usuariosData, isLoading: cargandoUsuariosData, error: errorUsuarios } = useObtenerUsuarios();
+  
+  // Actualizar el estado local cuando los datos del hook cambian
   useEffect(() => {
-    const cargarUsuarios = async () => {
-      try {
-        setCargandoUsuarios(true);
-        const obtenerUsuariosFunc = useObtenerUsuarios();
-        const data = await obtenerUsuariosFunc();
-        setUsuarios(data || []);
-      } catch (error) {
-        console.error("Error al cargar usuarios:", error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los usuarios. Por favor, inténtelo de nuevo.",
-          variant: "destructive",
-        });
-      } finally {
-        setCargandoUsuarios(false);
-      }
-    };
+    setUsuarios(usuariosData);
+    setCargandoUsuarios(cargandoUsuariosData);
     
-    cargarUsuarios();
-  }, [toast]);
+    if (errorUsuarios instanceof Error) {
+      console.error("Error al cargar usuarios:", errorUsuarios);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los usuarios. Por favor, inténtelo de nuevo.",
+        variant: "destructive",
+      });
+    }
+  }, [usuariosData, cargandoUsuariosData, errorUsuarios, toast]);
   
   const onSubmit = async (datos: CrearEmpleadoParams) => {
     try {

@@ -729,6 +729,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   
   app.use('/api/finanzas/nomina', nominaRouter);
+  
+  // Ruta para obtener todos los usuarios (necesaria para el formulario de empleados)
+  app.get('/api/users', async (req, res) => {
+    try {
+      // Simulamos una respuesta con datos de ejemplo para los usuarios
+      // En la implementación final, esto obtendría los usuarios reales de la base de datos
+      res.json([
+        {
+          id: 1,
+          username: 'admin',
+          fullName: 'Administrador',
+          email: 'admin@xtask.com',
+          role: 'admin'
+        },
+        {
+          id: 2,
+          username: 'usuario1',
+          fullName: 'Usuario Uno',
+          email: 'usuario1@xtask.com',
+          role: 'user'
+        },
+        {
+          id: 3,
+          username: 'usuario2',
+          fullName: 'Usuario Dos',
+          email: 'usuario2@xtask.com',
+          role: 'user'
+        }
+      ]);
+    } catch (error: any) {
+      console.error('Error al obtener usuarios:', error);
+      res.status(500).json({ error: 'Error al obtener los usuarios' });
+    }
+  });
 
   const httpServer = createServer(app);
 
