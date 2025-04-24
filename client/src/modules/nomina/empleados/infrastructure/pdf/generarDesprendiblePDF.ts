@@ -21,7 +21,7 @@ export async function generarDesprendiblePDF(datosNomina: ResultadoCalculoNomina
     // Llamar al endpoint de generación de desprendibles
     const response = await apiRequest(
       'POST',
-      '/api/finanzas/nomina/desprendible/generar',
+      '/api/nomina/desprendible/generar',
       datosNomina
     );
     
@@ -78,7 +78,7 @@ export async function descargarDesprendiblePDF(nominaId: number, nombreEmpleado?
 
     // Crear un elemento <a> temporal
     const link = document.createElement('a');
-    link.href = `/api/finanzas/nomina/${nominaId}/desprendible`;
+    link.href = `/api/nomina/${nominaId}/desprendible`;
     link.setAttribute('download', nombreArchivo);
     
     // Anexar a la página, hacer clic y remover

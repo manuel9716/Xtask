@@ -30,7 +30,7 @@ export class NominaController {
    */
   static async obtenerNominasEmpleado(empleadoId: number): Promise<NominaGenerada[]> {
     try {
-      const response = await apiRequest('GET', `/api/finanzas/nomina/empleado/${empleadoId}`);
+      const response = await apiRequest('GET', `/api/nomina/empleado/${empleadoId}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -51,7 +51,7 @@ export class NominaController {
    */
   static async generarNomina(datosNomina: ResultadoCalculoNomina): Promise<NominaGenerada> {
     try {
-      const response = await apiRequest('POST', '/api/finanzas/nomina/generar', datosNomina);
+      const response = await apiRequest('POST', '/api/nomina/generar', datosNomina);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -72,7 +72,7 @@ export class NominaController {
    */
   static async marcarNominaPagada(nominaId: number): Promise<NominaGenerada> {
     try {
-      const response = await apiRequest('PATCH', `/api/finanzas/nomina/${nominaId}/marcar-pagada`);
+      const response = await apiRequest('PATCH', `/api/nomina/${nominaId}/marcar-pagada`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -93,7 +93,7 @@ export class NominaController {
    */
   static async cancelarNomina(nominaId: number): Promise<NominaGenerada> {
     try {
-      const response = await apiRequest('PATCH', `/api/finanzas/nomina/${nominaId}/cancelar`);
+      const response = await apiRequest('PATCH', `/api/nomina/${nominaId}/cancelar`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -114,7 +114,7 @@ export class NominaController {
    */
   static async obtenerDesprendiblePDF(nominaId: number): Promise<string> {
     try {
-      const response = await apiRequest('GET', `/api/finanzas/nomina/${nominaId}/desprendible-url`);
+      const response = await apiRequest('GET', `/api/nomina/${nominaId}/desprendible-url`);
       
       if (!response.ok) {
         const errorData = await response.json();

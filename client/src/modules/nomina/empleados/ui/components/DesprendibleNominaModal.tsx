@@ -74,7 +74,7 @@ export default function DesprendibleNominaModal({
   // Mutación para generar el desprendible PDF
   const { mutate: generarDesprendible, isPending: isGenerandoPDF } = useMutation({
     mutationFn: async (datos: ResultadoCalculoNomina) => {
-      const response = await apiRequest('POST', '/api/finanzas/nomina/desprendible/generar', datos);
+      const response = await apiRequest('POST', '/api/nomina/desprendible/generar', datos);
       return response.json();
     },
     onSuccess: (data) => {
