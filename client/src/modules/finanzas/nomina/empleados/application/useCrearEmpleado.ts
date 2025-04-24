@@ -1,88 +1,73 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CrearEmpleadoParams, CrearEmpleadoDTO } from '../domain/entities/Empleado';
-import { crearEmpleado } from '../../api/empleadosApi';
+import { CrearEmpleadoDTO, CrearEmpleadoParams } from '../domain/entities/Empleado';
+import { crearEmpleado } from '../api/empleadosApi';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
 
 /**
- * Hook para crear un nuevo empleado
+ * Hook para la creación de empleados
  */
-export function useCrearEmpleado() {
-  const queryClient = useQueryClient();
+export const useCrearEmpleado = (onSuccess?: () => void) => {
   const { toast } = useToast();
-  
-  const mutacion = useMutation({
-    mutationFn: async (datos: CrearEmpleadoParams) => {
-      // Validar datos antes de enviar al API
-      const validacion = validarDatos(datos);
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (datosEmpleado: CrearEmpleadoParams) => {
+      // Validar los datos del empleado con Zod
+      const validacion = CrearEmpleadoDTO.safeParse(datosEmpleado);
       
       if (!validacion.success) {
-        throw new Error(validacion.error);
+        // Formatear los errores de validación
+        const errores = validacion.error.format();
+        throw new Error(JSON.stringify(errores));
       }
       
-      return crearEmpleado(validacion.data as CrearEmpleadoParams);
+      // Si los datos son válidos, enviar la petición
+      return await crearEmpleado(validacion.data);
     },
     onSuccess: () => {
-      // Invalidar consultas
-      queryClient.invalidateQueries({ queryKey: ['/api/finanzas/nomina/empleados'] });
-      
       toast({
         title: 'Empleado creado',
-        description: 'El empleado ha sido creado exitosamente',
+        description: 'El empleado ha sido creado exitosamente.',
+        variant: 'default',
       });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Error al crear el empleado',
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  /**
-   * Validar los datos del formulario mediante Zod
-   */
-  const validarDatos = (datos: unknown) => {
-    const resultado = CrearEmpleadoDTO.safeParse(datos);
-    
-    if (!resultado.success) {
-      const errorMessages = resultado.error.errors.map(err => 
-        `${err.path.join('.')}: ${err.message}`
-      ).join(', ');
       
-      return {
-        success: false,
-        error: errorMessages
-      };
-    }
-    
-    return {
-      success: true,
-      data: resultado.data
-    };
-  };
-  
-  return {
-    mutacion,
-    validarDatos
-  };
-}
-
-/**
- * Hook para obtener todos los usuarios (para seleccionar al crear empleado)
- */
-export function useObtenerUsuarios() {
-  const queryClient = useQueryClient();
-  
-  return queryClient.fetchQuery({
-    queryKey: ['/api/users'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/users');
-      if (!res.ok) {
-        throw new Error('Error al obtener los usuarios');
+      // Invalidar consultas para recargar la lista de empleados
+      queryClient.invalidateQueries({ queryKey: ['/api/finanzas/nomina/empleados'] });
+      
+      // Llamar al callback de éxito si existe
+      if (onSuccess) {
+        onSuccess();
       }
-      return res.json();
     },
+    onError: (error: Error) => {
+      try {
+        // Intentar parsear los errores de validación
+        const errores = JSON.parse(error.message);
+        
+        // Crear un mensaje de error legible
+        const mensajesError = Object.entries(errores)
+          .filter(([_, value]) => value && typeof value === 'object' && '_errors' in value)
+          .map(([campo, value]) => {
+            // @ts-ignore
+            const errores = value._errors.join(', ');
+            return `${campo}: ${errores}`;
+          });
+        
+        toast({
+          title: 'Error de validación',
+          description: mensajesError.join('\n'),
+          variant: 'destructive',
+        });
+      } catch {
+        // Si no es un error de validación, mostrar el mensaje original
+        toast({
+          title: 'Error',
+          description: error.message || 'Ha ocurrido un error al crear el empleado',
+          variant: 'destructive',
+        });
+      }
+    }
   });
-}
+
+  return mutation;
+};
