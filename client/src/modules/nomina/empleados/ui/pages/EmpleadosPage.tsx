@@ -183,7 +183,7 @@ export default function EmpleadosPage() {
   return (
     <div className="container mx-auto py-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <div>
             <CardTitle className="text-2xl font-bold">Gestión de Empleados</CardTitle>
             <CardDescription>
@@ -191,13 +191,8 @@ export default function EmpleadosPage() {
             </CardDescription>
           </div>
           
+          {/* Mantenemos el Dialog para usarlo desde otro lugar pero quitamos el botón */}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="ml-auto">
-                <Plus className="mr-2 h-4 w-4" />
-                Nuevo Empleado
-              </Button>
-            </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Crear Nuevo Empleado</DialogTitle>
