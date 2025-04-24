@@ -54,6 +54,11 @@ export interface CrearEmpleadoParams {
   paymentMethod?: string; // Método de pago (transferencia, cheque, etc.)
   healthInsurance?: string; // Seguro de salud
   vacationDays?: number; // Días de vacaciones anuales
+  // Campos para el contrato
+  contratoUrl?: string; // URL del contrato subido
+  contratoFile?: File; // Archivo del contrato (solo frontend)
+  tipoPago?: string; // Tipo de pago (mensual, quincenal, etc.)
+  fechaInicioNomina?: Date; // Fecha de inicio para cálculos de nómina
 }
 
 /**
@@ -96,7 +101,7 @@ export const CrearEmpleadoDTO = z.object({
   baseBenefits: z.string().regex(/^\d+(\.\d{1,2})?$/, "Los beneficios base deben ser un número válido").optional().default("0"),
   baseDeductions: z.string().regex(/^\d+(\.\d{1,2})?$/, "Las deducciones base deben ser un número válido").optional().default("0"),
   taxRate: z.string().regex(/^\d+(\.\d{1,2})?$/, "La tasa de impuestos debe ser un número válido").optional().default("0"),
-  // Nuevos campos
+  // Campos de proyectos y beneficios
   projectIds: z.array(z.number()).optional(),
   bankAccount: z.string().optional(),
   paymentMethod: z.string()
@@ -106,6 +111,14 @@ export const CrearEmpleadoDTO = z.object({
     .optional(),
   healthInsurance: z.string().optional(),
   vacationDays: z.number().int().min(0).max(60).optional(),
+  // Campos de contrato y nómina
+  contratoUrl: z.string().optional(),
+  tipoPago: z.string()
+    .refine(val => !val || ['mensual', 'quincenal', 'semanal', 'por_hora'].includes(val), {
+      message: "Tipo de pago inválido"
+    })
+    .optional(),
+  fechaInicioNomina: z.coerce.date().optional(),
 });
 
 /**
