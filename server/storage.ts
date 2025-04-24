@@ -609,7 +609,34 @@ export class DatabaseStorage implements IStorage {
   
   // Employees implementation
   async getAllEmployees(): Promise<Employee[]> {
-    return db.select().from(employees);
+    // Seleccionamos explícitamente todos los campos para incluir los nuevos (firstName, lastName, skills)
+    return db.select({
+      id: employees.id,
+      userId: employees.userId,
+      firstName: employees.firstName,
+      lastName: employees.lastName,
+      skills: employees.skills,
+      position: employees.position,
+      department: employees.department,
+      hireDate: employees.hireDate,
+      salary: employees.salary,
+      phoneNumber: employees.phoneNumber,
+      address: employees.address,
+      emergencyContact: employees.emergencyContact,
+      contractStatus: employees.contractStatus,
+      contractType: employees.contractType,
+      identification: employees.identification,
+      baseBenefits: employees.baseBenefits,
+      baseDeductions: employees.baseDeductions,
+      taxRate: employees.taxRate,
+      bankAccount: employees.bankAccount,
+      paymentMethod: employees.paymentMethod,
+      healthInsurance: employees.healthInsurance,
+      vacationDays: employees.vacationDays,
+      contratoUrl: employees.contratoUrl,
+      tipoPago: employees.tipoPago,
+      fechaInicioNomina: employees.fechaInicioNomina
+    }).from(employees);
   }
   
   async getEmployee(id: number): Promise<Employee | undefined> {
