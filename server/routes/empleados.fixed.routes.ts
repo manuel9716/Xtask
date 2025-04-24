@@ -3,6 +3,43 @@ import { db } from '../db';
 import { and, count, eq, like, sql } from 'drizzle-orm';
 import { users, employees } from '@shared/schema';
 import { z } from 'zod';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Configuración de multer para subida de archivos
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '../../uploads/contratos');
+    // Asegurarnos de que el directorio existe
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Generar un nombre único para el archivo
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'contrato-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máximo
+  fileFilter: function (req, file, cb) {
+    // Validar tipos de archivo (PDF, DOCX)
+    const filetypes = /pdf|docx|doc/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Solo se permiten archivos PDF o DOCX"));
+  }
+});
 
 // Esquema para validar la creación de empleado
 const crearEmpleadoSchema = z.object({
@@ -23,7 +60,11 @@ const crearEmpleadoSchema = z.object({
   bankAccount: z.string().optional(),
   paymentMethod: z.string().optional(),
   healthInsurance: z.string().optional(),
-  vacationDays: z.number().int().optional()
+  vacationDays: z.number().int().optional(),
+  contratoUrl: z.string().optional(),
+  tipoPago: z.string().optional(),
+  fechaInicioNomina: z.coerce.date().optional(),
+  projectIds: z.array(z.number()).optional()
 });
 
 // Esquema para validar la actualización de empleado
@@ -66,43 +107,47 @@ empleadosRouter.get('/listar', async (req: Request, res: Response) => {
     const totalItems = Number(totalResult?.count || 0);
     
     // Consulta para obtener los empleados con paginación
-    const query = db.select({
-      id: employees.id,
-      userId: employees.userId,
-      position: employees.position,
-      department: employees.department,
-      hireDate: employees.hireDate,
-      salary: employees.salary,
-      phoneNumber: employees.phoneNumber,
-      address: employees.address,
-      emergencyContact: employees.emergencyContact,
-      contractStatus: employees.contractStatus,
-      contractType: employees.contractType,
-      identification: employees.identification,
-      baseBenefits: employees.baseBenefits,
-      baseDeductions: employees.baseDeductions,
-      taxRate: employees.taxRate,
-      bankAccount: employees.bankAccount,
-      paymentMethod: employees.paymentMethod,
-      healthInsurance: employees.healthInsurance,
-      vacationDays: employees.vacationDays,
-      fullName: users.fullName
-    })
-    .from(employees)
-    .leftJoin(users, eq(employees.userId, users.id));
+    const empleadosQuery = db
+      .select({
+        id: employees.id,
+        userId: employees.userId,
+        position: employees.position,
+        department: employees.department,
+        hireDate: employees.hireDate,
+        salary: employees.salary,
+        phoneNumber: employees.phoneNumber,
+        address: employees.address, 
+        emergencyContact: employees.emergencyContact,
+        contractStatus: employees.contractStatus,
+        contractType: employees.contractType,
+        identification: employees.identification,
+        baseBenefits: employees.baseBenefits,
+        baseDeductions: employees.baseDeductions,
+        taxRate: employees.taxRate,
+        bankAccount: employees.bankAccount,
+        paymentMethod: employees.paymentMethod,
+        healthInsurance: employees.healthInsurance,
+        vacationDays: employees.vacationDays,
+        contratoUrl: employees.contratoUrl,
+        tipoPago: employees.tipoPago,
+        fechaInicioNomina: employees.fechaInicioNomina,
+        fullName: users.fullName
+      })
+      .from(employees)
+      .leftJoin(users, eq(employees.userId, users.id));
     
     if (conditions.length > 0) {
-      query.where(and(...conditions));
+      empleadosQuery.where(and(...conditions));
     }
     
     // Si hay búsqueda, aplicarla sobre el nombre o identificación
     if (search) {
-      query.where(
+      empleadosQuery.where(
         sql`(${users.fullName} ILIKE ${`%${search}%`} OR ${employees.identification} ILIKE ${`%${search}%`})`
       );
     }
     
-    const data = await query
+    const data = await empleadosQuery
       .limit(pageSizeNum)
       .offset(offset)
       .orderBy(employees.id);
@@ -155,43 +200,47 @@ empleadosRouter.get('/', async (req: Request, res: Response) => {
     const totalItems = Number(totalResult?.count || 0);
     
     // Consulta para obtener los empleados con paginación
-    const query = db.select({
-      id: employees.id,
-      userId: employees.userId,
-      position: employees.position,
-      department: employees.department,
-      hireDate: employees.hireDate,
-      salary: employees.salary,
-      phoneNumber: employees.phoneNumber,
-      address: employees.address,
-      emergencyContact: employees.emergencyContact,
-      contractStatus: employees.contractStatus,
-      contractType: employees.contractType,
-      identification: employees.identification,
-      baseBenefits: employees.baseBenefits,
-      baseDeductions: employees.baseDeductions,
-      taxRate: employees.taxRate,
-      bankAccount: employees.bankAccount,
-      paymentMethod: employees.paymentMethod,
-      healthInsurance: employees.healthInsurance,
-      vacationDays: employees.vacationDays,
-      fullName: users.fullName
-    })
-    .from(employees)
-    .leftJoin(users, eq(employees.userId, users.id));
+    const empleadosQuery = db
+      .select({
+        id: employees.id,
+        userId: employees.userId,
+        position: employees.position,
+        department: employees.department,
+        hireDate: employees.hireDate,
+        salary: employees.salary,
+        phoneNumber: employees.phoneNumber,
+        address: employees.address, 
+        emergencyContact: employees.emergencyContact,
+        contractStatus: employees.contractStatus,
+        contractType: employees.contractType,
+        identification: employees.identification,
+        baseBenefits: employees.baseBenefits,
+        baseDeductions: employees.baseDeductions,
+        taxRate: employees.taxRate,
+        bankAccount: employees.bankAccount,
+        paymentMethod: employees.paymentMethod,
+        healthInsurance: employees.healthInsurance,
+        vacationDays: employees.vacationDays,
+        contratoUrl: employees.contratoUrl,
+        tipoPago: employees.tipoPago,
+        fechaInicioNomina: employees.fechaInicioNomina,
+        fullName: users.fullName
+      })
+      .from(employees)
+      .leftJoin(users, eq(employees.userId, users.id));
     
     if (conditions.length > 0) {
-      query.where(and(...conditions));
+      empleadosQuery.where(and(...conditions));
     }
     
     // Si hay búsqueda, aplicarla sobre el nombre o identificación
     if (search) {
-      query.where(
+      empleadosQuery.where(
         sql`(${users.fullName} ILIKE ${`%${search}%`} OR ${employees.identification} ILIKE ${`%${search}%`})`
       );
     }
     
-    const data = await query
+    const data = await empleadosQuery
       .limit(pageSizeNum)
       .offset(offset)
       .orderBy(employees.id);
@@ -219,32 +268,36 @@ empleadosRouter.get('/:id([0-9]+)', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    const [empleado] = await db.select({
-      id: employees.id,
-      userId: employees.userId,
-      position: employees.position,
-      department: employees.department,
-      hireDate: employees.hireDate,
-      salary: employees.salary,
-      phoneNumber: employees.phoneNumber,
-      address: employees.address,
-      emergencyContact: employees.emergencyContact,
-      contractStatus: employees.contractStatus,
-      contractType: employees.contractType,
-      identification: employees.identification,
-      baseBenefits: employees.baseBenefits,
-      baseDeductions: employees.baseDeductions,
-      taxRate: employees.taxRate,
-      bankAccount: employees.bankAccount,
-      paymentMethod: employees.paymentMethod,
-      healthInsurance: employees.healthInsurance,
-      vacationDays: employees.vacationDays,
-      fullName: users.fullName,
-      email: users.email
-    })
-    .from(employees)
-    .leftJoin(users, eq(employees.userId, users.id))
-    .where(eq(employees.id, parseInt(id)));
+    const [empleado] = await db
+      .select({
+        id: employees.id,
+        userId: employees.userId,
+        position: employees.position,
+        department: employees.department,
+        hireDate: employees.hireDate,
+        salary: employees.salary,
+        phoneNumber: employees.phoneNumber,
+        address: employees.address, 
+        emergencyContact: employees.emergencyContact,
+        contractStatus: employees.contractStatus,
+        contractType: employees.contractType,
+        identification: employees.identification,
+        baseBenefits: employees.baseBenefits,
+        baseDeductions: employees.baseDeductions,
+        taxRate: employees.taxRate,
+        bankAccount: employees.bankAccount,
+        paymentMethod: employees.paymentMethod,
+        healthInsurance: employees.healthInsurance,
+        vacationDays: employees.vacationDays,
+        contratoUrl: employees.contratoUrl,
+        tipoPago: employees.tipoPago,
+        fechaInicioNomina: employees.fechaInicioNomina,
+        fullName: users.fullName,
+        email: users.email
+      })
+      .from(employees)
+      .leftJoin(users, eq(employees.userId, users.id))
+      .where(eq(employees.id, parseInt(id)));
     
     if (!empleado) {
       return res.status(404).json({ error: 'Empleado no encontrado' });
@@ -299,6 +352,52 @@ empleadosRouter.post('/', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error al crear empleado:', error);
     return res.status(500).json({ error: 'Error al crear el empleado' });
+  }
+});
+
+// Subir contrato para empleado
+empleadosRouter.post('/contrato', upload.single('contrato'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se ha subido ningún archivo' });
+    }
+    
+    // Generar la URL del archivo (relativa al servidor)
+    const fileUrl = `/uploads/contratos/${req.file.filename}`;
+    
+    // Si se proporciona un ID de empleado, actualizar su registro
+    const empleadoId = req.body.empleadoId;
+    
+    if (empleadoId) {
+      const [empleado] = await db.select()
+        .from(employees)
+        .where(eq(employees.id, parseInt(empleadoId)));
+      
+      if (!empleado) {
+        return res.status(404).json({ error: 'Empleado no encontrado' });
+      }
+      
+      // Si el empleado ya tenía un contrato, eliminar el archivo anterior
+      if (empleado.contratoUrl) {
+        const rutaAnterior = path.join(__dirname, '../../', empleado.contratoUrl);
+        if (fs.existsSync(rutaAnterior)) {
+          fs.unlinkSync(rutaAnterior);
+        }
+      }
+      
+      // Actualizar el empleado con la nueva URL del contrato
+      await db.update(employees)
+        .set({ contratoUrl: fileUrl })
+        .where(eq(employees.id, parseInt(empleadoId)));
+    }
+    
+    return res.status(200).json({ 
+      url: fileUrl,
+      message: 'Archivo subido correctamente' 
+    });
+  } catch (error) {
+    console.error('Error al subir contrato:', error);
+    return res.status(500).json({ error: 'Error al subir el contrato' });
   }
 });
 

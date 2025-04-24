@@ -1,5 +1,5 @@
 import { apiRequest } from '@/lib/queryClient';
-import { FiltrosEmpleado, ResultadoPaginadoEmpleados } from '../domain/entities/Empleado';
+import { FiltrosEmpleado, ResultadoPaginadoEmpleados, CrearEmpleadoParams } from '../domain/entities/Empleado';
 import { Employee, User } from '@shared/schema';
 
 const BASE_URL = '/api/finanzas/nomina/empleados';
@@ -53,8 +53,11 @@ export const obtenerEmpleadoPorId = async (id: number): Promise<Employee> => {
  * @param empleado Datos del empleado a crear
  * @returns Empleado creado
  */
-export const crearEmpleado = async (empleado: any): Promise<Employee> => {
-  const response = await apiRequest('POST', BASE_URL, empleado);
+export const crearEmpleado = async (empleado: CrearEmpleadoParams): Promise<Employee> => {
+  // Preparamos los datos, excluyendo el archivo de contrato que se sube por separado
+  const { contratoFile, ...datosEmpleado } = empleado;
+  
+  const response = await apiRequest('POST', BASE_URL, datosEmpleado);
   
   if (!response.ok) {
     const errorData = await response.json();
@@ -127,4 +130,42 @@ export const obtenerUsuarios = async (): Promise<User[]> => {
   }
   
   return await response.json();
+};
+
+/**
+ * Sube un archivo de contrato para un empleado
+ * @param file Archivo a subir
+ * @param empleadoId ID del empleado (opcional, para actualizar un contrato existente)
+ * @returns URL del archivo subido
+ */
+export const subirContratoEmpleado = async (file: File, empleadoId?: number): Promise<string> => {
+  const formData = new FormData();
+  formData.append('contrato', file);
+  
+  if (empleadoId) {
+    formData.append('empleadoId', empleadoId.toString());
+  }
+  
+  const url = `${BASE_URL}/contrato`;
+  
+  // No podemos usar apiRequest directamente porque necesitamos enviar un FormData
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    // No establecemos Content-Type porque fetch lo hace automáticamente con boundary para FormData
+  });
+  
+  if (!response.ok) {
+    let errorMsg = 'Error al subir el contrato';
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData.error || errorMsg;
+    } catch (e) {
+      // Si no podemos parsear el error como JSON, usamos el mensaje genérico
+    }
+    throw new Error(errorMsg);
+  }
+  
+  const data = await response.json();
+  return data.url;
 };
