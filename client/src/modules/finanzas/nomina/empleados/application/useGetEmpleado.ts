@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { obtenerEmpleadoPorId } from '../api/empleadosApi';
+import { obtenerEmpleado } from '../api/empleadosApi';
 import { Employee } from '@shared/schema';
 
 /**
@@ -14,7 +14,7 @@ export const useGetEmpleado = (id: number | undefined) => {
       if (!id) {
         throw new Error('ID de empleado no proporcionado');
       }
-      return obtenerEmpleadoPorId(id);
+      return obtenerEmpleado(id);
     },
     enabled: !!id, // Solo ejecutar la consulta si hay un ID válido
   });

@@ -164,7 +164,7 @@ export class CalculoNominaService {
     // Retornar el resultado completo
     return {
       empleadoId: empleado.id,
-      nombreEmpleado: empleado.fullName || `${empleado.id}`,
+      nombreEmpleado: empleado.position || `Empleado ${empleado.id}`,
       salarioBase,
       periodo: {
         fechaInicio: formatoFecha(fechaInicio),
