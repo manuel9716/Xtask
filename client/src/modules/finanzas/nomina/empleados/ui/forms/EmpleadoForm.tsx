@@ -386,7 +386,10 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tipo de Contrato <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value || "fulltime"} // Valor por defecto para evitar valor vacío
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un tipo" />
@@ -415,7 +418,10 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Estado del Contrato <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value || "active"} // Valor por defecto para evitar valor vacío
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un estado" />
@@ -580,7 +586,10 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tipo de Pago</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value || "mensual"} // Valor por defecto para evitar valor vacío
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un tipo de pago" />
@@ -721,7 +730,10 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Método de Pago</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value || "transferencia"} // Valor por defecto para evitar valor vacío
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un método" />
