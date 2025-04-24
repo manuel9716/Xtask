@@ -40,6 +40,11 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [cargandoUsuarios, setCargandoUsuarios] = useState(true);
   const [selectedProjects, setSelectedProjects] = useState<number[]>([]);
+  const [contrato, setContrato] = useState<File | null>(null);
+  const [contratoError, setContratoError] = useState<string | null>(null);
+  const [contratoUrl, setContratoUrl] = useState<string | null>(null);
+  const [subiendoContrato, setSubiendoContrato] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Cargar proyectos
   const { data: proyectos = [], isLoading: cargandoProyectos } = useQuery<Proyecto[]>({
@@ -72,6 +77,8 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
       healthInsurance: '',
       vacationDays: 15,
       projectIds: [],
+      tipoPago: 'mensual',
+      fechaInicioNomina: new Date(),
     },
   });
   
@@ -107,16 +114,100 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
     });
   };
   
+  // Manejar selección de archivo de contrato
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setContrato(file);
+    setContratoError(null);
+    
+    if (file) {
+      // Validar formato
+      if (!validarFormatoContrato(file)) {
+        setContratoError('Formato de archivo no válido. Solo se permiten PDF o DOCX.');
+        return;
+      }
+      
+      // Validar tamaño
+      if (!validarTamanoContrato(file)) {
+        setContratoError('El tamaño del archivo excede los 5MB permitidos.');
+        return;
+      }
+      
+      // Actualizar el formulario con el archivo seleccionado
+      form.setValue('contratoFile', file);
+    }
+  };
+  
+  // Función para subir el contrato
+  const handleUploadContrato = async () => {
+    if (!contrato) {
+      setContratoError('Seleccione un archivo para subir.');
+      return;
+    }
+    
+    try {
+      setSubiendoContrato(true);
+      const url = await subirContrato(contrato);
+      setContratoUrl(url);
+      form.setValue('contratoUrl', url);
+      
+      toast({
+        title: "Contrato subido",
+        description: "El contrato ha sido subido exitosamente",
+      });
+    } catch (error) {
+      setContratoError(error instanceof Error ? error.message : 'Error al subir el contrato');
+      toast({
+        title: "Error",
+        description: "No se pudo subir el contrato",
+        variant: "destructive",
+      });
+    } finally {
+      setSubiendoContrato(false);
+    }
+  };
+  
   const onSubmit = async (datos: CrearEmpleadoParams) => {
     try {
       // Asegurar que los projectIds estén incluidos
       datos.projectIds = selectedProjects;
+      
+      // Si hay un contrato seleccionado pero no se ha subido aún, subirlo
+      if (contrato && !contratoUrl) {
+        try {
+          const url = await subirContrato(contrato);
+          datos.contratoUrl = url;
+        } catch (error) {
+          toast({
+            title: "Error",
+            description: "No se pudo subir el contrato. Verifique el archivo e intente nuevamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      
+      // Si el contrato ya se subió, asignar la URL
+      if (contratoUrl) {
+        datos.contratoUrl = contratoUrl;
+      }
+      
       await mutation.mutateAsync(datos);
       form.reset();
       setSelectedProjects([]);
+      setContrato(null);
+      setContratoUrl(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       onSuccess();
     } catch (error) {
       console.error("Error al crear empleado:", error);
+      toast({
+        title: "Error",
+        description: "Error al guardar los datos del empleado",
+        variant: "destructive",
+      });
     }
   };
   
@@ -402,9 +493,155 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
         
         <Separator className="my-6" />
         
+        <h3 className="text-lg font-semibold mb-4">Documento de Contrato</h3>
+        
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex flex-col space-y-2">
+                <FormLabel htmlFor="contrato">Documento de Contrato (PDF o DOCX)</FormLabel>
+                <Input
+                  id="contrato"
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={handleFileChange}
+                  ref={fileInputRef}
+                  className="cursor-pointer"
+                />
+                <FormDescription>
+                  Suba el contrato laboral del empleado (máximo 5MB)
+                </FormDescription>
+              </div>
+              
+              {contratoError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{contratoError}</AlertDescription>
+                </Alert>
+              )}
+              
+              {contrato && !contratoError && (
+                <div className="flex items-center justify-between border p-3 rounded-md">
+                  <div className="flex items-center">
+                    <FileText className="h-5 w-5 mr-2 text-primary" />
+                    <span className="text-sm font-medium">{contrato.name}</span>
+                  </div>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUploadContrato}
+                    disabled={subiendoContrato || !!contratoUrl}
+                  >
+                    {subiendoContrato ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Subiendo...
+                      </>
+                    ) : contratoUrl ? (
+                      <>
+                        <CheckSquare className="mr-2 h-4 w-4" />
+                        Archivo Subido
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Subir Contrato
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+              
+              {contratoUrl && (
+                <Alert className="bg-green-50 border-green-200">
+                  <CheckSquare className="h-4 w-4 text-green-600" />
+                  <AlertTitle className="text-green-800">Contrato Subido Exitosamente</AlertTitle>
+                  <AlertDescription className="text-green-700">
+                    El contrato ha sido subido correctamente y será asociado al empleado.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Separator className="my-6" />
+        
         <h3 className="text-lg font-semibold mb-4">Información de Nómina</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Tipo de Pago */}
+          <FormField
+            control={form.control}
+            name="tipoPago"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo de Pago</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un tipo de pago" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="mensual">Mensual</SelectItem>
+                    <SelectItem value="quincenal">Quincenal</SelectItem>
+                    <SelectItem value="semanal">Semanal</SelectItem>
+                    <SelectItem value="por_hora">Por Hora</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Frecuencia con la que se procesa la nómina
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Fecha de Inicio de Nómina */}
+          <FormField
+            control={form.control}
+            name="fechaInicioNomina"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Fecha de Inicio de Nómina</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className="w-full pl-3 text-left font-normal"
+                      >
+                        {field.value ? (
+                          format(field.value, "dd/MM/yyyy", { locale: es })
+                        ) : (
+                          <span>Seleccione una fecha</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={new Date(field.value)}
+                      onSelect={(date) => field.onChange(date || new Date())}
+                      locale={es}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormDescription>
+                  Fecha en que empieza a recibir pagos de nómina
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           {/* Tasa de Impuestos */}
           <FormField
             control={form.control}
