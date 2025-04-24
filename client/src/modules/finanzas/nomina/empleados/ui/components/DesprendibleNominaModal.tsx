@@ -1,250 +1,220 @@
-import { useState } from 'react';
-import { format, endOfMonth, startOfMonth, subMonths } from 'date-fns';
+import { useState, useCallback } from 'react';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useToast } from '@/hooks/use-toast';
+import { Check, Calendar, CreditCard, DownloadCloud, Loader2 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+
 import { 
   Dialog, 
   DialogContent, 
   DialogDescription, 
-  DialogFooter, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle, 
+  DialogFooter, 
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarPicker } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { 
-  CalendarIcon, 
-  Loader2, 
-  FileDown, 
-  CheckCircle2 
-} from 'lucide-react';
+  CalculoNominaService, 
+  ConfiguracionNomina, 
+  ResultadoCalculoNomina 
+} from '../../domain/services/CalculoNominaEmpleado';
 import { Employee } from '@shared/schema';
-import { CalculoNominaService, ParametrosCalculoNomina, ConceptoNomina } from '../../domain/services/CalculoNominaEmpleado';
-import { generarDesprendiblePDF } from '../../infrastructure/pdf/generarDesprendiblePDF';
 
 interface DesprendibleNominaModalProps {
   empleado: Employee;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  trigger?: React.ReactNode;
+  onNominaGenerada?: (nominaId: number) => void;
 }
 
 export default function DesprendibleNominaModal({ 
   empleado, 
-  open, 
-  onOpenChange,
-  onSuccess
+  trigger, 
+  onNominaGenerada 
 }: DesprendibleNominaModalProps) {
   const { toast } = useToast();
-  const calculoService = new CalculoNominaService();
+  const [open, setOpen] = useState(false);
+  const [fechaInicio, setFechaInicio] = useState<Date>(new Date());
+  const [fechaFin, setFechaFin] = useState<Date>(new Date());
+  const [configuracion, setConfiguracion] = useState<ConfiguracionNomina>(
+    CalculoNominaService.obtenerConfiguracionPorDefecto()
+  );
+  const [resultadoCalculo, setResultadoCalculo] = useState<ResultadoCalculoNomina | null>(null);
+  const [paso, setPaso] = useState<'configuracion' | 'vista_previa' | 'finalizado'>('configuracion');
   
-  // Estado para el formulario de nómina
-  const [fechaInicio, setFechaInicio] = useState<Date>(startOfMonth(new Date()));
-  const [fechaFin, setFechaFin] = useState<Date>(endOfMonth(new Date()));
-  const [diasTrabajados, setDiasTrabajados] = useState<number>(30);
-  const [horasExtras, setHorasExtras] = useState<number>(0);
-  const [tipoPeriodo, setTipoPeriodo] = useState<string>('actual');
-  const [bonificaciones, setBonificaciones] = useState<ConceptoNomina[]>([]);
-  const [deducciones, setDeducciones] = useState<ConceptoNomina[]>([]);
-  
-  // Para nuevas bonificaciones/deducciones
-  const [nuevaBonificacion, setNuevaBonificacion] = useState<{nombre: string, valor: string}>({
-    nombre: '',
-    valor: ''
-  });
-  const [nuevaDeduccion, setNuevaDeduccion] = useState<{nombre: string, valor: string}>({
-    nombre: '',
-    valor: ''
-  });
-  
-  // Mutación para generar el desprendible de nómina
-  const generarDesprendibleMutation = useMutation({
-    mutationFn: async () => {
-      // 1. Calcular la nómina con el servicio
-      const parametros: ParametrosCalculoNomina = {
+  // Función para calcular la nómina
+  const calcularNomina = useCallback(() => {
+    try {
+      const resultado = CalculoNominaService.calcularNomina(
         empleado,
+        configuracion,
         fechaInicio,
-        fechaFin,
-        diasTrabajados,
-        horasExtras,
-        bonificaciones,
-        deducciones
-      };
+        fechaFin
+      );
       
-      const resultado = calculoService.calcularNomina(parametros);
-      
-      // 2. Enviar a la API para generar el PDF
-      const pdfUrl = await generarDesprendiblePDF(resultado);
-      
-      return { pdfUrl, resultado };
+      setResultadoCalculo(resultado);
+      setPaso('vista_previa');
+    } catch (error) {
+      toast({
+        title: 'Error al calcular la nómina',
+        description: error instanceof Error ? error.message : 'Error desconocido',
+        variant: 'destructive'
+      });
+    }
+  }, [empleado, configuracion, fechaInicio, fechaFin, toast]);
+  
+  // Mutación para generar el desprendible PDF
+  const { mutate: generarDesprendible, isPending: isGenerandoPDF } = useMutation({
+    mutationFn: async (datos: ResultadoCalculoNomina) => {
+      const response = await apiRequest('POST', '/api/finanzas/nomina/desprendible/generar', datos);
+      return response.json();
     },
     onSuccess: (data) => {
-      toast({
-        title: 'Desprendible generado',
-        description: 'El desprendible de nómina ha sido generado exitosamente',
-      });
-      
-      // Descargar automáticamente el PDF
-      window.open(data.pdfUrl, '_blank');
-      
-      if (onSuccess) {
-        onSuccess();
+      if (data.pdfUrl) {
+        toast({
+          title: 'Desprendible generado con éxito',
+          description: 'Puedes descargar el PDF desde el botón de descarga.',
+          variant: 'default'
+        });
+        
+        setPaso('finalizado');
+        
+        // Si hay un handler de nómina generada, lo llamamos
+        if (onNominaGenerada && data.id) {
+          onNominaGenerada(data.id);
+        }
+      } else {
+        toast({
+          title: 'Error al generar el desprendible',
+          description: 'No se pudo obtener la URL del PDF.',
+          variant: 'destructive'
+        });
       }
-      
-      // Cerrar el modal
-      setTimeout(() => {
-        onOpenChange(false);
-      }, 2000);
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
-        title: 'Error',
-        description: `Error al generar el desprendible: ${error.message}`,
-        variant: 'destructive',
+        title: 'Error al generar el desprendible',
+        description: error instanceof Error ? error.message : 'Error de comunicación con el servidor',
+        variant: 'destructive'
       });
-    },
+    }
   });
   
-  // Cambiar periodo según selección
-  const handleCambioPeriodo = (tipoPeriodo: string) => {
-    setTipoPeriodo(tipoPeriodo);
+  // Formatear valores monetarios
+  const formatMoneda = (valor: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0
+    }).format(valor);
+  };
+  
+  // Formatear fecha para mostrar
+  const formatFecha = (fecha: Date) => {
+    return format(fecha, "dd 'de' MMMM 'de' yyyy", { locale: es });
+  };
+  
+  // Resetear formulario al cerrar
+  const handleClose = () => {
+    if (!isGenerandoPDF) {
+      setOpen(false);
+      setTimeout(() => {
+        setPaso('configuracion');
+        setResultadoCalculo(null);
+        setConfiguracion(CalculoNominaService.obtenerConfiguracionPorDefecto());
+      }, 300);
+    }
+  };
+  
+  // Actualizar configuración para switch
+  const handleSwitchChange = (field: keyof ConfiguracionNomina, value: boolean) => {
+    setConfiguracion(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  // Actualizar configuración para valores numéricos
+  const handleNumberChange = (field: keyof ConfiguracionNomina, value: string) => {
+    const numericValue = value === '' ? 0 : parseFloat(value);
     
-    const hoy = new Date();
+    if (!isNaN(numericValue)) {
+      setConfiguracion(prev => ({
+        ...prev,
+        [field]: numericValue
+      }));
+    }
+  };
+  
+  // Actualizar configuración de horas extra
+  const handleHorasExtraChange = (field: 'cantidad' | 'valorHora', value: string) => {
+    const numericValue = value === '' ? 0 : parseFloat(value);
     
-    switch (tipoPeriodo) {
-      case 'actual':
-        setFechaInicio(startOfMonth(hoy));
-        setFechaFin(endOfMonth(hoy));
-        break;
-      case 'anterior':
-        const mesAnterior = subMonths(hoy, 1);
-        setFechaInicio(startOfMonth(mesAnterior));
-        setFechaFin(endOfMonth(mesAnterior));
-        break;
-      case 'personalizado':
-        // Mantener las fechas actuales
-        break;
+    if (!isNaN(numericValue)) {
+      setConfiguracion(prev => ({
+        ...prev,
+        aplicarHorasExtra: {
+          ...(prev.aplicarHorasExtra || { cantidad: 0, valorHora: 0 }),
+          [field]: numericValue
+        }
+      }));
     }
-  };
-  
-  // Agregar bonificación
-  const agregarBonificacion = () => {
-    if (nuevaBonificacion.nombre && nuevaBonificacion.valor) {
-      const valor = parseFloat(nuevaBonificacion.valor);
-      
-      if (!isNaN(valor) && valor > 0) {
-        setBonificaciones(prev => [
-          ...prev, 
-          {
-            nombre: nuevaBonificacion.nombre,
-            valor,
-            esDeduccion: false
-          }
-        ]);
-        
-        // Limpiar el formulario
-        setNuevaBonificacion({ nombre: '', valor: '' });
-      }
-    }
-  };
-  
-  // Agregar deducción
-  const agregarDeduccion = () => {
-    if (nuevaDeduccion.nombre && nuevaDeduccion.valor) {
-      const valor = parseFloat(nuevaDeduccion.valor);
-      
-      if (!isNaN(valor) && valor > 0) {
-        setDeducciones(prev => [
-          ...prev, 
-          {
-            nombre: nuevaDeduccion.nombre,
-            valor,
-            esDeduccion: true
-          }
-        ]);
-        
-        // Limpiar el formulario
-        setNuevaDeduccion({ nombre: '', valor: '' });
-      }
-    }
-  };
-  
-  // Eliminar bonificación
-  const eliminarBonificacion = (index: number) => {
-    setBonificaciones(prev => prev.filter((_, i) => i !== index));
-  };
-  
-  // Eliminar deducción
-  const eliminarDeduccion = (index: number) => {
-    setDeducciones(prev => prev.filter((_, i) => i !== index));
-  };
-  
-  // Manejar generación de desprendible
-  const handleGenerarDesprendible = () => {
-    generarDesprendibleMutation.mutate();
   };
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger || (
+          <Button>
+            <CreditCard className="mr-2 h-4 w-4" />
+            Generar Desprendible
+          </Button>
+        )}
+      </DialogTrigger>
+      
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Generar Desprendible de Nómina</DialogTitle>
+          <DialogTitle>
+            {paso === 'configuracion' && 'Generar Desprendible de Nómina'}
+            {paso === 'vista_previa' && 'Vista Previa del Desprendible'}
+            {paso === 'finalizado' && 'Desprendible Generado con Éxito'}
+          </DialogTitle>
           <DialogDescription>
-            Complete los detalles para generar el desprendible de pago para {(empleado as any).fullName || `Usuario #${empleado.userId}`}
+            {paso === 'configuracion' && 'Configura los parámetros para el cálculo de la nómina.'}
+            {paso === 'vista_previa' && 'Revisa la información calculada antes de generar el desprendible.'}
+            {paso === 'finalizado' && 'El desprendible ha sido generado y está listo para descargar.'}
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-6 py-4">
-          {/* Periodo de nómina */}
-          <div className="space-y-4">
-            <div className="font-medium">Periodo de nómina</div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {paso === 'configuracion' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Select
-                  value={tipoPeriodo}
-                  onValueChange={handleCambioPeriodo}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar periodo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="actual">Mes actual</SelectItem>
-                    <SelectItem value="anterior">Mes anterior</SelectItem>
-                    <SelectItem value="personalizado">Personalizado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="fechaInicio">Fecha de inicio</Label>
+                <Label htmlFor="fechaInicio">Fecha de inicio del período</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className="w-full justify-start text-left font-normal"
-                      disabled={tipoPeriodo !== 'personalizado'}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {fechaInicio ? format(fechaInicio, 'PP', { locale: es }) : 'Seleccionar fecha'}
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {formatFecha(fechaInicio)}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarPicker
                       mode="single"
                       selected={fechaInicio}
                       onSelect={(date) => date && setFechaInicio(date)}
+                      disabled={(date) => date > new Date()}
                       initialFocus
                     />
                   </PopoverContent>
@@ -252,226 +222,271 @@ export default function DesprendibleNominaModal({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="fechaFin">Fecha de fin</Label>
+                <Label htmlFor="fechaFin">Fecha de fin del período</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className="w-full justify-start text-left font-normal"
-                      disabled={tipoPeriodo !== 'personalizado'}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {fechaFin ? format(fechaFin, 'PP', { locale: es }) : 'Seleccionar fecha'}
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {formatFecha(fechaFin)}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarPicker
                       mode="single"
                       selected={fechaFin}
                       onSelect={(date) => date && setFechaFin(date)}
+                      disabled={(date) => date > new Date() || date < fechaInicio}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
             </div>
-          </div>
-          
-          {/* Cálculos adicionales */}
-          <div className="space-y-4">
-            <div className="font-medium">Días y horas trabajadas</div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="diasTrabajados">Días trabajados</Label>
-                <Input
-                  id="diasTrabajados"
-                  type="number"
-                  value={diasTrabajados}
-                  onChange={(e) => setDiasTrabajados(Number(e.target.value))}
-                  min={0}
-                  max={31}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="horasExtras">Horas extras</Label>
-                <Input
-                  id="horasExtras"
-                  type="number"
-                  value={horasExtras}
-                  onChange={(e) => setHorasExtras(Number(e.target.value))}
-                  min={0}
-                />
-              </div>
-            </div>
-          </div>
-          
-          {/* Bonificaciones */}
-          <div className="space-y-4">
-            <div className="font-medium">Bonificaciones adicionales</div>
+            <Separator />
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="bonificacionNombre">Descripción</Label>
-                <Input
-                  id="bonificacionNombre"
-                  value={nuevaBonificacion.nombre}
-                  onChange={(e) => setNuevaBonificacion({...nuevaBonificacion, nombre: e.target.value})}
-                  placeholder="Ej: Bono de desempeño"
-                />
-              </div>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Deducciones de Ley</h3>
               
-              <div className="space-y-2">
-                <Label htmlFor="bonificacionValor">Valor</Label>
-                <div className="flex space-x-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="porcentajeSalud">Porcentaje de Salud (%)</Label>
                   <Input
-                    id="bonificacionValor"
-                    value={nuevaBonificacion.valor}
-                    onChange={(e) => setNuevaBonificacion({...nuevaBonificacion, valor: e.target.value})}
-                    placeholder="Ej: 100000"
+                    id="porcentajeSalud"
                     type="number"
-                    min={0}
+                    value={configuracion.porcentajeSalud}
+                    onChange={(e) => handleNumberChange('porcentajeSalud', e.target.value)}
+                    min="0"
+                    max="100"
                   />
-                  <Button
-                    type="button"
-                    onClick={agregarBonificacion}
-                    disabled={!nuevaBonificacion.nombre || !nuevaBonificacion.valor}
-                  >
-                    Agregar
-                  </Button>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="porcentajePension">Porcentaje de Pensión (%)</Label>
+                  <Input
+                    id="porcentajePension"
+                    type="number"
+                    value={configuracion.porcentajePension}
+                    onChange={(e) => handleNumberChange('porcentajePension', e.target.value)}
+                    min="0"
+                    max="100"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="porcentajeRetencion">Retención en la Fuente (%)</Label>
+                  <Input
+                    id="porcentajeRetencion"
+                    type="number"
+                    value={configuracion.porcentajeRetencion || 0}
+                    onChange={(e) => handleNumberChange('porcentajeRetencion', e.target.value)}
+                    min="0"
+                    max="100"
+                  />
                 </div>
               </div>
             </div>
             
-            {/* Lista de bonificaciones */}
-            {bonificaciones.length > 0 && (
-              <div className="border rounded-md p-4 space-y-2">
-                <div className="font-medium">Bonificaciones agregadas:</div>
+            <Separator />
+            
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Bonificaciones y Adicionales</h3>
+              
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="aplicarBonificacion">Aplicar Bonificación (10% del salario base)</Label>
+                <Switch
+                  id="aplicarBonificacion"
+                  checked={configuracion.aplicarBonificacion || false}
+                  onCheckedChange={(checked) => handleSwitchChange('aplicarBonificacion', checked)}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="aplicarPrimaServicios">Aplicar Prima de Servicios</Label>
+                <Switch
+                  id="aplicarPrimaServicios"
+                  checked={configuracion.aplicarPrimaServicios || false}
+                  onCheckedChange={(checked) => handleSwitchChange('aplicarPrimaServicios', checked)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between space-x-2">
+                  <Label htmlFor="aplicarHorasExtra">Incluir Horas Extra</Label>
+                  <Switch
+                    id="aplicarHorasExtra"
+                    checked={!!configuracion.aplicarHorasExtra}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleSwitchChange('aplicarHorasExtra', true);
+                        if (!configuracion.aplicarHorasExtra) {
+                          setConfiguracion(prev => ({
+                            ...prev,
+                            aplicarHorasExtra: { cantidad: 0, valorHora: 0 }
+                          }));
+                        }
+                      } else {
+                        setConfiguracion(prev => {
+                          const { aplicarHorasExtra, ...rest } = prev;
+                          return rest;
+                        });
+                      }
+                    }}
+                  />
+                </div>
+                
+                {configuracion.aplicarHorasExtra && (
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="cantidadHoras">Cantidad de Horas</Label>
+                      <Input
+                        id="cantidadHoras"
+                        type="number"
+                        value={configuracion.aplicarHorasExtra.cantidad}
+                        onChange={(e) => handleHorasExtraChange('cantidad', e.target.value)}
+                        min="0"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="valorHora">Valor por Hora</Label>
+                      <Input
+                        id="valorHora"
+                        type="number"
+                        value={configuracion.aplicarHorasExtra.valorHora}
+                        onChange={(e) => handleHorasExtraChange('valorHora', e.target.value)}
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {paso === 'vista_previa' && resultadoCalculo && (
+          <div className="space-y-6">
+            <div className="bg-slate-50 p-4 rounded-md">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Empleado</p>
+                  <p className="font-medium">{resultadoCalculo.nombreEmpleado}</p>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Período</p>
+                  <p className="font-medium">
+                    {resultadoCalculo.periodo.fechaInicio} al {resultadoCalculo.periodo.fechaFin}
+                  </p>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Salario Base</p>
+                  <p className="font-medium">{formatMoneda(resultadoCalculo.salarioBase)}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-medium mb-3">Ingresos</h3>
                 <ul className="space-y-2">
-                  {bonificaciones.map((bonificacion, index) => (
-                    <li key={index} className="flex justify-between items-center">
-                      <span>{bonificacion.nombre}</span>
-                      <div className="flex items-center space-x-2">
-                        <span>
-                          {new Intl.NumberFormat('es-CO', { 
-                            style: 'currency', 
-                            currency: 'COP' 
-                          }).format(bonificacion.valor)}
-                        </span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => eliminarBonificacion(index)}
-                        >
-                          ×
-                        </Button>
-                      </div>
+                  {resultadoCalculo.ingresos.map((ingreso, index) => (
+                    <li key={index} className="flex justify-between items-center py-1 border-b">
+                      <span>{ingreso.nombre}</span>
+                      <span className="font-medium text-green-600">
+                        {formatMoneda(ingreso.valor)}
+                      </span>
                     </li>
                   ))}
+                  <li className="flex justify-between items-center py-2 font-medium">
+                    <span>Total Ingresos</span>
+                    <span className="text-green-600">
+                      {formatMoneda(resultadoCalculo.totalIngresos)}
+                    </span>
+                  </li>
                 </ul>
               </div>
-            )}
-          </div>
-          
-          {/* Deducciones */}
-          <div className="space-y-4">
-            <div className="font-medium">Deducciones adicionales</div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="deduccionNombre">Descripción</Label>
-                <Input
-                  id="deduccionNombre"
-                  value={nuevaDeduccion.nombre}
-                  onChange={(e) => setNuevaDeduccion({...nuevaDeduccion, nombre: e.target.value})}
-                  placeholder="Ej: Adelanto de salario"
-                />
-              </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="deduccionValor">Valor</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    id="deduccionValor"
-                    value={nuevaDeduccion.valor}
-                    onChange={(e) => setNuevaDeduccion({...nuevaDeduccion, valor: e.target.value})}
-                    placeholder="Ej: 50000"
-                    type="number"
-                    min={0}
-                  />
-                  <Button
-                    type="button"
-                    onClick={agregarDeduccion}
-                    disabled={!nuevaDeduccion.nombre || !nuevaDeduccion.valor}
-                  >
-                    Agregar
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Lista de deducciones */}
-            {deducciones.length > 0 && (
-              <div className="border rounded-md p-4 space-y-2">
-                <div className="font-medium">Deducciones agregadas:</div>
+              <div>
+                <h3 className="text-lg font-medium mb-3">Deducciones</h3>
                 <ul className="space-y-2">
-                  {deducciones.map((deduccion, index) => (
-                    <li key={index} className="flex justify-between items-center">
+                  {resultadoCalculo.deducciones.map((deduccion, index) => (
+                    <li key={index} className="flex justify-between items-center py-1 border-b">
                       <span>{deduccion.nombre}</span>
-                      <div className="flex items-center space-x-2">
-                        <span>
-                          {new Intl.NumberFormat('es-CO', { 
-                            style: 'currency', 
-                            currency: 'COP' 
-                          }).format(deduccion.valor)}
-                        </span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => eliminarDeduccion(index)}
-                        >
-                          ×
-                        </Button>
-                      </div>
+                      <span className="font-medium text-red-600">
+                        {formatMoneda(deduccion.valor)}
+                      </span>
                     </li>
                   ))}
+                  <li className="flex justify-between items-center py-2 font-medium">
+                    <span>Total Deducciones</span>
+                    <span className="text-red-600">
+                      {formatMoneda(resultadoCalculo.totalDeducciones)}
+                    </span>
+                  </li>
                 </ul>
               </div>
-            )}
+            </div>
+            
+            <Separator />
+            
+            <div className="flex justify-between items-center py-2 font-bold text-lg">
+              <span>Neto a Pagar</span>
+              <span className="text-primary">
+                {formatMoneda(resultadoCalculo.salarioNeto)}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
+        
+        {paso === 'finalizado' && (
+          <div className="flex flex-col items-center justify-center py-6">
+            <div className="bg-green-50 p-4 rounded-full mb-4">
+              <Check className="h-8 w-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Desprendible Generado</h3>
+            <p className="text-center text-muted-foreground mb-6">
+              El desprendible ha sido generado correctamente y está listo para ser descargado o compartido.
+            </p>
+            <Button className="w-full md:w-auto">
+              <DownloadCloud className="mr-2 h-4 w-4" />
+              Descargar PDF
+            </Button>
+          </div>
+        )}
         
         <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            disabled={generarDesprendibleMutation.isPending}
-          >
-            Cancelar
-          </Button>
+          {paso === 'configuracion' && (
+            <Button onClick={calcularNomina}>
+              Calcular Nómina
+            </Button>
+          )}
           
-          <Button 
-            onClick={handleGenerarDesprendible}
-            disabled={generarDesprendibleMutation.isPending}
-          >
-            {generarDesprendibleMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generando...
-              </>
-            ) : generarDesprendibleMutation.isSuccess ? (
-              <>
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                ¡Generado!
-              </>
-            ) : (
-              <>
-                <FileDown className="mr-2 h-4 w-4" />
-                Generar Desprendible
-              </>
-            )}
-          </Button>
+          {paso === 'vista_previa' && (
+            <>
+              <Button variant="outline" onClick={() => setPaso('configuracion')}>
+                Volver a Configuración
+              </Button>
+              <Button 
+                onClick={() => resultadoCalculo && generarDesprendible(resultadoCalculo)}
+                disabled={isGenerandoPDF}
+              >
+                {isGenerandoPDF && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Generar Desprendible PDF
+              </Button>
+            </>
+          )}
+          
+          {paso === 'finalizado' && (
+            <Button variant="outline" onClick={handleClose}>
+              Cerrar
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

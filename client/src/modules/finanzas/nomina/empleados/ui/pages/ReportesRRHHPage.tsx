@@ -20,8 +20,7 @@ import {
 import {
   ChevronDown,
   Download,
-  FileSpreadsheet,
-  FilePdf,
+  FileText,
   Users,
   Building,
   TrendingUp,
@@ -30,7 +29,8 @@ import {
   Briefcase,
   Loader2,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  FileOutput
 } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -149,11 +149,11 @@ export default function ReportesRRHHPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={exportarExcel}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                <FileText className="mr-2 h-4 w-4" />
                 Exportar a Excel
               </DropdownMenuItem>
               <DropdownMenuItem onClick={exportarPDF}>
-                <FilePdf className="mr-2 h-4 w-4" />
+                <FileOutput className="mr-2 h-4 w-4" />
                 Exportar a PDF
               </DropdownMenuItem>
             </DropdownMenuContent>

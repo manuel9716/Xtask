@@ -1,7 +1,7 @@
 import { Employee } from '@shared/schema';
 
 /**
- * Interfaces para el cálculo de nómina
+ * Interfaz para conceptos de nómina (ingresos o deducciones)
  */
 export interface ConceptoNomina {
   nombre: string;
@@ -9,16 +9,25 @@ export interface ConceptoNomina {
   esDeduccion: boolean;
 }
 
-export interface ParametrosCalculoNomina {
-  empleado: Employee;
-  fechaInicio: Date;
-  fechaFin: Date;
-  diasTrabajados?: number;
-  horasExtras?: number;
-  bonificaciones?: ConceptoNomina[];
-  deducciones?: ConceptoNomina[];
+/**
+ * Interfaz para configuración del cálculo de nómina
+ */
+export interface ConfiguracionNomina {
+  porcentajeSalud: number;
+  porcentajePension: number;
+  porcentajeRetencion?: number;
+  aplicarPrimaServicios?: boolean;
+  aplicarBonificacion?: boolean;
+  aplicarHorasExtra?: {
+    cantidad: number;
+    valorHora: number;
+  }
+  configuracionPersonalizada?: ConceptoNomina[];
 }
 
+/**
+ * Interfaz para el resultado del cálculo de nómina
+ */
 export interface ResultadoCalculoNomina {
   empleadoId: number;
   nombreEmpleado: string;
@@ -35,84 +44,111 @@ export interface ResultadoCalculoNomina {
 }
 
 /**
- * Servicio para calcular la nómina de un empleado
+ * Clase de servicio para cálculos de nómina
  */
 export class CalculoNominaService {
   /**
-   * Calcular la nómina de un empleado según parámetros
-   * @param params Parámetros para el cálculo de nómina
-   * @returns Resultado del cálculo con desglose de conceptos
+   * Calcular la nómina para un empleado
+   * @param empleado Datos del empleado
+   * @param configuracion Configuración para el cálculo
+   * @param fechaInicio Fecha de inicio del período de nómina
+   * @param fechaFin Fecha de fin del período de nómina
+   * @returns Resultado del cálculo de nómina
    */
-  calcularNomina(params: ParametrosCalculoNomina): ResultadoCalculoNomina {
-    const { empleado, fechaInicio, fechaFin, diasTrabajados = 30, horasExtras = 0 } = params;
+  static calcularNomina(
+    empleado: Employee,
+    configuracion: ConfiguracionNomina,
+    fechaInicio: Date,
+    fechaFin: Date
+  ): ResultadoCalculoNomina {
+    // Obtener el salario base del empleado (asegurar que sea un número)
+    const salarioBase = empleado.salary ? parseFloat(empleado.salary) : 0;
     
-    // Lista de ingresos (comenzando con el salario base)
-    const ingresos: ConceptoNomina[] = [
-      {
-        nombre: 'Salario Base',
-        valor: Number(empleado.salary) || 0,
-        esDeduccion: false
-      }
-    ];
-    
-    // Añadir bonificaciones si existen
-    if (params.bonificaciones && params.bonificaciones.length > 0) {
-      ingresos.push(...params.bonificaciones);
+    if (salarioBase <= 0) {
+      throw new Error('El empleado no tiene un salario base válido');
     }
     
-    // Calcular horas extras si hay
-    if (horasExtras > 0) {
-      const valorHora = (Number(empleado.salary) || 0) / 240; // 30 días x 8 horas
-      const valorHorasExtras = valorHora * horasExtras * 1.25; // 25% adicional
-      
-      ingresos.push({
-        nombre: `Horas Extras (${horasExtras})`,
-        valor: valorHorasExtras,
-        esDeduccion: false
-      });
-    }
-    
-    // Añadir beneficios del empleado si existen
-    if (empleado.baseBenefits && Number(empleado.baseBenefits) > 0) {
-      ingresos.push({
-        nombre: 'Beneficios',
-        valor: Number(empleado.baseBenefits),
-        esDeduccion: false
-      });
-    }
-    
-    // Lista de deducciones
+    // Inicializar arrays para ingresos y deducciones
+    const ingresos: ConceptoNomina[] = [];
     const deducciones: ConceptoNomina[] = [];
     
-    // Calcular deducciones de seguridad social (aprox. 8% del salario base)
-    const deduccionSeguridadSocial = (Number(empleado.salary) || 0) * 0.08;
+    // Agregar el salario base como ingreso
+    ingresos.push({
+      nombre: 'Salario base',
+      valor: salarioBase,
+      esDeduccion: false
+    });
+    
+    // Calcular bonificaciones si aplican
+    if (configuracion.aplicarBonificacion) {
+      const valorBonificacion = salarioBase * 0.1; // 10% del salario base
+      ingresos.push({
+        nombre: 'Bonificación',
+        valor: valorBonificacion,
+        esDeduccion: false
+      });
+    }
+    
+    // Calcular horas extra si aplican
+    if (configuracion.aplicarHorasExtra && configuracion.aplicarHorasExtra.cantidad > 0) {
+      const { cantidad, valorHora } = configuracion.aplicarHorasExtra;
+      const valorHorasExtra = cantidad * valorHora;
+      ingresos.push({
+        nombre: `Horas Extra (${cantidad})`,
+        valor: valorHorasExtra,
+        esDeduccion: false
+      });
+    }
+    
+    // Calcular prima de servicios si aplica
+    if (configuracion.aplicarPrimaServicios) {
+      const valorPrima = salarioBase * 0.0833; // Aproximadamente un mes de salario divido en 12
+      ingresos.push({
+        nombre: 'Prima de Servicios',
+        valor: valorPrima,
+        esDeduccion: false
+      });
+    }
+    
+    // Agregar conceptos personalizados de ingresos
+    if (configuracion.configuracionPersonalizada) {
+      configuracion.configuracionPersonalizada
+        .filter(concepto => !concepto.esDeduccion)
+        .forEach(concepto => ingresos.push(concepto));
+    }
+    
+    // Calcular deducciones obligatorias
+    // Salud
+    const valorSalud = salarioBase * (configuracion.porcentajeSalud / 100);
     deducciones.push({
-      nombre: 'Seguridad Social',
-      valor: deduccionSeguridadSocial,
+      nombre: 'Aportes a Salud',
+      valor: valorSalud,
       esDeduccion: true
     });
     
-    // Calcular retención en la fuente según tasa del empleado o valor por defecto
-    const tasaRetencion = empleado.taxRate ? Number(empleado.taxRate) / 100 : 0.05;
-    const retencionFuente = (Number(empleado.salary) || 0) * tasaRetencion;
+    // Pensión
+    const valorPension = salarioBase * (configuracion.porcentajePension / 100);
     deducciones.push({
-      nombre: 'Retención en la Fuente',
-      valor: retencionFuente,
+      nombre: 'Aportes a Pensión',
+      valor: valorPension,
       esDeduccion: true
     });
     
-    // Añadir deducciones base del empleado si existen
-    if (empleado.baseDeductions && Number(empleado.baseDeductions) > 0) {
+    // Retención en la fuente (si aplica)
+    if (configuracion.porcentajeRetencion && configuracion.porcentajeRetencion > 0) {
+      const valorRetencion = salarioBase * (configuracion.porcentajeRetencion / 100);
       deducciones.push({
-        nombre: 'Deducciones Base',
-        valor: Number(empleado.baseDeductions),
+        nombre: 'Retención en la Fuente',
+        valor: valorRetencion,
         esDeduccion: true
       });
     }
     
-    // Añadir deducciones adicionales si existen
-    if (params.deducciones && params.deducciones.length > 0) {
-      deducciones.push(...params.deducciones);
+    // Agregar conceptos personalizados de deducciones
+    if (configuracion.configuracionPersonalizada) {
+      configuracion.configuracionPersonalizada
+        .filter(concepto => concepto.esDeduccion)
+        .forEach(concepto => deducciones.push(concepto));
     }
     
     // Calcular totales
@@ -120,20 +156,37 @@ export class CalculoNominaService {
     const totalDeducciones = deducciones.reduce((sum, item) => sum + item.valor, 0);
     const salarioNeto = totalIngresos - totalDeducciones;
     
-    // Generar resultado
+    // Formatear fechas para el período
+    const formatoFecha = (fecha: Date) => {
+      return fecha.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    };
+    
+    // Retornar el resultado completo
     return {
       empleadoId: empleado.id,
-      nombreEmpleado: (empleado as any).fullName || `Usuario ${empleado.userId}`,
-      salarioBase: Number(empleado.salary) || 0,
+      nombreEmpleado: empleado.fullName || `${empleado.id}`,
+      salarioBase,
       periodo: {
-        fechaInicio: fechaInicio.toISOString().split('T')[0],
-        fechaFin: fechaFin.toISOString().split('T')[0]
+        fechaInicio: formatoFecha(fechaInicio),
+        fechaFin: formatoFecha(fechaFin)
       },
       ingresos,
       deducciones,
       totalIngresos,
       totalDeducciones,
       salarioNeto
+    };
+  }
+  
+  /**
+   * Obtener una configuración de nómina por defecto
+   * @returns Configuración básica para cálculos
+   */
+  static obtenerConfiguracionPorDefecto(): ConfiguracionNomina {
+    return {
+      porcentajeSalud: 4,
+      porcentajePension: 4,
+      porcentajeRetencion: 0
     };
   }
 }
