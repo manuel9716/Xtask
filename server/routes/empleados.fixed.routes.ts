@@ -31,15 +31,15 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB máximo
   fileFilter: function (req, file, cb) {
-    // Validar tipos de archivo (PDF, DOCX)
-    const filetypes = /pdf|docx|doc/;
+    // Validar tipos de archivo (solo PDF)
+    const filetypes = /pdf/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     
     if (mimetype && extname) {
       return cb(null, true);
     }
-    cb(new Error("Solo se permiten archivos PDF o DOCX"));
+    cb(new Error("Solo se permiten archivos PDF"));
   }
 });
 
