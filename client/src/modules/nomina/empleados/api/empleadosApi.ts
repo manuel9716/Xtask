@@ -69,7 +69,17 @@ export async function obtenerEmpleados(
     throw new Error('Error al obtener la lista de empleados');
   }
   
-  return response.json();
+  // Obtener la lista de empleados
+  const empleados = await response.json();
+  
+  // Construir manualmente el objeto PaginatedEmployeesResponse
+  return {
+    empleados,
+    total: empleados.length,
+    page,
+    pageSize,
+    totalPages: Math.ceil(empleados.length / pageSize)
+  };
 }
 
 /**

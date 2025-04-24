@@ -411,34 +411,34 @@ export default function EmpleadosPage() {
           )}
         </CardContent>
         
-        {data?.pagination && data.pagination.totalPages > 1 && (
+        {data && data.totalPages > 1 && (
           <CardFooter className="flex justify-between">
             <div className="text-sm text-muted-foreground">
-              Mostrando {(data.pagination.page - 1) * data.pagination.pageSize + 1} a {
-                Math.min(data.pagination.page * data.pagination.pageSize, data.pagination.totalItems)
-              } de {data.pagination.totalItems} empleados
+              Mostrando {(data.page - 1) * data.pageSize + 1} a {
+                Math.min(data.page * data.pageSize, data.total)
+              } de {data.total} empleados
             </div>
             
             <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => cambiarPagina(data.pagination.page - 1)}
-                disabled={data.pagination.page <= 1}
+                onClick={() => cambiarPagina(data.page - 1)}
+                disabled={data.page <= 1}
               >
                 <ChevronLeft className="h-4 w-4" />
                 <span className="sr-only">Página anterior</span>
               </Button>
               
               <span className="text-sm font-medium">
-                Página {data.pagination.page} de {data.pagination.totalPages}
+                Página {data.page} de {data.totalPages}
               </span>
               
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => cambiarPagina(data.pagination.page + 1)}
-                disabled={data.pagination.page >= data.pagination.totalPages}
+                onClick={() => cambiarPagina(data.page + 1)}
+                disabled={data.page >= data.totalPages}
               >
                 <ChevronRight className="h-4 w-4" />
                 <span className="sr-only">Página siguiente</span>
