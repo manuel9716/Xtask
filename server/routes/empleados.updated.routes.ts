@@ -482,7 +482,7 @@ empleadosRouter.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Subir contrato
+// Subir contrato para un empleado específico
 empleadosRouter.post('/:id/contrato', upload.single('contrato'), async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
@@ -514,6 +514,54 @@ empleadosRouter.post('/:id/contrato', upload.single('contrato'), async (req: Req
       .where(eq(employees.id, id));
     
     return res.status(200).json({ message: 'Contrato subido correctamente', url: fileUrl });
+  } catch (error) {
+    console.error('Error al subir contrato:', error);
+    return res.status(500).json({ error: 'Error al subir el contrato' });
+  }
+});
+
+// Subir contrato (ruta general sin ID específico)
+empleadosRouter.post('/contrato', upload.single('contrato'), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se ha subido ningún archivo' });
+    }
+    
+    // Generar la URL del archivo (relativa al servidor)
+    const fileUrl = `/uploads/contratos/${req.file.filename}`;
+    
+    // Si se proporciona un ID de empleado, actualizar su registro
+    const empleadoId = req.body.empleadoId;
+    
+    if (empleadoId) {
+      const [empleado] = await db.select()
+        .from(employees)
+        .where(eq(employees.id, parseInt(empleadoId)));
+      
+      if (!empleado) {
+        // No eliminar el archivo en este caso ya que puede usarse posteriormente
+        return res.status(404).json({ error: 'Empleado no encontrado' });
+      }
+      
+      // Si el empleado ya tenía un contrato, eliminar el archivo anterior
+      if (empleado.contratoUrl) {
+        const rutaAnterior = path.join(process.cwd(), empleado.contratoUrl);
+        if (fs.existsSync(rutaAnterior)) {
+          fs.unlinkSync(rutaAnterior);
+        }
+      }
+      
+      // Actualizar el empleado con la nueva URL del contrato
+      await db.update(employees)
+        .set({ contratoUrl: fileUrl })
+        .where(eq(employees.id, parseInt(empleadoId)));
+    }
+    
+    return res.status(200).json({ 
+      fileUrl: fileUrl, // Usar fileUrl para ser consistente con el frontend
+      url: fileUrl,
+      message: 'Archivo subido correctamente' 
+    });
   } catch (error) {
     console.error('Error al subir contrato:', error);
     return res.status(500).json({ error: 'Error al subir el contrato' });

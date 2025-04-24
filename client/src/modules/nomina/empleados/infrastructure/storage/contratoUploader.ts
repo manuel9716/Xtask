@@ -3,13 +3,26 @@
  */
 
 /**
- * Valida que el archivo tenga un formato correcto (solo PDF)
+ * Valida que el archivo tenga un formato correcto (PDF o DOCX)
  * @param file Archivo a validar
  * @returns True si el archivo es válido, false en caso contrario
  */
 export const validarFormatoContrato = (file: File): boolean => {
-  const allowedTypes = ['application/pdf'];
-  return allowedTypes.includes(file.type);
+  // Validamos por extensión y tipo MIME
+  const allowedTypes = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+    'application/msword' // DOC
+  ];
+  
+  // Si el tipo MIME es válido, aceptar el archivo
+  if (allowedTypes.includes(file.type)) {
+    return true;
+  }
+  
+  // También validar por extensión por si el tipo MIME no es confiable
+  const fileName = file.name.toLowerCase();
+  return fileName.endsWith('.pdf') || fileName.endsWith('.docx') || fileName.endsWith('.doc');
 };
 
 /**
@@ -33,7 +46,7 @@ export const subirContrato = async (file: File, empleadoId?: number): Promise<st
   try {
     // Validaciones
     if (!validarFormatoContrato(file)) {
-      throw new Error('El formato del archivo no es válido. Por favor, suba un archivo PDF.');
+      throw new Error('El formato del archivo no es válido. Por favor, suba un archivo PDF o DOCX.');
     }
     
     if (!validarTamanoContrato(file)) {
