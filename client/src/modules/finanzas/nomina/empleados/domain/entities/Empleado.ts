@@ -161,9 +161,9 @@ export class Empleado {
     this.phoneNumber = data.phoneNumber || undefined;
     this.address = data.address || undefined;
     this.emergencyContact = data.emergencyContact || undefined;
-    this.contractStatus = data.contractStatus;
-    this.contractType = data.contractType;
-    this.identification = data.identification;
+    this.contractStatus = data.contractStatus || 'active';
+    this.contractType = data.contractType || 'fulltime';
+    this.identification = data.identification || '';
     this.baseBenefits = data.baseBenefits || '0';
     this.baseDeductions = data.baseDeductions || '0';
     this.taxRate = data.taxRate || '0';

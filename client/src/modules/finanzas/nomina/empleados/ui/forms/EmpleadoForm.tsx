@@ -346,7 +346,7 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={new Date(field.value)}
+                      selected={field.value ? new Date(field.value) : undefined}
                       onSelect={(date) => field.onChange(date || new Date())}
                       locale={es}
                       initialFocus
@@ -627,7 +627,7 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={new Date(field.value)}
+                      selected={field.value ? new Date(field.value) : undefined}
                       onSelect={(date) => field.onChange(date || new Date())}
                       locale={es}
                       initialFocus
