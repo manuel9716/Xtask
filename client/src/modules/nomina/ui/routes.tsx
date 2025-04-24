@@ -35,9 +35,11 @@ export function NominaRoutes() {
       </Route>
       
       <Route path="/nomina/detalle/:id">
-        <MainLayout>
-          <DetalleNominaPage />
-        </MainLayout>
+        {(params) => (
+          <MainLayout>
+            <DetalleNominaPage nominaId={params.id} />
+          </MainLayout>
+        )}
       </Route>
     </>
   );
