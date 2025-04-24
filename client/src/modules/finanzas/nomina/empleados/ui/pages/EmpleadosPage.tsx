@@ -345,6 +345,14 @@ export default function EmpleadosPage() {
                               <FileText className="mr-2 h-4 w-4" />
                               Ver historial de pagos
                             </DropdownMenuItem>
+                            {empleado.contratoUrl && (
+                              <DropdownMenuItem
+                                onClick={() => descargarContratoEmpleado(empleado.id)}
+                              >
+                                <FileDown className="mr-2 h-4 w-4" />
+                                Descargar contrato
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel>Cambiar estado</DropdownMenuLabel>
                             <DropdownMenuItem
