@@ -82,9 +82,20 @@ export default function EmpleadosPage() {
   
   // Función para cambiar filtros
   const actualizarFiltro = (key: keyof FiltrosEmpleado, value: string | number) => {
+    let valorFinal = value;
+    
+    // Manejar valores especiales para filtros
+    if (key === 'contractStatus' && value === 'all') {
+      valorFinal = ''; // Valor vacío indica "todos" en el backend
+    }
+    
+    if (key === 'department' && value === 'all_departments') {
+      valorFinal = ''; // Valor vacío indica "todos" en el backend
+    }
+    
     setFiltros(prev => ({
       ...prev,
-      [key]: value,
+      [key]: valorFinal,
       // Si cambiamos cualquier filtro que no sea la página, volvemos a la página 1
       ...(key !== 'page' ? { page: 1 } : {})
     }));
@@ -222,7 +233,7 @@ export default function EmpleadosPage() {
                   <SelectValue placeholder="Estado de contrato" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los estados</SelectItem>
+                  <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="active">Activo</SelectItem>
                   <SelectItem value="inactive">Inactivo</SelectItem>
                   <SelectItem value="on_leave">Permiso</SelectItem>
@@ -240,7 +251,7 @@ export default function EmpleadosPage() {
                   <SelectValue placeholder="Departamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los departamentos</SelectItem>
+                  <SelectItem value="all_departments">Todos los departamentos</SelectItem>
                   <SelectItem value="Administración">Administración</SelectItem>
                   <SelectItem value="Finanzas">Finanzas</SelectItem>
                   <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
@@ -292,7 +303,9 @@ export default function EmpleadosPage() {
                 <TableBody>
                   {data.empleados.map((empleado) => (
                     <TableRow key={empleado.id}>
-                      <TableCell className="font-medium">{empleado.fullName}</TableCell>
+                      <TableCell className="font-medium">
+                        {(empleado as any).fullName || `Usuario #${empleado.userId}`}
+                      </TableCell>
                       <TableCell>{empleado.identification}</TableCell>
                       <TableCell>{empleado.position}</TableCell>
                       <TableCell>{empleado.department}</TableCell>
@@ -302,8 +315,12 @@ export default function EmpleadosPage() {
                           'N/A'
                         }
                       </TableCell>
-                      <TableCell>{renderEstadoContrato(empleado.contractStatus)}</TableCell>
-                      <TableCell>{renderTipoContrato(empleado.contractType)}</TableCell>
+                      <TableCell>
+                        {renderEstadoContrato(empleado.contractStatus || 'active')}
+                      </TableCell>
+                      <TableCell>
+                        {renderTipoContrato(empleado.contractType || 'fulltime')}
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
