@@ -11,7 +11,7 @@ export default function EditarEmpleadoPage() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const empleadoId = parseInt(id);
+  const empleadoId = id ? parseInt(id) : undefined;
   
   // Obtener los datos del empleado
   const { data: empleado, isLoading, isError } = useGetEmpleado(empleadoId);

@@ -998,9 +998,14 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
         </Card>
         
         <div className="flex justify-end mt-6">
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Guardar Empleado
+          <Button 
+            type="submit" 
+            disabled={isEditing ? editarEmpleadoMutation.isPending : crearEmpleadoMutation.isPending}
+          >
+            {(isEditing ? editarEmpleadoMutation.isPending : crearEmpleadoMutation.isPending) && 
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            }
+            {isEditing ? 'Actualizar Empleado' : 'Guardar Empleado'}
           </Button>
         </div>
       </form>
