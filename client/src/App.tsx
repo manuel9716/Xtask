@@ -14,7 +14,8 @@ import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import NominaDashboard from "@/pages/nomina-dashboard";
 import { MainLayout } from "@/layouts/main-layout";
-import { FinanzasRoutes } from "@/modules/finanzas/ui/routes"; 
+import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
+import { NominaRoutes } from "@/modules/nomina/ui/routes";
 
 function Router() {
   return (
@@ -69,6 +70,7 @@ function Router() {
       
       {/* Rutas de los módulos específicos */}
       <FinanzasRoutes />
+      <NominaRoutes />
       
       <Route component={NotFound} />
     </Switch>
