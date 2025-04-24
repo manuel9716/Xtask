@@ -62,7 +62,7 @@ export default function ReportesRRHHPage() {
     isError,
     refetch
   } = useQuery({
-    queryKey: ['/api/finanzas/nomina/empleados'],
+    queryKey: ['/api/nomina/empleados'],
     queryFn: () => obtenerEmpleados({ pageSize: 100 }), // Obtener con límite grande
   });
   

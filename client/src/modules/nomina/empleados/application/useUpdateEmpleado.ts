@@ -23,8 +23,8 @@ export const useUpdateEmpleado = () => {
     
     onSuccess: (_, variables) => {
       // Invalidar consultas relacionadas
-      queryClient.invalidateQueries({ queryKey: ['/api/finanzas/nomina/empleados'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/finanzas/nomina/empleados', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nomina/empleados'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nomina/empleados', variables.id] });
     }
   });
 };
