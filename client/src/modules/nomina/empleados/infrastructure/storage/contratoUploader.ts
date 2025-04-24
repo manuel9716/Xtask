@@ -55,7 +55,7 @@ export const subirContrato = async (file: File, empleadoId?: number): Promise<st
     
     // Crear FormData para enviar el archivo
     const formData = new FormData();
-    formData.append('contrato', file);
+    formData.append('file', file);
     
     if (empleadoId) {
       formData.append('empleadoId', empleadoId.toString());
