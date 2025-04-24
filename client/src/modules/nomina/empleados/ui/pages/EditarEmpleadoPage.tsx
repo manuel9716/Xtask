@@ -8,15 +8,49 @@ import { EmpleadoForm } from '../forms/EmpleadoForm';
 import { useGetEmpleado } from '../../application/useGetEmpleado';
 
 export default function EditarEmpleadoPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Extraer el ID del objeto params y verificar que existe
+  const id = params?.id;
   const empleadoId = id ? parseInt(id) : undefined;
   
   // Log para depuración
-  console.log("ID del empleado:", id, "empleadoId:", empleadoId);
+  console.log("Parámetros:", params, "ID del empleado:", id, "empleadoId:", empleadoId);
   
-  // Obtener los datos del empleado
+  // Intentar obtener los datos directamente mediante fetch
+  const [empleadoDirect, setEmpleadoDirect] = useState(null);
+  const [loadingDirect, setLoadingDirect] = useState(true);
+  const [errorDirect, setErrorDirect] = useState(false);
+  
+  useEffect(() => {
+    // Solo hacer el fetch si tenemos un ID válido
+    if (empleadoId) {
+      console.log("Intentando fetch directo a:", `/api/nomina/empleados/${empleadoId}`);
+      
+      fetch(`/api/nomina/empleados/${empleadoId}`)
+        .then(response => {
+          console.log("Respuesta status:", response.status);
+          if (!response.ok) {
+            throw new Error(`Error en la respuesta: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log("Datos obtenidos directamente:", data);
+          setEmpleadoDirect(data);
+          setLoadingDirect(false);
+        })
+        .catch(error => {
+          console.error("Error en fetch directo:", error);
+          setErrorDirect(true);
+          setLoadingDirect(false);
+        });
+    }
+  }, [empleadoId]);
+  
+  // Obtener los datos del empleado usando el hook
   const { data: empleado, isLoading, isError } = useGetEmpleado(empleadoId);
   
   // Manejar la navegación de regreso después de guardar cambios
@@ -36,7 +70,14 @@ export default function EditarEmpleadoPage() {
     );
   }
   
-  if (isError || !empleado) {
+  // Si tenemos datos directos pero hubo un error con el hook, usamos los datos directos
+  if ((isError || !empleado) && empleadoDirect) {
+    console.log("Usando datos directos porque el hook falló");
+    // Continúa con el renderizado usando empleadoDirect
+  }
+  // Si ambos métodos fallaron, mostrar error
+  else if ((isError || !empleado) && (errorDirect || !empleadoDirect)) {
+    console.log("Ambos métodos de carga fallaron");
     return (
       <div className="space-y-4">
         <div className="flex items-center">
@@ -47,6 +88,7 @@ export default function EditarEmpleadoPage() {
         </div>
         <Card className="p-6">
           <p>No se pudo cargar la información del empleado. Por favor, intente nuevamente.</p>
+          <p className="text-sm text-destructive mt-2">Detalles: {errorDirect ? "Error en la solicitud directa" : "Error en el hook"}</p>
           <Button className="mt-4" onClick={() => setLocation('/admin/nomina/empleados')}>
             Volver al listado
           </Button>
@@ -55,6 +97,9 @@ export default function EditarEmpleadoPage() {
     );
   }
   
+  // Determinar qué datos vamos a usar (del hook o directos)
+  const empleadoData = empleado || empleadoDirect;
+    
   return (
     <div className="space-y-4">
       <div className="flex items-center">
@@ -65,11 +110,18 @@ export default function EditarEmpleadoPage() {
       </div>
       
       <Card className="p-6">
-        <EmpleadoForm 
-          onSuccess={handleSuccess} 
-          empleadoData={empleado} 
-          isEditing={true} 
-        />
+        {empleadoData ? (
+          <EmpleadoForm 
+            onSuccess={handleSuccess} 
+            empleadoData={empleadoData} 
+            isEditing={true} 
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Cargando datos del empleado...</p>
+          </div>
+        )}
       </Card>
     </div>
   );
