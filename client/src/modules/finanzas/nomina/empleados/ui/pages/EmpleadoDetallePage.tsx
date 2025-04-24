@@ -28,7 +28,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { descargarContratoEmpleado } from '../../api/empleadosApi';
+// Importamos todas las funciones necesarias de la API
+import { descargarContratoEmpleado, obtenerNominasEmpleado } from '../../api/empleadosApi';
 import { useGetEmpleado } from '../../application/useGetEmpleado';
 import { useEditarEmpleado } from '../../application/useEditarEmpleado';
 
