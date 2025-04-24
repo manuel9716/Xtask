@@ -48,20 +48,20 @@ const upload = multer({
 
 // Esquema para validar la creación de empleado
 const crearEmpleadoSchema = z.object({
-  userId: z.number().int(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
+  userId: z.number().int().positive(),
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
   skills: z.string().optional(),
-  position: z.string(),
-  department: z.string(),
+  position: z.string().min(1),
+  department: z.string().min(1),
   hireDate: z.coerce.date(),
-  salary: z.string(),
+  salary: z.string().min(1),
   phoneNumber: z.string().optional(),
   address: z.string().optional(),
   emergencyContact: z.string().optional(),
-  contractStatus: z.string().default('active'),
-  contractType: z.string().default('fulltime'),
-  identification: z.string().optional(),
+  contractStatus: z.enum(['active', 'inactive', 'on_leave', 'terminated']).default('active'),
+  contractType: z.enum(['fulltime', 'parttime', 'contractor', 'temporary', 'internship']),
+  identification: z.string().min(1),
   baseBenefits: z.string().optional(),
   baseDeductions: z.string().optional(),
   taxRate: z.string().optional(),
@@ -71,8 +71,7 @@ const crearEmpleadoSchema = z.object({
   vacationDays: z.number().int().optional(),
   contratoUrl: z.string().optional(),
   tipoPago: z.string().optional(),
-  fechaInicioNomina: z.coerce.date().optional(),
-  projectIds: z.array(z.number()).optional()
+  fechaInicioNomina: z.coerce.date().optional()
 });
 
 // Esquema para validar la actualización de empleado
@@ -104,7 +103,7 @@ empleadosRouter.get('/listar', async (req: Request, res: Response) => {
       conditions.push(eq(employees.department, department as string));
     }
     
-    // Total de registros con los filtros aplicados
+    // Consulta para contar el total de registros
     const totalQuery = db.select({ count: count() }).from(employees);
     
     if (conditions.length > 0) {
@@ -115,50 +114,52 @@ empleadosRouter.get('/listar', async (req: Request, res: Response) => {
     const totalItems = Number(totalResult?.count || 0);
     
     // Consulta para obtener los empleados con paginación
-    const empleadosQuery = db
-      .select({
-        id: employees.id,
-        userId: employees.userId,
-        firstName: employees.firstName,
-        lastName: employees.lastName,
-        skills: employees.skills,
-        position: employees.position,
-        department: employees.department,
-        hireDate: employees.hireDate,
-        salary: employees.salary,
-        phoneNumber: employees.phoneNumber,
-        address: employees.address, 
-        emergencyContact: employees.emergencyContact,
-        contractStatus: employees.contractStatus,
-        contractType: employees.contractType,
-        identification: employees.identification,
-        baseBenefits: employees.baseBenefits,
-        baseDeductions: employees.baseDeductions,
-        taxRate: employees.taxRate,
-        bankAccount: employees.bankAccount,
-        paymentMethod: employees.paymentMethod,
-        healthInsurance: employees.healthInsurance,
-        vacationDays: employees.vacationDays,
-        contratoUrl: employees.contratoUrl,
-        tipoPago: employees.tipoPago,
-        fechaInicioNomina: employees.fechaInicioNomina,
-        fullName: users.fullName
-      })
-      .from(employees)
-      .leftJoin(users, eq(employees.userId, users.id));
+    const query = db.select({
+      id: employees.id,
+      userId: employees.userId,
+      firstName: employees.firstName,
+      lastName: employees.lastName,
+      skills: employees.skills,
+      position: employees.position,
+      department: employees.department,
+      hireDate: employees.hireDate,
+      salary: employees.salary,
+      phoneNumber: employees.phoneNumber,
+      address: employees.address,
+      emergencyContact: employees.emergencyContact,
+      contractStatus: employees.contractStatus,
+      contractType: employees.contractType,
+      identification: employees.identification,
+      baseBenefits: employees.baseBenefits,
+      baseDeductions: employees.baseDeductions,
+      taxRate: employees.taxRate,
+      bankAccount: employees.bankAccount,
+      paymentMethod: employees.paymentMethod,
+      healthInsurance: employees.healthInsurance,
+      vacationDays: employees.vacationDays,
+      contratoUrl: employees.contratoUrl,
+      tipoPago: employees.tipoPago,
+      fechaInicioNomina: employees.fechaInicioNomina,
+      fullName: users.fullName
+    })
+    .from(employees)
+    .leftJoin(users, eq(employees.userId, users.id));
     
     if (conditions.length > 0) {
-      empleadosQuery.where(and(...conditions));
+      query.where(and(...conditions));
     }
     
-    // Si hay búsqueda, aplicarla sobre el nombre o identificación
+    // Si hay búsqueda, aplicarla sobre nombre, apellido, nombre completo o identificación
     if (search) {
-      empleadosQuery.where(
-        sql`(${users.fullName} ILIKE ${`%${search}%`} OR ${employees.identification} ILIKE ${`%${search}%`})`
+      query.where(
+        sql`(${users.fullName} ILIKE ${`%${search}%`} OR 
+             ${employees.firstName} ILIKE ${`%${search}%`} OR 
+             ${employees.lastName} ILIKE ${`%${search}%`} OR 
+             ${employees.identification} ILIKE ${`%${search}%`})`
       );
     }
     
-    const data = await empleadosQuery
+    const data = await query
       .limit(pageSizeNum)
       .offset(offset)
       .orderBy(employees.id);
@@ -166,15 +167,7 @@ empleadosRouter.get('/listar', async (req: Request, res: Response) => {
     // Calcular el total de páginas
     const totalPages = Math.ceil(Number(totalItems) / pageSizeNum);
     
-    return res.status(200).json({
-      empleados: data,
-      pagination: {
-        page: pageNum,
-        pageSize: pageSizeNum,
-        totalItems: Number(totalItems),
-        totalPages
-      }
-    });
+    return res.status(200).json(data);
   } catch (error) {
     console.error('Error al obtener empleados:', error);
     return res.status(500).json({ error: 'Error al obtener los empleados' });
@@ -246,10 +239,13 @@ empleadosRouter.get('/', async (req: Request, res: Response) => {
       query.where(and(...conditions));
     }
     
-    // Si hay búsqueda, aplicarla sobre el nombre o identificación
+    // Si hay búsqueda, aplicarla sobre nombre, apellido, nombre completo o identificación
     if (search) {
       query.where(
-        sql`(${users.fullName} ILIKE ${`%${search}%`} OR ${employees.identification} ILIKE ${`%${search}%`})`
+        sql`(${users.fullName} ILIKE ${`%${search}%`} OR 
+             ${employees.firstName} ILIKE ${`%${search}%`} OR 
+             ${employees.lastName} ILIKE ${`%${search}%`} OR 
+             ${employees.identification} ILIKE ${`%${search}%`})`
       );
     }
     
@@ -276,113 +272,96 @@ empleadosRouter.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Obtener un empleado por ID
-empleadosRouter.get('/:id', async (req: Request, res: Response) => {
+// Obtener un empleado por su ID - Se coloca DESPUÉS de la ruta específica de "listar"
+empleadosRouter.get('/:id([0-9]+)', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    const [empleado] = await db
-      .select({
-        id: employees.id,
-        userId: employees.userId,
-        firstName: employees.firstName,
-        lastName: employees.lastName,
-        skills: employees.skills,
-        fullName: users.fullName,
-        email: users.email,
-        position: employees.position,
-        department: employees.department,
-        hireDate: employees.hireDate,
-        salary: employees.salary,
-        phoneNumber: employees.phoneNumber,
-        address: employees.address,
-        emergencyContact: employees.emergencyContact,
-        contractStatus: employees.contractStatus,
-        contractType: employees.contractType,
-        identification: employees.identification,
-        baseBenefits: employees.baseBenefits,
-        baseDeductions: employees.baseDeductions,
-        taxRate: employees.taxRate,
-        bankAccount: employees.bankAccount,
-        paymentMethod: employees.paymentMethod,
-        healthInsurance: employees.healthInsurance,
-        vacationDays: employees.vacationDays,
-        contratoUrl: employees.contratoUrl,
-        tipoPago: employees.tipoPago,
-        fechaInicioNomina: employees.fechaInicioNomina
-      })
-      .from(employees)
-      .leftJoin(users, eq(employees.userId, users.id))
-      .where(eq(employees.id, id));
+    const { id } = req.params;
+    
+    const [empleado] = await db.select({
+      id: employees.id,
+      userId: employees.userId,
+      firstName: employees.firstName,
+      lastName: employees.lastName,
+      skills: employees.skills,
+      position: employees.position,
+      department: employees.department,
+      hireDate: employees.hireDate,
+      salary: employees.salary,
+      phoneNumber: employees.phoneNumber,
+      address: employees.address,
+      emergencyContact: employees.emergencyContact,
+      contractStatus: employees.contractStatus,
+      contractType: employees.contractType,
+      identification: employees.identification,
+      baseBenefits: employees.baseBenefits,
+      baseDeductions: employees.baseDeductions,
+      taxRate: employees.taxRate,
+      bankAccount: employees.bankAccount,
+      paymentMethod: employees.paymentMethod,
+      healthInsurance: employees.healthInsurance,
+      vacationDays: employees.vacationDays,
+      contratoUrl: employees.contratoUrl,
+      tipoPago: employees.tipoPago,
+      fechaInicioNomina: employees.fechaInicioNomina,
+      fullName: users.fullName,
+      email: users.email
+    })
+    .from(employees)
+    .leftJoin(users, eq(employees.userId, users.id))
+    .where(eq(employees.id, parseInt(id)));
     
     if (!empleado) {
       return res.status(404).json({ error: 'Empleado no encontrado' });
     }
     
-    // Obtener proyectos asignados al empleado
-    // ... lógica para obtener proyectos ...
-    
     return res.status(200).json(empleado);
   } catch (error) {
-    console.error('Error al obtener empleado:', error);
-    return res.status(500).json({ error: 'Error al obtener el empleado' });
+    console.error(`Error al obtener empleado con ID ${req.params.id}:`, error);
+    return res.status(500).json({ error: 'Error al obtener los datos del empleado' });
   }
 });
 
 // Crear un nuevo empleado
 empleadosRouter.post('/', async (req: Request, res: Response) => {
   try {
-    const datosEmpleado = crearEmpleadoSchema.parse(req.body);
+    // Validar los datos recibidos
+    const validacionResultado = crearEmpleadoSchema.safeParse(req.body);
+    
+    if (!validacionResultado.success) {
+      return res.status(400).json({ 
+        error: 'Datos de empleado inválidos',
+        details: validacionResultado.error.format() 
+      });
+    }
+    
+    const datosEmpleado = validacionResultado.data;
     
     // Verificar que el usuario existe
-    const [usuario] = await db
-      .select()
+    const [usuario] = await db.select()
       .from(users)
       .where(eq(users.id, datosEmpleado.userId));
     
     if (!usuario) {
-      return res.status(400).json({ error: 'El usuario asociado no existe' });
+      return res.status(400).json({ error: `No se encontró el usuario con ID ${datosEmpleado.userId}` });
     }
     
-    // Crear el empleado
-    const [empleado] = await db
-      .insert(employees)
-      .values({
-        userId: datosEmpleado.userId,
-        firstName: datosEmpleado.firstName,
-        lastName: datosEmpleado.lastName,
-        skills: datosEmpleado.skills,
-        position: datosEmpleado.position,
-        department: datosEmpleado.department,
-        hireDate: datosEmpleado.hireDate,
-        salary: datosEmpleado.salary,
-        phoneNumber: datosEmpleado.phoneNumber,
-        address: datosEmpleado.address,
-        emergencyContact: datosEmpleado.emergencyContact,
-        contractStatus: datosEmpleado.contractStatus,
-        contractType: datosEmpleado.contractType,
-        identification: datosEmpleado.identification,
-        baseBenefits: datosEmpleado.baseBenefits,
-        baseDeductions: datosEmpleado.baseDeductions,
-        taxRate: datosEmpleado.taxRate,
-        bankAccount: datosEmpleado.bankAccount,
-        paymentMethod: datosEmpleado.paymentMethod,
-        healthInsurance: datosEmpleado.healthInsurance,
-        vacationDays: datosEmpleado.vacationDays,
-        contratoUrl: datosEmpleado.contratoUrl,
-        tipoPago: datosEmpleado.tipoPago,
-        fechaInicioNomina: datosEmpleado.fechaInicioNomina
-      })
+    // Verificar que no exista otro empleado con la misma identificación
+    const [empleadoExistente] = await db.select()
+      .from(employees)
+      .where(eq(employees.identification, datosEmpleado.identification));
+    
+    if (empleadoExistente) {
+      return res.status(400).json({ error: `Ya existe un empleado con la identificación ${datosEmpleado.identification}` });
+    }
+    
+    // Insertar el nuevo empleado
+    const [nuevoEmpleado] = await db.insert(employees)
+      .values(datosEmpleado)
       .returning();
     
-    // Asignar proyectos si se proporcionaron
-    // ... lógica para asignar proyectos ...
-    
-    return res.status(201).json(empleado);
+    return res.status(201).json(nuevoEmpleado);
   } catch (error) {
     console.error('Error al crear empleado:', error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
-    }
     return res.status(500).json({ error: 'Error al crear el empleado' });
   }
 });
@@ -390,168 +369,191 @@ empleadosRouter.post('/', async (req: Request, res: Response) => {
 // Actualizar un empleado existente
 empleadosRouter.patch('/:id', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    const actualizaciones = actualizarEmpleadoSchema.parse(req.body);
+    const { id } = req.params;
+    
+    // Validar los datos recibidos
+    const validacionResultado = actualizarEmpleadoSchema.safeParse(req.body);
+    
+    if (!validacionResultado.success) {
+      return res.status(400).json({ 
+        error: 'Datos de empleado inválidos',
+        details: validacionResultado.error.format() 
+      });
+    }
+    
+    const datosActualizacion = validacionResultado.data;
     
     // Verificar que el empleado existe
-    const [empleadoExistente] = await db
-      .select()
+    const [empleadoExistente] = await db.select()
       .from(employees)
-      .where(eq(employees.id, id));
+      .where(eq(employees.id, parseInt(id)));
     
     if (!empleadoExistente) {
       return res.status(404).json({ error: 'Empleado no encontrado' });
     }
     
+    // Si se actualiza el userId, verificar que el usuario existe
+    if (datosActualizacion.userId) {
+      const [usuario] = await db.select()
+        .from(users)
+        .where(eq(users.id, datosActualizacion.userId));
+      
+      if (!usuario) {
+        return res.status(400).json({ error: `No se encontró el usuario con ID ${datosActualizacion.userId}` });
+      }
+    }
+    
+    // Si se actualiza la identificación, verificar que no exista otro empleado con esa identificación
+    if (datosActualizacion.identification && 
+        datosActualizacion.identification !== empleadoExistente.identification) {
+      const [empleadoConIdentificacion] = await db.select()
+        .from(employees)
+        .where(
+          and(
+            eq(employees.identification, datosActualizacion.identification),
+            sql`${employees.id} != ${parseInt(id)}`
+          )
+        );
+      
+      if (empleadoConIdentificacion) {
+        return res.status(400).json({ 
+          error: `Ya existe otro empleado con la identificación ${datosActualizacion.identification}` 
+        });
+      }
+    }
+    
     // Actualizar el empleado
-    const [empleadoActualizado] = await db
-      .update(employees)
-      .set(actualizaciones)
-      .where(eq(employees.id, id))
+    const [empleadoActualizado] = await db.update(employees)
+      .set({
+        ...datosActualizacion,
+        // Siempre actualizar la fecha de modificación si existiera
+      })
+      .where(eq(employees.id, parseInt(id)))
       .returning();
     
     return res.status(200).json(empleadoActualizado);
   } catch (error) {
-    console.error('Error al actualizar empleado:', error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
-    }
-    return res.status(500).json({ error: 'Error al actualizar el empleado' });
+    console.error(`Error al actualizar empleado con ID ${req.params.id}:`, error);
+    return res.status(500).json({ error: 'Error al actualizar los datos del empleado' });
   }
 });
 
 // Cambiar el estado de un empleado
 empleadosRouter.patch('/:id/estado', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    const { estado } = cambiarEstadoSchema.parse(req.body);
+    const { id } = req.params;
+    
+    // Validar los datos recibidos
+    const validacionResultado = cambiarEstadoSchema.safeParse(req.body);
+    
+    if (!validacionResultado.success) {
+      return res.status(400).json({ 
+        error: 'Datos de estado inválidos',
+        details: validacionResultado.error.format() 
+      });
+    }
+    
+    const { estado } = validacionResultado.data;
     
     // Verificar que el empleado existe
-    const [empleadoExistente] = await db
-      .select()
+    const [empleadoExistente] = await db.select()
       .from(employees)
-      .where(eq(employees.id, id));
+      .where(eq(employees.id, parseInt(id)));
     
     if (!empleadoExistente) {
       return res.status(404).json({ error: 'Empleado no encontrado' });
     }
     
-    // Actualizar solo el estado del empleado
-    const [empleadoActualizado] = await db
-      .update(employees)
+    // Actualizar el estado del empleado
+    const [empleadoActualizado] = await db.update(employees)
       .set({ contractStatus: estado })
-      .where(eq(employees.id, id))
+      .where(eq(employees.id, parseInt(id)))
       .returning();
     
     return res.status(200).json(empleadoActualizado);
   } catch (error) {
-    console.error('Error al cambiar estado del empleado:', error);
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
-    }
+    console.error(`Error al cambiar estado del empleado con ID ${req.params.id}:`, error);
     return res.status(500).json({ error: 'Error al cambiar el estado del empleado' });
   }
 });
 
-// Eliminar un empleado (soft delete cambiando estado a 'terminated')
+// Eliminar un empleado (desactivar)
 empleadosRouter.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
+    const { id } = req.params;
     
     // Verificar que el empleado existe
-    const [empleadoExistente] = await db
-      .select()
+    const [empleadoExistente] = await db.select()
       .from(employees)
-      .where(eq(employees.id, id));
+      .where(eq(employees.id, parseInt(id)));
     
     if (!empleadoExistente) {
       return res.status(404).json({ error: 'Empleado no encontrado' });
     }
     
-    // Realizar soft delete cambiando el estado
-    const [empleadoTerminado] = await db
-      .update(employees)
+    // En lugar de eliminar, cambiamos el estado a inactivo
+    const [empleadoDesactivado] = await db.update(employees)
       .set({ contractStatus: 'terminated' })
-      .where(eq(employees.id, id))
+      .where(eq(employees.id, parseInt(id)))
       .returning();
     
-    return res.status(200).json({ message: 'Empleado eliminado correctamente', empleado: empleadoTerminado });
+    return res.status(200).json({
+      message: 'Empleado eliminado correctamente',
+      empleado: empleadoDesactivado
+    });
   } catch (error) {
-    console.error('Error al eliminar empleado:', error);
+    console.error(`Error al eliminar empleado con ID ${req.params.id}:`, error);
     return res.status(500).json({ error: 'Error al eliminar el empleado' });
   }
 });
 
-// Subir contrato para un empleado específico
-empleadosRouter.post('/:id/contrato', upload.single('contrato'), async (req: Request, res: Response) => {
+// Subir contrato sin ID de empleado específico (para nuevos empleados)
+empleadosRouter.post('/contrato', upload.single('file'), async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    const file = req.file;
-    
-    if (!file) {
-      return res.status(400).json({ error: 'No se ha proporcionado ningún archivo' });
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se ha subido ningún archivo' });
     }
     
-    // Verificar que el empleado existe
-    const [empleadoExistente] = await db
-      .select()
-      .from(employees)
-      .where(eq(employees.id, id));
+    // Generar la URL relativa del archivo
+    const fileUrl = `/uploads/contratos/${req.file.filename}`;
     
-    if (!empleadoExistente) {
-      // Eliminar el archivo si no se encuentra el empleado
-      fs.unlinkSync(file.path);
-      return res.status(404).json({ error: 'Empleado no encontrado' });
-    }
+    // No vinculamos a ningún empleado específico, solo devolvemos la URL
     
-    // Convertir la ruta del archivo a URL relativa
-    const fileUrl = `/uploads/contratos/${file.filename}`;
-    
-    // Guardar la URL del contrato en la base de datos
-    await db
-      .update(employees)
-      .set({ contratoUrl: fileUrl })
-      .where(eq(employees.id, id));
-    
-    return res.status(200).json({ message: 'Contrato subido correctamente', url: fileUrl });
+    // Devolver respuesta con el formato exacto que espera el frontend
+    return res.status(200).json({ 
+      fileUrl: fileUrl, // Esta es la propiedad que el frontend espera
+      url: fileUrl,     // Mantenemos ambas para compatibilidad
+      message: 'Archivo subido correctamente' 
+    });
   } catch (error) {
     console.error('Error al subir contrato:', error);
     return res.status(500).json({ error: 'Error al subir el contrato' });
   }
 });
 
-// Subir contrato (ruta general sin ID específico)
-empleadosRouter.post('/contrato', upload.single('contrato'), async (req: Request, res: Response) => {
+// Subir contrato para un empleado específico
+empleadosRouter.post('/:id/contrato', upload.single('file'), async (req: Request, res: Response) => {
   try {
+    const { id: empleadoId } = req.params;
+    
     if (!req.file) {
       return res.status(400).json({ error: 'No se ha subido ningún archivo' });
     }
     
-    // Generar la URL del archivo (relativa al servidor)
+    // Verificar que el empleado existe
+    const [empleadoExistente] = await db.select()
+      .from(employees)
+      .where(eq(employees.id, parseInt(empleadoId)));
+    
+    if (!empleadoExistente) {
+      return res.status(404).json({ error: 'Empleado no encontrado' });
+    }
+    
+    // Generar la URL relativa del archivo
     const fileUrl = `/uploads/contratos/${req.file.filename}`;
     
-    // Si se proporciona un ID de empleado, actualizar su registro
-    const empleadoId = req.body.empleadoId;
-    
-    if (empleadoId) {
-      const [empleado] = await db.select()
-        .from(employees)
-        .where(eq(employees.id, parseInt(empleadoId)));
-      
-      if (!empleado) {
-        // No eliminar el archivo en este caso ya que puede usarse posteriormente
-        return res.status(404).json({ error: 'Empleado no encontrado' });
-      }
-      
-      // Si el empleado ya tenía un contrato, eliminar el archivo anterior
-      if (empleado.contratoUrl) {
-        const rutaAnterior = path.join(process.cwd(), empleado.contratoUrl);
-        if (fs.existsSync(rutaAnterior)) {
-          fs.unlinkSync(rutaAnterior);
-        }
-      }
-      
-      // Actualizar el empleado con la nueva URL del contrato
+    // Actualizar el campo contratoUrl del empleado
+    if (empleadoExistente) {
       await db.update(employees)
         .set({ contratoUrl: fileUrl })
         .where(eq(employees.id, parseInt(empleadoId)));
