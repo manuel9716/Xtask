@@ -308,7 +308,7 @@ export async function descargarContratoEmpleado(id: number, nombreEmpleado?: str
 export async function cambiarEstadoEmpleado(id: number, estado: boolean): Promise<Employee> {
   const response = await apiRequest(
     'PATCH',
-    `/api/finanzas/nomina/empleados/${id}/estado`,
+    `/api/nomina/empleados/${id}/estado`,
     { activo: estado }
   );
   
