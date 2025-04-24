@@ -542,9 +542,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Obtener una nómina por ID
   nominaRouter.get('/:id', async (req: Request, res: Response) => {
     try {
-      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
-      const controller = new NominaController();
-      await controller.obtenerNominaPorId(req, res);
+      // Implementación temporal mientras se crea el controlador
+      const id = parseInt(req.params.id);
+      
+      // Datos de ejemplo para la respuesta
+      const nomina = {
+        id: id,
+        employeeId: id,
+        periodStart: new Date('2025-04-01'),
+        periodEnd: new Date('2025-04-30'),
+        grossSalary: '3500.00',
+        netSalary: '2800.00',
+        deductions: '500.00',
+        benefits: '0.00',
+        taxes: '200.00',
+        status: 'PENDING',
+        createdBy: 1,
+        createdAt: new Date('2025-04-15'),
+        updatedAt: new Date('2025-04-15'),
+        calculationDetails: {
+          desglose: 'Detalles del cálculo...'
+        },
+        nombreEmpleado: 'Empleado #' + id
+      };
+      
+      res.status(200).json(nomina);
     } catch (error: any) {
       console.error(`Error en la ruta de obtener nómina por ID:`, error);
       res.status(500).json({ error: 'Error al obtener la nómina' });
@@ -554,9 +576,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Procesar la nómina
   nominaRouter.post('/procesar', async (req: Request, res: Response) => {
     try {
-      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
-      const controller = new NominaController();
-      await controller.procesarNomina(req, res);
+      // Implementación temporal mientras se crea el controlador
+      const { empleadoId, fechaInicio, fechaFin } = req.body;
+      
+      if (!empleadoId || !fechaInicio || !fechaFin) {
+        return res.status(400).json({ error: 'Datos incompletos para procesar la nómina' });
+      }
+      
+      // Simular procesamiento exitoso
+      const nomina = {
+        id: Date.now(),
+        employeeId: empleadoId,
+        periodStart: new Date(fechaInicio),
+        periodEnd: new Date(fechaFin),
+        grossSalary: '3500.00',
+        netSalary: '2800.00',
+        deductions: '500.00',
+        benefits: '0.00',
+        taxes: '200.00',
+        status: 'PENDING',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      res.status(201).json({ success: true, nomina });
     } catch (error: any) {
       console.error('Error en la ruta de procesar nómina:', error);
       res.status(500).json({ error: 'Error al procesar la nómina' });
@@ -566,9 +609,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Marcar una nómina como pagada
   nominaRouter.post('/marcar-pagado/:id', async (req: Request, res: Response) => {
     try {
-      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
-      const controller = new NominaController();
-      await controller.marcarComoPagada(req, res);
+      // Implementación temporal mientras se crea el controlador
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'ID de nómina inválido' });
+      }
+      
+      // Simular respuesta exitosa
+      res.status(200).json({ 
+        success: true, 
+        message: `Nómina #${id} marcada como pagada`,
+        nomina: {
+          id: id,
+          status: 'PAID',
+          updatedAt: new Date()
+        }
+      });
     } catch (error: any) {
       console.error('Error en la ruta de marcar nómina como pagada:', error);
       res.status(500).json({ error: 'Error al marcar la nómina como pagada' });
@@ -578,9 +635,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cambiar el estado de una nómina
   nominaRouter.post('/cambiar-estado/:id', async (req: Request, res: Response) => {
     try {
-      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
-      const controller = new NominaController();
-      await controller.cambiarEstadoNomina(req, res);
+      // Implementación temporal mientras se crea el controlador
+      const id = parseInt(req.params.id);
+      const { nuevoEstado } = req.body;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'ID de nómina inválido' });
+      }
+      
+      if (!nuevoEstado) {
+        return res.status(400).json({ error: 'Nuevo estado no especificado' });
+      }
+      
+      // Validar que el estado sea válido
+      const estadosValidos = ['PENDING', 'APPROVED', 'REJECTED', 'PAID', 'CANCELLED'];
+      if (!estadosValidos.includes(nuevoEstado)) {
+        return res.status(400).json({ 
+          error: 'Estado inválido', 
+          estadosValidos 
+        });
+      }
+      
+      // Simular respuesta exitosa
+      res.status(200).json({ 
+        success: true, 
+        message: `Estado de nómina #${id} cambiado a ${nuevoEstado}`,
+        nomina: {
+          id: id,
+          status: nuevoEstado,
+          updatedAt: new Date()
+        }
+      });
     } catch (error: any) {
       console.error('Error en la ruta de cambiar estado de nómina:', error);
       res.status(500).json({ error: 'Error al cambiar el estado de la nómina' });
@@ -590,9 +675,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generar un desprendible de nómina en PDF
   nominaRouter.get('/:id/desprendible', async (req: Request, res: Response) => {
     try {
-      const NominaController = require('../client/src/modules/finanzas/nomina/infrastructure/controllers/nomina.controller').NominaController;
-      const controller = new NominaController();
-      await controller.generarDesprendible(req, res);
+      // Implementación temporal mientras se crea el controlador
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'ID de nómina inválido' });
+      }
+      
+      // En lugar de generar un PDF real, enviamos un objeto JSON con los datos que se incluirían en el PDF
+      // Cuando se implemente la funcionalidad completa, esto debería generar un PDF y enviarlo como respuesta
+      res.status(200).json({
+        success: true,
+        message: 'Estos datos se usarán para generar el PDF',
+        desprendible: {
+          id: id,
+          titulo: 'Comprobante de Pago',
+          fecha: new Date().toLocaleDateString(),
+          empleado: {
+            nombre: 'Nombre del Empleado',
+            identificacion: '12345678-9',
+            cargo: 'Desarrollador',
+            departamento: 'Tecnología'
+          },
+          periodo: {
+            inicio: '01/04/2025',
+            fin: '30/04/2025'
+          },
+          ingresos: {
+            salarioBase: 3500.00,
+            bonos: 0.00,
+            beneficios: 0.00,
+            totalIngresos: 3500.00
+          },
+          deducciones: {
+            impuestos: 200.00,
+            seguridadSocial: 250.00,
+            otrasRetenciones: 50.00,
+            totalDeducciones: 500.00
+          },
+          resumen: {
+            totalIngresos: 3500.00,
+            totalDeducciones: 500.00,
+            salarioNeto: 3000.00
+          }
+        }
+      });
     } catch (error: any) {
       console.error('Error en la ruta de generar desprendible de nómina:', error);
       res.status(500).json({ error: 'Error al generar el desprendible de nómina' });
