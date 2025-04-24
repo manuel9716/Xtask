@@ -640,12 +640,64 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getEmployee(id: number): Promise<Employee | undefined> {
-    const [employee] = await db.select().from(employees).where(eq(employees.id, id));
+    const [employee] = await db.select({
+      id: employees.id,
+      userId: employees.userId,
+      firstName: employees.firstName,
+      lastName: employees.lastName,
+      skills: employees.skills,
+      position: employees.position,
+      department: employees.department,
+      hireDate: employees.hireDate,
+      salary: employees.salary,
+      phoneNumber: employees.phoneNumber,
+      address: employees.address,
+      emergencyContact: employees.emergencyContact,
+      contractStatus: employees.contractStatus,
+      contractType: employees.contractType,
+      identification: employees.identification,
+      baseBenefits: employees.baseBenefits,
+      baseDeductions: employees.baseDeductions,
+      taxRate: employees.taxRate,
+      bankAccount: employees.bankAccount,
+      paymentMethod: employees.paymentMethod,
+      healthInsurance: employees.healthInsurance,
+      vacationDays: employees.vacationDays,
+      contratoUrl: employees.contratoUrl,
+      tipoPago: employees.tipoPago,
+      fechaInicioNomina: employees.fechaInicioNomina
+    }).from(employees).where(eq(employees.id, id));
     return employee;
   }
   
   async createEmployee(employeeData: InsertEmployee): Promise<Employee> {
-    const [employee] = await db.insert(employees).values(employeeData).returning();
+    const [employee] = await db.insert(employees).values(employeeData).returning({
+      id: employees.id,
+      userId: employees.userId,
+      firstName: employees.firstName,
+      lastName: employees.lastName,
+      skills: employees.skills,
+      position: employees.position,
+      department: employees.department,
+      hireDate: employees.hireDate,
+      salary: employees.salary,
+      phoneNumber: employees.phoneNumber,
+      address: employees.address,
+      emergencyContact: employees.emergencyContact,
+      contractStatus: employees.contractStatus,
+      contractType: employees.contractType,
+      identification: employees.identification,
+      baseBenefits: employees.baseBenefits,
+      baseDeductions: employees.baseDeductions,
+      taxRate: employees.taxRate,
+      bankAccount: employees.bankAccount,
+      paymentMethod: employees.paymentMethod,
+      healthInsurance: employees.healthInsurance,
+      vacationDays: employees.vacationDays,
+      contratoUrl: employees.contratoUrl,
+      tipoPago: employees.tipoPago,
+      fechaInicioNomina: employees.fechaInicioNomina
+    });
     return employee;
   }
   

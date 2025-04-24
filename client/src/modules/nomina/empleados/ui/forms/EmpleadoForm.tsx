@@ -18,6 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { CrearEmpleadoParams, CrearEmpleadoDTO } from '../../domain/entities/Empleado';
@@ -60,6 +61,9 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
     resolver: zodResolver(CrearEmpleadoDTO),
     defaultValues: {
       userId: undefined, // Esto debe ser seleccionado por el usuario
+      firstName: '',     // Nombre del empleado
+      lastName: '',      // Apellido del empleado
+      skills: '',        // Habilidades del empleado
       department: '',
       position: '',
       contractStatus: 'active',
@@ -275,6 +279,64 @@ export function EmpleadoForm({ onSuccess }: EmpleadoFormProps) {
                 </Select>
                 <FormDescription>
                   Asocie este empleado con un usuario de la plataforma
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Nombre */}
+          <FormField
+            control={form.control}
+            name="firstName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej. Juan Carlos" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Nombre del empleado
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Apellido */}
+          <FormField
+            control={form.control}
+            name="lastName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Apellido</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej. Pérez González" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Apellido del empleado
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Habilidades */}
+          <FormField
+            control={form.control}
+            name="skills"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Habilidades</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Ej. React, TypeScript, Node.js, SQL, Gestión de Proyectos" 
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormDescription>
+                  Habilidades, tecnologías y competencias del empleado
                 </FormDescription>
                 <FormMessage />
               </FormItem>
