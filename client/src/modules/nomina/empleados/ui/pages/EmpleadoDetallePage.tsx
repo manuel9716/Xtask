@@ -256,7 +256,7 @@ export default function EmpleadoDetallePage() {
         </div>
         <div className="ml-auto space-x-2">
           {!editMode ? (
-            <Button onClick={() => setEditMode(true)}>
+            <Button onClick={() => setLocation(`/admin/nomina/empleados/${id}/editar`)}>
               <Edit className="mr-2 h-4 w-4" />
               Editar información
             </Button>
@@ -852,12 +852,10 @@ export default function EmpleadoDetallePage() {
                       <p className="text-muted-foreground mb-2">
                         No hay contrato registrado para este empleado
                       </p>
-                      {!editMode && (
-                        <Button variant="outline" onClick={() => setEditMode(true)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar para subir contrato
-                        </Button>
-                      )}
+                      <Button variant="outline" onClick={() => setLocation(`/admin/nomina/empleados/${id}/editar`)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar para subir contrato
+                      </Button>
                     </div>
                   )}
                 </div>
