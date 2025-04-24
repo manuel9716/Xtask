@@ -246,7 +246,9 @@ export default function EmpleadoDetallePage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">
-            {(empleado as any).fullName || `Usuario #${empleado.userId}`}
+            {empleado.firstName && empleado.lastName 
+              ? `${empleado.firstName} ${empleado.lastName}` 
+              : (empleado as any).fullName || `Usuario #${empleado.userId}`}
           </h1>
           <p className="text-muted-foreground">
             {empleado.position} - {empleado.department}
@@ -310,6 +312,26 @@ export default function EmpleadoDetallePage() {
                   {editMode ? (
                     <>
                       <div className="grid gap-2">
+                        <Label htmlFor="firstName">Nombre</Label>
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="lastName">Apellido</Label>
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      
+                      <div className="grid gap-2">
                         <Label htmlFor="identification">Identificación</Label>
                         <Input
                           id="identification"
@@ -351,6 +373,16 @@ export default function EmpleadoDetallePage() {
                     </>
                   ) : (
                     <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium text-muted-foreground">Nombre:</div>
+                        <div>{empleado.firstName || 'No registrado'}</div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="font-medium text-muted-foreground">Apellido:</div>
+                        <div>{empleado.lastName || 'No registrado'}</div>
+                      </div>
+                      
                       <div className="grid grid-cols-2 gap-2">
                         <div className="font-medium text-muted-foreground">Identificación:</div>
                         <div>{empleado.identification}</div>
