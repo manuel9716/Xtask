@@ -19,6 +19,7 @@ import { useActualizarProyecto } from "../../application/useCases/actualizarProy
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 
 // Schema para validación del formulario
 const proyectoSchema = z.object({
@@ -82,6 +83,21 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
   // Hooks para crear/actualizar proyectos
   const crearProyectoMutation = useCrearProyecto();
   const actualizarProyectoMutation = useActualizarProyecto(proyecto?.id || 0);
+  
+  // Obtener empleados para el selector
+  const { data: empleados, isLoading: isLoadingEmpleados } = useQuery({
+    queryKey: ["/api/employees"],
+  });
+  
+  // Departamentos disponibles
+  const departamentos = [
+    { id: 1, nombre: "Tecnología" },
+    { id: 2, nombre: "Ventas" },
+    { id: 3, nombre: "Marketing" },
+    { id: 4, nombre: "Finanzas" },
+    { id: 5, nombre: "Recursos Humanos" },
+    { id: 6, nombre: "Operaciones" },
+  ];
   
   const isCreating = crearProyectoMutation.isPending;
   const isUpdating = actualizarProyectoMutation.isPending;
