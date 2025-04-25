@@ -46,8 +46,12 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
       <div className="flex justify-between items-center p-5 border-b border-gray-100">
         <h2 className="font-heading font-semibold text-lg text-gray-900">Active Projects</h2>
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" className="text-primary-600 hover:text-primary-700 text-sm gap-1">
-            <Plus className="h-4 w-4" /> New Project
+          <Button 
+            variant="ghost" 
+            className="text-primary-600 hover:text-primary-700 text-sm gap-1"
+            onClick={() => window.location.href = "/admin/proyectos/nuevo"}
+          >
+            <Plus className="h-4 w-4" /> Nuevo Proyecto
           </Button>
           <div className="w-px h-4 bg-gray-200"></div>
           <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700">

@@ -29,11 +29,11 @@ export default function Projects() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-900">Projects</h1>
-          <p className="text-gray-500">Manage and monitor all your company's projects</p>
+          <h1 className="text-2xl font-heading font-bold text-gray-900">Proyectos</h1>
+          <p className="text-gray-500">Administra y supervisa todos los proyectos de tu empresa</p>
         </div>
-        <Button className="md:self-start" size="sm">
-          <Plus className="mr-2 h-4 w-4" /> Create New Project
+        <Button className="md:self-start" size="sm" onClick={() => window.location.href = "/admin/proyectos/nuevo"}>
+          <Plus className="mr-2 h-4 w-4" /> Nuevo Proyecto
         </Button>
       </div>
       
@@ -41,12 +41,12 @@ export default function Projects() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Projects</CardDescription>
+            <CardDescription>Total Proyectos</CardDescription>
             <CardTitle className="text-3xl">{totalProjects}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-gray-500">
-              From all departments
+              De todos los departamentos
             </div>
           </CardContent>
         </Card>
