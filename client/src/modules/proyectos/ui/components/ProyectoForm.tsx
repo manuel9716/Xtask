@@ -80,8 +80,13 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
   const [isEditing] = useState(!!proyecto);
   
   // Hooks para crear/actualizar proyectos
-  const { crearProyecto, isLoading: isCreating, error: createError } = useCrearProyecto();
-  const { actualizarProyecto, isLoading: isUpdating, error: updateError } = useActualizarProyecto(proyecto?.id || 0);
+  const crearProyectoMutation = useCrearProyecto();
+  const actualizarProyectoMutation = useActualizarProyecto(proyecto?.id || 0);
+  
+  const isCreating = crearProyectoMutation.isPending;
+  const isUpdating = actualizarProyectoMutation.isPending;
+  const createError = crearProyectoMutation.error;
+  const updateError = actualizarProyectoMutation.error;
   
   // Inicializar el formulario
   const form = useForm<ProyectoFormValues>({
@@ -136,7 +141,7 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
         tags: values.tags,
       };
       
-      actualizarProyecto(updateData, {
+      actualizarProyectoMutation.mutate(updateData, {
         onSuccess: () => {
           onSuccess();
         },
@@ -154,7 +159,7 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
         tags: values.tags,
       };
       
-      crearProyecto(createData, {
+      crearProyectoMutation.mutate(createData, {
         onSuccess: () => {
           onSuccess();
         },
