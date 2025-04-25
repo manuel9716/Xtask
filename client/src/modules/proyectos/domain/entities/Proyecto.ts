@@ -1,17 +1,17 @@
-/**
- * Enumeración de posibles estados de un proyecto
- */
-export enum EstadoProyecto {
-  ACTIVO = "activo",
-  PAUSADO = "pausado",
-  FINALIZADO = "finalizado",
-  ARCHIVADO = "archivado",
-  CANCELADO = "cancelado",
+import { EstadoProyecto } from '@shared/schema';
+
+// Define FiltrosProyecto locally since it's not being properly imported
+export interface FiltrosProyecto {
+  busqueda?: string;
+  estado?: string;
+  fechaInicio?: Date;
+  fechaFin?: Date;
+  responsableId?: number;
+  clienteId?: number;
 }
 
-/**
- * Interfaz para la entidad Proyecto
- */
+export { EstadoProyecto };
+
 export interface Proyecto {
   id: number;
   nombre: string;
@@ -21,71 +21,39 @@ export interface Proyecto {
   fechaFinReal: Date | null;
   estado: EstadoProyecto;
   presupuesto: number;
-  responsableId: number;
-  clienteId?: number;
+  responsableId: number | null;
+  clienteId: number | null;
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-/**
- * Interfaz para crear un nuevo proyecto (DTO de entrada)
- */
-export interface CrearProyectoDTO {
-  nombre: string;
-  descripcion: string;
-  fechaInicio: Date;
-  fechaFinPrevista?: Date;
-  presupuesto: number;
-  responsableId: number;
-  clienteId?: number;
-  tags?: string[];
-}
-
-/**
- * Interfaz para actualizar un proyecto (DTO de entrada)
- */
-export interface ActualizarProyectoDTO {
-  nombre?: string;
-  descripcion?: string;
-  fechaInicio?: Date;
-  fechaFinPrevista?: Date | null;
-  fechaFinReal?: Date | null;
-  presupuesto?: number;
-  responsableId?: number;
-  clienteId?: number | null;
-  tags?: string[];
-}
-
-/**
- * Interfaz para cambiar el estado de un proyecto (DTO de entrada)
- */
-export interface CambiarEstadoProyectoDTO {
-  estado: EstadoProyecto;
-  comentario?: string;
-}
-
-/**
- * Interfaz para filtros en la consulta de proyectos
- */
-export interface FiltrosProyecto {
-  busqueda?: string;
-  estado?: EstadoProyecto | EstadoProyecto[];
-  responsableId?: number;
-  clienteId?: number;
-  fechaInicioDesde?: Date;
-  fechaInicioHasta?: Date;
-  page?: number;
-  pageSize?: number;
-}
-
-/**
- * Interfaz para la respuesta paginada de proyectos
- */
-export interface ProyectosPaginados {
-  data: Proyecto[];
-  total: number;
+// Interfaces para la paginación y filtrado
+export interface PaginacionProyectos {
   pagina: number;
-  totalPaginas: number;
   porPagina: number;
+  total: number;
+  totalPaginas: number;
+}
+
+export interface ResultadoProyectos extends PaginacionProyectos {
+  proyectos: (Proyecto & { 
+    progreso: number;
+    retrasado: boolean;
+  })[];
+  proyectosActivos: Proyecto[];
+  proyectosPausados: Proyecto[];
+  proyectosFinalizados: Proyecto[];
+  proyectosRetrasados: Proyecto[];
+}
+
+// Interfaces para indicadores/métricas
+export interface IndicadoresProyectos {
+  totalProyectos: number;
+  proyectosActivos: number;
+  proyectosPausados: number;
+  proyectosFinalizados: number;
+  proyectosRetrasados: number;
+  presupuestoTotal: number;
+  presupuestoActivos: number;
 }

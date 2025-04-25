@@ -1,212 +1,332 @@
 import { Router, Request, Response } from 'express';
-import { storage } from '../storage';
-import { EstadoProyecto } from '../../shared/schema';
+import { db } from '../db';
+import { projects } from '../../shared/schema';
+import { eq } from 'drizzle-orm';
+import { EstadoProyecto } from '@shared/schema';
 
+// Definimos el enrutador para proyectos
 const proyectosRouter = Router();
 
-// Obtener listado de proyectos (con filtros y paginación)
+// GET /api/proyectos - Listar proyectos con filtros y paginación
 proyectosRouter.get('/', async (req: Request, res: Response) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const pageSize = parseInt(req.query.pageSize as string) || 10;
-    const busqueda = req.query.busqueda as string;
-    const estado = req.query.estado as string;
+    // Parámetros de paginación y filtrado
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 10;
+    const offset = (page - 1) * pageSize;
     
-    // Obtener todos los proyectos
-    const proyectos = await storage.getAllProjects();
+    // Consulta base
+    let query = db.select().from(projects).limit(pageSize).offset(offset);
     
-    // Aplicar filtros si hay
-    let proyectosFiltrados = proyectos;
-    
-    if (busqueda) {
-      const busquedaLower = busqueda.toLowerCase();
-      proyectosFiltrados = proyectosFiltrados.filter(
-        proyecto => 
-          proyecto.nombre.toLowerCase().includes(busquedaLower) || 
-          proyecto.descripcion.toLowerCase().includes(busquedaLower)
-      );
+    // Filtros (pendiente de implementar completamente)
+    if (req.query.busqueda) {
+      // Ejemplo: implementar búsqueda por texto en nombre o descripción
     }
     
-    if (estado) {
-      proyectosFiltrados = proyectosFiltrados.filter(
-        proyecto => proyecto.estado === estado
-      );
-    }
+    // Ejecutar consulta
+    const result = await query;
     
-    // Paginación
-    const total = proyectosFiltrados.length;
-    const totalPaginas = Math.ceil(total / pageSize);
-    const inicio = (page - 1) * pageSize;
-    const fin = inicio + pageSize;
-    const proyectosPaginados = proyectosFiltrados.slice(inicio, fin);
+    // Transformar resultados al formato esperado en el frontend
+    const proyectos = result.map(p => ({
+      id: p.id,
+      nombre: p.name,
+      descripcion: p.description || '',
+      fechaInicio: p.startDate,
+      fechaFinPrevista: p.endDate,
+      fechaFinReal: null, // Pendiente de implementar en base de datos
+      estado: p.status === 'active' ? EstadoProyecto.ACTIVO : EstadoProyecto.FINALIZADO,
+      presupuesto: parseFloat(p.budget),
+      responsableId: p.managerId,
+      clienteId: null, // Pendiente de implementar en base de datos
+      tags: [], // Pendiente de implementar en base de datos
+      createdAt: p.createdAt,
+      updatedAt: p.createdAt // Pendiente de implementar en base de datos
+    }));
     
+    // Contar el total para la paginación
+    const totalCount = await db.select().from(projects);
+    const total = totalCount.length;
+    
+    // Enviar respuesta con formato adecuado para el frontend
     res.json({
-      data: proyectosPaginados,
-      total,
+      data: proyectos,
       pagina: page,
-      totalPaginas,
-      porPagina: pageSize
+      porPagina: pageSize,
+      total,
+      totalPaginas: Math.ceil(total / pageSize)
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al obtener proyectos:', error);
-    res.status(500).json({ error: 'Error al obtener proyectos' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Obtener un proyecto por ID
+// GET /api/proyectos/:id - Obtener un proyecto por ID
 proyectosRouter.get('/:id', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    const proyecto = await storage.getProject(id);
+    const id = Number(req.params.id);
+    const result = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
     
-    if (!proyecto) {
+    if (result.length === 0) {
       return res.status(404).json({ error: 'Proyecto no encontrado' });
     }
     
+    const p = result[0];
+    
+    // Transformar al formato esperado en el frontend
+    const proyecto = {
+      id: p.id,
+      nombre: p.name,
+      descripcion: p.description || '',
+      fechaInicio: p.startDate,
+      fechaFinPrevista: p.endDate,
+      fechaFinReal: null, // Pendiente de implementar en base de datos
+      estado: p.status === 'active' ? EstadoProyecto.ACTIVO : EstadoProyecto.FINALIZADO,
+      presupuesto: parseFloat(p.budget),
+      responsableId: p.managerId,
+      clienteId: null, // Pendiente de implementar en base de datos
+      tags: [], // Pendiente de implementar en base de datos
+      createdAt: p.createdAt,
+      updatedAt: p.createdAt // Pendiente de implementar en base de datos
+    };
+    
     res.json(proyecto);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al obtener proyecto:', error);
-    res.status(500).json({ error: 'Error al obtener proyecto' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Crear un nuevo proyecto
+// POST /api/proyectos - Crear un nuevo proyecto
 proyectosRouter.post('/', async (req: Request, res: Response) => {
   try {
-    const { nombre, descripcion, fechaInicio, fechaFinPrevista, presupuesto, responsableId, clienteId, tags } = req.body;
-    
-    const nuevoProyecto = await storage.createProject({
+    // Transformar datos del frontend al formato de la base de datos
+    const {
       nombre,
       descripcion,
-      fechaInicio: new Date(fechaInicio),
-      fechaFinPrevista: fechaFinPrevista ? new Date(fechaFinPrevista) : null,
+      fechaInicio,
+      fechaFinPrevista,
+      presupuesto,
+      responsableId
+    } = req.body;
+    
+    // Crear proyecto en la base de datos
+    const [nuevoProyecto] = await db.insert(projects).values({
+      name: nombre,
+      description: descripcion,
+      startDate: new Date(fechaInicio),
+      endDate: fechaFinPrevista ? new Date(fechaFinPrevista) : null,
+      budget: presupuesto.toString(),
+      remainingBudget: presupuesto.toString(),
+      managerId: responsableId || null,
+      status: 'active',
+      category: null
+    }).returning();
+    
+    // Transformar al formato esperado en el frontend
+    const proyecto = {
+      id: nuevoProyecto.id,
+      nombre: nuevoProyecto.name,
+      descripcion: nuevoProyecto.description || '',
+      fechaInicio: nuevoProyecto.startDate,
+      fechaFinPrevista: nuevoProyecto.endDate,
       fechaFinReal: null,
       estado: EstadoProyecto.ACTIVO,
+      presupuesto: parseFloat(nuevoProyecto.budget),
+      responsableId: nuevoProyecto.managerId,
+      clienteId: null,
+      tags: [],
+      createdAt: nuevoProyecto.createdAt,
+      updatedAt: nuevoProyecto.createdAt
+    };
+    
+    res.status(201).json(proyecto);
+  } catch (error: any) {
+    console.error('Error al crear proyecto:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH /api/proyectos/:id - Actualizar un proyecto
+proyectosRouter.patch('/:id', async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    
+    // Verificar si el proyecto existe
+    const existingProject = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
+    
+    if (existingProject.length === 0) {
+      return res.status(404).json({ error: 'Proyecto no encontrado' });
+    }
+    
+    // Transformar datos del frontend al formato de la base de datos
+    const {
+      nombre,
+      descripcion,
+      fechaInicio,
+      fechaFinPrevista,
+      fechaFinReal,
       presupuesto,
       responsableId,
       clienteId,
-      tags: tags || []
-    });
+      tags
+    } = req.body;
     
-    res.status(201).json(nuevoProyecto);
-  } catch (error) {
-    console.error('Error al crear proyecto:', error);
-    res.status(500).json({ error: 'Error al crear proyecto' });
-  }
-});
-
-// Actualizar un proyecto
-proyectosRouter.patch('/:id', async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id);
-    const proyecto = await storage.getProject(id);
+    // Actualizar proyecto en la base de datos
+    const [proyectoActualizado] = await db.update(projects)
+      .set({
+        name: nombre !== undefined ? nombre : undefined,
+        description: descripcion !== undefined ? descripcion : undefined,
+        startDate: fechaInicio !== undefined ? new Date(fechaInicio) : undefined,
+        endDate: fechaFinPrevista !== undefined ? 
+                (fechaFinPrevista === null ? null : new Date(fechaFinPrevista)) : 
+                undefined,
+        budget: presupuesto !== undefined ? presupuesto.toString() : undefined,
+        remainingBudget: presupuesto !== undefined ? presupuesto.toString() : undefined,
+        managerId: responsableId !== undefined ? responsableId : undefined
+      })
+      .where(eq(projects.id, id))
+      .returning();
     
-    if (!proyecto) {
-      return res.status(404).json({ error: 'Proyecto no encontrado' });
+    // Si no se actualizó el proyecto
+    if (!proyectoActualizado) {
+      return res.status(404).json({ error: 'Error al actualizar el proyecto' });
     }
     
-    const { nombre, descripcion, fechaInicio, fechaFinPrevista, fechaFinReal, presupuesto, responsableId, clienteId, tags } = req.body;
+    // Transformar al formato esperado en el frontend
+    const proyecto = {
+      id: proyectoActualizado.id,
+      nombre: proyectoActualizado.name,
+      descripcion: proyectoActualizado.description || '',
+      fechaInicio: proyectoActualizado.startDate,
+      fechaFinPrevista: proyectoActualizado.endDate,
+      fechaFinReal: fechaFinReal, // Pendiente de implementar en base de datos
+      estado: proyectoActualizado.status === 'active' ? EstadoProyecto.ACTIVO : EstadoProyecto.FINALIZADO,
+      presupuesto: parseFloat(proyectoActualizado.budget),
+      responsableId: proyectoActualizado.managerId,
+      clienteId: clienteId !== undefined ? clienteId : null,
+      tags: tags !== undefined ? tags : [],
+      createdAt: proyectoActualizado.createdAt,
+      updatedAt: proyectoActualizado.createdAt // Pendiente de implementar en base de datos
+    };
     
-    const proyectoActualizado = await storage.updateProject(id, {
-      ...(nombre !== undefined && { nombre }),
-      ...(descripcion !== undefined && { descripcion }),
-      ...(fechaInicio !== undefined && { fechaInicio: new Date(fechaInicio) }),
-      ...(fechaFinPrevista !== undefined && { fechaFinPrevista: fechaFinPrevista ? new Date(fechaFinPrevista) : null }),
-      ...(fechaFinReal !== undefined && { fechaFinReal: fechaFinReal ? new Date(fechaFinReal) : null }),
-      ...(presupuesto !== undefined && { presupuesto }),
-      ...(responsableId !== undefined && { responsableId }),
-      ...(clienteId !== undefined && { clienteId }),
-      ...(tags !== undefined && { tags })
-    });
-    
-    res.json(proyectoActualizado);
-  } catch (error) {
+    res.json(proyecto);
+  } catch (error: any) {
     console.error('Error al actualizar proyecto:', error);
-    res.status(500).json({ error: 'Error al actualizar proyecto' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Cambiar el estado de un proyecto
+// PATCH /api/proyectos/:id/estado - Cambiar estado de un proyecto
 proyectosRouter.patch('/:id/estado', async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id);
-    const proyecto = await storage.getProject(id);
-    
-    if (!proyecto) {
-      return res.status(404).json({ error: 'Proyecto no encontrado' });
-    }
-    
+    const id = Number(req.params.id);
     const { estado, comentario } = req.body;
     
-    if (!Object.values(EstadoProyecto).includes(estado)) {
-      return res.status(400).json({ error: 'Estado no válido' });
-    }
+    // Verificar si el proyecto existe
+    const existingProject = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
     
-    // Si se marca como finalizado, establecer la fecha de fin real
-    const actualizaciones: any = { estado };
-    if (estado === EstadoProyecto.FINALIZADO && !proyecto.fechaFinReal) {
-      actualizaciones.fechaFinReal = new Date();
-    }
-    
-    const proyectoActualizado = await storage.updateProject(id, actualizaciones);
-    
-    res.json(proyectoActualizado);
-  } catch (error) {
-    console.error('Error al cambiar estado del proyecto:', error);
-    res.status(500).json({ error: 'Error al cambiar estado del proyecto' });
-  }
-});
-
-// Eliminar (archivar) un proyecto
-proyectosRouter.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const id = parseInt(req.params.id);
-    const proyecto = await storage.getProject(id);
-    
-    if (!proyecto) {
+    if (existingProject.length === 0) {
       return res.status(404).json({ error: 'Proyecto no encontrado' });
     }
     
-    // Archivar el proyecto en lugar de eliminarlo realmente
-    await storage.updateProject(id, {
-      estado: EstadoProyecto.ARCHIVADO
-    });
+    // Mapear estado de dominio a estado de base de datos
+    let dbStatus = 'active';
+    if (estado === EstadoProyecto.FINALIZADO) dbStatus = 'completed';
+    else if (estado === EstadoProyecto.PAUSADO) dbStatus = 'paused';
+    else if (estado === EstadoProyecto.CANCELADO) dbStatus = 'cancelled';
+    else if (estado === EstadoProyecto.ARCHIVADO) dbStatus = 'archived';
     
-    res.status(204).send();
-  } catch (error) {
-    console.error('Error al eliminar proyecto:', error);
-    res.status(500).json({ error: 'Error al eliminar proyecto' });
+    // Actualizar estado en la base de datos
+    const [proyectoActualizado] = await db.update(projects)
+      .set({ status: dbStatus })
+      .where(eq(projects.id, id))
+      .returning();
+    
+    // Transformar al formato esperado en el frontend
+    const proyecto = {
+      id: proyectoActualizado.id,
+      nombre: proyectoActualizado.name,
+      descripcion: proyectoActualizado.description || '',
+      fechaInicio: proyectoActualizado.startDate,
+      fechaFinPrevista: proyectoActualizado.endDate,
+      fechaFinReal: null, // Pendiente de implementar en base de datos
+      estado: estado,
+      presupuesto: parseFloat(proyectoActualizado.budget),
+      responsableId: proyectoActualizado.managerId,
+      clienteId: null, // Pendiente de implementar en base de datos
+      tags: [], // Pendiente de implementar en base de datos
+      createdAt: proyectoActualizado.createdAt,
+      updatedAt: proyectoActualizado.createdAt // Pendiente de implementar en base de datos
+    };
+    
+    res.json(proyecto);
+  } catch (error: any) {
+    console.error('Error al cambiar estado del proyecto:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Obtener indicadores/métricas de proyectos
+// DELETE /api/proyectos/:id - Eliminar un proyecto
+proyectosRouter.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    
+    // Verificar si el proyecto existe
+    const existingProject = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
+    
+    if (existingProject.length === 0) {
+      return res.status(404).json({ error: 'Proyecto no encontrado' });
+    }
+    
+    // Eliminar proyecto (o marcar como inactivo)
+    // Opción 1: Eliminación física
+    await db.delete(projects).where(eq(projects.id, id));
+    
+    // Opción 2: Eliminación lógica (como alternativa, marcar como archivado)
+    // await db.update(projects)
+    //   .set({ status: 'archived' })
+    //   .where(eq(projects.id, id));
+    
+    res.status(204).send();
+  } catch (error: any) {
+    console.error('Error al eliminar proyecto:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/proyectos/indicadores - Obtener indicadores de proyectos
 proyectosRouter.get('/indicadores', async (req: Request, res: Response) => {
   try {
-    const proyectos = await storage.getAllProjects();
+    // Obtener todos los proyectos para calcular indicadores
+    const allProjects = await db.select().from(projects);
     
     // Calcular indicadores
-    const totalProyectos = proyectos.length;
-    const proyectosActivos = proyectos.filter(p => p.estado === EstadoProyecto.ACTIVO).length;
-    const proyectosPausados = proyectos.filter(p => p.estado === EstadoProyecto.PAUSADO).length;
-    const proyectosFinalizados = proyectos.filter(p => p.estado === EstadoProyecto.FINALIZADO).length;
+    const totalProyectos = allProjects.length;
     
-    // Calcular proyectos retrasados (aquellos activos con fecha fin prevista pasada)
-    const hoy = new Date();
-    const proyectosRetrasados = proyectos.filter(p => 
-      p.estado === EstadoProyecto.ACTIVO && 
-      p.fechaFinPrevista && 
-      new Date(p.fechaFinPrevista) < hoy
+    const proyectosActivos = allProjects.filter(p => p.status === 'active').length;
+    const proyectosPausados = allProjects.filter(p => p.status === 'paused').length;
+    const proyectosFinalizados = allProjects.filter(p => p.status === 'completed').length;
+    
+    // Proyectos retrasados: aquellos activos cuya fecha fin prevista ya pasó
+    const ahora = new Date();
+    const proyectosRetrasados = allProjects.filter(p => 
+      p.status === 'active' && 
+      p.endDate && 
+      new Date(p.endDate) < ahora
     ).length;
     
-    // Calcular presupuestos
-    const presupuestoTotal = proyectos
-      .filter(p => p.estado !== EstadoProyecto.ARCHIVADO)
-      .reduce((sum, p) => sum + p.presupuesto, 0);
+    // Calcular presupuesto total y de proyectos activos
+    const presupuestoTotal = allProjects.reduce(
+      (sum, p) => sum + parseFloat(p.budget), 
+      0
+    );
     
-    const presupuestoActivos = proyectos
-      .filter(p => p.estado === EstadoProyecto.ACTIVO)
-      .reduce((sum, p) => sum + p.presupuesto, 0);
+    const presupuestoActivos = allProjects
+      .filter(p => p.status === 'active')
+      .reduce((sum, p) => sum + parseFloat(p.budget), 0);
     
+    // Enviar indicadores
     res.json({
       totalProyectos,
       proyectosActivos,
@@ -216,9 +336,9 @@ proyectosRouter.get('/indicadores', async (req: Request, res: Response) => {
       presupuestoTotal,
       presupuestoActivos
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al obtener indicadores:', error);
-    res.status(500).json({ error: 'Error al obtener indicadores' });
+    res.status(500).json({ error: error.message });
   }
 });
 

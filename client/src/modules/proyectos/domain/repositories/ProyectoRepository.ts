@@ -1,44 +1,40 @@
-import { 
-  Proyecto, 
-  CrearProyectoDTO, 
-  ActualizarProyectoDTO, 
-  CambiarEstadoProyectoDTO,
-  FiltrosProyecto,
-  ProyectosPaginados
-} from '../entities/Proyecto';
+import { FiltrosProyecto, Proyecto, ResultadoProyectos, IndicadoresProyectos } from '../entities/Proyecto';
+import { EstadoProyecto } from '@shared/schema';
 
-/**
- * Interfaz que define las operaciones disponibles para el repositorio de proyectos
- * Siguiendo el patrón Repository para abstraer el acceso a datos
- */
+export interface CrearProyectoData {
+  nombre: string;
+  descripcion: string;
+  fechaInicio: Date | string;
+  fechaFinPrevista?: Date | string | null;
+  presupuesto: number;
+  responsableId?: number | null;
+  clienteId?: number | null;
+  tags?: string[];
+}
+
+export interface ActualizarProyectoData {
+  nombre?: string;
+  descripcion?: string;
+  fechaInicio?: Date | string;
+  fechaFinPrevista?: Date | string | null;
+  fechaFinReal?: Date | string | null;
+  presupuesto?: number;
+  responsableId?: number | null;
+  clienteId?: number | null;
+  tags?: string[];
+}
+
+export interface CambiarEstadoData {
+  estado: EstadoProyecto;
+  comentario?: string;
+}
+
 export interface ProyectoRepository {
-  /**
-   * Obtiene un listado paginado de proyectos según los filtros aplicados
-   */
-  listarProyectos(filtros?: FiltrosProyecto): Promise<ProyectosPaginados>;
-  
-  /**
-   * Obtiene un proyecto por su ID
-   */
-  obtenerProyectoPorId(id: number): Promise<Proyecto | null>;
-  
-  /**
-   * Crea un nuevo proyecto
-   */
-  crearProyecto(proyecto: CrearProyectoDTO): Promise<Proyecto>;
-  
-  /**
-   * Actualiza un proyecto existente
-   */
-  actualizarProyecto(id: number, proyecto: ActualizarProyectoDTO): Promise<Proyecto>;
-  
-  /**
-   * Cambia el estado de un proyecto
-   */
-  cambiarEstadoProyecto(id: number, cambioEstado: CambiarEstadoProyectoDTO): Promise<Proyecto>;
-  
-  /**
-   * Elimina (o archiva) un proyecto
-   */
+  listarProyectos(pagina: number, porPagina: number, filtros?: FiltrosProyecto): Promise<ResultadoProyectos>;
+  obtenerProyecto(id: number): Promise<Proyecto>;
+  crearProyecto(data: CrearProyectoData): Promise<Proyecto>;
+  actualizarProyecto(id: number, data: ActualizarProyectoData): Promise<Proyecto>;
+  cambiarEstado(id: number, data: CambiarEstadoData): Promise<Proyecto>;
   eliminarProyecto(id: number): Promise<void>;
+  obtenerIndicadores(): Promise<IndicadoresProyectos>;
 }

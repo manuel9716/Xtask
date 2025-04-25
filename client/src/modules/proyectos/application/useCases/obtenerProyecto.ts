@@ -1,41 +1,53 @@
 import { useQuery } from '@tanstack/react-query';
 import { Proyecto } from '../../domain/entities/Proyecto';
 import { ProyectoService } from '../../domain/services/ProyectoService';
-import { proyectosApi } from '../../infrastructure/api/proyectosApi';
+import { proyectosRepository } from '../../infrastructure/di/container';
+
+// Instancia del servicio con el repositorio inyectado
+const proyectoService = new ProyectoService(proyectosRepository);
 
 /**
- * Hook para obtener un proyecto por su ID
- * Implementa el caso de uso "Obtener Proyecto por ID"
+ * Hook para obtener un proyecto por ID con cálculos adicionales
  */
-export function useObtenerProyecto(id?: number) {
-  const {
-    data: proyecto,
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useQuery<Proyecto, Error>({
+export function useProyecto(id: number) {
+  const queryResult = useQuery<Proyecto, Error>({
     queryKey: ['/api/proyectos', id],
-    queryFn: async () => {
-      if (!id) throw new Error('ID de proyecto no especificado');
-      return await proyectosApi.obtenerProyectoPorId(id);
-    },
-    enabled: !!id,  // Solo ejecutar si hay un ID
+    queryFn: () => proyectoService.obtenerProyecto(id),
+    enabled: !!id, // Solo ejecuta la consulta si id es truthy
   });
-  
-  // Calcular información adicional sobre el proyecto si existe
-  const proyectoConDetalles = proyecto ? {
-    ...proyecto,
-    progreso: ProyectoService.calcularProgreso(proyecto),
-    retrasado: ProyectoService.estaRetrasado(proyecto),
-    diasRestantes: ProyectoService.calcularDiasRestantes(proyecto)
-  } : undefined;
-  
+
+  const { data: proyecto } = queryResult;
+
+  // Información adicional calculada si existe el proyecto
+  const proyectoConCalculos = proyecto
+    ? {
+        ...proyecto,
+        // Cálculos de negocio adicionales que enriquecen el modelo para la UI
+        progreso: proyectoService.calcularProgreso(proyecto),
+        retrasado: proyectoService.estaRetrasado(proyecto),
+        diasRestantes: calcularDiasRestantes(proyecto),
+      }
+    : null;
+
   return {
-    proyecto: proyectoConDetalles,
-    isLoading,
-    isError,
-    error,
-    refetch
+    ...queryResult,
+    proyecto: proyectoConCalculos,
   };
+}
+
+// Función auxiliar para calcular días restantes
+function calcularDiasRestantes(proyecto: Proyecto): number | null {
+  if (!proyecto.fechaFinPrevista) return null;
+  
+  const ahora = new Date();
+  const fechaFin = new Date(proyecto.fechaFinPrevista);
+  
+  // Si el proyecto ya debería haber terminado
+  if (ahora > fechaFin) return 0;
+  
+  // Calcular diferencia en días
+  const diffTime = fechaFin.getTime() - ahora.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
 }
