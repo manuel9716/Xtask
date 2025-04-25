@@ -6,13 +6,14 @@ import { FiltrosProyecto } from "../components/FiltrosProyecto";
 import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Loader2, Plus } from "lucide-react";
-import { Link } from "wouter";
+import { ModalCrearProyecto } from "../components/ModalCrearProyecto";
 
 export function ListaProyectos() {
   // Estado para la paginación y filtros
   const [pagina, setPagina] = useState(1);
   const [porPagina] = useState(9); // Fijo a 9 proyectos por página
   const [filtros, setFiltros] = useState<IFiltrosProyecto>({});
+  const [modalAbierto, setModalAbierto] = useState(false);
   
   // Consultar proyectos con filtros y paginación
   const { 
@@ -46,13 +47,17 @@ export function ListaProyectos() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Proyectos</h1>
-        <Link href="/admin/proyectos/nuevo">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo Proyecto
-          </Button>
-        </Link>
+        <Button className="gap-2" onClick={() => setModalAbierto(true)}>
+          <Plus className="h-4 w-4" />
+          Nuevo Proyecto
+        </Button>
       </div>
+      
+      {/* Modal para crear proyecto */}
+      <ModalCrearProyecto 
+        abierto={modalAbierto} 
+        onOpenChange={setModalAbierto} 
+      />
       
       {/* Componente de filtros */}
       <FiltrosProyecto 
