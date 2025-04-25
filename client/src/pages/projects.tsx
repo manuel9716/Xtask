@@ -18,9 +18,9 @@ export default function Projects() {
   
   // Calculate project metrics
   const totalProjects = projects?.length || 0;
-  const activeProjects = projects?.filter(p => p.status === "On Track" || p.status === "At Risk").length || 0;
-  const delayedProjects = projects?.filter(p => p.status === "Delayed").length || 0;
-  const completedProjects = projects?.filter(p => p.status === "Completed").length || 0;
+  const activeProjects = projects?.filter(p => p.status === "active").length || 0;
+  const delayedProjects = projects?.filter(p => p.status === "delayed").length || 0;
+  const completedProjects = projects?.filter(p => p.status === "completed").length || 0;
   
   // Calculate total budget
   const totalBudget = projects?.reduce((acc, project) => {
