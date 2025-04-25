@@ -7,6 +7,53 @@ import { EstadoProyecto } from '@shared/schema';
 // Definimos el enrutador para proyectos
 const proyectosRouter = Router();
 
+// GET /api/proyectos/indicadores - Obtener indicadores de proyectos
+proyectosRouter.get('/indicadores', async (req: Request, res: Response) => {
+  try {
+    // Obtener todos los proyectos para calcular indicadores
+    const allProjects = await db.select().from(projects);
+    
+    // Calcular indicadores
+    const totalProyectos = allProjects.length;
+    
+    const proyectosActivos = allProjects.filter(p => p.status === 'active').length;
+    const proyectosPausados = allProjects.filter(p => p.status === 'paused').length;
+    const proyectosFinalizados = allProjects.filter(p => p.status === 'completed').length;
+    
+    // Proyectos retrasados: aquellos activos cuya fecha fin prevista ya pasó
+    const ahora = new Date();
+    const proyectosRetrasados = allProjects.filter(p => 
+      p.status === 'active' && 
+      p.endDate && 
+      new Date(p.endDate) < ahora
+    ).length;
+    
+    // Calcular presupuesto total y de proyectos activos
+    const presupuestoTotal = allProjects.reduce(
+      (sum, p) => sum + parseFloat(p.budget), 
+      0
+    );
+    
+    const presupuestoActivos = allProjects
+      .filter(p => p.status === 'active')
+      .reduce((sum, p) => sum + parseFloat(p.budget), 0);
+    
+    // Enviar indicadores
+    res.json({
+      totalProyectos,
+      proyectosActivos,
+      proyectosPausados,
+      proyectosFinalizados,
+      proyectosRetrasados,
+      presupuestoTotal,
+      presupuestoActivos
+    });
+  } catch (error: any) {
+    console.error('Error al obtener indicadores:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/proyectos - Listar proyectos con filtros y paginación
 proyectosRouter.get('/', async (req: Request, res: Response) => {
   try {
