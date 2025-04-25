@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Project, EstadoProyecto } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { EstadoProyectoBadge } from "@/modules/proyectos/ui/components/EstadoProyectoBadge";
+import { ProyectoEstadoBadge } from "@/modules/proyectos/ui/components/ProyectoEstadoBadge";
 
 const iconMap: Record<string, any> = {
   "Tech": Building2,
@@ -178,7 +178,7 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
                             estadoProyecto = EstadoProyecto.ACTIVO;
                         }
                         
-                        return <EstadoProyectoBadge estado={estadoProyecto} />;
+                        return <ProyectoEstadoBadge estado={estadoProyecto} />;
                       })()}
                     </TableCell>
                     <TableCell className="text-right">
