@@ -12,14 +12,15 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useCrearProyecto } from "../../application/useCases/crearProyecto";
 import { CrearProyectoDTO, EstadoProyecto } from "../../domain/entities/Proyecto";
-import { Loader2 } from "lucide-react";
+import { Loader2, X, CalendarIcon } from "lucide-react";
 import { 
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
+  FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,9 +30,10 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 
 // Schema de validación para el formulario
 const crearProyectoSchema = z.object({
@@ -69,11 +71,9 @@ const crearProyectoSchema = z.object({
     .optional()
     .nullable(),
   departamentoId: z
-    .number({ invalid_type_error: "El ID del departamento debe ser un número" })
-    .int({ message: "El ID del departamento debe ser un número entero" })
-    .positive({ message: "El ID del departamento debe ser positivo" })
-    .optional()
-    .nullable(),
+    .array(z.number())
+    .default([])
+    .optional(),
 });
 
 // Tipo inferido del schema
@@ -88,6 +88,21 @@ export function ModalCrearProyecto({ abierto, onOpenChange }: ModalCrearProyecto
   const { toast } = useToast();
   const crearProyectoMutation = useCrearProyecto();
   
+  // Obtener empleados para el selector
+  const { data: empleados = [], isLoading: isLoadingEmpleados } = useQuery<any[]>({
+    queryKey: ["/api/employees"],
+  });
+  
+  // Departamentos disponibles
+  const departamentos = [
+    { id: 1, nombre: "Tecnología" },
+    { id: 2, nombre: "Ventas" },
+    { id: 3, nombre: "Marketing" },
+    { id: 4, nombre: "Finanzas" },
+    { id: 5, nombre: "Recursos Humanos" },
+    { id: 6, nombre: "Operaciones" },
+  ];
+  
   // Inicializar el formulario
   const form = useForm<CrearProyectoFormValues>({
     resolver: zodResolver(crearProyectoSchema),
@@ -99,7 +114,7 @@ export function ModalCrearProyecto({ abierto, onOpenChange }: ModalCrearProyecto
       fechaFin: null,
       presupuesto: 0,
       responsableId: null,
-      departamentoId: null,
+      departamentoId: [],
     },
   });
   
@@ -112,7 +127,7 @@ export function ModalCrearProyecto({ abierto, onOpenChange }: ModalCrearProyecto
       fechaInicio: values.fechaInicio,
       fechaFin: values.fechaFin || undefined,
       responsableId: values.responsableId || undefined,
-      departamentoId: values.departamentoId || undefined,
+      departamentoId: values.departamentoId?.length ? values.departamentoId[0] : undefined,
     };
     
     crearProyectoMutation.mutate(proyectoDTO, {
@@ -271,15 +286,27 @@ export function ModalCrearProyecto({ abierto, onOpenChange }: ModalCrearProyecto
                 name="presupuesto"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Presupuesto *</FormLabel>
+                    <FormLabel>Presupuesto (COP) *</FormLabel>
                     <FormControl>
                       <Input 
-                        type="number" 
-                        placeholder="0.00" 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        type="text" 
+                        placeholder="$0" 
+                        value={field.value.toLocaleString('es-CO', {
+                          style: 'currency',
+                          currency: 'COP',
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0
+                        })}
+                        onChange={(e) => {
+                          // Eliminar caracteres no numéricos
+                          const rawValue = e.target.value.replace(/[^\d]/g, "");
+                          field.onChange(rawValue ? parseInt(rawValue) : 0);
+                        }}
                       />
                     </FormControl>
+                    <FormDescription>
+                      Ingrese el monto en pesos colombianos.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -291,43 +318,92 @@ export function ModalCrearProyecto({ abierto, onOpenChange }: ModalCrearProyecto
                 name="responsableId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>ID del responsable</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="ID del responsable" 
-                        {...field} 
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? parseInt(value) : null);
-                        }}
-                      />
-                    </FormControl>
+                    <FormLabel>Responsable</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      value={field.value?.toString() || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar responsable" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingEmpleados ? (
+                          <div className="flex items-center justify-center p-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : (
+                          empleados?.map((empleado) => (
+                            <SelectItem 
+                              key={empleado.id} 
+                              value={empleado.id.toString()}
+                            >
+                              {empleado.firstName} {empleado.lastName}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Seleccione la persona responsable de este proyecto.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              {/* Departamento */}
+              {/* Departamentos */}
               <FormField
                 control={form.control}
                 name="departamentoId"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ID del departamento</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="ID del departamento" 
-                        {...field} 
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value ? parseInt(value) : null);
-                        }}
-                      />
-                    </FormControl>
+                  <FormItem className="col-span-2">
+                    <FormLabel>Departamentos asociados</FormLabel>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {departamentos.map((departamento) => {
+                        const isSelected = field.value?.includes(departamento.id);
+                        return (
+                          <Badge 
+                            key={departamento.id}
+                            variant={isSelected ? "default" : "outline"}
+                            className={`py-1.5 px-3 cursor-pointer hover:opacity-80 ${
+                              isSelected ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'
+                            }`}
+                            onClick={() => {
+                              const currentDepartamentos = field.value || [];
+                              if (isSelected) {
+                                // Remover del array
+                                field.onChange(currentDepartamentos.filter(id => id !== departamento.id));
+                              } else {
+                                // Agregar al array
+                                field.onChange([...currentDepartamentos, departamento.id]);
+                              }
+                            }}
+                          >
+                            {departamento.nombre}
+                            {isSelected && (
+                              <X
+                                className="h-3 w-3 ml-2 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const currentDepartamentos = field.value || [];
+                                  field.onChange(currentDepartamentos.filter(id => id !== departamento.id));
+                                }}
+                              />
+                            )}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                    {(!field.value || field.value.length === 0) && (
+                      <p className="text-muted-foreground text-sm mt-2">
+                        Selecciona al menos un departamento.
+                      </p>
+                    )}
+                    <FormDescription>
+                      Haz clic en los departamentos para seleccionarlos.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
