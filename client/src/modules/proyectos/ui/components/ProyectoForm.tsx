@@ -63,6 +63,9 @@ const proyectoSchema = z.object({
   tags: z
     .array(z.string())
     .optional(),
+  departamentos: z
+    .array(z.number())
+    .optional(),
   estado: z
     .nativeEnum(EstadoProyecto)
     .optional(),
@@ -117,6 +120,7 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
       responsableId: 0,
       clienteId: null,
       tags: [],
+      departamentos: [],
       estado: EstadoProyecto.ACTIVO,
     },
   });
@@ -134,6 +138,7 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
         responsableId: proyecto.responsableId,
         clienteId: proyecto.clienteId || null,
         tags: proyecto.tags || [],
+        departamentos: proyecto.departamentos || [],
         estado: proyecto.estado,
       };
       
@@ -155,6 +160,7 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
         responsableId: values.responsableId,
         clienteId: values.clienteId,
         tags: values.tags,
+        departamentos: values.departamentos,
       };
       
       actualizarProyectoMutation.mutate(updateData, {
@@ -173,6 +179,7 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
         responsableId: values.responsableId,
         clienteId: values.clienteId || undefined,
         tags: values.tags,
+        departamentos: values.departamentos,
       };
       
       crearProyectoMutation.mutate(createData, {
@@ -233,15 +240,24 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
               name="presupuesto"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Presupuesto *</FormLabel>
+                  <FormLabel>Presupuesto (COP) *</FormLabel>
                   <FormControl>
                     <Input 
-                      type="number" 
-                      placeholder="0.00" 
+                      type="text" 
+                      placeholder="0" 
                       {...field} 
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                      value={field.value.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).replace('COP', '').trim()}
+                      onChange={(e) => {
+                        // Eliminar todos los caracteres no numéricos
+                        const numericValue = e.target.value.replace(/[^0-9]/g, '');
+                        // Convertir a número
+                        field.onChange(numericValue ? parseInt(numericValue) : 0);
+                      }}
                     />
                   </FormControl>
+                  <FormDescription>
+                    Valor en pesos colombianos
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -253,14 +269,30 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
               name="responsableId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>ID del responsable *</FormLabel>
+                  <FormLabel>Responsable *</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="ID del responsable" 
-                      {...field} 
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
-                    />
+                    <Select 
+                      value={field.value.toString()} 
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar responsable" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {isLoadingEmpleados ? (
+                          <div className="flex items-center justify-center p-2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            <span className="ml-2 text-sm text-muted-foreground">Cargando...</span>
+                          </div>
+                        ) : (
+                          empleados?.map((empleado) => (
+                            <SelectItem key={empleado.id} value={empleado.id.toString()}>
+                              {empleado.firstName} {empleado.lastName}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -487,6 +519,67 @@ export function ProyectoForm({ proyecto, onSuccess }: ProyectoFormProps) {
             />
           </Card>
         )}
+        
+        {/* Departamentos */}
+        <Card className="p-6">
+          <h3 className="text-lg font-medium mb-4">Departamentos</h3>
+          
+          <FormField
+            control={form.control}
+            name="departamentos"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Departamentos asociados</FormLabel>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {departamentos.map((departamento) => {
+                      const isSelected = field.value?.includes(departamento.id);
+                      return (
+                        <Badge 
+                          key={departamento.id}
+                          variant={isSelected ? "default" : "outline"}
+                          className={`py-1.5 px-3 cursor-pointer hover:opacity-80 ${
+                            isSelected ? 'bg-primary text-primary-foreground' : 'bg-background text-foreground'
+                          }`}
+                          onClick={() => {
+                            const currentDepartamentos = field.value || [];
+                            if (isSelected) {
+                              // Remover del array
+                              field.onChange(currentDepartamentos.filter(id => id !== departamento.id));
+                            } else {
+                              // Agregar al array
+                              field.onChange([...currentDepartamentos, departamento.id]);
+                            }
+                          }}
+                        >
+                          {departamento.nombre}
+                          {isSelected && (
+                            <X
+                              className="h-3 w-3 ml-2 cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const currentDepartamentos = field.value || [];
+                                field.onChange(currentDepartamentos.filter(id => id !== departamento.id));
+                              }}
+                            />
+                          )}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                  
+                  {(!field.value || field.value.length === 0) && (
+                    <p className="text-muted-foreground text-sm">Selecciona al menos un departamento.</p>
+                  )}
+                </div>
+                <FormDescription>
+                  Haz clic en los departamentos para seleccionarlos.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </Card>
         
         {/* Etiquetas */}
         <Card className="p-6">
