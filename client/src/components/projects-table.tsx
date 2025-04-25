@@ -178,7 +178,7 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-gray-500">
-                  No projects found. Create your first project.
+                  No se encontraron proyectos. Crea tu primer proyecto.
                 </TableCell>
               </TableRow>
             )}
@@ -189,9 +189,9 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
       {limit && projects?.length > limit && (
         <div className="px-6 py-3 border-t border-gray-100 bg-white">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-600">Showing {limit} of {projectCount} projects</p>
+            <p className="text-sm text-gray-600">Mostrando {limit} de {projectCount} proyectos</p>
             <Button variant="link" className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1">
-              View All <span className="ml-1">→</span>
+              Ver Todos <span className="ml-1">→</span>
             </Button>
           </div>
         </div>
