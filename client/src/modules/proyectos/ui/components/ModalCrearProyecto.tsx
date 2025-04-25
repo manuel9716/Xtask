@@ -128,6 +128,7 @@ export function ModalCrearProyecto({ abierto, onOpenChange }: ModalCrearProyecto
       fechaFin: values.fechaFin || undefined,
       responsableId: values.responsableId || undefined,
       departamentoId: values.departamentoId?.length ? values.departamentoId[0] : undefined,
+      estado: values.estado, // Enviamos el estado seleccionado
     };
     
     crearProyectoMutation.mutate(proyectoDTO, {

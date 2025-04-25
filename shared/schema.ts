@@ -6,6 +6,7 @@ import { z } from "zod";
 export enum EstadoProyecto {
   ACTIVO = "ACTIVO",
   PAUSADO = "PAUSADO",
+  RETRASADO = "RETRASADO",
   FINALIZADO = "FINALIZADO",
   CANCELADO = "CANCELADO",
   ARCHIVADO = "ARCHIVADO"

@@ -154,7 +154,8 @@ proyectosRouter.post('/', async (req: Request, res: Response) => {
       fechaInicio,
       fechaFinPrevista,
       presupuesto,
-      responsableId
+      responsableId,
+      estado
     } = req.body;
     
     // Si tenemos un responsableId, necesitamos obtener el user_id asociado
@@ -167,6 +168,15 @@ proyectosRouter.post('/', async (req: Request, res: Response) => {
       }
     }
     
+    // Mapear estado de dominio a estado de base de datos
+    let dbStatus = 'active'; // Valor por defecto
+    if (estado) {
+      if (estado === EstadoProyecto.FINALIZADO) dbStatus = 'completed';
+      else if (estado === EstadoProyecto.PAUSADO) dbStatus = 'paused';
+      else if (estado === EstadoProyecto.RETRASADO) dbStatus = 'delayed';
+      else if (estado === EstadoProyecto.ACTIVO) dbStatus = 'active';
+    }
+    
     // Crear proyecto en la base de datos
     const [nuevoProyecto] = await db.insert(projects).values({
       name: nombre,
@@ -176,9 +186,15 @@ proyectosRouter.post('/', async (req: Request, res: Response) => {
       budget: presupuesto.toString(),
       remainingBudget: presupuesto.toString(),
       managerId: userId, // Ahora usamos el user_id, no el employee_id
-      status: 'active',
+      status: dbStatus,
       category: null
     }).returning();
+    
+    // Mapear estado de la base de datos al estado de dominio
+    let estadoDominio = EstadoProyecto.ACTIVO;
+    if (nuevoProyecto.status === 'completed') estadoDominio = EstadoProyecto.FINALIZADO;
+    else if (nuevoProyecto.status === 'paused') estadoDominio = EstadoProyecto.PAUSADO;
+    else if (nuevoProyecto.status === 'delayed') estadoDominio = EstadoProyecto.RETRASADO;
     
     // Transformar al formato esperado en el frontend
     const proyecto = {
@@ -188,7 +204,7 @@ proyectosRouter.post('/', async (req: Request, res: Response) => {
       fechaInicio: nuevoProyecto.startDate,
       fechaFinPrevista: nuevoProyecto.endDate,
       fechaFinReal: null,
-      estado: EstadoProyecto.ACTIVO,
+      estado: estadoDominio,
       presupuesto: parseFloat(nuevoProyecto.budget),
       responsableId: nuevoProyecto.managerId,
       clienteId: null,
