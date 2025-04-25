@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { projects } from '../../shared/schema';
+import { projects, employees, users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
 import { EstadoProyecto } from '@shared/schema';
 
@@ -110,6 +110,16 @@ proyectosRouter.post('/', async (req: Request, res: Response) => {
       responsableId
     } = req.body;
     
+    // Si tenemos un responsableId, necesitamos obtener el user_id asociado
+    let userId = null;
+    if (responsableId) {
+      // Obtener el employee para encontrar su user_id
+      const [empleado] = await db.select().from(employees).where(eq(employees.id, responsableId));
+      if (empleado) {
+        userId = empleado.userId;
+      }
+    }
+    
     // Crear proyecto en la base de datos
     const [nuevoProyecto] = await db.insert(projects).values({
       name: nombre,
@@ -118,7 +128,7 @@ proyectosRouter.post('/', async (req: Request, res: Response) => {
       endDate: fechaFinPrevista ? new Date(fechaFinPrevista) : null,
       budget: presupuesto.toString(),
       remainingBudget: presupuesto.toString(),
-      managerId: responsableId || null,
+      managerId: userId, // Ahora usamos el user_id, no el employee_id
       status: 'active',
       category: null
     }).returning();
@@ -172,6 +182,20 @@ proyectosRouter.patch('/:id', async (req: Request, res: Response) => {
       tags
     } = req.body;
     
+    // Si tenemos un responsableId, necesitamos obtener el user_id asociado
+    let userId = undefined;
+    if (responsableId !== undefined) {
+      if (responsableId === null) {
+        userId = null;
+      } else {
+        // Obtener el employee para encontrar su user_id
+        const [empleado] = await db.select().from(employees).where(eq(employees.id, responsableId));
+        if (empleado) {
+          userId = empleado.userId;
+        }
+      }
+    }
+    
     // Actualizar proyecto en la base de datos
     const [proyectoActualizado] = await db.update(projects)
       .set({
@@ -183,7 +207,7 @@ proyectosRouter.patch('/:id', async (req: Request, res: Response) => {
                 undefined,
         budget: presupuesto !== undefined ? presupuesto.toString() : undefined,
         remainingBudget: presupuesto !== undefined ? presupuesto.toString() : undefined,
-        managerId: responsableId !== undefined ? responsableId : undefined
+        managerId: userId
       })
       .where(eq(projects.id, id))
       .returning();
