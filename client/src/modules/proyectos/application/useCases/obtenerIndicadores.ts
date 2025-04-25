@@ -9,10 +9,14 @@ export function useIndicadoresProyectos() {
   return useQuery<ProyectosIndicadores, Error>({
     queryKey: ['/api/proyectos/indicadores'],
     queryFn: async () => {
-      return proyectoService.obtenerIndicadores();
+      console.log('Obteniendo indicadores de proyectos...');
+      const indicadores = await proyectoService.obtenerIndicadores();
+      console.log('Indicadores obtenidos:', indicadores);
+      return indicadores;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: true, // Habilitamos para ver actualizaciones
+    retry: 3 // Intentar hasta 3 veces
   });
 }
 

@@ -91,19 +91,19 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
               <Badge variant="secondary" className="ml-2">{indicadores.totalProyectos}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value={EstadoProyecto.ACTIVO} className="relative">
+          <TabsTrigger value="active" className="relative">
             Activos
             {!cargandoIndicadores && indicadores?.proyectosActivos !== undefined && (
               <Badge variant="secondary" className="ml-2">{indicadores.proyectosActivos}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value={EstadoProyecto.PAUSADO} className="relative">
+          <TabsTrigger value="paused" className="relative">
             Pausados
             {!cargandoIndicadores && indicadores?.proyectosPausados !== undefined && (
               <Badge variant="secondary" className="ml-2">{indicadores.proyectosPausados}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value={EstadoProyecto.FINALIZADO} className="relative">
+          <TabsTrigger value="completed" className="relative">
             Completados
             {!cargandoIndicadores && indicadores?.proyectosFinalizados !== undefined && (
               <Badge variant="secondary" className="ml-2">{indicadores.proyectosFinalizados}</Badge>
