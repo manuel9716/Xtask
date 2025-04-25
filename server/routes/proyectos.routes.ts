@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { projects, employees, users } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { EstadoProyecto } from '@shared/schema';
 
 // Definimos el enrutador para proyectos
@@ -63,12 +63,50 @@ proyectosRouter.get('/', async (req: Request, res: Response) => {
     const offset = (page - 1) * pageSize;
     
     // Consulta base
-    let query = db.select().from(projects).limit(pageSize).offset(offset);
+    let query = db.select().from(projects);
     
-    // Filtros (pendiente de implementar completamente)
-    if (req.query.busqueda) {
-      // Ejemplo: implementar búsqueda por texto en nombre o descripción
+    // Aplicar filtros
+    if (req.query.estado) {
+      const estadoFiltro = req.query.estado.toString();
+      // Mapear el estado de dominio (español) al estado de base de datos (inglés)
+      let dbStatus;
+      switch (estadoFiltro) {
+        case EstadoProyecto.ACTIVO:
+          dbStatus = 'active';
+          break;
+        case EstadoProyecto.PAUSADO:
+          dbStatus = 'paused';
+          break;
+        case EstadoProyecto.RETRASADO:
+          dbStatus = 'delayed';
+          break;
+        case EstadoProyecto.FINALIZADO:
+          dbStatus = 'completed';
+          break;
+        case EstadoProyecto.CANCELADO:
+          dbStatus = 'cancelled';
+          break;
+        case EstadoProyecto.ARCHIVADO:
+          dbStatus = 'archived';
+          break;
+      }
+      
+      if (dbStatus) {
+        query = query.where(eq(projects.status, dbStatus));
+      }
     }
+    
+    if (req.query.busqueda) {
+      const busqueda = req.query.busqueda.toString();
+      // Implementar búsqueda por texto en nombre o descripción
+      // Este es un filtro simplificado, en producción deberías usar búsqueda de texto completo
+      // o una función LIKE más robusta
+      query = query.where(sql`${projects.name} ILIKE ${'%' + busqueda + '%'} OR ${projects.description} ILIKE ${'%' + busqueda + '%'}`);
+    }
+    
+    // Aplicar paginación después de los filtros
+    const totalQuery = query;
+    query = query.limit(pageSize).offset(offset);
     
     // Ejecutar consulta
     const result = await query;
@@ -104,9 +142,9 @@ proyectosRouter.get('/', async (req: Request, res: Response) => {
       };
     });
     
-    // Contar el total para la paginación
-    const totalCount = await db.select().from(projects);
-    const total = totalCount.length;
+    // Contar el total para la paginación después de aplicar los filtros, pero sin paginación
+    const totalResult = await totalQuery;
+    const total = totalResult.length;
     
     // Enviar respuesta con formato adecuado para el frontend
     res.json({
