@@ -9,9 +9,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
-import { Project } from "@shared/schema";
+import { Project, EstadoProyecto } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { EstadoProyectoBadge } from "@/modules/proyectos/ui/components/EstadoProyectoBadge";
 
 const iconMap: Record<string, any> = {
   "Tech": Building2,
@@ -149,15 +150,36 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
                       <p className="text-xs text-gray-500">{daysLeft ? `${daysLeft} días restantes` : 'Sin fecha límite'}</p>
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        variant="outline" 
-                        className={`${statusColorMap[project.status || "On Track"] || "bg-gray-100 text-gray-800"} border-none`}
-                      >
-                        {project.status === "On Track" ? "En Progreso" : 
-                          project.status === "Delayed" ? "Retrasado" :
-                          project.status === "Completed" ? "Completado" :
-                          project.status || "En Progreso"}
-                      </Badge>
+                      {/* Mapear los estados en inglés a los estados en español del enum */}
+                      {(() => {
+                        let estadoProyecto: EstadoProyecto;
+                        
+                        switch (project.status) {
+                          case 'active':
+                            estadoProyecto = EstadoProyecto.ACTIVO;
+                            break;
+                          case 'paused':
+                            estadoProyecto = EstadoProyecto.PAUSADO;
+                            break;
+                          case 'delayed':
+                            estadoProyecto = EstadoProyecto.RETRASADO;
+                            break;
+                          case 'completed':
+                            estadoProyecto = EstadoProyecto.FINALIZADO;
+                            break;
+                          case 'cancelled':
+                          case 'canceled':
+                            estadoProyecto = EstadoProyecto.CANCELADO;
+                            break;
+                          case 'archived':
+                            estadoProyecto = EstadoProyecto.ARCHIVADO;
+                            break;
+                          default:
+                            estadoProyecto = EstadoProyecto.ACTIVO;
+                        }
+                        
+                        return <EstadoProyectoBadge estado={estadoProyecto} />;
+                      })()}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
