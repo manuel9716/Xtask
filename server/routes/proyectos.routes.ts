@@ -306,6 +306,18 @@ proyectosRouter.patch('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Error al actualizar el proyecto' });
     }
     
+    // Mapear estado de la base de datos al estado de dominio
+    let estadoDominio;
+    switch (proyectoActualizado.status) {
+      case 'active': estadoDominio = EstadoProyecto.ACTIVO; break;
+      case 'paused': estadoDominio = EstadoProyecto.PAUSADO; break;
+      case 'delayed': estadoDominio = EstadoProyecto.RETRASADO; break;
+      case 'completed': estadoDominio = EstadoProyecto.FINALIZADO; break;
+      case 'cancelled': estadoDominio = EstadoProyecto.CANCELADO; break;
+      case 'archived': estadoDominio = EstadoProyecto.ARCHIVADO; break;
+      default: estadoDominio = EstadoProyecto.ACTIVO;
+    }
+    
     // Transformar al formato esperado en el frontend
     const proyecto = {
       id: proyectoActualizado.id,
@@ -314,7 +326,7 @@ proyectosRouter.patch('/:id', async (req: Request, res: Response) => {
       fechaInicio: proyectoActualizado.startDate,
       fechaFinPrevista: proyectoActualizado.endDate,
       fechaFinReal: fechaFinReal, // Pendiente de implementar en base de datos
-      estado: proyectoActualizado.status === 'active' ? EstadoProyecto.ACTIVO : EstadoProyecto.FINALIZADO,
+      estado: estadoDominio,
       presupuesto: parseFloat(proyectoActualizado.budget),
       responsableId: proyectoActualizado.managerId,
       clienteId: clienteId !== undefined ? clienteId : null,
