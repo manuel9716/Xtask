@@ -53,36 +53,36 @@ export default function Projects() {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Active Projects</CardDescription>
+            <CardDescription>Proyectos Activos</CardDescription>
             <CardTitle className="text-3xl">{activeProjects}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-gray-500">
-              Currently in progress
+              Actualmente en progreso
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Delayed Projects</CardDescription>
+            <CardDescription>Proyectos Retrasados</CardDescription>
             <CardTitle className="text-3xl text-red-600">{delayedProjects}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-gray-500">
-              Require attention
+              Requieren atención
             </div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Budget</CardDescription>
+            <CardDescription>Presupuesto Total</CardDescription>
             <CardTitle className="text-3xl">${totalBudget.toLocaleString()}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-gray-500">
-              All projects combined
+              Todos los proyectos combinados
             </div>
           </CardContent>
         </Card>
@@ -91,10 +91,10 @@ export default function Projects() {
       {/* Projects Tabs */}
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="all">All Projects</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="delayed">Delayed</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="all">Todos los Proyectos</TabsTrigger>
+          <TabsTrigger value="active">Activos</TabsTrigger>
+          <TabsTrigger value="delayed">Retrasados</TabsTrigger>
+          <TabsTrigger value="completed">Completados</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="mt-6">

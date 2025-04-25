@@ -44,7 +44,7 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
       <div className="flex justify-between items-center p-5 border-b border-gray-100">
-        <h2 className="font-heading font-semibold text-lg text-gray-900">Active Projects</h2>
+        <h2 className="font-heading font-semibold text-lg text-gray-900">Proyectos Activos</h2>
         <div className="flex items-center space-x-2">
           <Button 
             variant="ghost" 
@@ -64,10 +64,10 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead className="font-medium">Project Name</TableHead>
-              <TableHead className="font-medium">Budget</TableHead>
-              <TableHead className="font-medium">Timeline</TableHead>
-              <TableHead className="font-medium">Status</TableHead>
+              <TableHead className="font-medium">Nombre del Proyecto</TableHead>
+              <TableHead className="font-medium">Presupuesto</TableHead>
+              <TableHead className="font-medium">Cronograma</TableHead>
+              <TableHead className="font-medium">Estado</TableHead>
               <TableHead className="sr-only">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -136,7 +136,7 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
                         </div>
                         <div>
                           <p className="font-medium text-gray-800">{project.name}</p>
-                          <p className="text-xs text-gray-500">{project.category || 'Uncategorized'}</p>
+                          <p className="text-xs text-gray-500">{project.category || 'Sin categoría'}</p>
                         </div>
                       </div>
                     </TableCell>
@@ -149,19 +149,22 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
                             style={{ width: `${percentUsed}%` }}
                           ></div>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">{percentUsed}% used</p>
+                        <p className="text-xs text-gray-500 mt-1">{percentUsed}% utilizado</p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <p className="text-gray-800">{startDateFormatted} - {endDateFormatted}</p>
-                      <p className="text-xs text-gray-500">{daysLeft ? `${daysLeft} days left` : 'No deadline'}</p>
+                      <p className="text-xs text-gray-500">{daysLeft ? `${daysLeft} días restantes` : 'Sin fecha límite'}</p>
                     </TableCell>
                     <TableCell>
                       <Badge 
                         variant="outline" 
                         className={`${statusColorMap[project.status || "On Track"] || "bg-gray-100 text-gray-800"} border-none`}
                       >
-                        {project.status || "On Track"}
+                        {project.status === "On Track" ? "En Progreso" : 
+                          project.status === "Delayed" ? "Retrasado" :
+                          project.status === "Completed" ? "Completado" :
+                          project.status || "En Progreso"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
