@@ -61,8 +61,8 @@ export function ListaProyectos() {
       
       {/* Componente de filtros */}
       <FiltrosProyecto 
-        onFiltrosChange={handleFiltrosChange} 
-        initialFiltros={filtros}
+        onFilterChange={handleFiltrosChange}
+        filtrosActivos={filtros}
       />
       
       {/* Estado de carga */}
