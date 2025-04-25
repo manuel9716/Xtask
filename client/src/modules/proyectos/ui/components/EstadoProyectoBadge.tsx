@@ -1,44 +1,49 @@
-import { Badge } from "@/components/ui/badge";
-import { EstadoProyecto } from "../../domain/entities/Proyecto";
+import { Badge } from '@/components/ui/badge';
+import { EstadoProyecto } from '../../domain/entities/Proyecto';
+import { cn } from '@/lib/utils';
 
 interface EstadoProyectoBadgeProps {
   estado: EstadoProyecto;
   className?: string;
 }
 
-// Mapeo de estado a color de badge y texto localizado
-const estadoConfig: Record<EstadoProyecto, { color: string, texto: string }> = {
-  [EstadoProyecto.ACTIVO]: { 
-    color: "bg-green-500 hover:bg-green-600", 
-    texto: "Activo" 
-  },
-  [EstadoProyecto.PAUSADO]: { 
-    color: "bg-yellow-500 hover:bg-yellow-600", 
-    texto: "Pausado" 
-  },
-  [EstadoProyecto.FINALIZADO]: { 
-    color: "bg-blue-500 hover:bg-blue-600", 
-    texto: "Finalizado" 
-  },
-  [EstadoProyecto.ARCHIVADO]: { 
-    color: "bg-gray-500 hover:bg-gray-600", 
-    texto: "Archivado" 
-  },
-  [EstadoProyecto.CANCELADO]: { 
-    color: "bg-red-500 hover:bg-red-600", 
-    texto: "Cancelado" 
-  },
-};
-
-/**
- * Componente para mostrar el estado de un proyecto como un badge con colores según el tipo
- */
-export function EstadoProyectoBadge({ estado, className = "" }: EstadoProyectoBadgeProps) {
-  const config = estadoConfig[estado];
+export function EstadoProyectoBadge({ estado, className }: EstadoProyectoBadgeProps) {
+  // Determinar variante según el estado
+  let variant: 'default' | 'secondary' | 'destructive' | 'outline' = 'default';
+  let label: string = estado;
+  
+  switch (estado) {
+    case EstadoProyecto.ACTIVO:
+      variant = 'default'; // Verde (primary) para activo
+      label = 'Activo';
+      break;
+    case EstadoProyecto.PAUSADO:
+      variant = 'secondary'; // Gris para pausado
+      label = 'Pausado';
+      break;
+    case EstadoProyecto.FINALIZADO:
+      variant = 'outline'; // Con borde para finalizado
+      label = 'Finalizado';
+      break;
+    case EstadoProyecto.CANCELADO:
+      variant = 'destructive'; // Rojo para cancelado
+      label = 'Cancelado';
+      break;
+    case EstadoProyecto.ARCHIVADO:
+      variant = 'outline'; // Con borde para archivado
+      label = 'Archivado';
+      break;
+  }
   
   return (
-    <Badge className={`${config.color} ${className}`}>
-      {config.texto}
+    <Badge 
+      variant={variant} 
+      className={cn(
+        estado === EstadoProyecto.ARCHIVADO && 'text-muted-foreground',
+        className
+      )}
+    >
+      {label}
     </Badge>
   );
 }

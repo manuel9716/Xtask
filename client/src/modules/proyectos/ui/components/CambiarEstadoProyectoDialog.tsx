@@ -1,117 +1,91 @@
-import { useState } from "react";
-import { CambiarEstadoProyectoDTO, EstadoProyecto } from "../../domain/entities/Proyecto";
-import { useCambiarEstadoProyecto } from "../../application/useCases/cambiarEstadoProyecto";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { ReactNode, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from '@/components/ui/button';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
+import { useCambiarEstadoProyecto } from '../../application/useCases/cambiarEstadoProyecto';
+import { EstadoProyecto } from '../../domain/entities/Proyecto';
+import { EstadoProyectoBadge } from './EstadoProyectoBadge';
+import { useToast } from '@/hooks/use-toast';
 
 interface CambiarEstadoProyectoDialogProps {
+  children: ReactNode;
   proyectoId: number;
   estadoActual: EstadoProyecto;
   onEstadoCambiado?: () => void;
-  children: React.ReactNode;
 }
 
 export function CambiarEstadoProyectoDialog({ 
+  children, 
   proyectoId, 
-  estadoActual, 
-  onEstadoCambiado,
-  children 
+  estadoActual,
+  onEstadoCambiado
 }: CambiarEstadoProyectoDialogProps) {
   const [open, setOpen] = useState(false);
-  const [estado, setEstado] = useState<EstadoProyecto | "">("");
-  const [comentario, setComentario] = useState("");
-  const { cambiarEstado, isLoading, error } = useCambiarEstadoProyecto(proyectoId);
+  const [estado, setEstado] = useState<EstadoProyecto | ''>('');
+  const [comentario, setComentario] = useState('');
+  
+  const mutation = useCambiarEstadoProyecto(proyectoId);
   const { toast } = useToast();
-
-  // Obtener estados permitidos según el estado actual
-  const getEstadosPermitidos = () => {
-    const todosEstados = Object.values(EstadoProyecto);
-    
-    // Reglas de negocio para transiciones permitidas
-    switch (estadoActual) {
-      case EstadoProyecto.ARCHIVADO:
-        return [EstadoProyecto.ACTIVO]; // Solo puede ir a activo
-      
-      case EstadoProyecto.CANCELADO:
-        return []; // No puede cambiar a ningún otro estado
-      
-      case EstadoProyecto.FINALIZADO:
-        return [EstadoProyecto.ARCHIVADO, EstadoProyecto.ACTIVO];
-      
-      default: // ACTIVO o PAUSADO
-        return todosEstados.filter(e => e !== estadoActual);
+  
+  // Resetear el estado del formulario al cerrarse
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setEstado('');
+      setComentario('');
     }
   };
-
-  const estadosPermitidos = getEstadosPermitidos();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  
+  // Manejar cambio de estado
+  const handleSubmit = async () => {
     if (!estado) {
       toast({
-        title: "Error",
-        description: "Debes seleccionar un estado",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Debes seleccionar un estado',
+        variant: 'destructive',
       });
       return;
     }
     
     try {
-      const cambioEstado: CambiarEstadoProyectoDTO = {
-        estado: estado as EstadoProyecto,
-        comentario: comentario.trim() || undefined,
-      };
-      
-      await cambiarEstado(cambioEstado);
-      
-      toast({
-        title: "Estado actualizado",
-        description: `El proyecto ha sido cambiado a "${estado}"`,
+      await mutation.mutateAsync({
+        estado,
+        comentario: comentario.trim() || undefined
       });
       
-      // Resetear el formulario y cerrar el diálogo
-      setEstado("");
-      setComentario("");
       setOpen(false);
-      
-      // Notificar al componente padre
       if (onEstadoCambiado) {
         onEstadoCambiado();
       }
     } catch (error) {
-      console.error("Error al cambiar estado:", error);
-      // El toast de error ya se muestra desde el hook useCambiarEstadoProyecto
+      // El manejo de errores ya se hace en el hook
     }
   };
-
-  // Textos descriptivos según el estado destino
-  const getDescripcionEstado = () => {
-    if (!estado) return "";
-    
-    switch (estado) {
-      case EstadoProyecto.ACTIVO:
-        return "El proyecto estará en ejecución activa.";
-      case EstadoProyecto.PAUSADO:
-        return "El proyecto se detendrá temporalmente.";
-      case EstadoProyecto.FINALIZADO:
-        return "El proyecto se marcará como completado.";
-      case EstadoProyecto.ARCHIVADO:
-        return "El proyecto se moverá al archivo histórico.";
-      case EstadoProyecto.CANCELADO:
-        return "El proyecto se cancelará permanentemente.";
-      default:
-        return "";
-    }
-  };
-
+  
+  // Filtrar estados no permitidos (no se puede volver al mismo estado)
+  const estadosDisponibles = Object.values(EstadoProyecto).filter(
+    e => e !== estadoActual
+  );
+  
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -119,80 +93,62 @@ export function CambiarEstadoProyectoDialog({
         <DialogHeader>
           <DialogTitle>Cambiar estado del proyecto</DialogTitle>
           <DialogDescription>
-            Estado actual: <span className="font-medium">{estadoActual}</span>
+            Estado actual: <EstadoProyectoBadge estado={estadoActual} className="ml-1" />
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          <div className="space-y-2">
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
             <Label htmlFor="estado">Nuevo estado</Label>
-            {estadosPermitidos.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Este proyecto no puede cambiar de estado.
-              </p>
-            ) : (
-              <>
-                <Select 
-                  value={estado} 
-                  onValueChange={(value) => setEstado(value as EstadoProyecto)}
-                >
-                  <SelectTrigger id="estado">
-                    <SelectValue placeholder="Seleccionar estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {estadosPermitidos.map((e) => (
-                      <SelectItem key={e} value={e}>
-                        {e.charAt(0).toUpperCase() + e.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {estado && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {getDescripcionEstado()}
-                  </p>
-                )}
-              </>
-            )}
+            <Select
+              value={estado}
+              onValueChange={(value) => setEstado(value as EstadoProyecto)}
+            >
+              <SelectTrigger id="estado">
+                <SelectValue placeholder="Seleccionar estado" />
+              </SelectTrigger>
+              <SelectContent>
+                {estadosDisponibles.map((estado) => (
+                  <SelectItem key={estado} value={estado}>
+                    <div className="flex items-center">
+                      <EstadoProyectoBadge estado={estado} />
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
-          <div className="space-y-2">
+          <div className="grid gap-2">
             <Label htmlFor="comentario">Comentario (opcional)</Label>
             <Textarea
               id="comentario"
-              placeholder="Añade un comentario explicando el cambio de estado"
+              placeholder="Razón del cambio de estado..."
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
-              className="resize-none"
               rows={3}
             />
           </div>
-          
-          {error && (
-            <p className="text-sm text-destructive">
-              {error}
-            </p>
-          )}
-          
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setOpen(false)}
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={!estado || isLoading || estadosPermitidos.length === 0}
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Guardar cambios
-            </Button>
-          </DialogFooter>
-        </form>
+        </div>
+        
+        <DialogFooter>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => setOpen(false)}
+            disabled={mutation.isPending}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            type="button" 
+            onClick={handleSubmit}
+            disabled={!estado || mutation.isPending}
+          >
+            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Guardar cambios
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

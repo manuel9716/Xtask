@@ -1,39 +1,36 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import { proyectosApi } from '../../infrastructure/api/proyectosApi';
+import { useToast } from '@/hooks/use-toast';
 
 /**
- * Hook para gestionar la eliminación de un proyecto
+ * Hook para eliminar (archivar) un proyecto
+ * Implementa el caso de uso "Eliminar Proyecto"
  */
 export function useEliminarProyecto() {
-  const [error, setError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async (id: number): Promise<void> => {
-      try {
-        return await proyectosApi.eliminarProyecto(id);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Error al eliminar el proyecto';
-        setError(message);
-        throw new Error(message);
-      }
+  const { toast } = useToast();
+  
+  const mutation = useMutation<void, Error, number>({
+    mutationFn: async (id: number) => {
+      return await proyectosApi.eliminarProyecto(id);
     },
     onSuccess: () => {
-      // Invalidar consultas para refrescar los datos
+      // Invalidar la cache de proyectos para que se actualice el listado
       queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
-      setError(null);
+      
+      toast({
+        title: 'Proyecto eliminado',
+        description: 'El proyecto ha sido archivado correctamente',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error al eliminar proyecto',
+        description: error.message || 'Ha ocurrido un error al eliminar el proyecto',
+        variant: 'destructive',
+      });
     },
   });
-
-  return {
-    eliminarProyecto: mutation.mutate,
-    isLoading: mutation.isPending,
-    error,
-    isSuccess: mutation.isSuccess,
-    reset: () => {
-      setError(null);
-      mutation.reset();
-    }
-  };
+  
+  return mutation;
 }
