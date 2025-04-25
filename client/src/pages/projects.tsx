@@ -6,9 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { Project } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ModalCrearProyecto } from "@/modules/proyectos/ui/components/ModalCrearProyecto";
 
 export default function Projects() {
   const [activeTab, setActiveTab] = useState("all");
+  const [modalAbierto, setModalAbierto] = useState(false);
   
   const { data: projects } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
@@ -32,10 +34,16 @@ export default function Projects() {
           <h1 className="text-2xl font-heading font-bold text-gray-900">Proyectos</h1>
           <p className="text-gray-500">Administra y supervisa todos los proyectos de tu empresa</p>
         </div>
-        <Button className="md:self-start" size="sm" onClick={() => window.location.href = "/admin/proyectos/nuevo"}>
+        <Button className="md:self-start" size="sm" onClick={() => setModalAbierto(true)}>
           <Plus className="mr-2 h-4 w-4" /> Nuevo Proyecto
         </Button>
       </div>
+      
+      {/* Modal para crear proyecto */}
+      <ModalCrearProyecto 
+        abierto={modalAbierto} 
+        onOpenChange={setModalAbierto} 
+      />
       
       {/* Project Overview Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
