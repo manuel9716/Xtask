@@ -56,8 +56,12 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
     return count;
   };
   
+  // Depuración - Ver qué filtros están activos
+  console.log('Filtros activos:', filtrosActivos);
+
   // Manejar cambio de pestaña
   const handleTabChange = (value: string) => {
+    console.log('Cambiando tab a:', value);
     let nuevosFiltros: FiltrosProyectoType = { ...filtrosActivos };
     
     // Eliminar filtro de estado anterior si existe
@@ -67,11 +71,14 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
     
     // Si no es "todos", agregar el nuevo filtro
     if (value !== 'todos') {
-      nuevosFiltros.estado = value as EstadoProyecto;
+      // Mapear entre estados de UI y valores de base de datos
+      let estadoDB = value; // Por defecto usar el valor tal cual
+      nuevosFiltros.estado = estadoDB as EstadoProyecto;
     }
     
     // Actualizar estado local y aplicar filtros
     setEstado(value as EstadoProyecto | 'todos');
+    console.log('Nuevos filtros:', nuevosFiltros);
     onFilterChange(nuevosFiltros);
   };
   
@@ -154,7 +161,7 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los estados</SelectItem>
-                  <SelectItem value={EstadoProyecto.ACTIVO}>
+                  <SelectItem value="active">
                     <div className="flex items-center justify-between w-full">
                       <span>Activos</span>
                       {!cargandoIndicadores && indicadores?.proyectosActivos !== undefined && (
@@ -162,7 +169,7 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
                       )}
                     </div>
                   </SelectItem>
-                  <SelectItem value={EstadoProyecto.PAUSADO}>
+                  <SelectItem value="paused">
                     <div className="flex items-center justify-between w-full">
                       <span>Pausados</span>
                       {!cargandoIndicadores && indicadores?.proyectosPausados !== undefined && (
@@ -170,7 +177,7 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
                       )}
                     </div>
                   </SelectItem>
-                  <SelectItem value={EstadoProyecto.FINALIZADO}>
+                  <SelectItem value="completed">
                     <div className="flex items-center justify-between w-full">
                       <span>Finalizados</span>
                       {!cargandoIndicadores && indicadores?.proyectosFinalizados !== undefined && (

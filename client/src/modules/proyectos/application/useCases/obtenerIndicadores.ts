@@ -6,17 +6,28 @@ import { proyectoService } from '../../infrastructure/di/container';
  * Hook para obtener indicadores y métricas de proyectos
  */
 export function useIndicadoresProyectos() {
+  // Reducimos staleTime para forzar actualización más frecuente
   return useQuery<ProyectosIndicadores, Error>({
     queryKey: ['/api/proyectos/indicadores'],
     queryFn: async () => {
       console.log('Obteniendo indicadores de proyectos...');
-      const indicadores = await proyectoService.obtenerIndicadores();
-      console.log('Indicadores obtenidos:', indicadores);
-      return indicadores;
+      try {
+        const response = await fetch('/api/proyectos/indicadores');
+        if (!response.ok) {
+          throw new Error(`Error API: ${response.status}`);
+        }
+        const indicadores = await response.json();
+        console.log('Indicadores obtenidos directamente:', indicadores);
+        return indicadores;
+      } catch (error) {
+        console.error('Error al obtener indicadores:', error);
+        throw error;
+      }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    refetchOnWindowFocus: true, // Habilitamos para ver actualizaciones
-    retry: 3 // Intentar hasta 3 veces
+    staleTime: 0, // Sin caché para forzar refetch
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    retry: 3
   });
 }
 
