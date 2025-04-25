@@ -1,33 +1,29 @@
 /**
- * Enum para representar los estados posibles de un proyecto.
- * Seguimos el patrón de Value Objects para limitar los valores posibles.
+ * Enum que define los posibles estados de un proyecto
  */
 export enum EstadoProyecto {
-  ACTIVO = 'active',
-  PAUSADO = 'paused',
-  RETRASADO = 'delayed',
-  FINALIZADO = 'done'
+  ACTIVO = 'ACTIVO',
+  PAUSADO = 'PAUSADO',
+  RETRASADO = 'RETRASADO',
+  FINALIZADO = 'FINALIZADO'
 }
 
 /**
- * Interfaz que representa la entidad Proyecto en el dominio
- * Esta es independiente de la capa de infraestructura/persistencia
+ * Interfaz que define la estructura de un proyecto en el sistema
  */
 export interface Proyecto {
   id: number;
   nombre: string;
-  descripcion?: string;
+  descripcion: string;
   estado: EstadoProyecto;
-  fechaInicio: Date;
-  fechaFin?: Date;
   presupuesto: number;
-  costoActual?: number;
-  departamentoId?: number;
-  responsableId?: number;
-  creadoEn: Date;
-  actualizadoEn?: Date;
-  categoria?: string;
-  presupuestoRestante?: number;
+  costoActual: number;
+  fechaInicio: Date | string;
+  fechaFin: Date | string | null;
+  departamentoId: number | null;
+  responsableId: number | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 /**
@@ -35,14 +31,12 @@ export interface Proyecto {
  */
 export interface CrearProyectoDTO {
   nombre: string;
-  descripcion?: string;
-  estado: EstadoProyecto;
-  fechaInicio: Date;
-  fechaFin?: Date;
+  descripcion: string;
   presupuesto: number;
-  departamentoId?: number;
-  responsableId?: number;
-  categoria?: string;
+  fechaInicio: Date | string;
+  fechaFin?: Date | string | null;
+  departamentoId?: number | null;
+  responsableId?: number | null;
 }
 
 /**
@@ -51,161 +45,88 @@ export interface CrearProyectoDTO {
 export interface ActualizarProyectoDTO {
   nombre?: string;
   descripcion?: string;
-  estado?: EstadoProyecto;
-  fechaInicio?: Date;
-  fechaFin?: Date;
   presupuesto?: number;
   costoActual?: number;
-  departamentoId?: number;
-  responsableId?: number;
-  categoria?: string;
-  presupuestoRestante?: number;
+  fechaInicio?: Date | string;
+  fechaFin?: Date | string | null;
+  departamentoId?: number | null;
+  responsableId?: number | null;
 }
 
 /**
- * DTO para cambiar solo el estado de un proyecto
+ * DTO para cambiar el estado de un proyecto
  */
 export interface CambiarEstadoProyectoDTO {
   estado: EstadoProyecto;
 }
 
 /**
- * DTO para filtrar proyectos
+ * Filtros para buscar proyectos
  */
 export interface FiltrosProyecto {
-  busqueda?: string;
   estado?: EstadoProyecto;
+  busqueda?: string;
+  departamentoId?: number;
+  responsableId?: number;
   fechaInicio?: Date;
   fechaFin?: Date;
-  responsableId?: number;
-  departamentoId?: number;
-  categoria?: string;
 }
 
 /**
- * Clase para validar la creación de un proyecto y aplicar reglas de negocio
+ * Métricas de un proyecto
  */
-export class ProyectoFactory {
-  /**
-   * Crea un nuevo proyecto validando las reglas de negocio
-   */
-  public static crear(datos: CrearProyectoDTO): CrearProyectoDTO {
-    if (!datos.nombre || datos.nombre.trim() === '') {
-      throw new Error('El nombre del proyecto es obligatorio');
-    }
-
-    if (!datos.fechaInicio) {
-      throw new Error('La fecha de inicio es obligatoria');
-    }
-
-    if (datos.fechaFin && datos.fechaInicio > datos.fechaFin) {
-      throw new Error('La fecha de fin no puede ser anterior a la fecha de inicio');
-    }
-
-    if (datos.presupuesto <= 0) {
-      throw new Error('El presupuesto debe ser mayor que cero');
-    }
-
-    return {
-      ...datos,
-      nombre: datos.nombre.trim(),
-      estado: datos.estado || EstadoProyecto.ACTIVO
-    };
-  }
-
-  /**
-   * Valida los datos para actualizar un proyecto
-   */
-  public static actualizar(datos: ActualizarProyectoDTO): ActualizarProyectoDTO {
-    // Validar que al menos se proporciona un campo para actualizar
-    if (Object.keys(datos).length === 0) {
-      throw new Error('Debe proporcionar al menos un campo para actualizar');
-    }
-
-    // Validar nombre si se proporciona
-    if (datos.nombre !== undefined && datos.nombre.trim() === '') {
-      throw new Error('El nombre del proyecto no puede estar vacío');
-    }
-
-    // Validar fechas si se proporcionan ambas
-    if (datos.fechaInicio && datos.fechaFin && datos.fechaInicio > datos.fechaFin) {
-      throw new Error('La fecha de fin no puede ser anterior a la fecha de inicio');
-    }
-
-    // Validar presupuesto si se proporciona
-    if (datos.presupuesto !== undefined && datos.presupuesto <= 0) {
-      throw new Error('El presupuesto debe ser mayor que cero');
-    }
-
-    return datos;
-  }
+export interface ProyectoMetricas {
+  porcentajeAvance: number;
+  porcentajePresupuesto: number;
+  diasRestantes: number;
+  diasTranscurridos: number;
+  duracionTotal: number;
+  estaRetrasado: boolean;
 }
 
 /**
- * Funciones para calcular KPIs y métricas relacionadas con proyectos
+ * Función para calcular las métricas de un proyecto
  */
-export class ProyectoMetricas {
-  /**
-   * Calcula el porcentaje de avance basado en fechas
-   */
-  public static calcularPorcentajeAvanceTemporal(proyecto: Proyecto): number {
-    if (!proyecto.fechaFin) return 0;
-    
-    const hoy = new Date();
-    const inicio = new Date(proyecto.fechaInicio);
-    const fin = new Date(proyecto.fechaFin);
-    
-    // Si la fecha de fin ya pasó
-    if (hoy > fin) {
-      return proyecto.estado === EstadoProyecto.FINALIZADO ? 100 : 90;
-    }
-    
-    // Si aún no ha comenzado
-    if (hoy < inicio) return 0;
-    
-    // Calcular porcentaje de tiempo transcurrido
-    const duracionTotal = fin.getTime() - inicio.getTime();
-    const tiempoTranscurrido = hoy.getTime() - inicio.getTime();
-    
-    return Math.min(Math.round((tiempoTranscurrido / duracionTotal) * 100), 100);
+export function calcularMetricasProyecto(proyecto: Proyecto): ProyectoMetricas {
+  const fechaInicio = new Date(proyecto.fechaInicio);
+  const fechaFin = proyecto.fechaFin ? new Date(proyecto.fechaFin) : null;
+  const hoy = new Date();
+  
+  // Calcular días transcurridos
+  const diasTranscurridos = Math.floor((hoy.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Calcular días restantes y duración total
+  let diasRestantes = 0;
+  let duracionTotal = 0;
+  
+  if (fechaFin) {
+    diasRestantes = Math.max(0, Math.floor((fechaFin.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)));
+    duracionTotal = Math.floor((fechaFin.getTime() - fechaInicio.getTime()) / (1000 * 60 * 60 * 24));
   }
-
-  /**
-   * Calcula el porcentaje de presupuesto utilizado
-   */
-  public static calcularPorcentajePresupuesto(proyecto: Proyecto): number {
-    if (!proyecto.costoActual || proyecto.costoActual <= 0) return 0;
-    
-    return Math.min(Math.round((proyecto.costoActual / proyecto.presupuesto) * 100), 100);
+  
+  // Calcular porcentaje de avance (basado en tiempo)
+  let porcentajeAvance = 0;
+  if (duracionTotal > 0) {
+    porcentajeAvance = Math.min(100, Math.round((diasTranscurridos / duracionTotal) * 100));
   }
-
-  /**
-   * Determina si un proyecto está retrasado
-   */
-  public static estaRetrasado(proyecto: Proyecto): boolean {
-    if (proyecto.estado === EstadoProyecto.FINALIZADO) return false;
-    
-    if (!proyecto.fechaFin) return false;
-    
-    const hoy = new Date();
-    const fin = new Date(proyecto.fechaFin);
-    
-    return hoy > fin && proyecto.estado !== EstadoProyecto.FINALIZADO;
-  }
-
-  /**
-   * Calcula el presupuesto restante
-   */
-  public static calcularPresupuestoRestante(proyecto: Proyecto): number {
-    if (!proyecto.costoActual) return proyecto.presupuesto;
-    
-    return Math.max(proyecto.presupuesto - proyecto.costoActual, 0);
-  }
+  
+  // Calcular porcentaje de presupuesto utilizado
+  const porcentajePresupuesto = proyecto.presupuesto > 0 
+    ? Math.round((proyecto.costoActual / proyecto.presupuesto) * 100) 
+    : 0;
+  
+  // Determinar si el proyecto está retrasado
+  const estaRetrasado = 
+    (fechaFin && hoy > fechaFin && proyecto.estado !== EstadoProyecto.FINALIZADO) || 
+    (porcentajePresupuesto > 100) || 
+    proyecto.estado === EstadoProyecto.RETRASADO;
+  
+  return {
+    porcentajeAvance,
+    porcentajePresupuesto,
+    diasRestantes,
+    diasTranscurridos,
+    duracionTotal,
+    estaRetrasado
+  };
 }
-
-// Exportar todo el módulo
-export default {
-  EstadoProyecto,
-  ProyectoFactory,
-  ProyectoMetricas
-};

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListarProyectos } from "../../application/useCases/listarProyectos";
+import { useProyectos } from "../../application/useCases/listarProyectos";
 import { FiltrosProyecto as IFiltrosProyecto } from "../../domain/entities/Proyecto";
 import { ProyectoCard } from "../components/ProyectoCard";
 import { FiltrosProyecto } from "../components/FiltrosProyecto";
@@ -16,17 +16,19 @@ export function ListaProyectos() {
   
   // Consultar proyectos con filtros y paginación
   const { 
-    proyectos, 
-    total, 
-    totalPaginas, 
+    data: proyectos = [], 
     isLoading, 
     isError, 
     error 
-  } = useListarProyectos({
+  } = useProyectos({
     ...filtros,
     page: pagina,
     pageSize: porPagina,
   });
+  
+  // Calcular valores para paginación
+  const total = proyectos.length;
+  const totalPaginas = Math.ceil(total / porPagina);
   
   // Manejar cambio de filtros
   const handleFiltrosChange = (nuevosFiltros: IFiltrosProyecto) => {

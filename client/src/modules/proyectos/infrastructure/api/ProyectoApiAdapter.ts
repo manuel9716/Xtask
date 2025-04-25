@@ -2,7 +2,7 @@ import {
   Proyecto, 
   CrearProyectoDTO, 
   ActualizarProyectoDTO, 
-  CambiarEstadoProyectoDTO,
+  EstadoProyecto,
   FiltrosProyecto
 } from '../../domain/entities/Proyecto';
 import { ProyectoRepository, ProyectosIndicadores } from '../../domain/repositories/ProyectoRepository';
@@ -52,8 +52,8 @@ export class ProyectoApiAdapter implements ProyectoRepository {
   /**
    * Cambia el estado de un proyecto
    */
-  async cambiarEstado(id: number, cambioEstado: CambiarEstadoProyectoDTO): Promise<Proyecto> {
-    return proyectosApi.cambiarEstado(id, cambioEstado);
+  async cambiarEstado(id: number, estado: EstadoProyecto): Promise<Proyecto> {
+    return proyectosApi.cambiarEstado(id, estado);
   }
   
   /**

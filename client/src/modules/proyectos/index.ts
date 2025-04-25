@@ -1,42 +1,70 @@
 /**
- * Punto de entrada para el módulo de Proyectos
- * Exporta componentes, entidades y funcionalidades para su uso en la aplicación
+ * Exportaciones del módulo de proyectos
+ * Este archivo centraliza todas las exportaciones para facilitar la importación
+ * desde otros módulos.
  */
 
-// Entidades y tipos de dominio
-export { EstadoProyecto } from './domain/entities/Proyecto';
-export type { 
-  Proyecto,
-  CrearProyectoDTO,
-  ActualizarProyectoDTO,
-  CambiarEstadoProyectoDTO,
-  FiltrosProyecto,
-  ProyectosPaginados
+// Domain entities
+export {
+  EstadoProyecto,
+  type Proyecto,
+  type CrearProyectoDTO,
+  type ActualizarProyectoDTO,
+  type CambiarEstadoProyectoDTO,
+  type FiltrosProyecto,
+  type ProyectoMetricas
 } from './domain/entities/Proyecto';
 
-// Componentes de UI
-export { ProyectoCard } from './ui/components/ProyectoCard';
-export { EstadoProyectoBadge } from './ui/components/EstadoProyectoBadge';
-export { CambiarEstadoProyectoDialog } from './ui/components/CambiarEstadoProyectoDialog';
-export { FiltrosProyecto as FiltrosProyectoComponent } from './ui/components/FiltrosProyecto';
-export { ProyectoForm } from './ui/components/ProyectoForm';
+// Domain repositories
+export { 
+  type ProyectoRepository,
+  type ProyectosIndicadores 
+} from './domain/repositories/ProyectoRepository';
 
-// Vistas
-export { ListaProyectos } from './ui/views/ListaProyectos';
-export { DetalleProyecto } from './ui/views/DetalleProyecto';
-export { NuevoProyecto } from './ui/views/NuevoProyecto';
-export { EditarProyecto } from './ui/views/EditarProyecto';
+// Domain services
+export { ProyectoService } from './domain/services/ProyectoService';
 
-// Configuración de rutas
-export { ProyectosRoutes } from './ui/routes';
+// Application (Use Cases)
+export { 
+  useProyectos, 
+  listarProyectos 
+} from './application/useCases/listarProyectos';
 
-// Hooks de casos de uso (application layer)
-export { useListarProyectos } from './application/useCases/listarProyectos';
-export { useObtenerProyecto } from './application/useCases/obtenerProyecto';
-export { useCrearProyecto } from './application/useCases/crearProyecto';
-export { useActualizarProyecto } from './application/useCases/actualizarProyecto';
-export { useCambiarEstadoProyecto } from './application/useCases/cambiarEstadoProyecto';
-export { useEliminarProyecto } from './application/useCases/eliminarProyecto';
+export { 
+  useProyecto, 
+  obtenerProyecto 
+} from './application/useCases/obtenerProyecto';
 
-// API client (infraestructura)
+export { 
+  useCrearProyecto, 
+  crearProyecto 
+} from './application/useCases/crearProyecto';
+
+export { 
+  useActualizarProyecto, 
+  actualizarProyecto 
+} from './application/useCases/actualizarProyecto';
+
+export { 
+  useCambiarEstadoProyecto, 
+  cambiarEstadoProyecto 
+} from './application/useCases/cambiarEstadoProyecto';
+
+export { 
+  useEliminarProyecto, 
+  eliminarProyecto 
+} from './application/useCases/eliminarProyecto';
+
+export { 
+  useIndicadoresProyectos, 
+  obtenerIndicadoresProyectos 
+} from './application/useCases/obtenerIndicadores';
+
+// Infrastructure
+export { proyectoService } from './infrastructure/di/container';
+export { ProyectoApiAdapter } from './infrastructure/api/ProyectoApiAdapter';
 export { proyectosApi } from './infrastructure/api/proyectosApi';
+
+// UI Components - exporta según necesidades
+// export { ... } from './ui/components/...';
+// export { ... } from './ui/views/...';

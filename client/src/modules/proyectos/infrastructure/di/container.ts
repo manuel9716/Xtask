@@ -1,9 +1,13 @@
-import { ProyectoService } from "../../domain/services/ProyectoService";
-import { ProyectoRepository } from "../../domain/repositories/ProyectoRepository";
-import { ProyectoApiAdapter } from "../api/ProyectoApiAdapter";
+import { ProyectoService } from '../../domain/services/ProyectoService';
+import { ProyectoApiAdapter } from '../api/ProyectoApiAdapter';
 
-// Crear una instancia del adaptador de API que implementa la interfaz ProyectoRepository
-export const proyectosRepository: ProyectoRepository = new ProyectoApiAdapter();
+/**
+ * Contenedor de dependencias para el módulo de proyectos
+ * Implementa el patrón singleton para servicios compartidos
+ */
 
-// Crear una instancia del servicio con el repositorio inyectado
-export const proyectoService = new ProyectoService(proyectosRepository);
+// Repositorios
+const proyectoRepository = new ProyectoApiAdapter();
+
+// Servicios de dominio
+export const proyectoService = new ProyectoService(proyectoRepository);

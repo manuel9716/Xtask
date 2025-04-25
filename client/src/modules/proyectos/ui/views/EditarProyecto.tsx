@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { useObtenerProyecto } from "../../application/useCases/obtenerProyecto";
+import { useProyecto } from "../../application/useCases/obtenerProyecto";
 import { ProyectoForm } from "../components/ProyectoForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -12,11 +12,11 @@ export function EditarProyecto() {
   
   // Obtener datos del proyecto
   const { 
-    proyecto, 
+    data: proyecto, 
     isLoading, 
     isError, 
     error 
-  } = useObtenerProyecto(proyectoId);
+  } = useProyecto(proyectoId);
 
   const handleSuccess = () => {
     navigate(`/admin/proyectos/${proyectoId}`);

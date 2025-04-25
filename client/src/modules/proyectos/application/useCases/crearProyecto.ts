@@ -1,37 +1,31 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Proyecto, CrearProyectoDTO } from '../../domain/entities/Proyecto';
-import { queryClient } from '@/lib/queryClient';
-import { proyectosApi } from '../../infrastructure/api/proyectosApi';
-import { useToast } from '@/hooks/use-toast';
+import { proyectoService } from '../../infrastructure/di/container';
 
 /**
  * Hook para crear un nuevo proyecto
- * Implementa el caso de uso "Crear Proyecto"
  */
 export function useCrearProyecto() {
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
-  const mutation = useMutation<Proyecto, Error, CrearProyectoDTO>({
-    mutationFn: async (proyecto: CrearProyectoDTO) => {
-      return await proyectosApi.crearProyecto(proyecto);
+  return useMutation<Proyecto, Error, CrearProyectoDTO>({
+    mutationFn: async (datos) => {
+      try {
+        return await proyectoService.crearProyecto(datos);
+      } catch (error) {
+        throw new Error(`Error al crear el proyecto: ${(error as Error).message}`);
+      }
     },
     onSuccess: () => {
-      // Invalidar la cache para que se recarguen los listados
+      // Invalidar cache de proyectos
       queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
-      
-      toast({
-        title: 'Proyecto creado',
-        description: 'El proyecto ha sido creado exitosamente',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error al crear proyecto',
-        description: error.message || 'Ha ocurrido un error al crear el proyecto',
-        variant: 'destructive',
-      });
-    },
+    }
   });
-  
-  return mutation;
+}
+
+/**
+ * Use case para crear un nuevo proyecto
+ */
+export async function crearProyecto(datos: CrearProyectoDTO): Promise<Proyecto> {
+  return proyectoService.crearProyecto(datos);
 }

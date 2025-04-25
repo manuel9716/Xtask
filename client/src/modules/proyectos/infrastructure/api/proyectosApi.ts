@@ -1,157 +1,82 @@
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Proyecto, 
   CrearProyectoDTO, 
   ActualizarProyectoDTO, 
-  CambiarEstadoProyectoDTO,
-  FiltrosProyecto,
-  EstadoProyecto
+  EstadoProyecto,
+  FiltrosProyecto
 } from '../../domain/entities/Proyecto';
 import { ProyectosIndicadores } from '../../domain/repositories/ProyectoRepository';
 
 /**
- * Cliente API para el módulo de proyectos
- * Esta capa se encarga de la comunicación con el servidor
+ * Cliente de API para el módulo de proyectos
+ * Contiene todos los métodos para interactuar con el backend
  */
 export const proyectosApi = {
   /**
    * Obtiene todos los proyectos con filtros opcionales
    */
-  listar: async (filtros?: FiltrosProyecto): Promise<Proyecto[]> => {
-    let queryParams = '';
+  async listar(filtros?: FiltrosProyecto): Promise<Proyecto[]> {
+    const queryParams = new URLSearchParams();
+    
     if (filtros) {
-      const params = new URLSearchParams();
-      
-      if (filtros.busqueda) {
-        params.append('busqueda', filtros.busqueda);
-      }
-      
-      if (filtros.estado) {
-        params.append('estado', filtros.estado);
-      }
-      
-      if (filtros.fechaInicio) {
-        params.append('fechaInicio', filtros.fechaInicio.toISOString());
-      }
-      
-      if (filtros.fechaFin) {
-        params.append('fechaFin', filtros.fechaFin.toISOString());
-      }
-      
-      if (filtros.responsableId) {
-        params.append('responsableId', filtros.responsableId.toString());
-      }
-      
-      if (filtros.departamentoId) {
-        params.append('departamentoId', filtros.departamentoId.toString());
-      }
-      
-      queryParams = `?${params.toString()}`;
+      if (filtros.estado) queryParams.append('estado', filtros.estado);
+      if (filtros.busqueda) queryParams.append('busqueda', filtros.busqueda);
+      if (filtros.departamentoId) queryParams.append('departamentoId', filtros.departamentoId.toString());
+      if (filtros.responsableId) queryParams.append('responsableId', filtros.responsableId.toString());
+      if (filtros.fechaInicio) queryParams.append('fechaInicio', filtros.fechaInicio.toISOString());
+      if (filtros.fechaFin) queryParams.append('fechaFin', filtros.fechaFin.toISOString());
     }
     
-    const response = await apiRequest('GET', `/api/proyectos${queryParams}`);
-    const data = await response.json();
-    
-    // Convertir fechas en string a objetos Date
-    return data.map((proyecto: any) => ({
-      ...proyecto,
-      fechaInicio: proyecto.fechaInicio ? new Date(proyecto.fechaInicio) : undefined,
-      fechaFin: proyecto.fechaFin ? new Date(proyecto.fechaFin) : undefined,
-      creadoEn: proyecto.creadoEn ? new Date(proyecto.creadoEn) : undefined,
-      actualizadoEn: proyecto.actualizadoEn ? new Date(proyecto.actualizadoEn) : undefined
-    }));
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    const response = await apiRequest('GET', `/api/proyectos${queryString}`);
+    return response.json();
   },
   
   /**
    * Obtiene un proyecto por su ID
    */
-  obtenerPorId: async (id: number): Promise<Proyecto> => {
+  async obtenerPorId(id: number): Promise<Proyecto> {
     const response = await apiRequest('GET', `/api/proyectos/${id}`);
-    const data = await response.json();
-    
-    return {
-      ...data,
-      fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : undefined,
-      fechaFin: data.fechaFin ? new Date(data.fechaFin) : undefined,
-      creadoEn: data.creadoEn ? new Date(data.creadoEn) : undefined,
-      actualizadoEn: data.actualizadoEn ? new Date(data.actualizadoEn) : undefined
-    };
+    return response.json();
   },
   
   /**
    * Crea un nuevo proyecto
    */
-  crear: async (proyecto: CrearProyectoDTO): Promise<Proyecto> => {
+  async crear(proyecto: CrearProyectoDTO): Promise<Proyecto> {
     const response = await apiRequest('POST', '/api/proyectos', proyecto);
-    const data = await response.json();
-    
-    // Invalidar cache de listado
-    queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
-    
-    return {
-      ...data,
-      fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : undefined,
-      fechaFin: data.fechaFin ? new Date(data.fechaFin) : undefined,
-      creadoEn: data.creadoEn ? new Date(data.creadoEn) : undefined,
-      actualizadoEn: data.actualizadoEn ? new Date(data.actualizadoEn) : undefined
-    };
+    return response.json();
   },
   
   /**
    * Actualiza un proyecto existente
    */
-  actualizar: async (id: number, proyecto: ActualizarProyectoDTO): Promise<Proyecto> => {
+  async actualizar(id: number, proyecto: ActualizarProyectoDTO): Promise<Proyecto> {
     const response = await apiRequest('PATCH', `/api/proyectos/${id}`, proyecto);
-    const data = await response.json();
-    
-    // Invalidar cache de listado y del proyecto específico
-    queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
-    queryClient.invalidateQueries({ queryKey: [`/api/proyectos/${id}`] });
-    
-    return {
-      ...data,
-      fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : undefined,
-      fechaFin: data.fechaFin ? new Date(data.fechaFin) : undefined,
-      creadoEn: data.creadoEn ? new Date(data.creadoEn) : undefined,
-      actualizadoEn: data.actualizadoEn ? new Date(data.actualizadoEn) : undefined
-    };
-  },
-  
-  /**
-   * Elimina un proyecto
-   */
-  eliminar: async (id: number): Promise<void> => {
-    await apiRequest('DELETE', `/api/proyectos/${id}`);
-    
-    // Invalidar cache de listado
-    queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
+    return response.json();
   },
   
   /**
    * Cambia el estado de un proyecto
    */
-  cambiarEstado: async (id: number, cambioEstado: CambiarEstadoProyectoDTO): Promise<Proyecto> => {
-    const response = await apiRequest('PATCH', `/api/proyectos/${id}/estado`, cambioEstado);
-    const data = await response.json();
-    
-    // Invalidar cache de listado y del proyecto específico
-    queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
-    queryClient.invalidateQueries({ queryKey: [`/api/proyectos/${id}`] });
-    
-    return {
-      ...data,
-      fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : undefined,
-      fechaFin: data.fechaFin ? new Date(data.fechaFin) : undefined,
-      creadoEn: data.creadoEn ? new Date(data.creadoEn) : undefined,
-      actualizadoEn: data.actualizadoEn ? new Date(data.actualizadoEn) : undefined
-    };
+  async cambiarEstado(id: number, estado: EstadoProyecto): Promise<Proyecto> {
+    const response = await apiRequest('PATCH', `/api/proyectos/${id}/estado`, { estado });
+    return response.json();
   },
   
   /**
-   * Obtiene indicadores y KPIs de proyectos
+   * Elimina un proyecto por su ID
    */
-  obtenerIndicadores: async (): Promise<ProyectosIndicadores> => {
+  async eliminar(id: number): Promise<void> {
+    await apiRequest('DELETE', `/api/proyectos/${id}`);
+  },
+  
+  /**
+   * Obtiene indicadores y métricas de proyectos
+   */
+  async obtenerIndicadores(): Promise<ProyectosIndicadores> {
     const response = await apiRequest('GET', '/api/proyectos/indicadores');
-    return await response.json();
+    return response.json();
   }
 };

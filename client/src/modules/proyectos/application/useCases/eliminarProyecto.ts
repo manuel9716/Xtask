@@ -1,36 +1,30 @@
-import { useMutation } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
-import { proyectosApi } from '../../infrastructure/api/proyectosApi';
-import { useToast } from '@/hooks/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { proyectoService } from '../../infrastructure/di/container';
 
 /**
- * Hook para eliminar (archivar) un proyecto
- * Implementa el caso de uso "Eliminar Proyecto"
+ * Hook para eliminar un proyecto
  */
 export function useEliminarProyecto() {
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
-  const mutation = useMutation<void, Error, number>({
-    mutationFn: async (id: number) => {
-      return await proyectosApi.eliminarProyecto(id);
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => {
+      try {
+        return await proyectoService.eliminarProyecto(id);
+      } catch (error) {
+        throw new Error(`Error al eliminar el proyecto: ${(error as Error).message}`);
+      }
     },
     onSuccess: () => {
-      // Invalidar la cache de proyectos para que se actualice el listado
+      // Invalidar cache del listado de proyectos
       queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
-      
-      toast({
-        title: 'Proyecto eliminado',
-        description: 'El proyecto ha sido archivado correctamente',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error al eliminar proyecto',
-        description: error.message || 'Ha ocurrido un error al eliminar el proyecto',
-        variant: 'destructive',
-      });
-    },
+    }
   });
-  
-  return mutation;
+}
+
+/**
+ * Use case para eliminar un proyecto
+ */
+export async function eliminarProyecto(id: number): Promise<void> {
+  return proyectoService.eliminarProyecto(id);
 }

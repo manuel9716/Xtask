@@ -2,18 +2,41 @@ import {
   Proyecto, 
   CrearProyectoDTO, 
   ActualizarProyectoDTO, 
-  CambiarEstadoProyectoDTO,
-  FiltrosProyecto
+  EstadoProyecto,
+  FiltrosProyecto 
 } from '../entities/Proyecto';
 
 /**
- * Interface para el repositorio de proyectos.
- * Define las operaciones que se pueden realizar con proyectos,
- * independiente de la implementación de persistencia.
+ * Interfaz que define los indicadores (KPIs) para proyectos
+ */
+export interface ProyectosIndicadores {
+  // Contadores
+  totalProyectos: number;
+  proyectosActivos: number;
+  proyectosRetrasados: number;
+  proyectosFinalizados: number;
+  proyectosPausados: number;
+  
+  // Financieros
+  presupuestoTotal: number;
+  costoActualTotal: number;
+  desviacionPresupuesto: number;
+  
+  // Departamentos
+  proyectosPorDepartamento: { departamento: string; count: number }[];
+  
+  // Tiempo
+  proyectosRetrasadosPorcentaje: number;
+  tiempoPromedioFinalizacion: number;
+  proyectosFinalizadosAtiempo: number;
+}
+
+/**
+ * Interfaz que define las operaciones disponibles para proyectos
  */
 export interface ProyectoRepository {
   /**
-   * Obtiene todos los proyectos, opcionalmente filtrados
+   * Obtiene todos los proyectos con filtros opcionales
    */
   listar(filtros?: FiltrosProyecto): Promise<Proyecto[]>;
   
@@ -40,28 +63,10 @@ export interface ProyectoRepository {
   /**
    * Cambia el estado de un proyecto
    */
-  cambiarEstado(id: number, cambioEstado: CambiarEstadoProyectoDTO): Promise<Proyecto>;
+  cambiarEstado(id: number, cambioEstado: EstadoProyecto): Promise<Proyecto>;
   
   /**
    * Obtiene indicadores y métricas de proyectos
    */
   obtenerIndicadores(): Promise<ProyectosIndicadores>;
-}
-
-/**
- * Interfaz para representar los indicadores/KPIs de proyectos
- */
-export interface ProyectosIndicadores {
-  totalProyectos: number;
-  proyectosActivos: number;
-  proyectosRetrasados: number;
-  proyectosCompletados: number;
-  presupuestoTotal: number;
-  costoAcumulado: number;
-  proyectosPorDepartamento?: {
-    departamentoId: number;
-    nombreDepartamento?: string;
-    cantidad: number;
-  }[];
-  proyectosFueraDeTiempo?: number;
 }

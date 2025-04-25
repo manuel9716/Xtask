@@ -1,42 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
-import { proyectosApi } from '../../infrastructure/api/proyectosApi';
+import { ProyectosIndicadores } from '../../domain/repositories/ProyectoRepository';
+import { proyectoService } from '../../infrastructure/di/container';
 
 /**
- * Interfaz para los indicadores/métricas de proyectos
+ * Hook para obtener indicadores y métricas de proyectos
  */
-export interface IndicadoresProyectos {
-  totalProyectos: number;
-  proyectosActivos: number;
-  proyectosPausados: number;
-  proyectosFinalizados: number;
-  proyectosRetrasados: number;
-  presupuestoTotal: number;
-  presupuestoActivos: number;
+export function useIndicadoresProyectos() {
+  return useQuery<ProyectosIndicadores, Error>({
+    queryKey: ['/api/proyectos/indicadores'],
+    queryFn: async () => {
+      return proyectoService.obtenerIndicadores();
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: false
+  });
 }
 
 /**
- * Hook para obtener indicadores/métricas del dashboard de proyectos
- * Implementa el caso de uso "Obtener Indicadores"
+ * Use case para obtener indicadores y métricas de proyectos
  */
-export function useObtenerIndicadores() {
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useQuery<IndicadoresProyectos, Error>({
-    queryKey: ['/api/proyectos/indicadores'],
-    queryFn: async () => {
-      return await proyectosApi.obtenerIndicadores();
-    }
-  });
-  
-  return {
-    indicadores: data,
-    isLoading,
-    isError,
-    error,
-    refetch
-  };
+export async function obtenerIndicadoresProyectos(): Promise<ProyectosIndicadores> {
+  return proyectoService.obtenerIndicadores();
 }

@@ -1,39 +1,32 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Proyecto, ActualizarProyectoDTO } from '../../domain/entities/Proyecto';
-import { queryClient } from '@/lib/queryClient';
-import { proyectosApi } from '../../infrastructure/api/proyectosApi';
-import { useToast } from '@/hooks/use-toast';
+import { proyectoService } from '../../infrastructure/di/container';
 
 /**
  * Hook para actualizar un proyecto existente
- * Implementa el caso de uso "Actualizar Proyecto"
  */
-export function useActualizarProyecto(id?: number) {
-  const { toast } = useToast();
+export function useActualizarProyecto(id: number) {
+  const queryClient = useQueryClient();
   
-  const mutation = useMutation<Proyecto, Error, ActualizarProyectoDTO>({
-    mutationFn: async (proyecto: ActualizarProyectoDTO) => {
-      if (!id) throw new Error('ID de proyecto no especificado');
-      return await proyectosApi.actualizarProyecto(id, proyecto);
+  return useMutation<Proyecto, Error, ActualizarProyectoDTO>({
+    mutationFn: async (datosActualizados) => {
+      try {
+        return await proyectoService.actualizarProyecto(id, datosActualizados);
+      } catch (error) {
+        throw new Error(`Error al actualizar el proyecto: ${(error as Error).message}`);
+      }
     },
-    onSuccess: (data) => {
-      // Invalidar la cache del listado y del detalle
+    onSuccess: () => {
+      // Invalidar cache del listado y del proyecto específico
       queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/proyectos', id] });
-      
-      toast({
-        title: 'Proyecto actualizado',
-        description: 'El proyecto ha sido actualizado exitosamente',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error al actualizar proyecto',
-        description: error.message || 'Ha ocurrido un error al actualizar el proyecto',
-        variant: 'destructive',
-      });
-    },
+      queryClient.invalidateQueries({ queryKey: [`/api/proyectos/${id}`] });
+    }
   });
-  
-  return mutation;
+}
+
+/**
+ * Use case para actualizar un proyecto existente
+ */
+export async function actualizarProyecto(id: number, datos: ActualizarProyectoDTO): Promise<Proyecto> {
+  return proyectoService.actualizarProyecto(id, datos);
 }

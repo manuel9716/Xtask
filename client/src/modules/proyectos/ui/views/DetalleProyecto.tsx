@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { useObtenerProyecto } from "../../application/useCases/obtenerProyecto";
+import { useProyecto } from "../../application/useCases/obtenerProyecto";
 import { EstadoProyectoBadge } from "../components/EstadoProyectoBadge";
 import { CambiarEstadoProyectoDialog } from "../components/CambiarEstadoProyectoDialog";
 import { format } from "date-fns";
@@ -62,12 +62,12 @@ export function DetalleProyecto() {
   
   // Consultar datos del proyecto
   const { 
-    proyecto, 
+    data: proyecto,
     isLoading, 
     isError, 
     error, 
     refetch 
-  } = useObtenerProyecto(proyectoId);
+  } = useProyecto(proyectoId);
   
   // Método para eliminar el proyecto
   const handleEliminar = async () => {

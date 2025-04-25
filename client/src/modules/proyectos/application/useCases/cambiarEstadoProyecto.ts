@@ -1,60 +1,50 @@
-import { useMutation } from '@tanstack/react-query';
-import { Proyecto, CambiarEstadoProyectoDTO, EstadoProyecto } from '../../domain/entities/Proyecto';
-import { queryClient } from '@/lib/queryClient';
-import { proyectosApi } from '../../infrastructure/api/proyectosApi';
-import { useToast } from '@/hooks/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Proyecto, EstadoProyecto, CambiarEstadoProyectoDTO } from '../../domain/entities/Proyecto';
+import { proyectoService } from '../../infrastructure/di/container';
 
 /**
  * Hook para cambiar el estado de un proyecto
- * Implementa el caso de uso "Cambiar Estado de Proyecto"
  */
-export function useCambiarEstadoProyecto(id?: number) {
-  const { toast } = useToast();
+export function useCambiarEstadoProyecto(id: number) {
+  const queryClient = useQueryClient();
   
-  const mutation = useMutation<Proyecto, Error, CambiarEstadoProyectoDTO>({
-    mutationFn: async (cambioEstado: CambiarEstadoProyectoDTO) => {
-      if (!id) throw new Error('ID de proyecto no especificado');
-      return await proyectosApi.cambiarEstadoProyecto(id, cambioEstado);
-    },
-    onSuccess: (data) => {
-      // Invalidar la cache del listado y del detalle
-      queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/proyectos', id] });
-      
-      // Mostrar mensaje según el estado cambiado
-      let mensaje = 'El estado del proyecto ha sido actualizado';
-      
-      switch (data.estado) {
-        case EstadoProyecto.ACTIVO:
-          mensaje = 'El proyecto ha sido activado';
-          break;
-        case EstadoProyecto.PAUSADO:
-          mensaje = 'El proyecto ha sido pausado';
-          break;
-        case EstadoProyecto.FINALIZADO:
-          mensaje = 'El proyecto ha sido marcado como finalizado';
-          break;
-        case EstadoProyecto.CANCELADO:
-          mensaje = 'El proyecto ha sido cancelado';
-          break;
-        case EstadoProyecto.ARCHIVADO:
-          mensaje = 'El proyecto ha sido archivado';
-          break;
+  return useMutation<Proyecto, Error, { estado: EstadoProyecto }>({
+    mutationFn: async ({ estado }) => {
+      try {
+        return await proyectoService.cambiarEstadoProyecto(id, estado);
+      } catch (error) {
+        throw new Error(`Error al cambiar estado del proyecto: ${(error as Error).message}`);
       }
-      
-      toast({
-        title: 'Estado actualizado',
-        description: mensaje,
-      });
     },
-    onError: (error) => {
-      toast({
-        title: 'Error al cambiar estado',
-        description: error.message || 'Ha ocurrido un error al cambiar el estado del proyecto',
-        variant: 'destructive',
-      });
-    },
+    onSuccess: () => {
+      // Invalidar cache del listado y del proyecto específico
+      queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/proyectos/${id}`] });
+    }
   });
-  
-  return mutation;
+}
+
+/**
+ * Use case para cambiar el estado de un proyecto
+ */
+export async function cambiarEstadoProyecto(id: number, estado: EstadoProyecto): Promise<Proyecto> {
+  return proyectoService.cambiarEstadoProyecto(id, estado);
+}
+
+/**
+ * Obtiene el siguiente estado de un proyecto en la secuencia típica
+ */
+export function obtenerSiguienteEstado(estadoActual: EstadoProyecto): EstadoProyecto {
+  switch (estadoActual) {
+    case EstadoProyecto.ACTIVO:
+      return EstadoProyecto.PAUSADO;
+    case EstadoProyecto.PAUSADO:
+      return EstadoProyecto.RETRASADO;
+    case EstadoProyecto.RETRASADO:
+      return EstadoProyecto.FINALIZADO;
+    case EstadoProyecto.FINALIZADO:
+      return EstadoProyecto.ACTIVO;
+    default:
+      return EstadoProyecto.ACTIVO;
+  }
 }
