@@ -1,40 +1,67 @@
-import { FiltrosProyecto, Proyecto, ResultadoProyectos, IndicadoresProyectos } from '../entities/Proyecto';
-import { EstadoProyecto } from '@shared/schema';
+import { 
+  Proyecto, 
+  CrearProyectoDTO, 
+  ActualizarProyectoDTO, 
+  CambiarEstadoProyectoDTO,
+  FiltrosProyecto
+} from '../entities/Proyecto';
 
-export interface CrearProyectoData {
-  nombre: string;
-  descripcion: string;
-  fechaInicio: Date | string;
-  fechaFinPrevista?: Date | string | null;
-  presupuesto: number;
-  responsableId?: number | null;
-  clienteId?: number | null;
-  tags?: string[];
-}
-
-export interface ActualizarProyectoData {
-  nombre?: string;
-  descripcion?: string;
-  fechaInicio?: Date | string;
-  fechaFinPrevista?: Date | string | null;
-  fechaFinReal?: Date | string | null;
-  presupuesto?: number;
-  responsableId?: number | null;
-  clienteId?: number | null;
-  tags?: string[];
-}
-
-export interface CambiarEstadoData {
-  estado: EstadoProyecto;
-  comentario?: string;
-}
-
+/**
+ * Interface para el repositorio de proyectos.
+ * Define las operaciones que se pueden realizar con proyectos,
+ * independiente de la implementación de persistencia.
+ */
 export interface ProyectoRepository {
-  listarProyectos(pagina: number, porPagina: number, filtros?: FiltrosProyecto): Promise<ResultadoProyectos>;
-  obtenerProyecto(id: number): Promise<Proyecto>;
-  crearProyecto(data: CrearProyectoData): Promise<Proyecto>;
-  actualizarProyecto(id: number, data: ActualizarProyectoData): Promise<Proyecto>;
-  cambiarEstado(id: number, data: CambiarEstadoData): Promise<Proyecto>;
-  eliminarProyecto(id: number): Promise<void>;
-  obtenerIndicadores(): Promise<IndicadoresProyectos>;
+  /**
+   * Obtiene todos los proyectos, opcionalmente filtrados
+   */
+  listar(filtros?: FiltrosProyecto): Promise<Proyecto[]>;
+  
+  /**
+   * Obtiene un proyecto por su ID
+   */
+  obtenerPorId(id: number): Promise<Proyecto>;
+  
+  /**
+   * Crea un nuevo proyecto
+   */
+  crear(proyecto: CrearProyectoDTO): Promise<Proyecto>;
+  
+  /**
+   * Actualiza un proyecto existente
+   */
+  actualizar(id: number, proyecto: ActualizarProyectoDTO): Promise<Proyecto>;
+  
+  /**
+   * Elimina un proyecto
+   */
+  eliminar(id: number): Promise<void>;
+  
+  /**
+   * Cambia el estado de un proyecto
+   */
+  cambiarEstado(id: number, cambioEstado: CambiarEstadoProyectoDTO): Promise<Proyecto>;
+  
+  /**
+   * Obtiene indicadores y métricas de proyectos
+   */
+  obtenerIndicadores(): Promise<ProyectosIndicadores>;
+}
+
+/**
+ * Interfaz para representar los indicadores/KPIs de proyectos
+ */
+export interface ProyectosIndicadores {
+  totalProyectos: number;
+  proyectosActivos: number;
+  proyectosRetrasados: number;
+  proyectosCompletados: number;
+  presupuestoTotal: number;
+  costoAcumulado: number;
+  proyectosPorDepartamento?: {
+    departamentoId: number;
+    nombreDepartamento?: string;
+    cantidad: number;
+  }[];
+  proyectosFueraDeTiempo?: number;
 }

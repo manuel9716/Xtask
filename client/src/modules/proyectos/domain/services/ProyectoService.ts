@@ -1,95 +1,99 @@
-import { Proyecto, ResultadoProyectos, IndicadoresProyectos, FiltrosProyecto } from '../entities/Proyecto';
-import { ProyectoRepository, CrearProyectoData, ActualizarProyectoData, CambiarEstadoData } from '../repositories/ProyectoRepository';
+import { 
+  Proyecto, 
+  EstadoProyecto, 
+  CrearProyectoDTO, 
+  ActualizarProyectoDTO,
+  CambiarEstadoProyectoDTO,
+  FiltrosProyecto,
+  ProyectoFactory,
+  ProyectoMetricas
+} from '../entities/Proyecto';
+import { ProyectoRepository, ProyectosIndicadores } from '../repositories/ProyectoRepository';
 
 /**
- * Servicio que implementa la lógica de negocio para proyectos
- * Actúa como fachada entre los casos de uso y el repositorio
+ * Servicio de dominio para la lógica de negocio relacionada con proyectos
  */
 export class ProyectoService {
   constructor(private repository: ProyectoRepository) {}
 
-  // Métodos principales que delegan en el repositorio
-  async listarProyectos(
-    pagina: number = 1, 
-    porPagina: number = 10, 
-    filtros?: FiltrosProyecto
-  ): Promise<ResultadoProyectos> {
-    return this.repository.listarProyectos(pagina, porPagina, filtros);
+  /**
+   * Obtiene todos los proyectos aplicando filtros si se proporcionan
+   */
+  async listarProyectos(filtros?: FiltrosProyecto): Promise<Proyecto[]> {
+    return this.repository.listar(filtros);
   }
 
+  /**
+   * Obtiene un proyecto por su ID
+   */
   async obtenerProyecto(id: number): Promise<Proyecto> {
-    return this.repository.obtenerProyecto(id);
+    return this.repository.obtenerPorId(id);
   }
 
-  async crearProyecto(data: CrearProyectoData): Promise<Proyecto> {
-    // Aquí podríamos añadir validaciones o lógica de negocio adicional
-    return this.repository.crearProyecto(data);
+  /**
+   * Crea un nuevo proyecto aplicando validaciones de negocio
+   */
+  async crearProyecto(datos: CrearProyectoDTO): Promise<Proyecto> {
+    // Aplicar reglas de negocio a través del factory
+    const proyectoValidado = ProyectoFactory.crear(datos);
+    return this.repository.crear(proyectoValidado);
   }
 
-  async actualizarProyecto(id: number, data: ActualizarProyectoData): Promise<Proyecto> {
-    return this.repository.actualizarProyecto(id, data);
+  /**
+   * Actualiza un proyecto existente
+   */
+  async actualizarProyecto(id: number, datos: ActualizarProyectoDTO): Promise<Proyecto> {
+    // Validar datos de actualización
+    const datosValidados = ProyectoFactory.actualizar(datos);
+    return this.repository.actualizar(id, datosValidados);
   }
 
-  async cambiarEstado(id: number, data: CambiarEstadoData): Promise<Proyecto> {
-    return this.repository.cambiarEstado(id, data);
-  }
-
+  /**
+   * Elimina un proyecto
+   */
   async eliminarProyecto(id: number): Promise<void> {
-    return this.repository.eliminarProyecto(id);
+    return this.repository.eliminar(id);
   }
 
-  async obtenerIndicadores(): Promise<IndicadoresProyectos> {
+  /**
+   * Cambia el estado de un proyecto
+   */
+  async cambiarEstadoProyecto(id: number, nuevoEstado: EstadoProyecto): Promise<Proyecto> {
+    return this.repository.cambiarEstado(id, { estado: nuevoEstado });
+  }
+
+  /**
+   * Verifica si un proyecto está retrasado según su fecha de fin
+   */
+  estaRetrasado(proyecto: Proyecto): boolean {
+    return ProyectoMetricas.estaRetrasado(proyecto);
+  }
+
+  /**
+   * Calcula el progreso de un proyecto basado en fechas
+   */
+  calcularPorcentajeAvance(proyecto: Proyecto): number {
+    return ProyectoMetricas.calcularPorcentajeAvanceTemporal(proyecto);
+  }
+
+  /**
+   * Calcula el porcentaje de presupuesto utilizado
+   */
+  calcularPorcentajePresupuesto(proyecto: Proyecto): number {
+    return ProyectoMetricas.calcularPorcentajePresupuesto(proyecto);
+  }
+
+  /**
+   * Obtiene indicadores y KPIs de proyectos
+   */
+  async obtenerIndicadores(): Promise<ProyectosIndicadores> {
     return this.repository.obtenerIndicadores();
   }
 
-  // Métodos de lógica de negocio para cálculos sobre proyectos
-  calcularProgreso(proyecto: Proyecto): number {
-    // Si está finalizado, 100%
-    if (proyecto.estado === 'FINALIZADO') return 100;
-    if (!proyecto.fechaFinPrevista) return 0;
-
-    const inicio = new Date(proyecto.fechaInicio).getTime();
-    const fin = new Date(proyecto.fechaFinPrevista).getTime();
-    const ahora = new Date().getTime();
-    
-    // Si no ha comenzado aún
-    if (ahora < inicio) return 0;
-    
-    // Si ya debería haber terminado
-    if (ahora > fin) return 95; // 95% para indicar que falta finalizar
-    
-    // Progreso basado en tiempo transcurrido
-    const duracionTotal = fin - inicio;
-    const transcurrido = ahora - inicio;
-    const porcentaje = (transcurrido / duracionTotal) * 100;
-    
-    return Math.min(Math.round(porcentaje), 95); // Máximo 95% si no está finalizado
-  }
-  
-  estaRetrasado(proyecto: Proyecto): boolean {
-    // Un proyecto está retrasado si está activo y su fecha de fin prevista ya pasó
-    if (proyecto.estado !== 'ACTIVO') return false;
-    if (!proyecto.fechaFinPrevista) return false;
-    
-    const fechaFin = new Date(proyecto.fechaFinPrevista);
-    const hoy = new Date();
-    
-    return fechaFin < hoy;
-  }
-  
-  calcularDiasRestantes(proyecto: Proyecto): number | null {
-    if (!proyecto.fechaFinPrevista) return null;
-    
-    const ahora = new Date();
-    const fechaFin = new Date(proyecto.fechaFinPrevista);
-    
-    // Si el proyecto ya debería haber terminado
-    if (ahora > fechaFin) return 0;
-    
-    // Calcular diferencia en días
-    const diffTime = fechaFin.getTime() - ahora.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
+  /**
+   * Calcula el presupuesto restante de un proyecto
+   */
+  calcularPresupuestoRestante(proyecto: Proyecto): number {
+    return ProyectoMetricas.calcularPresupuestoRestante(proyecto);
   }
 }
