@@ -1,7 +1,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { EstadoProyecto } from "@shared/schema";
-import { Clock, CheckCircle, PauseCircle, XCircle, Archive } from "lucide-react";
+import { Clock, CheckCircle, PauseCircle, XCircle, Archive, AlertCircle } from "lucide-react";
 
 interface EstadoProyectoBadgeProps {
   estado: EstadoProyecto;
@@ -12,17 +12,19 @@ export function EstadoProyectoBadge({ estado, className = "" }: EstadoProyectoBa
   const getVariant = () => {
     switch (estado) {
       case EstadoProyecto.ACTIVO:
-        return "bg-green-100 text-green-800 hover:bg-green-100";
+        return "bg-green-600 text-white hover:bg-green-700 border-green-600";
       case EstadoProyecto.PAUSADO:
-        return "bg-amber-100 text-amber-800 hover:bg-amber-100";
+        return "bg-amber-500 text-white hover:bg-amber-600 border-amber-500";
+      case EstadoProyecto.RETRASADO:
+        return "bg-red-600 text-white hover:bg-red-700 border-red-600";
       case EstadoProyecto.FINALIZADO:
-        return "bg-blue-100 text-blue-800 hover:bg-blue-100";
+        return "bg-blue-600 text-white hover:bg-blue-700 border-blue-600";
       case EstadoProyecto.CANCELADO:
-        return "bg-red-100 text-red-800 hover:bg-red-100";
+        return "bg-orange-600 text-white hover:bg-orange-700 border-orange-600";
       case EstadoProyecto.ARCHIVADO:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+        return "bg-gray-600 text-white hover:bg-gray-700 border-gray-600";
       default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+        return "bg-gray-600 text-white hover:bg-gray-700 border-gray-600";
     }
   };
 
@@ -32,6 +34,8 @@ export function EstadoProyectoBadge({ estado, className = "" }: EstadoProyectoBa
         return <Clock className="h-3.5 w-3.5 mr-1" />;
       case EstadoProyecto.PAUSADO:
         return <PauseCircle className="h-3.5 w-3.5 mr-1" />;
+      case EstadoProyecto.RETRASADO:
+        return <AlertCircle className="h-3.5 w-3.5 mr-1" />;
       case EstadoProyecto.FINALIZADO:
         return <CheckCircle className="h-3.5 w-3.5 mr-1" />;
       case EstadoProyecto.CANCELADO:
