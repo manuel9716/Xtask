@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
 import { CheckIcon, SearchIcon, XCircleIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { EstadoProyecto, FiltrosProyecto as FiltrosProyectoType } from '../../domain/entities/Proyecto';
+import { useIndicadoresProyectos } from '../../application/useCases/obtenerIndicadores';
 
 interface FiltrosProyectoProps {
   onFilterChange: (filtros: FiltrosProyectoType) => void;
@@ -20,6 +21,9 @@ interface FiltrosProyectoProps {
 }
 
 export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProyectoProps) {
+  // Obtener indicadores para mostrar contadores
+  const { data: indicadores, isLoading: cargandoIndicadores } = useIndicadoresProyectos();
+  
   // Estado local para los filtros
   const [busqueda, setBusqueda] = useState(filtrosActivos.busqueda || '');
   const [estado, setEstado] = useState<EstadoProyecto | 'todos'>(
@@ -94,9 +98,30 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos los estados</SelectItem>
-                <SelectItem value={EstadoProyecto.ACTIVO}>Activos</SelectItem>
-                <SelectItem value={EstadoProyecto.PAUSADO}>Pausados</SelectItem>
-                <SelectItem value={EstadoProyecto.FINALIZADO}>Finalizados</SelectItem>
+                <SelectItem value={EstadoProyecto.ACTIVO}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>Activos</span>
+                    {!cargandoIndicadores && indicadores?.proyectosActivos !== undefined && (
+                      <Badge variant="secondary" className="ml-2">{indicadores.proyectosActivos}</Badge>
+                    )}
+                  </div>
+                </SelectItem>
+                <SelectItem value={EstadoProyecto.PAUSADO}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>Pausados</span>
+                    {!cargandoIndicadores && indicadores?.proyectosPausados !== undefined && (
+                      <Badge variant="secondary" className="ml-2">{indicadores.proyectosPausados}</Badge>
+                    )}
+                  </div>
+                </SelectItem>
+                <SelectItem value={EstadoProyecto.FINALIZADO}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>Finalizados</span>
+                    {!cargandoIndicadores && indicadores?.proyectosFinalizados !== undefined && (
+                      <Badge variant="secondary" className="ml-2">{indicadores.proyectosFinalizados}</Badge>
+                    )}
+                  </div>
+                </SelectItem>
                 <SelectItem value={EstadoProyecto.CANCELADO}>Cancelados</SelectItem>
                 <SelectItem value={EstadoProyecto.ARCHIVADO}>Archivados</SelectItem>
               </SelectContent>
