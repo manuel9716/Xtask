@@ -37,6 +37,7 @@ export interface CrearProyectoDTO {
   fechaFin?: Date | string | null;
   departamentoId?: number | null;
   responsableId?: number | null;
+  estado?: EstadoProyecto;
 }
 
 /**
