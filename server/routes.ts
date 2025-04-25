@@ -5,6 +5,7 @@ import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupp
 import express from "express";
 import empleadosRouter from "./routes/empleados.updated.routes";
 import nominaRouter from "./routes/nomina.routes";
+import proyectosRouter from "./routes/proyectos.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Projects routes
@@ -731,6 +732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.use('/api/nomina', nominaRouter);
   app.use('/api/nomina/empleados', empleadosRouter);
+  app.use('/api/proyectos', proyectosRouter);
   
   // Ruta para obtener todos los usuarios (necesaria para el formulario de empleados)
   app.get('/api/users', async (req, res) => {

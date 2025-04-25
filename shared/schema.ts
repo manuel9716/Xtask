@@ -2,6 +2,25 @@ import { pgTable, text, serial, integer, decimal, timestamp, boolean, uniqueInde
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Enums
+export enum EstadoProyecto {
+  ACTIVO = "ACTIVO",
+  PAUSADO = "PAUSADO",
+  FINALIZADO = "FINALIZADO",
+  CANCELADO = "CANCELADO",
+  ARCHIVADO = "ARCHIVADO"
+}
+
+// Interfaces
+export interface FiltrosProyecto {
+  busqueda?: string;
+  estado?: string;
+  fechaInicio?: Date;
+  fechaFin?: Date;
+  responsableId?: number;
+  clienteId?: number;
+}
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
