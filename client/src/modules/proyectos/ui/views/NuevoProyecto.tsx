@@ -1,11 +1,11 @@
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { ProyectoForm } from "../components/ProyectoForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export function NuevoProyecto() {
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
 
   const handleSuccess = () => {
     navigate("/admin/proyectos");

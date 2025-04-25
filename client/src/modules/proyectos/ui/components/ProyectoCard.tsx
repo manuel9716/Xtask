@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 
 interface ProyectoCardProps {
   proyecto: Proyecto;
@@ -22,7 +22,7 @@ const estadoColorMap: Record<EstadoProyecto, string> = {
 };
 
 export function ProyectoCard({ proyecto }: ProyectoCardProps) {
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
 
   // Formatear fechas y valores para presentación
   const fechaInicio = format(proyecto.fechaInicio, "dd MMM yyyy", { locale: es });

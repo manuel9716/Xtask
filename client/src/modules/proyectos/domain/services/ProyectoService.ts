@@ -1,112 +1,132 @@
-import { 
-  Proyecto, 
-  CrearProyectoDTO, 
-  ActualizarProyectoDTO, 
-  CambiarEstadoProyectoDTO,
-  EstadoProyecto,
-  FiltrosProyecto,
-  ProyectosPaginados
-} from '../entities/Proyecto';
-import { ProyectoRepository } from '../repositories/ProyectoRepository';
+import { EstadoProyecto, Proyecto } from '../entities/Proyecto';
 
 /**
- * Servicio de dominio para la gestión de proyectos
- * Contiene la lógica de negocio relacionada con proyectos
+ * Servicio para realizar operaciones y lógica de negocio con proyectos
+ * Se puede usar para cálculos, validaciones complejas, y reglas de negocio
  */
 export class ProyectoService {
-  constructor(private readonly proyectoRepository: ProyectoRepository) {}
-
   /**
-   * Obtiene un listado paginado de proyectos aplicando filtros opcionales
+   * Calcula si un proyecto está retrasado basado en su fecha de fin prevista
+   * @param proyecto El proyecto a evaluar
+   * @returns true si el proyecto está retrasado, false si no
    */
-  async listarProyectos(filtros?: FiltrosProyecto): Promise<ProyectosPaginados> {
-    return await this.proyectoRepository.listarProyectos(filtros);
-  }
-
-  /**
-   * Obtiene un proyecto por su ID
-   * @throws Error si el proyecto no existe
-   */
-  async obtenerProyectoPorId(id: number): Promise<Proyecto> {
-    const proyecto = await this.proyectoRepository.obtenerProyectoPorId(id);
-    if (!proyecto) {
-      throw new Error(`No se encontró el proyecto con ID ${id}`);
-    }
-    return proyecto;
-  }
-
-  /**
-   * Crea un nuevo proyecto
-   */
-  async crearProyecto(proyectoDTO: CrearProyectoDTO): Promise<Proyecto> {
-    // Aplicar valores por defecto
-    const proyectoCompleto: CrearProyectoDTO = {
-      ...proyectoDTO,
-      tags: proyectoDTO.tags || []
-    };
+  static estaRetrasado(proyecto: Proyecto): boolean {
+    // Si no tiene fecha de fin prevista, no puede estar retrasado
+    if (!proyecto.fechaFinPrevista) return false;
     
-    return await this.proyectoRepository.crearProyecto(proyectoCompleto);
-  }
-
-  /**
-   * Actualiza un proyecto existente
-   * @throws Error si el proyecto no existe
-   */
-  async actualizarProyecto(id: number, proyectoDTO: ActualizarProyectoDTO): Promise<Proyecto> {
-    // Verificar que el proyecto existe
-    await this.obtenerProyectoPorId(id);
-    
-    return await this.proyectoRepository.actualizarProyecto(id, proyectoDTO);
-  }
-
-  /**
-   * Cambia el estado de un proyecto
-   * @throws Error si el proyecto no existe o la transición no está permitida
-   */
-  async cambiarEstadoProyecto(id: number, cambioEstado: CambiarEstadoProyectoDTO): Promise<Proyecto> {
-    // Verificar que el proyecto existe
-    const proyecto = await this.obtenerProyectoPorId(id);
-    
-    // Verificar si la transición está permitida
-    if (!this.esTransicionEstadoValida(proyecto.estado, cambioEstado.estado)) {
-      throw new Error(`No se puede cambiar el estado de "${proyecto.estado}" a "${cambioEstado.estado}"`);
-    }
-    
-    return await this.proyectoRepository.cambiarEstadoProyecto(id, cambioEstado);
-  }
-
-  /**
-   * Elimina (o archiva) un proyecto
-   * @throws Error si el proyecto no existe
-   */
-  async eliminarProyecto(id: number): Promise<void> {
-    // Verificar que el proyecto existe
-    await this.obtenerProyectoPorId(id);
-    
-    await this.proyectoRepository.eliminarProyecto(id);
-  }
-
-  /**
-   * Verifica si una transición de estado es válida según reglas de negocio
-   * @private
-   */
-  private esTransicionEstadoValida(estadoActual: EstadoProyecto, nuevoEstado: EstadoProyecto): boolean {
-    // Estado actual ARCHIVADO solo puede ir a ACTIVO (recuperar)
-    if (estadoActual === EstadoProyecto.ARCHIVADO) {
-      return nuevoEstado === EstadoProyecto.ACTIVO;
-    }
-    
-    // Estado actual CANCELADO no puede ir a ningún otro estado (es terminal)
-    if (estadoActual === EstadoProyecto.CANCELADO) {
+    // Si ya está finalizado o cancelado, no está retrasado
+    if (proyecto.estado === EstadoProyecto.FINALIZADO || 
+        proyecto.estado === EstadoProyecto.CANCELADO ||
+        proyecto.estado === EstadoProyecto.ARCHIVADO) {
       return false;
     }
     
-    // Estado actual FINALIZADO solo puede ir a ARCHIVADO o ACTIVO (reabrir)
-    if (estadoActual === EstadoProyecto.FINALIZADO) {
-      return nuevoEstado === EstadoProyecto.ARCHIVADO || nuevoEstado === EstadoProyecto.ACTIVO;
+    // Comprobar si la fecha actual es posterior a la fecha prevista
+    const hoy = new Date();
+    const fechaFin = new Date(proyecto.fechaFinPrevista);
+    return hoy > fechaFin;
+  }
+  
+  /**
+   * Calcula el porcentaje de progreso del proyecto (simulado, ya que no tenemos tareas)
+   * Si el proyecto está finalizado, retorna 100%
+   * En un caso real, este cálculo podría basarse en el porcentaje de tareas completadas
+   */
+  static calcularProgreso(proyecto: Proyecto): number {
+    if (proyecto.estado === EstadoProyecto.FINALIZADO) {
+      return 100;
     }
     
-    // Para ACTIVO y PAUSADO, todas las transiciones están permitidas excepto a sí mismo
-    return estadoActual !== nuevoEstado;
+    if (!proyecto.fechaFinPrevista || !proyecto.fechaInicio) {
+      return 0;
+    }
+    
+    // Calcular progreso basado en el tiempo transcurrido vs tiempo total planificado
+    const fechaInicio = new Date(proyecto.fechaInicio).getTime();
+    const fechaFin = new Date(proyecto.fechaFinPrevista).getTime();
+    const hoy = new Date().getTime();
+    
+    // Si no ha comenzado aún
+    if (hoy < fechaInicio) return 0;
+    
+    // Si ya pasó la fecha fin
+    if (hoy > fechaFin) return 95; // 95% si no está marcado como finalizado
+    
+    // Progreso basado en tiempo transcurrido
+    const tiempoTotal = fechaFin - fechaInicio;
+    const tiempoTranscurrido = hoy - fechaInicio;
+    const porcentaje = Math.round((tiempoTranscurrido / tiempoTotal) * 100);
+    
+    // Limitar a un máximo de 95% si no está finalizado
+    return Math.min(porcentaje, 95);
+  }
+  
+  /**
+   * Calcula los días restantes hasta la fecha de fin prevista
+   * Retorna un número negativo si ya pasó la fecha
+   */
+  static calcularDiasRestantes(proyecto: Proyecto): number | null {
+    if (!proyecto.fechaFinPrevista) return null;
+    
+    const hoy = new Date();
+    const fechaFin = new Date(proyecto.fechaFinPrevista);
+    const diferencia = fechaFin.getTime() - hoy.getTime();
+    
+    return Math.ceil(diferencia / (1000 * 60 * 60 * 24));
+  }
+  
+  /**
+   * Genera estadísticas agregadas a partir de una colección de proyectos
+   */
+  static generarEstadisticas(proyectos: Proyecto[]): {
+    totalProyectos: number;
+    proyectosActivos: number;
+    proyectosPausados: number;
+    proyectosFinalizados: number;
+    proyectosRetrasados: number;
+    presupuestoTotal: number;
+    presupuestoActivos: number;
+  } {
+    // Valores iniciales
+    let totalProyectos = proyectos.length;
+    let proyectosActivos = 0;
+    let proyectosPausados = 0;
+    let proyectosFinalizados = 0;
+    let proyectosRetrasados = 0;
+    let presupuestoTotal = 0;
+    let presupuestoActivos = 0;
+    
+    // Calcular estadísticas
+    proyectos.forEach(proyecto => {
+      // Contar por estado
+      if (proyecto.estado === EstadoProyecto.ACTIVO) {
+        proyectosActivos++;
+        presupuestoActivos += proyecto.presupuesto;
+      } else if (proyecto.estado === EstadoProyecto.PAUSADO) {
+        proyectosPausados++;
+      } else if (proyecto.estado === EstadoProyecto.FINALIZADO) {
+        proyectosFinalizados++;
+      }
+      
+      // Acumular presupuesto total (solo de proyectos no archivados)
+      if (proyecto.estado !== EstadoProyecto.ARCHIVADO) {
+        presupuestoTotal += proyecto.presupuesto;
+      }
+      
+      // Contar retrasados
+      if (this.estaRetrasado(proyecto)) {
+        proyectosRetrasados++;
+      }
+    });
+    
+    return {
+      totalProyectos,
+      proyectosActivos,
+      proyectosPausados,
+      proyectosFinalizados,
+      proyectosRetrasados,
+      presupuestoTotal,
+      presupuestoActivos
+    };
   }
 }

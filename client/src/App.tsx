@@ -17,6 +17,7 @@ import { MainLayout } from "@/layouts/main-layout";
 import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
 import { EmpleadosRoutes } from "@/modules/nomina/empleados/ui/routes";
+import { ProyectosRoutes } from "@/modules/proyectos/ui/routes";
 
 function Router() {
   return (
@@ -73,6 +74,7 @@ function Router() {
       <FinanzasRoutes />
       <NominaRoutes />
       <EmpleadosRoutes />
+      <ProyectosRoutes />
       
       <Route component={NotFound} />
     </Switch>

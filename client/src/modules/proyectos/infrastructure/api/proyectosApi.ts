@@ -1,139 +1,116 @@
-import { apiRequest } from '@/lib/queryClient';
 import { 
-  ActualizarProyectoDTO, 
-  CambiarEstadoProyectoDTO, 
-  CrearProyectoDTO,
-  EstadoProyecto,
-  FiltrosProyecto, 
   Proyecto, 
-  ProyectosPaginados 
+  CrearProyectoDTO, 
+  ActualizarProyectoDTO, 
+  CambiarEstadoProyectoDTO,
+  FiltrosProyecto,
+  ProyectosPaginados
 } from '../../domain/entities/Proyecto';
+import { apiRequest } from '@/lib/queryClient';
 
 /**
- * Cliente HTTP para consumir la API REST de proyectos
- * Implementa las operaciones definidas en ProyectoRepository
+ * Cliente API para interactuar con el backend de proyectos
+ * Implementa las operaciones definidas en el repositorio
  */
-class ProyectosApi {
-  private readonly baseUrl = '/api/proyectos';
-
+export const proyectosApi = {
   /**
-   * Obtiene un listado paginado de proyectos según los filtros aplicados
+   * Obtiene un listado paginado de proyectos según los filtros
    */
-  async listarProyectos(filtros: FiltrosProyecto = {}): Promise<ProyectosPaginados> {
-    // Construir query params a partir de los filtros
-    const queryParams = new URLSearchParams();
-    
-    if (filtros.busqueda) queryParams.append('busqueda', filtros.busqueda);
-    
-    if (filtros.estado) {
-      const estados = Array.isArray(filtros.estado) ? filtros.estado : [filtros.estado];
-      estados.forEach(estado => queryParams.append('estado', estado));
+  async listarProyectos(filtros?: FiltrosProyecto): Promise<ProyectosPaginados> {
+    // Construir query params para filtros
+    const params = new URLSearchParams();
+    if (filtros?.busqueda) params.append('busqueda', filtros.busqueda);
+    if (filtros?.estado) {
+      if (Array.isArray(filtros.estado)) {
+        filtros.estado.forEach(estado => params.append('estado', estado));
+      } else {
+        params.append('estado', filtros.estado);
+      }
     }
-    
-    if (filtros.responsableId) queryParams.append('responsableId', filtros.responsableId.toString());
-    if (filtros.clienteId) queryParams.append('clienteId', filtros.clienteId.toString());
-    
-    if (filtros.fechaInicioDesde) queryParams.append('fechaInicioDesde', filtros.fechaInicioDesde.toISOString());
-    if (filtros.fechaInicioHasta) queryParams.append('fechaInicioHasta', filtros.fechaInicioHasta.toISOString());
-    
-    if (filtros.page) queryParams.append('page', filtros.page.toString());
-    if (filtros.pageSize) queryParams.append('pageSize', filtros.pageSize.toString());
-    
-    const url = `${this.baseUrl}?${queryParams.toString()}`;
-    const response = await apiRequest('GET', url);
+    if (filtros?.responsableId) params.append('responsableId', String(filtros.responsableId));
+    if (filtros?.clienteId) params.append('clienteId', String(filtros.clienteId));
+    if (filtros?.fechaInicioDesde) params.append('fechaInicioDesde', filtros.fechaInicioDesde.toISOString());
+    if (filtros?.fechaInicioHasta) params.append('fechaInicioHasta', filtros.fechaInicioHasta.toISOString());
+    if (filtros?.page) params.append('page', String(filtros.page));
+    if (filtros?.pageSize) params.append('pageSize', String(filtros.pageSize));
+
+    // Hacer la petición GET con los parámetros
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    const response = await apiRequest('GET', `/api/proyectos${queryString}`);
     const data = await response.json();
-    
-    // Transformar fechas de string a Date
-    return this.transformarRespuestaPaginada(data);
-  }
+    return data;
+  },
 
   /**
    * Obtiene un proyecto por su ID
    */
   async obtenerProyectoPorId(id: number): Promise<Proyecto> {
-    const response = await apiRequest('GET', `${this.baseUrl}/${id}`);
+    const response = await apiRequest('GET', `/api/proyectos/${id}`);
     if (!response.ok) {
-      throw new Error(`Error al obtener el proyecto #${id}: ${response.statusText}`);
+      throw new Error(`Error al obtener proyecto: ${response.statusText}`);
     }
-    
-    const data = await response.json();
-    return this.transformarProyecto(data);
-  }
+    return await response.json();
+  },
 
   /**
    * Crea un nuevo proyecto
    */
   async crearProyecto(proyecto: CrearProyectoDTO): Promise<Proyecto> {
-    const response = await apiRequest('POST', this.baseUrl, proyecto);
+    const response = await apiRequest('POST', '/api/proyectos', proyecto);
     if (!response.ok) {
-      throw new Error(`Error al crear el proyecto: ${response.statusText}`);
+      throw new Error(`Error al crear proyecto: ${response.statusText}`);
     }
-    
-    const data = await response.json();
-    return this.transformarProyecto(data);
-  }
+    return await response.json();
+  },
 
   /**
    * Actualiza un proyecto existente
    */
   async actualizarProyecto(id: number, proyecto: ActualizarProyectoDTO): Promise<Proyecto> {
-    const response = await apiRequest('PATCH', `${this.baseUrl}/${id}`, proyecto);
+    const response = await apiRequest('PATCH', `/api/proyectos/${id}`, proyecto);
     if (!response.ok) {
-      throw new Error(`Error al actualizar el proyecto #${id}: ${response.statusText}`);
+      throw new Error(`Error al actualizar proyecto: ${response.statusText}`);
     }
-    
-    const data = await response.json();
-    return this.transformarProyecto(data);
-  }
+    return await response.json();
+  },
 
   /**
    * Cambia el estado de un proyecto
    */
   async cambiarEstadoProyecto(id: number, cambioEstado: CambiarEstadoProyectoDTO): Promise<Proyecto> {
-    const response = await apiRequest('PATCH', `${this.baseUrl}/${id}/estado`, cambioEstado);
+    const response = await apiRequest('PATCH', `/api/proyectos/${id}/estado`, cambioEstado);
     if (!response.ok) {
-      throw new Error(`Error al cambiar el estado del proyecto #${id}: ${response.statusText}`);
+      throw new Error(`Error al cambiar estado: ${response.statusText}`);
     }
-    
-    const data = await response.json();
-    return this.transformarProyecto(data);
-  }
+    return await response.json();
+  },
 
   /**
    * Elimina (o archiva) un proyecto
    */
   async eliminarProyecto(id: number): Promise<void> {
-    const response = await apiRequest('DELETE', `${this.baseUrl}/${id}`);
+    const response = await apiRequest('DELETE', `/api/proyectos/${id}`);
     if (!response.ok) {
-      throw new Error(`Error al eliminar el proyecto #${id}: ${response.statusText}`);
+      throw new Error(`Error al eliminar proyecto: ${response.statusText}`);
     }
-  }
+  },
 
   /**
-   * Transforma las fechas de string a Date en un proyecto
+   * Obtiene indicadores/métricas de los proyectos
    */
-  private transformarProyecto(proyecto: any): Proyecto {
-    return {
-      ...proyecto,
-      fechaInicio: proyecto.fechaInicio ? new Date(proyecto.fechaInicio) : new Date(),
-      fechaFinPrevista: proyecto.fechaFinPrevista ? new Date(proyecto.fechaFinPrevista) : null,
-      fechaFinReal: proyecto.fechaFinReal ? new Date(proyecto.fechaFinReal) : null,
-      createdAt: proyecto.createdAt ? new Date(proyecto.createdAt) : new Date(),
-      updatedAt: proyecto.updatedAt ? new Date(proyecto.updatedAt) : new Date(),
-    };
+  async obtenerIndicadores(): Promise<{ 
+    totalProyectos: number, 
+    proyectosActivos: number, 
+    proyectosPausados: number,
+    proyectosFinalizados: number,
+    proyectosRetrasados: number,
+    presupuestoTotal: number,
+    presupuestoActivos: number
+  }> {
+    const response = await apiRequest('GET', '/api/proyectos/indicadores');
+    if (!response.ok) {
+      throw new Error(`Error al obtener indicadores: ${response.statusText}`);
+    }
+    return await response.json();
   }
-
-  /**
-   * Transforma las fechas en una respuesta paginada
-   */
-  private transformarRespuestaPaginada(respuesta: any): ProyectosPaginados {
-    return {
-      ...respuesta,
-      data: Array.isArray(respuesta.data) 
-        ? respuesta.data.map((proyecto: any) => this.transformarProyecto(proyecto))
-        : [],
-    };
-  }
-}
-
-export const proyectosApi = new ProyectosApi();
+};

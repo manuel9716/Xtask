@@ -1,40 +1,37 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CrearProyectoDTO, Proyecto } from '../../domain/entities/Proyecto';
+import { useMutation } from '@tanstack/react-query';
+import { Proyecto, CrearProyectoDTO } from '../../domain/entities/Proyecto';
+import { queryClient } from '@/lib/queryClient';
 import { proyectosApi } from '../../infrastructure/api/proyectosApi';
+import { useToast } from '@/hooks/use-toast';
 
 /**
- * Hook para gestionar la creación de un nuevo proyecto
+ * Hook para crear un nuevo proyecto
+ * Implementa el caso de uso "Crear Proyecto"
  */
 export function useCrearProyecto() {
-  const [error, setError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async (proyecto: CrearProyectoDTO): Promise<Proyecto> => {
-      try {
-        return await proyectosApi.crearProyecto(proyecto);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Error al crear el proyecto';
-        setError(message);
-        throw new Error(message);
-      }
+  const { toast } = useToast();
+  
+  const mutation = useMutation<Proyecto, Error, CrearProyectoDTO>({
+    mutationFn: async (proyecto: CrearProyectoDTO) => {
+      return await proyectosApi.crearProyecto(proyecto);
     },
     onSuccess: () => {
-      // Invalidar consultas para refrescar los datos
+      // Invalidar la cache para que se recarguen los listados
       queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
-      setError(null);
+      
+      toast({
+        title: 'Proyecto creado',
+        description: 'El proyecto ha sido creado exitosamente',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error al crear proyecto',
+        description: error.message || 'Ha ocurrido un error al crear el proyecto',
+        variant: 'destructive',
+      });
     },
   });
-
-  return {
-    crearProyecto: mutation.mutate,
-    isLoading: mutation.isPending,
-    error,
-    isSuccess: mutation.isSuccess,
-    reset: () => {
-      setError(null);
-      mutation.reset();
-    }
-  };
+  
+  return mutation;
 }

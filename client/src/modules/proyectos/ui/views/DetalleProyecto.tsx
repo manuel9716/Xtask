@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useObtenerProyecto } from "../../application/useCases/obtenerProyecto";
 import { EstadoProyectoBadge } from "../components/EstadoProyectoBadge";
 import { CambiarEstadoProyectoDialog } from "../components/CambiarEstadoProyectoDialog";
@@ -54,7 +54,7 @@ import { proyectosApi } from "../../infrastructure/api/proyectosApi";
 
 export function DetalleProyecto() {
   const { id } = useParams<{ id: string }>();
-  const [, navigate] = useNavigate();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const proyectoId = id ? parseInt(id) : undefined;
   
