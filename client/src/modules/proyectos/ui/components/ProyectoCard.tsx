@@ -1,4 +1,5 @@
-import { Proyecto, EstadoProyecto } from '../../domain/entities/Proyecto';
+import { Proyecto } from '../../domain/entities/Proyecto';
+import { EstadoProyecto } from '@shared/schema';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

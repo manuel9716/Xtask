@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/select';
 import { SearchIcon, XCircleIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { EstadoProyecto, FiltrosProyecto as FiltrosProyectoType } from '../../domain/entities/Proyecto';
+import { FiltrosProyecto as FiltrosProyectoType } from '../../domain/entities/Proyecto';
+import { EstadoProyecto } from '@shared/schema';
 import { useIndicadoresProyectos } from '../../application/useCases/obtenerIndicadores';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -98,19 +99,25 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
               <Badge variant="secondary" className="ml-2">{indicadores.totalProyectos}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="active" className="relative">
+          <TabsTrigger value="ACTIVO" className="relative">
             Activos
             {!cargandoIndicadores && indicadores?.proyectosActivos !== undefined && (
               <Badge variant="secondary" className="ml-2">{indicadores.proyectosActivos}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="paused" className="relative">
+          <TabsTrigger value="PAUSADO" className="relative">
             Pausados
             {!cargandoIndicadores && indicadores?.proyectosPausados !== undefined && (
               <Badge variant="secondary" className="ml-2">{indicadores.proyectosPausados}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="completed" className="relative">
+          <TabsTrigger value="RETRASADO" className="relative">
+            Retrasados
+            {!cargandoIndicadores && indicadores?.proyectosRetrasados !== undefined && (
+              <Badge variant="secondary" className="ml-2">{indicadores.proyectosRetrasados || 0}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="FINALIZADO" className="relative">
             Completados
             {!cargandoIndicadores && indicadores?.proyectosFinalizados !== undefined && (
               <Badge variant="secondary" className="ml-2">{indicadores.proyectosFinalizados}</Badge>
