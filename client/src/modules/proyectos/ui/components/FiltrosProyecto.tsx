@@ -168,7 +168,7 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los estados</SelectItem>
-                  <SelectItem value="active">
+                  <SelectItem value="ACTIVO">
                     <div className="flex items-center justify-between w-full">
                       <span>Activos</span>
                       {!cargandoIndicadores && indicadores?.proyectosActivos !== undefined && (
@@ -176,7 +176,7 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
                       )}
                     </div>
                   </SelectItem>
-                  <SelectItem value="paused">
+                  <SelectItem value="PAUSADO">
                     <div className="flex items-center justify-between w-full">
                       <span>Pausados</span>
                       {!cargandoIndicadores && indicadores?.proyectosPausados !== undefined && (
@@ -184,7 +184,15 @@ export function FiltrosProyecto({ onFilterChange, filtrosActivos }: FiltrosProye
                       )}
                     </div>
                   </SelectItem>
-                  <SelectItem value="completed">
+                  <SelectItem value="RETRASADO">
+                    <div className="flex items-center justify-between w-full">
+                      <span>Retrasados</span>
+                      {!cargandoIndicadores && indicadores?.proyectosRetrasados !== undefined && (
+                        <Badge variant="secondary" className="ml-2">{indicadores.proyectosRetrasados || 0}</Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="FINALIZADO">
                     <div className="flex items-center justify-between w-full">
                       <span>Finalizados</span>
                       {!cargandoIndicadores && indicadores?.proyectosFinalizados !== undefined && (
