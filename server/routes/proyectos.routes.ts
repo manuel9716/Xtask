@@ -74,21 +74,35 @@ proyectosRouter.get('/', async (req: Request, res: Response) => {
     const result = await query;
     
     // Transformar resultados al formato esperado en el frontend
-    const proyectos = result.map(p => ({
-      id: p.id,
-      nombre: p.name,
-      descripcion: p.description || '',
-      fechaInicio: p.startDate,
-      fechaFinPrevista: p.endDate,
-      fechaFinReal: null, // Pendiente de implementar en base de datos
-      estado: p.status === 'active' ? EstadoProyecto.ACTIVO : EstadoProyecto.FINALIZADO,
-      presupuesto: parseFloat(p.budget),
-      responsableId: p.managerId,
-      clienteId: null, // Pendiente de implementar en base de datos
-      tags: [], // Pendiente de implementar en base de datos
-      createdAt: p.createdAt,
-      updatedAt: p.createdAt // Pendiente de implementar en base de datos
-    }));
+    const proyectos = result.map(p => {
+      // Mapear estado de la base de datos al estado de dominio
+      let estadoDominio;
+      switch (p.status) {
+        case 'active': estadoDominio = EstadoProyecto.ACTIVO; break;
+        case 'paused': estadoDominio = EstadoProyecto.PAUSADO; break;
+        case 'delayed': estadoDominio = EstadoProyecto.RETRASADO; break;
+        case 'completed': estadoDominio = EstadoProyecto.FINALIZADO; break;
+        case 'cancelled': estadoDominio = EstadoProyecto.CANCELADO; break;
+        case 'archived': estadoDominio = EstadoProyecto.ARCHIVADO; break;
+        default: estadoDominio = EstadoProyecto.ACTIVO;
+      }
+      
+      return {
+        id: p.id,
+        nombre: p.name,
+        descripcion: p.description || '',
+        fechaInicio: p.startDate,
+        fechaFinPrevista: p.endDate,
+        fechaFinReal: null, // Pendiente de implementar en base de datos
+        estado: estadoDominio,
+        presupuesto: parseFloat(p.budget),
+        responsableId: p.managerId,
+        clienteId: null, // Pendiente de implementar en base de datos
+        tags: [], // Pendiente de implementar en base de datos
+        createdAt: p.createdAt,
+        updatedAt: p.createdAt // Pendiente de implementar en base de datos
+      };
+    });
     
     // Contar el total para la paginación
     const totalCount = await db.select().from(projects);
@@ -120,6 +134,18 @@ proyectosRouter.get('/:id', async (req: Request, res: Response) => {
     
     const p = result[0];
     
+    // Mapear estado de la base de datos al estado de dominio
+    let estadoDominio;
+    switch (p.status) {
+      case 'active': estadoDominio = EstadoProyecto.ACTIVO; break;
+      case 'paused': estadoDominio = EstadoProyecto.PAUSADO; break;
+      case 'delayed': estadoDominio = EstadoProyecto.RETRASADO; break;
+      case 'completed': estadoDominio = EstadoProyecto.FINALIZADO; break;
+      case 'cancelled': estadoDominio = EstadoProyecto.CANCELADO; break;
+      case 'archived': estadoDominio = EstadoProyecto.ARCHIVADO; break;
+      default: estadoDominio = EstadoProyecto.ACTIVO;
+    }
+    
     // Transformar al formato esperado en el frontend
     const proyecto = {
       id: p.id,
@@ -128,7 +154,7 @@ proyectosRouter.get('/:id', async (req: Request, res: Response) => {
       fechaInicio: p.startDate,
       fechaFinPrevista: p.endDate,
       fechaFinReal: null, // Pendiente de implementar en base de datos
-      estado: p.status === 'active' ? EstadoProyecto.ACTIVO : EstadoProyecto.FINALIZADO,
+      estado: estadoDominio,
       presupuesto: parseFloat(p.budget),
       responsableId: p.managerId,
       clienteId: null, // Pendiente de implementar en base de datos
