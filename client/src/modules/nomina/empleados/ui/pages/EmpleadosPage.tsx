@@ -16,7 +16,9 @@ import {
   AlertCircle,
   Loader2,
   Download,
-  FileDown
+  FileDown,
+  Briefcase,
+  Clock
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -296,6 +298,7 @@ export default function EmpleadosPage() {
                     <TableHead>Fecha Ingreso</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead>Tipo</TableHead>
+                    <TableHead>Proyectos</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>

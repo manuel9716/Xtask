@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { and, count, eq, like, sql } from 'drizzle-orm';
-import { users, employees } from '@shared/schema';
+import { users, employees, projects, tasks } from '@shared/schema';
 import { z } from 'zod';
 
 // Esquema para validar la creación de empleado
@@ -356,6 +356,47 @@ empleadosRouter.patch('/:id/estado', async (req: Request, res: Response) => {
   } catch (error) {
     console.error(`Error al cambiar estado del empleado con ID ${req.params.id}:`, error);
     return res.status(500).json({ error: 'Error al cambiar el estado del empleado' });
+  }
+});
+
+// Obtener los proyectos asignados a un empleado
+empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Verificar que el empleado existe
+    const [empleado] = await db.select()
+      .from(employees)
+      .where(eq(employees.id, parseInt(id)));
+    
+    if (!empleado) {
+      return res.status(404).json({ error: 'Empleado no encontrado' });
+    }
+    
+    // Obtener proyectos asignados a través de las tareas
+    // Asumimos que un empleado está asignado a un proyecto si tiene tareas en ese proyecto
+    const proyectosAsignados = await db.select({
+      id: projects.id,
+      name: projects.name,
+      description: projects.description,
+      status: projects.status,
+      startDate: projects.startDate,
+      endDate: projects.endDate,
+      category: projects.category,
+    })
+    .from(projects)
+    .innerJoin(tasks, eq(tasks.projectId, projects.id))
+    .where(eq(tasks.assigneeId, empleado.userId))
+    .groupBy(projects.id);
+    
+    return res.status(200).json({
+      empleadoId: parseInt(id),
+      cantidadProyectos: proyectosAsignados.length,
+      proyectos: proyectosAsignados
+    });
+  } catch (error) {
+    console.error(`Error al obtener proyectos del empleado con ID ${req.params.id}:`, error);
+    return res.status(500).json({ error: 'Error al obtener los proyectos del empleado' });
   }
 });
 
