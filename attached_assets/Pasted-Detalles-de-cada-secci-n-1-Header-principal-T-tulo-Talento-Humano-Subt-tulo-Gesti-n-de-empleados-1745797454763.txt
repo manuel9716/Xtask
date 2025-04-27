@@ -1,0 +1,110 @@
+Detalles de cada sección
+1. Header principal
+Título: Talento Humano
+
+Subtítulo: Gestión de empleados, evaluaciones y formación
+
+Icono de Recursos Humanos (opcional)
+
+2. KPIs resumen (cards principales arriba)
+Coloca 4 a 6 tarjetas resumen tipo "dashboard" mostrando:
+
+
+KPI	Fuente
+Total empleados activos	employees donde contract_status = active
+Empleados nuevos este mes	employees hire_date mes actual
+Total capacitaciones	capacitaciones activas en mes
+Evaluaciones completadas	evaluaciones realizadas
+Promedio de calificación	evaluaciones promedio
+Nómina mensual proyectada	SUM(gross_salary) payrolls mes
+UI asociada:
+
+src/modules/recursos-humanos/ui/components/KpiCard.tsx
+
+3. Navegación por Tabs
+Implementar tabs que permitan cambiar entre:
+
+
+Tab	Contenido cargado
+Empleados	ListaEmpleados.tsx
+Evaluaciones	ListaEvaluaciones.tsx
+Capacitaciones	ListaCapacitaciones.tsx
+Nómina	ListaNominas.tsx
+UI asociada:
+
+src/modules/recursos-humanos/ui/components/TabNavigator.tsx
+
+4. Dentro de cada Tab
+Tab: Empleados
+Mostrar la lista de empleados (EmpleadoCard o tabla)
+
+Botón + Nuevo Empleado (abre modal EmpleadoForm.tsx)
+
+Búsqueda, filtro por estado, departamento
+
+Tab: Evaluaciones
+Listar evaluaciones recientes (EvaluacionCard)
+
+Botón + Nueva Evaluación
+
+Filtro por empleado, periodo
+
+Tab: Capacitaciones
+Listar capacitaciones próximas y pasadas
+
+Botón + Nueva Capacitación
+
+Filtro por estado (programada, realizada)
+
+Tab: Nómina
+Mostrar resumen de pagos recientes
+
+Botón Ver Detalle para cada empleado
+
+Filtro por mes, estado de pago
+
+🖌️ Estilo Visual
+Espaciado generoso (padding, margin)
+
+Tipografías claras y consistentes
+
+Uso de colores para estados:
+
+Activo: verde
+
+Inactivo: gris
+
+Evaluado: azul
+
+Capacitación pendiente: amarillo
+
+Diseño responsive para móvil y desktop
+
+Skeleton loaders al cargar datos
+
+Toasts de éxito/error en operaciones CRUD
+
+📎 Extras requeridos
+Modales reutilizables para creación y edición (empleados, evaluaciones, capacitaciones)
+
+Actualización automática tras creación/edición (mutate de react-query o refetch)
+
+Confirmaciones para eliminar registros (ConfirmModal.tsx)
+
+Accesibilidad básica (tabIndex, roles de ARIA donde corresponda)
+
+🚀 Resultado esperado
+Una pantalla principal de Talento Humano limpia, moderna y totalmente funcional, desde donde el usuario pueda:
+
+Ver métricas clave
+
+Administrar empleados
+
+Gestionar evaluaciones
+
+Planificar capacitaciones
+
+Consultar nóminas
+
+Todo sin salir de la misma vista principal, utilizando navegación por tabs y modales.
+
