@@ -37,17 +37,16 @@ export {
 export const recursosHumanosRoutes = [
   {
     path: '/admin/recursos-humanos/empleados',
-    component: () => import('./ui/views/ListaEmpleados').then(module => module.default)
+    component: () => import('./ui/views/SimpleListaEmpleados').then(module => module.default)
   },
   {
     path: '/admin/recursos-humanos',
-    component: () => import('./ui/views/RRHHDashboardPage').then(module => module.default)
+    component: () => import('./ui/views/TempDashboard').then(module => module.default)
   },
-  // Comentamos estas rutas temporalmente para depurar el problema
-  // {
-  //   path: '/admin/recursos-humanos/dashboard',
-  //   component: () => import('./ui/views/RRHHDashboardPage').then(module => module.default)
-  // }
+  {
+    path: '/admin/recursos-humanos/dashboard',
+    component: () => import('./ui/views/TempDashboard').then(module => module.default)
+  }
   // Futuras rutas:
   // { path: '/admin/recursos-humanos/empleados/nuevo', component: () => import('./ui/views/CrearEditarEmpleado').then(module => module.default) },
   // { path: '/admin/recursos-humanos/empleados/:id', component: () => import('./ui/views/DetalleEmpleado').then(module => module.default) },
