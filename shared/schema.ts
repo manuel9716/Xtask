@@ -216,6 +216,17 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Tabla de relación entre empleados y proyectos
+export const employeeProjects = pgTable("employee_projects", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").references(() => employees.id).notNull(),
+  projectId: integer("project_id").references(() => projects.id).notNull(),
+  role: text("role").default("member"), // member, lead, manager
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  assignedBy: integer("assigned_by").references(() => users.id).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
 // Task comments
 export const taskComments = pgTable("task_comments", {
   id: serial("id").primaryKey(),
@@ -318,6 +329,7 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({ i
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true });
 export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({ id: true, createdAt: true });
 export const insertEmployeeSchema = createInsertSchema(employees).omit({ id: true });
+export const insertEmployeeProjectSchema = createInsertSchema(employeeProjects).omit({ id: true, assignedAt: true });
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true, createdAt: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
 export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders).omit({ id: true, createdAt: true, approvedAt: true, completedAt: true });
@@ -352,6 +364,9 @@ export type InsertTaskComment = z.infer<typeof insertTaskCommentSchema>;
 
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
+
+export type EmployeeProject = typeof employeeProjects.$inferSelect;
+export type InsertEmployeeProject = z.infer<typeof insertEmployeeProjectSchema>;
 
 export type Supplier = typeof suppliers.$inferSelect;
 export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
