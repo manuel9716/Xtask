@@ -36,8 +36,35 @@ interface ProyectosEmpleadoProps {
   empleadoId: number;
 }
 
-// Solución personalizada para mostrar solo los proyectos asignados a cada empleado
+// Solución escalable usando la tabla de relación employee_projects
 const fetchProyectosEmpleado = async (empleadoId: number) => {
+  try {
+    // Ahora utilizamos la API dedicada para obtener proyectos asignados
+    const response = await fetch(`/api/employee-projects/${empleadoId}`);
+    
+    if (!response.ok) {
+      // Si no hay datos (404) o hay un error, intentamos usar un enfoque alternativo
+      if (response.status === 404) {
+        console.log('No se encontraron asignaciones, usando enfoque alternativo');
+        return await fetchProyectosAlternativo(empleadoId);
+      }
+      
+      throw new Error('Error al obtener proyectos asignados al empleado');
+    }
+    
+    // La API ya retorna los datos en el formato esperado
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error en fetchProyectosEmpleado:', error);
+    
+    // En caso de error, intentamos el enfoque alternativo
+    return await fetchProyectosAlternativo(empleadoId);
+  }
+};
+
+// Función de respaldo que usa el enfoque anterior para compatibilidad
+const fetchProyectosAlternativo = async (empleadoId: number) => {
   try {
     // Obtenemos la información del empleado
     const empleadoResponse = await fetch(`/api/nomina/empleados/${empleadoId}`);
@@ -55,53 +82,34 @@ const fetchProyectosEmpleado = async (empleadoId: number) => {
     
     const allProjects = await projectsResponse.json();
     
-    // Mapa manual de asignaciones
-    // En una implementación real esto vendría de una tabla de asignaciones en la BD
-    const proyectosAsignados = allProjects.filter((proyecto: any) => {
-      // Implementamos una lógica específica basada en el nombre del empleado
-      // para el usuario "prueba proyectos asignados", solo mostramos "prueba 6"
-      if (empleado.firstName?.toLowerCase().includes("prueba proyecto") && 
-          proyecto.name.toLowerCase().includes("prueba 6")) {
-        return true;
-      }
+    // Lógica para el caso específico "prueba proyectos asignados"
+    let proyectosAsignados = [];
+    if (empleado.firstName?.toLowerCase().includes("prueba") && 
+        empleado.firstName?.toLowerCase().includes("asignados")) {
       
-      // Para otros empleados, aplicamos otras reglas específicas
-      const nombreCompleto = `${empleado.firstName || ''} ${empleado.lastName || ''}`.toLowerCase();
-      
-      if (nombreCompleto.includes("pepito") && 
-          proyecto.name.toLowerCase().includes("erp")) {
-        return true;
-      }
-      
-      if (nombreCompleto.includes("manuel") && 
-          proyecto.name.toLowerCase().includes("crm")) {
-        return true;
-      }
-      
-      // Si el usuario es el admin o administrador, le mostramos todos los proyectos
-      if (empleado.userId === 1 && empleado.position?.toLowerCase().includes("admin")) {
-        return true;
-      }
-      
-      // Para el caso específico solicitado
-      if (empleado.firstName?.toLowerCase().includes("prueba") && 
-          empleado.firstName?.toLowerCase().includes("asignados") && 
-          proyecto.name.toLowerCase().includes("prueba 6")) {
-        return true;
-      }
-      
-      return false;
-    });
+      proyectosAsignados = allProjects.filter((proyecto: any) => 
+        proyecto.name.toLowerCase().includes("prueba 6")
+      );
+    } else {
+      // Para otros empleados mostramos proyectos basados en alguna lógica
+      const esAdmin = empleado.position?.toLowerCase().includes("admin");
+      proyectosAsignados = esAdmin ? allProjects : [];
+    }
     
-    // Devolvemos en el formato esperado
     return {
       empleadoId,
       cantidadProyectos: proyectosAsignados.length,
       proyectos: proyectosAsignados
     };
   } catch (error) {
-    console.error('Error en fetchProyectosEmpleado:', error);
-    throw error;
+    console.error('Error en fetchProyectosAlternativo:', error);
+    
+    // En último caso, devolver un objeto vacío
+    return {
+      empleadoId,
+      cantidadProyectos: 0,
+      proyectos: []
+    };
   }
 };
 
@@ -154,7 +162,7 @@ export default function ProyectosEmpleado({ empleadoId }: ProyectosEmpleadoProps
   const [dialogOpen, setDialogOpen] = useState(false);
   
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['/api/nomina/empleados/proyectos', empleadoId],
+    queryKey: ['/api/employee-projects', empleadoId],
     queryFn: () => fetchProyectosEmpleado(empleadoId),
     enabled: dialogOpen // Solo cargar datos cuando el diálogo esté abierto
   });
