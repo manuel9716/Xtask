@@ -27,7 +27,8 @@ const crearEmpleadoSchema = z.object({
   projectIds: z.array(z.number().int().positive()).optional(),
   tipoPago: z.string().optional(),
   fechaInicioNomina: z.coerce.date().optional(),
-  contratoUrl: z.string().optional()
+  contratoUrl: z.string().optional(),
+  id_employed_proyects: z.number().int().positive().optional()
 });
 
 // Esquema para validar la actualización de empleado
