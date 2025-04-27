@@ -1,0 +1,107 @@
+Funcionalidades principales
+1. Gestión de empleados
+Crear empleado
+
+Editar empleado
+
+Eliminar (o desactivar) empleado
+
+Listar empleados (con paginación, filtros por departamento, estado)
+
+Ver detalle de empleado
+
+2. Gestión de evaluaciones de desempeño
+Crear evaluación
+
+Asignar evaluación a empleado
+
+Ver historial de evaluaciones de un empleado
+
+Listar todas las evaluaciones
+
+3. Gestión de capacitaciones
+Crear capacitación
+
+Asignar empleados a capacitación
+
+Marcar asistencia a capacitación
+
+Ver capacitaciones pasadas y futuras
+
+📚 Entidades esperadas
+Empleado
+
+Evaluacion
+
+Capacitacion
+
+AsistenciaCapacitacion
+
+🌐 API esperada para Recursos Humanos
+
+Método	Ruta	Descripción
+GET	/api/recursos-humanos/empleados	Listar empleados
+POST	/api/recursos-humanos/empleados	Crear empleado
+PATCH	/api/recursos-humanos/empleados/:id	Actualizar empleado
+DELETE	/api/recursos-humanos/empleados/:id	Eliminar (desactivar) empleado
+GET	/api/recursos-humanos/evaluaciones	Listar evaluaciones
+POST	/api/recursos-humanos/evaluaciones	Crear evaluación
+GET	/api/recursos-humanos/capacitaciones	Listar capacitaciones
+POST	/api/recursos-humanos/capacitaciones	Crear capacitación
+POST	/api/recursos-humanos/asistencias	Registrar asistencia a capacitación
+🧩 Detalle de dónde implementar cada funcionalidad:
+
+Funcionalidad	Archivo/Carpeta sugerida
+Crear empleado	application/useCases/crearEmpleado.ts
+Editar empleado	application/useCases/editarEmpleado.ts
+Eliminar empleado	application/useCases/eliminarEmpleado.ts
+Listar empleados	application/useCases/listarEmpleados.ts
+Vista lista empleados	ui/views/ListaEmpleados.tsx
+Componente de empleado	ui/components/EmpleadoCard.tsx
+Crear evaluación	application/useCases/crearEvaluacion.ts
+Vista lista evaluaciones	ui/views/ListaEvaluaciones.tsx
+Crear capacitación	application/useCases/crearCapacitacion.ts
+Vista lista capacitaciones	ui/views/ListaCapacitaciones.tsx
+Registrar asistencia	application/useCases/registrarAsistencia.ts
+Servicio de métricas RRHH	domain/services/RRHHMetricsService.ts
+API de empleados	infrastructure/api/empleadosApi.ts
+API de evaluaciones	infrastructure/api/evaluacionesApi.ts
+API de capacitaciones	infrastructure/api/capacitacionesApi.ts
+📊 KPIs o Indicadores esperados para RRHH
+Total empleados activos
+
+Empleados nuevos en el mes
+
+Empleados por departamento
+
+Evaluaciones pendientes
+
+Capacitaciones en curso
+
+Porcentaje de asistencia a capacitaciones
+
+📜 Buenas prácticas requeridas
+Tipado estricto en todas las entidades y DTOs
+
+Separar la lógica de dominio, infraestructura y UI
+
+Validaciones de formularios
+
+Manejo de estados y errores controlados
+
+Actualización en tiempo real al crear/editar/eliminar
+
+Modal accesible para formularios de creación y edición
+
+🚀 Resultado esperado:
+Un módulo independiente y escalable de recursos-humanos, siguiendo la arquitectura hexagonal, totalmente alineado al estilo de los módulos proyectos, finanzas y nómina que ya manejas.
+
+¿Quieres que también te arme ahora mismo los archivos iniciales para:
+
+Empleado.ts
+
+crearEmpleado.ts
+
+empleadosApi.ts
+
+ListaEmpleados.tsx
