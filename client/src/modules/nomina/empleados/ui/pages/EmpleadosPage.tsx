@@ -60,6 +60,7 @@ import { EmpleadoForm } from '../forms/EmpleadoForm';
 import { FiltrosEmpleado } from '../../domain/entities/Empleado';
 import { obtenerEmpleados, cambiarEstadoEmpleado, eliminarEmpleado, descargarContratoEmpleado } from '../../api/empleadosApi';
 import { useToast } from '@/hooks/use-toast';
+import ProyectosEmpleado from '../components/ProyectosEmpleado';
 
 export default function EmpleadosPage() {
   const [location, setLocation] = useLocation();
@@ -324,6 +325,9 @@ export default function EmpleadosPage() {
                       </TableCell>
                       <TableCell>
                         {renderTipoContrato(empleado.contractType || 'fulltime')}
+                      </TableCell>
+                      <TableCell>
+                        <ProyectosEmpleado empleadoId={empleado.id} />
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
