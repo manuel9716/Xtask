@@ -36,22 +36,52 @@ interface ProyectosEmpleadoProps {
   empleadoId: number;
 }
 
+// Dado que hay un problema con la ruta, usamos una solución alternativa
+// que consulta las tareas y proyectos directamente
 const fetchProyectosEmpleado = async (empleadoId: number) => {
   try {
-    const response = await fetch(`/api/nomina/empleados/${empleadoId}/proyectos`);
-    
-    // Verificar si la respuesta es JSON
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      console.error('La respuesta no es JSON:', contentType);
-      throw new Error('La respuesta del servidor no es JSON');
+    // Primero obtenemos el empleado para obtener el userId
+    const empleadoResponse = await fetch(`/api/nomina/empleados/${empleadoId}`);
+    if (!empleadoResponse.ok) {
+      throw new Error('Error al obtener información del empleado');
     }
     
-    if (!response.ok) {
-      throw new Error('Error al obtener proyectos del empleado');
+    const empleado = await empleadoResponse.json();
+    const userId = empleado.userId;
+    
+    // Luego obtenemos todas las tareas
+    const tasksResponse = await fetch('/api/tasks');
+    if (!tasksResponse.ok) {
+      throw new Error('Error al obtener tareas');
     }
     
-    return response.json();
+    const tasks = await tasksResponse.json();
+    
+    // Filtramos las tareas del empleado por userId
+    const tareasFiltradas = tasks.filter((tarea: any) => tarea.assigneeId === userId);
+    
+    // Obtenemos todos los proyectos
+    const projectsResponse = await fetch('/api/projects');
+    if (!projectsResponse.ok) {
+      throw new Error('Error al obtener proyectos');
+    }
+    
+    const allProjects = await projectsResponse.json();
+    
+    // Extraemos los IDs de proyecto únicos de las tareas del empleado
+    const projectIds = [...new Set(tareasFiltradas.map((tarea: any) => tarea.projectId))];
+    
+    // Filtramos los proyectos que coinciden con esos IDs
+    const proyectosAsignados = allProjects.filter((proyecto: any) => 
+      projectIds.includes(proyecto.id)
+    );
+    
+    // Devolvemos en el mismo formato que esperaría el endpoint original
+    return {
+      empleadoId,
+      cantidadProyectos: proyectosAsignados.length,
+      proyectos: proyectosAsignados
+    };
   } catch (error) {
     console.error('Error en fetchProyectosEmpleado:', error);
     throw error;
