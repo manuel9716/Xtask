@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { and, count, eq, like, sql } from 'drizzle-orm';
-import { users, employees, projects, tasks } from '@shared/schema';
+import { users, employees, projects, tasks, employeeProjects } from '@shared/schema';
 import { z } from 'zod';
 
 // Esquema para validar la creación de empleado
@@ -23,7 +23,11 @@ const crearEmpleadoSchema = z.object({
   bankAccount: z.string().optional(),
   paymentMethod: z.string().optional(),
   healthInsurance: z.string().optional(),
-  vacationDays: z.number().int().optional()
+  vacationDays: z.number().int().optional(),
+  projectIds: z.array(z.number().int().positive()).optional(),
+  tipoPago: z.string().optional(),
+  fechaInicioNomina: z.coerce.date().optional(),
+  contratoUrl: z.string().optional()
 });
 
 // Esquema para validar la actualización de empleado
@@ -236,12 +240,47 @@ empleadosRouter.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: `Ya existe un empleado con la identificación ${datosEmpleado.identification}` });
     }
     
+    // Extraemos los projectIds si existen
+    const { projectIds, ...datosEmpleadoSinProyectos } = datosEmpleado;
+    
     // Insertar el nuevo empleado
     const [nuevoEmpleado] = await db.insert(employees)
-      .values(datosEmpleado)
+      .values(datosEmpleadoSinProyectos)
       .returning();
     
-    return res.status(201).json(nuevoEmpleado);
+    // Si se especificaron proyectos, los asignamos al empleado
+    if (projectIds && projectIds.length > 0) {
+      console.log(`Asignando ${projectIds.length} proyectos al empleado ${nuevoEmpleado.id}`);
+      
+      // Para cada proyecto en projectIds, crear una asignación
+      for (const projectId of projectIds) {
+        // Verificar que el proyecto existe
+        const [proyecto] = await db
+          .select()
+          .from(projects)
+          .where(eq(projects.id, projectId))
+          .limit(1);
+        
+        if (proyecto) {
+          // Crear la asignación en la tabla employee_projects
+          await db.insert(employeeProjects).values({
+            employeeId: nuevoEmpleado.id,
+            projectId: projectId,
+            role: 'member',
+            assignedBy: 1, // Id del usuario administrador por defecto
+            isActive: true
+          });
+          console.log(`Proyecto ${projectId} asignado al empleado ${nuevoEmpleado.id}`);
+        } else {
+          console.log(`El proyecto ${projectId} no existe, no se puede asignar`);
+        }
+      }
+    }
+    
+    return res.status(201).json({
+      ...nuevoEmpleado,
+      projectIds: projectIds || []
+    });
   } catch (error) {
     console.error('Error al crear empleado:', error);
     return res.status(500).json({ error: 'Error al crear el empleado' });
@@ -264,11 +303,12 @@ empleadosRouter.patch('/:id', async (req: Request, res: Response) => {
     }
     
     const datosActualizacion = validacionResultado.data;
+    const empleadoId = parseInt(id);
     
     // Verificar que el empleado existe
     const [empleadoExistente] = await db.select()
       .from(employees)
-      .where(eq(employees.id, parseInt(id)));
+      .where(eq(employees.id, empleadoId));
     
     if (!empleadoExistente) {
       return res.status(404).json({ error: 'Empleado no encontrado' });
@@ -293,7 +333,7 @@ empleadosRouter.patch('/:id', async (req: Request, res: Response) => {
         .where(
           and(
             eq(employees.identification, datosActualizacion.identification),
-            sql`${employees.id} != ${parseInt(id)}`
+            sql`${employees.id} != ${empleadoId}`
           )
         );
       
@@ -304,16 +344,74 @@ empleadosRouter.patch('/:id', async (req: Request, res: Response) => {
       }
     }
     
+    // Extraemos los projectIds si existen
+    const { projectIds, ...datosEmpleadoSinProyectos } = datosActualizacion;
+    
     // Actualizar el empleado
     const [empleadoActualizado] = await db.update(employees)
       .set({
-        ...datosActualizacion,
+        ...datosEmpleadoSinProyectos,
         // Siempre actualizar la fecha de modificación si existiera
       })
-      .where(eq(employees.id, parseInt(id)))
+      .where(eq(employees.id, empleadoId))
       .returning();
     
-    return res.status(200).json(empleadoActualizado);
+    // Si se especificaron proyectos, actualizar las asignaciones
+    if (projectIds && projectIds.length > 0) {
+      console.log(`Actualizando asignaciones de proyectos para el empleado ${empleadoId}`);
+      
+      // Primero, desactivamos todas las asignaciones existentes
+      await db.update(employeeProjects)
+        .set({ isActive: false })
+        .where(eq(employeeProjects.employeeId, empleadoId));
+      
+      // Luego, creamos nuevas asignaciones para cada proyecto
+      for (const projectId of projectIds) {
+        // Verificar que el proyecto existe
+        const [proyecto] = await db
+          .select()
+          .from(projects)
+          .where(eq(projects.id, projectId))
+          .limit(1);
+        
+        if (proyecto) {
+          // Primero verificamos si ya existe una asignación para este proyecto (incluso inactiva)
+          const [asignacionExistente] = await db
+            .select()
+            .from(employeeProjects)
+            .where(and(
+              eq(employeeProjects.employeeId, empleadoId),
+              eq(employeeProjects.projectId, projectId)
+            ))
+            .limit(1);
+          
+          if (asignacionExistente) {
+            // Si existe, la reactivamos
+            await db.update(employeeProjects)
+              .set({ isActive: true })
+              .where(eq(employeeProjects.id, asignacionExistente.id));
+            console.log(`Reactivada asignación de proyecto ${projectId} para empleado ${empleadoId}`);
+          } else {
+            // Si no existe, creamos una nueva
+            await db.insert(employeeProjects).values({
+              employeeId: empleadoId,
+              projectId: projectId,
+              role: 'member',
+              assignedBy: 1, // Id del usuario administrador por defecto
+              isActive: true
+            });
+            console.log(`Nuevo proyecto ${projectId} asignado al empleado ${empleadoId}`);
+          }
+        } else {
+          console.log(`El proyecto ${projectId} no existe, no se puede asignar`);
+        }
+      }
+    }
+    
+    return res.status(200).json({
+      ...empleadoActualizado,
+      projectIds: projectIds || []
+    });
   } catch (error) {
     console.error(`Error al actualizar empleado con ID ${req.params.id}:`, error);
     return res.status(500).json({ error: 'Error al actualizar los datos del empleado' });
@@ -362,37 +460,64 @@ empleadosRouter.patch('/:id/estado', async (req: Request, res: Response) => {
 // Obtener los proyectos asignados a un empleado
 empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const empleadoId = parseInt(req.params.id);
     
     // Verificar que el empleado existe
     const [empleado] = await db.select()
       .from(employees)
-      .where(eq(employees.id, parseInt(id)));
+      .where(eq(employees.id, empleadoId));
     
     if (!empleado) {
       return res.status(404).json({ error: 'Empleado no encontrado' });
     }
     
-    // Obtener proyectos asignados a través de las tareas
-    // Asumimos que un empleado está asignado a un proyecto si tiene tareas en ese proyecto
-    const proyectosAsignados = await db.select({
-      id: projects.id,
-      name: projects.name,
-      description: projects.description,
-      status: projects.status,
-      startDate: projects.startDate,
-      endDate: projects.endDate,
-      category: projects.category,
-    })
-    .from(projects)
-    .innerJoin(tasks, eq(tasks.projectId, projects.id))
-    .where(eq(tasks.assigneeId, empleado.userId))
-    .groupBy(projects.id);
+    // Consulta de asignaciones activas en la tabla employee_projects
+    const asignaciones = await db
+      .select({
+        employeeProjectId: employeeProjects.id,
+        projectId: employeeProjects.projectId,
+        role: employeeProjects.role
+      })
+      .from(employeeProjects)
+      .where(and(
+        eq(employeeProjects.employeeId, empleadoId),
+        eq(employeeProjects.isActive, true)
+      ));
+    
+    if (asignaciones.length === 0) {
+      return res.status(200).json({
+        empleadoId: empleadoId,
+        cantidadProyectos: 0,
+        proyectos: []
+      });
+    }
+    
+    // Obtener los proyectos correspondientes a las asignaciones
+    const proyectos = [];
+    for (const asignacion of asignaciones) {
+      const [proyecto] = await db
+        .select({
+          id: projects.id,
+          name: projects.name,
+          description: projects.description,
+          status: projects.status,
+          startDate: projects.startDate,
+          endDate: projects.endDate,
+          category: projects.category,
+        })
+        .from(projects)
+        .where(eq(projects.id, asignacion.projectId))
+        .limit(1);
+      
+      if (proyecto) {
+        proyectos.push(proyecto);
+      }
+    }
     
     return res.status(200).json({
-      empleadoId: parseInt(id),
-      cantidadProyectos: proyectosAsignados.length,
-      proyectos: proyectosAsignados
+      empleadoId: empleadoId,
+      cantidadProyectos: proyectos.length,
+      proyectos: proyectos
     });
   } catch (error) {
     console.error(`Error al obtener proyectos del empleado con ID ${req.params.id}:`, error);
