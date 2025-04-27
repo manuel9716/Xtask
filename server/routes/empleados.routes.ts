@@ -256,52 +256,76 @@ empleadosRouter.post('/', async (req: Request, res: Response) => {
         .limit(1);
       
       if (proyectoExiste) {
-        // Asignar el proyecto principal al campo id_employed_proyects
-        datosEmpleadoSinProyectos.id_employed_proyects = proyectoPrincipal;
-        console.log(`Asignando proyecto principal ${proyectoPrincipal} al empleado`);
+        // Creamos una copia segura de los datos para evitar problemas de tipo
+        const empleadoConProyectoPrincipal = {
+          ...datosEmpleadoSinProyectos,
+          id_employed_proyects: proyectoPrincipal
+        };
+        
+        // Insertar el nuevo empleado con el proyecto principal
+        const [nuevoEmpleado] = await db.insert(employees)
+          .values(empleadoConProyectoPrincipal)
+          .returning();
+          
+        console.log(`Empleado creado con proyecto principal ${proyectoPrincipal}`);
+        
+        // Si se especificaron proyectos, también los asignamos en la tabla de relación
+        if (projectIds.length > 0) {
+          console.log(`Asignando ${projectIds.length} proyectos al empleado ${nuevoEmpleado.id}`);
+          
+          // Para cada proyecto en projectIds, crear una asignación
+          for (const projectId of projectIds) {
+            // Verificar que el proyecto existe
+            const [proyecto] = await db
+              .select()
+              .from(projects)
+              .where(eq(projects.id, projectId))
+              .limit(1);
+            
+            if (proyecto) {
+              // Crear la asignación en la tabla employee_projects
+              await db.insert(employeeProjects).values({
+                employeeId: nuevoEmpleado.id,
+                projectId: projectId,
+                role: 'member',
+                assignedBy: 1, // Id del usuario administrador por defecto
+                isActive: true
+              });
+              console.log(`Proyecto ${projectId} asignado al empleado ${nuevoEmpleado.id}`);
+            } else {
+              console.log(`El proyecto ${projectId} no existe, no se puede asignar`);
+            }
+          }
+        }
+        
+        return res.status(201).json({
+          ...nuevoEmpleado,
+          projectIds: projectIds || []
+        });
       } else {
         console.log(`El proyecto ${proyectoPrincipal} no existe, no se puede asignar como principal`);
-      }
-    }
-    
-    // Insertar el nuevo empleado con el proyecto principal (si existe)
-    const [nuevoEmpleado] = await db.insert(employees)
-      .values(datosEmpleadoSinProyectos)
-      .returning();
-    
-    // Si se especificaron proyectos, también los asignamos en la tabla de relación
-    if (projectIds && projectIds.length > 0) {
-      console.log(`Asignando ${projectIds.length} proyectos al empleado ${nuevoEmpleado.id}`);
-      
-      // Para cada proyecto en projectIds, crear una asignación
-      for (const projectId of projectIds) {
-        // Verificar que el proyecto existe
-        const [proyecto] = await db
-          .select()
-          .from(projects)
-          .where(eq(projects.id, projectId))
-          .limit(1);
         
-        if (proyecto) {
-          // Crear la asignación en la tabla employee_projects
-          await db.insert(employeeProjects).values({
-            employeeId: nuevoEmpleado.id,
-            projectId: projectId,
-            role: 'member',
-            assignedBy: 1, // Id del usuario administrador por defecto
-            isActive: true
-          });
-          console.log(`Proyecto ${projectId} asignado al empleado ${nuevoEmpleado.id}`);
-        } else {
-          console.log(`El proyecto ${projectId} no existe, no se puede asignar`);
-        }
+        // Insertar el nuevo empleado sin proyecto principal
+        const [nuevoEmpleado] = await db.insert(employees)
+          .values(datosEmpleadoSinProyectos)
+          .returning();
+          
+        return res.status(201).json({
+          ...nuevoEmpleado,
+          projectIds: []
+        });
       }
+    } else {
+      // Insertar el nuevo empleado sin proyecto principal
+      const [nuevoEmpleado] = await db.insert(employees)
+        .values(datosEmpleadoSinProyectos)
+        .returning();
+        
+      return res.status(201).json({
+        ...nuevoEmpleado,
+        projectIds: []
+      });
     }
-    
-    return res.status(201).json({
-      ...nuevoEmpleado,
-      projectIds: projectIds || []
-    });
   } catch (error) {
     console.error('Error al crear empleado:', error);
     return res.status(500).json({ error: 'Error al crear el empleado' });
