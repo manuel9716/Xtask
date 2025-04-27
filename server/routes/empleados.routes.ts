@@ -251,6 +251,8 @@ empleadosRouter.post('/', async (req: Request, res: Response) => {
     // Si se especifica un proyecto principal, asignarlo directamente al campo id_employed_proyects
     if (projectIds && projectIds.length > 0) {
       const proyectoPrincipal = projectIds[0]; // Usamos el primer proyecto como el principal
+      console.log(`DEPURACIÓN: Intentando asignar proyecto principal ${proyectoPrincipal}`);
+      console.log(`DEPURACIÓN: Datos iniciales para inserción:`, datosEmpleadoParaInsertar);
       
       // Verificar que el proyecto existe
       const [proyectoExiste] = await db
@@ -262,8 +264,13 @@ empleadosRouter.post('/', async (req: Request, res: Response) => {
       if (proyectoExiste) {
         // Asignar el ID del proyecto principal directamente
         datosEmpleadoParaInsertar.id_employed_proyects = proyectoPrincipal;
-        console.log(`Proyecto principal ${proyectoPrincipal} será asignado al empleado`);
+        console.log(`DEPURACIÓN: Proyecto principal ${proyectoPrincipal} será asignado al empleado`);
+        console.log(`DEPURACIÓN: Datos actualizados para inserción:`, datosEmpleadoParaInsertar);
+      } else {
+        console.log(`DEPURACIÓN: El proyecto ${proyectoPrincipal} no existe`);
       }
+    } else {
+      console.log(`DEPURACIÓN: No se especificaron proyectos para asignar`);
     }
     
     // Insertar el nuevo empleado 
