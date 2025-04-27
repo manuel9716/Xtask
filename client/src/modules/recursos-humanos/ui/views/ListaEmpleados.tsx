@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import { 
   Users, 
   Plus, 
@@ -11,11 +11,12 @@ import {
   ChevronRight, 
   RefreshCcw,
   AlertCircle,
-  Download
+  Download,
+  Building2,
+  UserCircle2
 } from 'lucide-react';
 import { obtenerEmpleados } from '../../infrastructure/api/empleadosApi';
-import { FiltrosEmpleadoRRHH, EstadoEmpleado } from '../../domain/entities/Empleado';
-import { EmpleadoCard } from '../components/EmpleadoCard';
+import { FiltrosEmpleadoRRHH, EstadoEmpleado, EmpleadoResumenRRHH } from '../../domain/entities/Empleado';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
@@ -115,10 +116,16 @@ export default function ListaEmpleados() {
       <Pagination className="mt-8">
         <PaginationContent>
           <PaginationItem>
-            <PaginationPrevious 
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setPagina(p => Math.max(1, p - 1))}
-              disabled={pagina === 1} 
-            />
+              disabled={pagina === 1}
+              className="cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="sr-only">Página anterior</span>
+            </Button>
           </PaginationItem>
           
           {Array.from({ length: totalPaginas }, (_, i) => i + 1)
@@ -135,21 +142,29 @@ export default function ListaEmpleados() {
               
               return (
                 <PaginationItem key={p}>
-                  <PaginationLink 
-                    isActive={pagina === p}
+                  <Button
+                    variant={pagina === p ? "default" : "outline"}
+                    size="icon"
                     onClick={() => setPagina(p)}
+                    className="cursor-pointer"
                   >
                     {p}
-                  </PaginationLink>
+                  </Button>
                 </PaginationItem>
               );
             })}
           
           <PaginationItem>
-            <PaginationNext 
+            <Button
+              variant="outline"
+              size="icon"
               onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))}
-              disabled={pagina === totalPaginas} 
-            />
+              disabled={pagina === totalPaginas}
+              className="cursor-pointer"
+            >
+              <ChevronRight className="h-4 w-4" />
+              <span className="sr-only">Página siguiente</span>
+            </Button>
           </PaginationItem>
         </PaginationContent>
       </Pagination>
@@ -334,11 +349,60 @@ export default function ListaEmpleados() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.empleados.map((empleado) => (
-              <EmpleadoCard 
-                key={empleado.id} 
-                empleado={empleado} 
-                onSelect={() => setLocation(`/admin/recursos-humanos/empleados/${empleado.id}`)}
-              />
+              <Card key={empleado.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary">
+                        <UserCircle2 className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{`${empleado.nombre} ${empleado.apellido}`}</CardTitle>
+                        <CardDescription>{empleado.posicion}</CardDescription>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm">
+                      <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{empleado.departamento}</span>
+                    </div>
+                    <div className="inline-block">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        empleado.estado === EstadoEmpleado.ACTIVO 
+                          ? 'bg-green-100 text-green-800' 
+                          : empleado.estado === EstadoEmpleado.INACTIVO 
+                            ? 'bg-red-100 text-red-800'
+                            : empleado.estado === EstadoEmpleado.VACACIONES
+                              ? 'bg-blue-100 text-blue-800'
+                              : empleado.estado === EstadoEmpleado.PERMISO
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {empleado.estado.charAt(0).toUpperCase() + empleado.estado.slice(1).replace('_', ' ')}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between pt-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setLocation(`/admin/recursos-humanos/empleados/${empleado.id}`)}
+                  >
+                    Ver perfil
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLocation(`/admin/recursos-humanos/empleados/${empleado.id}/editar`)}
+                  >
+                    Editar
+                  </Button>
+                </CardFooter>
+              </Card>
             ))}
           </div>
 

@@ -19,6 +19,10 @@ export { EmpleadoCard } from './ui/components/EmpleadoCard';
 
 // Exportar vistas
 export { default as ListaEmpleados } from './ui/views/ListaEmpleados';
+export { default as RRHHDashboardPage } from './ui/views/RRHHDashboardPage';
+
+// Exportar componentes adicionales
+export { RRHHDashboard } from './ui/components/RRHHDashboard';
 
 // Exportar funciones de API
 export {
@@ -37,7 +41,11 @@ export const recursosHumanosRoutes = [
   },
   {
     path: '/admin/recursos-humanos',
-    component: () => import('./ui/views/ListaEmpleados').then(module => module.default)
+    component: () => import('./ui/views/RRHHDashboardPage').then(module => module.default)
+  },
+  {
+    path: '/admin/recursos-humanos/dashboard',
+    component: () => import('./ui/views/RRHHDashboardPage').then(module => module.default)
   }
   // Futuras rutas:
   // { path: '/admin/recursos-humanos/empleados/nuevo', component: () => import('./ui/views/CrearEditarEmpleado').then(module => module.default) },
