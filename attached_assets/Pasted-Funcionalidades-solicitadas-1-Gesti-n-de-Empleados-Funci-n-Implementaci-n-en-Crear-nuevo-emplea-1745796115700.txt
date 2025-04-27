@@ -1,0 +1,137 @@
+Funcionalidades solicitadas
+🔵 1. Gestión de Empleados
+
+Función	Implementación en
+Crear nuevo empleado	application/useCases/crearEmpleado.ts
+Editar empleado	application/useCases/editarEmpleado.ts
+Eliminar/desactivar empleado	application/useCases/eliminarEmpleado.ts
+Listar empleados (con filtros)	application/useCases/listarEmpleados.ts
+Ver detalle de empleado	application/useCases/obtenerEmpleadoPorId.ts
+Basado en la tabla employees:
+
+Usar columnas como first_name, last_name, position, department, hire_date, contract_status, salary, etc.
+
+UI asociada:
+
+ui/views/ListaEmpleados.tsx
+
+ui/views/DetalleEmpleado.tsx
+
+ui/components/EmpleadoForm.tsx
+
+ui/components/EmpleadoCard.tsx
+
+🟠 2. Dashboard de Indicadores de RRHH
+
+Función	Implementación en
+Obtener KPIs de empleados	application/useCases/obtenerIndicadoresRRHH.ts
+Servicio de cálculos	domain/services/RRHHMetricsService.ts
+Indicadores:
+
+Total empleados activos (contract_status = 'active')
+
+Empleados nuevos este mes (hire_date >= primer día del mes)
+
+Empleados por departamento
+
+Rotación mensual (empleados inactivos recientes)
+
+Salario promedio
+
+Total nómina proyectada
+
+UI asociada:
+
+ui/views/DashboardRRHH.tsx
+
+ui/components/KpiCard.tsx
+
+⚪ 3. Evaluaciones de Desempeño
+
+Función	Implementación en
+Crear evaluación	application/useCases/crearEvaluacion.ts
+Asignar evaluación a empleado	application/useCases/asignarEvaluacionEmpleado.ts
+Ver historial de evaluaciones	application/useCases/listarEvaluacionesEmpleado.ts
+Nota: Aunque no existe una tabla evaluations, debes crearla o manejar evaluaciones en una entidad virtual con mínimo:
+
+employee_id
+
+period
+
+score
+
+comments
+
+created_at
+
+UI asociada:
+
+ui/views/ListaEvaluaciones.tsx
+
+ui/views/CrearEvaluacion.tsx
+
+ui/components/EvaluacionCard.tsx
+
+⚪ 4. Gestión de Capacitaciones
+
+Función	Implementación en
+Crear capacitación	application/useCases/crearCapacitacion.ts
+Asignar empleados a capacitación	application/useCases/asignarEmpleadosCapacitacion.ts
+Registrar asistencia	application/useCases/registrarAsistenciaCapacitacion.ts
+Entidad sugerida:
+
+Capacitacion: nombre, fecha, responsable, participantes
+
+UI asociada:
+
+ui/views/ListaCapacitaciones.tsx
+
+ui/views/DetalleCapacitacion.tsx
+
+ui/components/CapacitacionCard.tsx
+
+🧾 5. Integración con Nómina
+
+Función	Implementación en
+Ver pagos por empleado	application/useCases/listarNominasEmpleado.ts
+Detalle de pagos	application/useCases/verDetalleNomina.ts
+Usar la tabla payrolls:
+
+Base: employee_id, period_start, period_end, net_salary, payment_status
+
+UI asociada:
+
+ui/views/NominaEmpleado.tsx
+
+ui/components/NominaCard.tsx
+
+📡 APIs esperadas
+
+Método	Ruta	Descripción
+GET	/api/recursos-humanos/empleados	Listar empleados
+POST	/api/recursos-humanos/empleados	Crear empleado
+PATCH	/api/recursos-humanos/empleados/:id	Editar empleado
+DELETE	/api/recursos-humanos/empleados/:id	Eliminar empleado
+GET	/api/recursos-humanos/evaluaciones	Listar evaluaciones
+POST	/api/recursos-humanos/evaluaciones	Crear evaluación
+GET	/api/recursos-humanos/capacitaciones	Listar capacitaciones
+POST	/api/recursos-humanos/capacitaciones	Crear capacitación
+POST	/api/recursos-humanos/capacitaciones/asistencia	Registrar asistencia
+🧩 Buenas prácticas requeridas
+Tipado fuerte con TypeScript en todas las capas
+
+Separación clara de dominio / infraestructura / UI
+
+Validaciones en formularios de creación/edición
+
+Feedback visual para acciones del usuario
+
+Manejo de errores consistente
+
+Paginación en listados de empleados, evaluaciones y capacitaciones
+
+Modal de creación para todos los registros (no cargar nueva página)
+
+🚀 Resultado esperado
+Un módulo completo de Talento Humano, conectado desde la base de datos hasta la interfaz del usuario, con métricas de control y procesos de gestión realista de empleados, evaluaciones, capacitaciones y nóminas, siguiendo el patrón hexagonal.
+
