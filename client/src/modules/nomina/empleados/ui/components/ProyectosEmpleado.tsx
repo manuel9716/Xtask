@@ -37,11 +37,25 @@ interface ProyectosEmpleadoProps {
 }
 
 const fetchProyectosEmpleado = async (empleadoId: number) => {
-  const response = await fetch(`/api/nomina/empleados/${empleadoId}/proyectos`);
-  if (!response.ok) {
-    throw new Error('Error al obtener proyectos del empleado');
+  try {
+    const response = await fetch(`/api/nomina/empleados/${empleadoId}/proyectos`);
+    
+    // Verificar si la respuesta es JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('La respuesta no es JSON:', contentType);
+      throw new Error('La respuesta del servidor no es JSON');
+    }
+    
+    if (!response.ok) {
+      throw new Error('Error al obtener proyectos del empleado');
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error en fetchProyectosEmpleado:', error);
+    throw error;
   }
-  return response.json();
 };
 
 // Componente para el badge de estado del proyecto

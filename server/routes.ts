@@ -731,8 +731,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
 
   
-  app.use('/api/nomina', nominaRouter);
   app.use('/api/nomina/empleados', empleadosRouter);
+  app.use('/api/nomina', nominaRouter);
   app.use('/api/proyectos', proyectosRouter);
   app.use('/api/dashboard', dashboardRouter);
   

@@ -601,6 +601,7 @@ empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
     .where(eq(tasks.assigneeId, empleado.userId))
     .groupBy(projects.id);
     
+    res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({
       empleadoId: parseInt(id),
       cantidadProyectos: proyectosAsignados.length,
@@ -608,6 +609,7 @@ empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(`Error al obtener proyectos del empleado con ID ${req.params.id}:`, error);
+    res.setHeader('Content-Type', 'application/json');
     return res.status(500).json({ error: 'Error al obtener los proyectos del empleado' });
   }
 });
