@@ -263,6 +263,7 @@ export const employees = pgTable("employees", {
   contratoUrl: text("contrato_url"), // URL del contrato subido
   tipoPago: text("tipo_pago"), // Tipo de pago (mensual, quincenal, etc.)
   fechaInicioNomina: timestamp("fecha_inicio_nomina"), // Fecha de inicio para cálculos de nómina
+  id_employed_proyects: integer("id_employed_proyects").references(() => projects.id), // ID del proyecto asignado al empleado
 });
 
 // Suppliers

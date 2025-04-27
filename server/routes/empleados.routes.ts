@@ -243,12 +243,32 @@ empleadosRouter.post('/', async (req: Request, res: Response) => {
     // Extraemos los projectIds si existen
     const { projectIds, ...datosEmpleadoSinProyectos } = datosEmpleado;
     
-    // Insertar el nuevo empleado
+    // Si se especifica un proyecto principal, asignarlo directamente al campo id_employed_proyects
+    if (projectIds && projectIds.length > 0) {
+      const proyectoPrincipal = projectIds[0]; // Usamos el primer proyecto como el principal
+      
+      // Verificar que el proyecto existe
+      const [proyectoExiste] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, proyectoPrincipal))
+        .limit(1);
+      
+      if (proyectoExiste) {
+        // Asignar el proyecto principal al campo id_employed_proyects
+        datosEmpleadoSinProyectos.id_employed_proyects = proyectoPrincipal;
+        console.log(`Asignando proyecto principal ${proyectoPrincipal} al empleado`);
+      } else {
+        console.log(`El proyecto ${proyectoPrincipal} no existe, no se puede asignar como principal`);
+      }
+    }
+    
+    // Insertar el nuevo empleado con el proyecto principal (si existe)
     const [nuevoEmpleado] = await db.insert(employees)
       .values(datosEmpleadoSinProyectos)
       .returning();
     
-    // Si se especificaron proyectos, los asignamos al empleado
+    // Si se especificaron proyectos, también los asignamos en la tabla de relación
     if (projectIds && projectIds.length > 0) {
       console.log(`Asignando ${projectIds.length} proyectos al empleado ${nuevoEmpleado.id}`);
       
@@ -346,6 +366,26 @@ empleadosRouter.patch('/:id', async (req: Request, res: Response) => {
     
     // Extraemos los projectIds si existen
     const { projectIds, ...datosEmpleadoSinProyectos } = datosActualizacion;
+    
+    // Si se especifica un proyecto principal, asignarlo directamente al campo id_employed_proyects
+    if (projectIds && projectIds.length > 0) {
+      const proyectoPrincipal = projectIds[0]; // Usamos el primer proyecto como el principal
+      
+      // Verificar que el proyecto existe
+      const [proyectoExiste] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, proyectoPrincipal))
+        .limit(1);
+      
+      if (proyectoExiste) {
+        // Asignar el proyecto principal al campo id_employed_proyects
+        datosEmpleadoSinProyectos.id_employed_proyects = proyectoPrincipal;
+        console.log(`Actualizando proyecto principal a ${proyectoPrincipal} para el empleado ${empleadoId}`);
+      } else {
+        console.log(`El proyecto ${proyectoPrincipal} no existe, no se puede asignar como principal`);
+      }
+    }
     
     // Actualizar el empleado
     const [empleadoActualizado] = await db.update(employees)
@@ -471,6 +511,30 @@ empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Empleado no encontrado' });
     }
     
+    const proyectos = [];
+    
+    // Primero verificamos si hay un proyecto principal asignado en id_employed_proyects
+    if (empleado.id_employed_proyects) {
+      const [proyectoPrincipal] = await db
+        .select({
+          id: projects.id,
+          name: projects.name,
+          description: projects.description,
+          status: projects.status,
+          startDate: projects.startDate,
+          endDate: projects.endDate,
+          category: projects.category,
+          isPrincipal: sql`true`.as('isPrincipal')
+        })
+        .from(projects)
+        .where(eq(projects.id, empleado.id_employed_proyects))
+        .limit(1);
+      
+      if (proyectoPrincipal) {
+        proyectos.push(proyectoPrincipal);
+      }
+    }
+    
     // Consulta de asignaciones activas en la tabla employee_projects
     const asignaciones = await db
       .select({
@@ -484,7 +548,7 @@ empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
         eq(employeeProjects.isActive, true)
       ));
     
-    if (asignaciones.length === 0) {
+    if (asignaciones.length === 0 && proyectos.length === 0) {
       return res.status(200).json({
         empleadoId: empleadoId,
         cantidadProyectos: 0,
@@ -493,8 +557,12 @@ empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
     }
     
     // Obtener los proyectos correspondientes a las asignaciones
-    const proyectos = [];
     for (const asignacion of asignaciones) {
+      // Verificar que no sea el mismo que el proyecto principal
+      if (empleado.id_employed_proyects && empleado.id_employed_proyects === asignacion.projectId) {
+        continue; // Saltamos este proyecto ya que es el principal y ya se incluyó
+      }
+      
       const [proyecto] = await db
         .select({
           id: projects.id,
@@ -504,6 +572,7 @@ empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
           startDate: projects.startDate,
           endDate: projects.endDate,
           category: projects.category,
+          isPrincipal: sql`false`.as('isPrincipal')
         })
         .from(projects)
         .where(eq(projects.id, asignacion.projectId))
