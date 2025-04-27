@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { employeeProjects, employees, projects, users } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 const employeeProjectsRouter = Router();
 
@@ -14,27 +14,53 @@ employeeProjectsRouter.get('/:employeeId', async (req: Request, res: Response) =
     }
 
     // Verificar que el empleado existe
-    const employee = await db.query.employees.findFirst({
-      where: eq(employees.id, employeeId)
-    });
+    const [employee] = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.id, employeeId))
+      .limit(1);
 
     if (!employee) {
       return res.status(404).json({ error: 'Empleado no encontrado' });
     }
 
-    // Obtener las asignaciones de proyectos para este empleado
-    const assignments = await db.query.employeeProjects.findMany({
-      where: and(
+    // Consulta manual de las asignaciones para evitar problemas con las relaciones
+    const assignments = await db
+      .select({
+        employeeProjectId: employeeProjects.id,
+        projectId: employeeProjects.projectId,
+        role: employeeProjects.role
+      })
+      .from(employeeProjects)
+      .where(and(
         eq(employeeProjects.employeeId, employeeId),
         eq(employeeProjects.isActive, true)
-      ),
-      with: {
-        project: true
-      }
-    });
+      ));
 
-    // Formatear los datos para la respuesta
-    const proyectos = assignments.map(assignment => assignment.project);
+    if (assignments.length === 0) {
+      return res.status(200).json({
+        empleadoId: employeeId,
+        cantidadProyectos: 0,
+        proyectos: []
+      });
+    }
+
+    // Obtener los proyectos correspondientes
+    const projectIds = assignments.map(a => a.projectId);
+    
+    // Usamos consultas más seguras para evitar problemas con el SQL IN
+    const proyectos = [];
+    for (const projectId of projectIds) {
+      const [proyecto] = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1);
+      
+      if (proyecto) {
+        proyectos.push(proyecto);
+      }
+    }
 
     return res.status(200).json({
       empleadoId: employeeId,
@@ -58,31 +84,37 @@ employeeProjectsRouter.post('/:employeeId/assign', async (req: Request, res: Res
     }
 
     // Verificar que el empleado existe
-    const employee = await db.query.employees.findFirst({
-      where: eq(employees.id, employeeId)
-    });
+    const [employee] = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.id, employeeId))
+      .limit(1);
 
     if (!employee) {
       return res.status(404).json({ error: 'Empleado no encontrado' });
     }
 
     // Verificar que el proyecto existe
-    const project = await db.query.projects.findFirst({
-      where: eq(projects.id, projectId)
-    });
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .limit(1);
 
     if (!project) {
       return res.status(404).json({ error: 'Proyecto no encontrado' });
     }
 
     // Verificar si ya existe una asignación activa
-    const existingAssignment = await db.query.employeeProjects.findFirst({
-      where: and(
+    const [existingAssignment] = await db
+      .select()
+      .from(employeeProjects)
+      .where(and(
         eq(employeeProjects.employeeId, employeeId),
         eq(employeeProjects.projectId, projectId),
         eq(employeeProjects.isActive, true)
-      )
-    });
+      ))
+      .limit(1);
 
     if (existingAssignment) {
       return res.status(409).json({ error: 'El empleado ya está asignado a este proyecto' });
@@ -115,13 +147,15 @@ employeeProjectsRouter.post('/:employeeId/unassign/:projectId', async (req: Requ
     }
 
     // Buscar la asignación activa
-    const assignment = await db.query.employeeProjects.findFirst({
-      where: and(
+    const [assignment] = await db
+      .select()
+      .from(employeeProjects)
+      .where(and(
         eq(employeeProjects.employeeId, employeeId),
         eq(employeeProjects.projectId, projectId),
         eq(employeeProjects.isActive, true)
-      )
-    });
+      ))
+      .limit(1);
 
     if (!assignment) {
       return res.status(404).json({ error: 'Asignación no encontrada' });
