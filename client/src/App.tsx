@@ -7,7 +7,8 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
 import Finances from "@/pages/finances";
-import HumanResources from "@/pages/human-resources";
+// Reemplazamos temporalmente HumanResources con SimpleHumanResources para depurar el problema
+import SimpleHumanResources from "@/pages/simple-hr";
 import Suppliers from "@/pages/suppliers";
 import Tasks from "@/pages/tasks";
 import UserManagement from "@/pages/user-management";
@@ -39,7 +40,7 @@ function Router() {
       </Route>
       <Route path="/human-resources">
         <MainLayout>
-          <HumanResources />
+          <SimpleHumanResources />
         </MainLayout>
       </Route>
       <Route path="/suppliers">
