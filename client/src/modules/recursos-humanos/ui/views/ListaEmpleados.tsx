@@ -218,11 +218,15 @@ export default function ListaEmpleados() {
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Departamento</label>
-              <Select value={filtroDepartamento} onValueChange={setFiltroDepartamento}>
+              <Select 
+                value={filtroDepartamento || "todos"} 
+                onValueChange={(value) => value === "todos" ? setFiltroDepartamento(undefined) : setFiltroDepartamento(value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar departamento" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="todos">Todos los departamentos</SelectItem>
                   {departamentos.map(depto => (
                     <SelectItem key={depto} value={depto}>{depto}</SelectItem>
                   ))}
@@ -233,13 +237,14 @@ export default function ListaEmpleados() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Estado</label>
               <Select 
-                value={filtroEstado} 
-                onValueChange={(value) => setFiltroEstado(value as EstadoEmpleado)}
+                value={filtroEstado || "todos"} 
+                onValueChange={(value) => value === "todos" ? setFiltroEstado(undefined) : setFiltroEstado(value as EstadoEmpleado)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar estado" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="todos">Todos los estados</SelectItem>
                   <SelectItem value={EstadoEmpleado.ACTIVO}>Activo</SelectItem>
                   <SelectItem value={EstadoEmpleado.INACTIVO}>Inactivo</SelectItem>
                   <SelectItem value={EstadoEmpleado.VACACIONES}>En vacaciones</SelectItem>

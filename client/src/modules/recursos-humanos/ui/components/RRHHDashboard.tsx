@@ -93,11 +93,14 @@ export function RRHHDashboard() {
       }))
     : [];
 
+  // Verificar que los tabs tengan siempre valores válidos
+  const tab = selectedTab || "general";
+
   return (
     <div className="space-y-4">
       <Tabs
         defaultValue="general"
-        value={selectedTab}
+        value={tab}
         onValueChange={setSelectedTab}
         className="w-full"
       >
