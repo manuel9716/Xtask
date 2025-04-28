@@ -1,96 +1,161 @@
 /**
- * Caso de uso: Crear Evaluación
- * Permite crear una nueva evaluación de desempeño
+ * @file Caso de uso: Crear Evaluación
+ * @description Gestiona la creación de nuevas evaluaciones de desempeño
  */
 
-import { CrearEvaluacionDTO, EstadoEvaluacion, Evaluacion } from "../../../domain/entities/Evaluacion";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+
+import { CrearEvaluacionDTO, Evaluacion, EstadoEvaluacion, CRITERIOS_EVALUACION } from "../../../domain/entities/Evaluacion";
 import { EvaluacionRepository } from "../../../domain/repositories/EvaluacionRepository";
-import { EmpleadoRepository } from "../../../domain/repositories/EmpleadoRepository";
+import * as evaluacionesApi from "../../../infrastructure/api/evaluacionesApi";
 
-export class CrearEvaluacionUseCase {
-  constructor(
-    private evaluacionRepository: EvaluacionRepository,
-    private empleadoRepository: EmpleadoRepository
-  ) {}
+// Clave para cache de ReactQuery
+const EVALUACIONES_QUERY_KEY = "/api/evaluaciones";
 
-  /**
-   * Ejecuta el caso de uso para crear una nueva evaluación
-   * @param evaluacionData Datos de la evaluación a crear
-   * @returns La evaluación creada
-   */
-  async execute(evaluacionData: CrearEvaluacionDTO): Promise<Evaluacion> {
-    // Validar que los empleados (evaluado y evaluador) existan
-    await this.validarEmpleados(evaluacionData.empleadoId, evaluacionData.evaluadorId);
-    
-    // Validar otros datos de la evaluación
-    this.validarDatosEvaluacion(evaluacionData);
-    
-    // Lógica de aplicación: crear evaluación en estado PENDIENTE
-    const evaluacionCompleta = {
-      ...evaluacionData,
-      // Aseguramos que el estado inicial sea siempre PENDIENTE
-      estado: EstadoEvaluacion.PENDIENTE
+/**
+ * Hook personalizado para crear evaluaciones
+ * @param onSuccess Callback a ejecutar cuando la evaluación se crea correctamente
+ */
+export function useCrearEvaluacion(onSuccess?: (evaluacion: Evaluacion) => void) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [errores, setErrores] = useState<Record<string, string>>({});
+
+  // Mutation para crear una evaluación
+  const mutation = useMutation({
+    mutationFn: async (nuevaEvaluacion: CrearEvaluacionDTO) => {
+      try {
+        return await evaluacionesApi.crearEvaluacion(nuevaEvaluacion);
+      } catch (error) {
+        console.error("Error al crear evaluación:", error);
+        throw new Error("No se pudo crear la evaluación");
+      }
+    },
+    onSuccess: (evaluacion) => {
+      // Limpiar errores
+      setErrores({});
+
+      // Invalidar queries para refrescar los datos
+      queryClient.invalidateQueries({ queryKey: [EVALUACIONES_QUERY_KEY] });
+      queryClient.invalidateQueries({ 
+        queryKey: [`${EVALUACIONES_QUERY_KEY}/empleado/${evaluacion.empleadoId}`] 
+      });
+
+      // Mostrar notificación de éxito
+      toast({
+        title: "Evaluación creada",
+        description: `La evaluación "${evaluacion.titulo}" ha sido creada correctamente.`,
+      });
+
+      // Ejecutar callback si existe
+      if (onSuccess) {
+        onSuccess(evaluacion);
+      }
+    },
+    onError: (error: Error) => {
+      // Mostrar notificación de error
+      toast({
+        title: "Error al crear evaluación",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Función para validar datos
+  const validarDatos = (datos: CrearEvaluacionDTO): boolean => {
+    const erroresValidacion: Record<string, string> = {};
+
+    // Validar título
+    if (!datos.titulo || datos.titulo.trim() === '') {
+      erroresValidacion.titulo = "El título es obligatorio";
+    } else if (datos.titulo.length < 5) {
+      erroresValidacion.titulo = "El título debe tener al menos 5 caracteres";
+    }
+
+    // Validar empleadoId
+    if (!datos.empleadoId) {
+      erroresValidacion.empleadoId = "El empleado es obligatorio";
+    }
+
+    // Validar evaluadorId
+    if (!datos.evaluadorId) {
+      erroresValidacion.evaluadorId = "El evaluador es obligatorio";
+    }
+
+    // Validar fechaInicio
+    if (!datos.fechaInicio) {
+      erroresValidacion.fechaInicio = "La fecha de inicio es obligatoria";
+    }
+
+    // Validar tipo
+    if (!datos.tipo) {
+      erroresValidacion.tipo = "El tipo de evaluación es obligatorio";
+    }
+
+    // Si hay errores, guardarlos y retornar false
+    if (Object.keys(erroresValidacion).length > 0) {
+      setErrores(erroresValidacion);
+      return false;
+    }
+
+    return true;
+  };
+
+  // Función para crear evaluación
+  const crearEvaluacion = (datos: CrearEvaluacionDTO) => {
+    // Validar datos
+    if (!validarDatos(datos)) {
+      return;
+    }
+
+    // Asegurar que estado sea PENDIENTE si no se proporciona
+    const evaluacionConEstado: CrearEvaluacionDTO = {
+      ...datos,
+      estado: datos.estado || EstadoEvaluacion.PENDIENTE
     };
-    
-    return this.evaluacionRepository.crearEvaluacion(evaluacionCompleta);
-  }
 
-  /**
-   * Valida que el empleado evaluado y el evaluador existan
-   * @param empleadoId ID del empleado evaluado
-   * @param evaluadorId ID del empleado evaluador
-   * @throws Error si alguno de los empleados no existe
-   */
-  private async validarEmpleados(empleadoId: number, evaluadorId: number): Promise<void> {
-    // Validar que el empleado evaluado exista
-    const empleado = await this.empleadoRepository.obtenerEmpleadoPorId(empleadoId);
-    if (!empleado) {
-      throw new Error(`No se encontró el empleado a evaluar con ID: ${empleadoId}`);
-    }
-    
-    // Validar que el evaluador exista
-    const evaluador = await this.empleadoRepository.obtenerEmpleadoPorId(evaluadorId);
-    if (!evaluador) {
-      throw new Error(`No se encontró el empleado evaluador con ID: ${evaluadorId}`);
-    }
-    
-    // Verificar que el evaluado y el evaluador sean diferentes
-    if (empleadoId === evaluadorId) {
-      throw new Error('El empleado evaluado no puede ser su propio evaluador');
-    }
-  }
+    // Ejecutar la mutación
+    mutation.mutate(evaluacionConEstado);
+  };
 
-  /**
-   * Valida los datos de la evaluación
-   * @param evaluacionData Datos de la evaluación a validar
-   * @throws Error si los datos no cumplen las reglas del dominio
-   */
-  private validarDatosEvaluacion(evaluacionData: CrearEvaluacionDTO): void {
-    // Validar que el período no esté vacío
-    if (!evaluacionData.periodo || evaluacionData.periodo.trim() === '') {
-      throw new Error('El período de evaluación es obligatorio');
+  return {
+    crearEvaluacion,
+    isLoading: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    errores,
+    setErrores,
+    CRITERIOS_EVALUACION
+  };
+}
+
+/**
+ * Implementación del caso de uso para crear evaluaciones usando el repositorio
+ */
+export class CrearEvaluacionUseCase {
+  constructor(private evaluacionRepository: EvaluacionRepository) {}
+
+  async ejecutar(datos: CrearEvaluacionDTO): Promise<Evaluacion> {
+    // Validar datos
+    if (!datos.titulo || !datos.empleadoId || !datos.evaluadorId || !datos.fechaInicio || !datos.tipo) {
+      throw new Error("Faltan datos obligatorios para crear la evaluación");
     }
-    
-    // Validar fechas
-    if (!evaluacionData.fechaInicio || !evaluacionData.fechaFin) {
-      throw new Error('Las fechas de inicio y fin son obligatorias');
-    }
-    
-    // La fecha de inicio debe ser anterior a la fecha de fin
-    const fechaInicio = new Date(evaluacionData.fechaInicio);
-    const fechaFin = new Date(evaluacionData.fechaFin);
-    
-    if (fechaInicio >= fechaFin) {
-      throw new Error('La fecha de inicio debe ser anterior a la fecha de fin');
-    }
-    
-    // La fecha de inicio no puede ser en el pasado (más de 30 días)
-    const hoy = new Date();
-    const limitePasado = new Date();
-    limitePasado.setDate(limitePasado.getDate() - 30);
-    
-    if (fechaInicio < limitePasado) {
-      throw new Error('La fecha de inicio no puede ser más de 30 días en el pasado');
+
+    // Asegurar que estado sea PENDIENTE si no se proporciona
+    const evaluacionConEstado: CrearEvaluacionDTO = {
+      ...datos,
+      estado: datos.estado || EstadoEvaluacion.PENDIENTE
+    };
+
+    // Crear la evaluación usando el repositorio
+    try {
+      return await this.evaluacionRepository.crear(evaluacionConEstado);
+    } catch (error) {
+      console.error("Error al crear evaluación:", error);
+      throw new Error("No se pudo crear la evaluación en el sistema");
     }
   }
 }
