@@ -8,6 +8,8 @@ import nominaRouter from "./routes/nomina.routes";
 import proyectosRouter from "./routes/proyectos.routes";
 import dashboardRouter from "./routes/dashboard.routes";
 import employeeProjectsRouter from "./routes/employee-projects.routes";
+import evaluacionesRouter from "./routes/evaluaciones.routes";
+import capacitacionesRouter from "./routes/capacitaciones.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Projects routes
@@ -813,6 +815,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas para la relación entre empleados y proyectos
   app.use('/api/employee-projects', employeeProjectsRouter);
+  
+  // Rutas para el módulo de Recursos Humanos
+  app.use('/api/evaluaciones', evaluacionesRouter);
+  app.use('/api/capacitaciones', capacitacionesRouter);
 
   const httpServer = createServer(app);
 

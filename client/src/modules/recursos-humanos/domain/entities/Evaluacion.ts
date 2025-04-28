@@ -1,154 +1,87 @@
 /**
- * @file Entidad de dominio para Evaluaciones de Desempeño
- * @description Define la entidad de dominio para las evaluaciones de desempeño de empleados
+ * @file Entidad Evaluacion
+ * @description Define la estructura de datos de evaluaciones de desempeño
  */
 
-import { TipoEvaluacion, EstadoEvaluacion } from '@shared/schema';
+import { EstadoEvaluacion, TipoEvaluacion } from '@shared/schema';
 
 /**
- * Entidad de dominio para las evaluaciones de desempeño
+ * Entidad Evaluación de desempeño
  */
-export class Evaluacion {
-  id?: number;
-  empleadoId: number;
-  evaluadorId: number;
+export interface Evaluacion {
+  id: number;
   titulo: string;
   descripcion?: string;
+  empleadoId: number;
+  evaluadorId: number;
+  fechaInicio: Date;
+  fechaFin?: Date;
   tipo: TipoEvaluacion;
   estado: EstadoEvaluacion;
-  fechaInicio: Date;
-  fechaFinalizacion?: Date;
   calificacion?: number;
+  criteriosJson?: string;
   comentarios?: string;
   fortalezas?: string;
   areasAMejorar?: string;
   objetivosSiguientePeriodo?: string;
-  criteriosJson?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-
-  constructor(props: {
-    id?: number;
-    empleadoId: number;
-    evaluadorId: number;
-    titulo: string;
-    descripcion?: string;
-    tipo: TipoEvaluacion;
-    estado?: EstadoEvaluacion;
-    fechaInicio: Date;
-    fechaFinalizacion?: Date;
-    calificacion?: number;
-    comentarios?: string;
-    fortalezas?: string;
-    areasAMejorar?: string;
-    objetivosSiguientePeriodo?: string;
-    criteriosJson?: string;
-    createdAt?: Date;
-    updatedAt?: Date;
-  }) {
-    this.id = props.id;
-    this.empleadoId = props.empleadoId;
-    this.evaluadorId = props.evaluadorId;
-    this.titulo = props.titulo;
-    this.descripcion = props.descripcion;
-    this.tipo = props.tipo;
-    this.estado = props.estado || EstadoEvaluacion.PENDIENTE;
-    this.fechaInicio = props.fechaInicio;
-    this.fechaFinalizacion = props.fechaFinalizacion;
-    this.calificacion = props.calificacion;
-    this.comentarios = props.comentarios;
-    this.fortalezas = props.fortalezas;
-    this.areasAMejorar = props.areasAMejorar;
-    this.objetivosSiguientePeriodo = props.objetivosSiguientePeriodo;
-    this.criteriosJson = props.criteriosJson;
-    this.createdAt = props.createdAt;
-    this.updatedAt = props.updatedAt;
-  }
-
-  /**
-   * Valida si una evaluación está completa para ser finalizada
-   */
-  estaCompletaParaFinalizar(): boolean {
-    return (
-      !!this.calificacion &&
-      !!this.fechaInicio &&
-      !!this.fechaFinalizacion &&
-      !!this.comentarios
-    );
-  }
-
-  /**
-   * Finaliza una evaluación si cumple con los requisitos
-   */
-  finalizar(fechaFinalizacion: Date = new Date()): Evaluacion {
-    if (!this.estaCompletaParaFinalizar()) {
-      throw new Error('La evaluación no está completa para ser finalizada');
-    }
-
-    this.estado = EstadoEvaluacion.COMPLETADA;
-    this.fechaFinalizacion = fechaFinalizacion;
-    this.updatedAt = new Date();
-    return this;
-  }
-
-  /**
-   * Cambia el estado de una evaluación
-   */
-  cambiarEstado(nuevoEstado: EstadoEvaluacion): Evaluacion {
-    this.estado = nuevoEstado;
-    this.updatedAt = new Date();
-    return this;
-  }
-
-  /**
-   * Actualiza la calificación de la evaluación
-   */
-  actualizarCalificacion(calificacion: number): Evaluacion {
-    if (calificacion < 0 || calificacion > 5) {
-      throw new Error('La calificación debe estar entre 0 y 5');
-    }
-    
-    this.calificacion = calificacion;
-    this.updatedAt = new Date();
-    return this;
-  }
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
- * DTO para crear una evaluación
+ * DTO para crear una Evaluación
  */
 export interface CrearEvaluacionDTO {
-  empleadoId: number;
-  evaluadorId: number;
   titulo: string;
   descripcion?: string;
-  tipo: TipoEvaluacion;
+  empleadoId: number;
+  evaluadorId: number;
   fechaInicio: Date;
-  fechaFinalizacion?: Date;
+  fechaFin?: Date;
+  tipo: TipoEvaluacion;
+  estado?: EstadoEvaluacion;
   criteriosJson?: string;
+  comentarios?: string;
+  fortalezas?: string;
+  areasAMejorar?: string;
+  objetivosSiguientePeriodo?: string;
 }
 
 /**
- * DTO para actualizar una evaluación
+ * DTO para actualizar una Evaluación
  */
 export interface ActualizarEvaluacionDTO {
   id: number;
   titulo?: string;
   descripcion?: string;
+  empleadoId?: number;
+  evaluadorId?: number;
+  fechaInicio?: Date;
+  fechaFin?: Date;
   tipo?: TipoEvaluacion;
   estado?: EstadoEvaluacion;
-  fechaInicio?: Date;
-  fechaFinalizacion?: Date;
   calificacion?: number;
+  criteriosJson?: string;
   comentarios?: string;
   fortalezas?: string;
   areasAMejorar?: string;
   objetivosSiguientePeriodo?: string;
-  criteriosJson?: string;
 }
 
 /**
- * DTO para los filtros de búsqueda de evaluaciones
+ * DTO para completar una Evaluación
+ */
+export interface CompletarEvaluacionDTO {
+  id: number;
+  calificacion: number;
+  comentarios?: string;
+  fortalezas?: string;
+  areasAMejorar?: string;
+  objetivosSiguientePeriodo?: string;
+}
+
+/**
+ * Filtros para listar evaluaciones
  */
 export interface FiltrosEvaluacion {
   empleadoId?: number;
@@ -157,7 +90,58 @@ export interface FiltrosEvaluacion {
   estado?: EstadoEvaluacion;
   fechaDesde?: Date;
   fechaHasta?: Date;
-  calificacionMin?: number;
-  calificacionMax?: number;
   busqueda?: string;
 }
+
+/**
+ * Criterio de evaluación
+ */
+export interface CriterioEvaluacion {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  peso: number;
+  calificacion?: number;
+  comentario?: string;
+}
+
+/**
+ * Tipo de criterio (para tener un objeto fácil de utilizar)
+ */
+export const CRITERIOS_EVALUACION = {
+  PRODUCTIVIDAD: 'PRODUCTIVIDAD',
+  CALIDAD: 'CALIDAD',
+  COMUNICACION: 'COMUNICACION',
+  TRABAJO_EQUIPO: 'TRABAJO_EQUIPO',
+  INICIATIVA: 'INICIATIVA',
+  LIDERAZGO: 'LIDERAZGO',
+  APRENDIZAJE: 'APRENDIZAJE',
+  RESOLUCION_PROBLEMAS: 'RESOLUCION_PROBLEMAS',
+  PUNTUALIDAD: 'PUNTUALIDAD',
+  CUMPLIMIENTO_OBJETIVOS: 'CUMPLIMIENTO_OBJETIVOS'
+} as const;
+
+/**
+ * Mapeo de estados de evaluación para mostrar en la interfaz
+ */
+export const ESTADOS_EVALUACION_LABELS: Record<EstadoEvaluacion, string> = {
+  [EstadoEvaluacion.PENDIENTE]: 'Pendiente',
+  [EstadoEvaluacion.EN_CURSO]: 'En Curso',
+  [EstadoEvaluacion.COMPLETADA]: 'Completada',
+  [EstadoEvaluacion.REVISADA]: 'Revisada',
+  [EstadoEvaluacion.ARCHIVADA]: 'Archivada',
+  [EstadoEvaluacion.CANCELADA]: 'Cancelada'
+};
+
+/**
+ * Mapeo de tipos de evaluación para mostrar en la interfaz
+ */
+export const TIPOS_EVALUACION_LABELS: Record<TipoEvaluacion, string> = {
+  [TipoEvaluacion.PERIODO]: 'Evaluación de Periodo',
+  [TipoEvaluacion.OBJETIVOS]: 'Evaluación por Objetivos',
+  [TipoEvaluacion.DESEMPENO]: 'Evaluación de Desempeño',
+  [TipoEvaluacion.COMPETENCIAS]: 'Evaluación de Competencias',
+  [TipoEvaluacion.PROYECTO]: 'Evaluación de Proyecto',
+  [TipoEvaluacion.INICIAL]: 'Evaluación Inicial',
+  [TipoEvaluacion.ANUAL]: 'Evaluación Anual'
+};
