@@ -7,7 +7,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
 import Finances from "@/pages/finances";
-// Reemplazamos temporalmente HumanResources con SimpleHumanResources para depurar el problema
+// Entrada para el módulo de Recursos Humanos
 import SimpleHumanResources from "@/pages/simple-hr";
 import Suppliers from "@/pages/suppliers";
 import Tasks from "@/pages/tasks";
@@ -19,6 +19,7 @@ import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
 import { EmpleadosRoutes } from "@/modules/nomina/empleados/ui/routes";
 import { ProyectosRoutes } from "@/modules/proyectos/ui/routes";
+import { RecursosHumanosRoutes } from "@/modules/recursos-humanos/ui/routes";
 
 function Router() {
   return (
@@ -76,6 +77,7 @@ function Router() {
       <NominaRoutes />
       <EmpleadosRoutes />
       <ProyectosRoutes />
+      <RecursosHumanosRoutes />
       
       <Route component={NotFound} />
     </Switch>

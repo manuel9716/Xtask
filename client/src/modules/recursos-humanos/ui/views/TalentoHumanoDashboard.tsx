@@ -1,20 +1,17 @@
 /**
- * Vista TalentoHumanoDashboard
+ * Vista TalentoHumanoDashboard (Versión Provisional)
  * Pantalla principal del módulo de Talento Humano que integra todas las funcionalidades
  * de gestión de empleados, evaluaciones, capacitaciones y nóminas.
  */
 
-import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import React from "react";
+import { Link } from "wouter";
 
 // UI Components
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Iconos
 import {
@@ -22,201 +19,17 @@ import {
   ClipboardCheck,
   GraduationCap,
   DollarSign,
-  Plus,
-  RefreshCw,
-  Download,
+  FileText,
+  Wrench,
+  InfoIcon,
   BarChart3,
+  AlertTriangle
 } from "lucide-react";
 
 // Componentes del módulo
 import { KpiCard } from "../components/KpiCard";
-import { ListaEmpleados } from "./ListaEmpleados";
-import { EmpleadoCard } from "../components/EmpleadoCard";
-import { RRHHDashboard } from "../components/RRHHDashboard";
-import { ListaEvaluaciones } from "./ListaEvaluaciones";
-import { ListaCapacitaciones } from "./ListaCapacitaciones";
-import { ListaNominas } from "./ListaNominas";
-
-// API y casos de uso
-import { EmpleadosApi } from "../../infrastructure/api/empleadosApi";
-import { ObtenerIndicadoresRRHHUseCase } from "../../application/useCases/obtenerIndicadoresRRHH";
-import { ListarEmpleadosUseCase } from "../../application/useCases/empleados/listarEmpleados";
-
-// Modales
-import { EmpleadoModal } from "../components/EmpleadoModal";
-import { EvaluacionModal } from "../components/EvaluacionModal";
-import { CapacitacionModal } from "../components/CapacitacionModal";
 
 export const TalentoHumanoDashboard: React.FC = () => {
-  const [location, navigate] = useLocation();
-  const { toast } = useToast();
-  
-  // Repositorios y casos de uso
-  const empleadosApi = new EmpleadosApi();
-  const obtenerIndicadoresUseCase = new ObtenerIndicadoresRRHHUseCase(empleadosApi);
-  const listarEmpleadosUseCase = new ListarEmpleadosUseCase(empleadosApi);
-  
-  // Estado para controlar modales
-  const [modalEmpleadoOpen, setModalEmpleadoOpen] = useState(false);
-  const [modalEvaluacionOpen, setModalEvaluacionOpen] = useState(false);
-  const [modalCapacitacionOpen, setModalCapacitacionOpen] = useState(false);
-  
-  // Estado para tab activo - recuperamos de URL o usamos valor por defecto
-  const getTabFromUrl = () => {
-    const hash = window.location.hash.replace('#', '');
-    if (['empleados', 'evaluaciones', 'capacitaciones', 'nomina', 'metricas'].includes(hash)) {
-      return hash;
-    }
-    return 'empleados';
-  };
-  
-  const [tabActivo, setTabActivo] = useState(getTabFromUrl());
-  
-  // Actualizar hash en la URL cuando cambia el tab
-  useEffect(() => {
-    window.location.hash = tabActivo;
-  }, [tabActivo]);
-  
-  // Detectar cambios en el hash de la URL para mantener sincronizado el estado
-  useEffect(() => {
-    const handleHashChange = () => {
-      setTabActivo(getTabFromUrl());
-    };
-    
-    window.addEventListener('hashchange', handleHashChange);
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  }, []);
-  
-  // Consulta para obtener métricas generales (KPIs)
-  const { 
-    data: metricasGenerales, 
-    isLoading: isLoadingMetricas,
-    isError: isErrorMetricas,
-    refetch: refetchMetricas
-  } = useQuery({
-    queryKey: ['/api/recursos-humanos/indicadores/generales'],
-    queryFn: () => obtenerIndicadoresUseCase.executeGenerales(),
-  });
-  
-  // Consulta para obtener estadísticas de evaluaciones
-  const {
-    data: estadisticasEvaluaciones,
-    isLoading: isLoadingEstadisticasEvaluaciones
-  } = useQuery({
-    queryKey: ['/api/recursos-humanos/evaluaciones/estadisticas'],
-    queryFn: async () => {
-      // Esta es una implementación simulada hasta que tengamos la API real
-      return {
-        total: 24,
-        completadas: 18,
-        pendientes: 6,
-        calificacionPromedio: 4.2
-      };
-    }
-  });
-  
-  // Consulta para obtener estadísticas de capacitaciones
-  const {
-    data: estadisticasCapacitaciones,
-    isLoading: isLoadingEstadisticasCapacitaciones
-  } = useQuery({
-    queryKey: ['/api/recursos-humanos/capacitaciones/estadisticas'],
-    queryFn: async () => {
-      // Esta es una implementación simulada hasta que tengamos la API real
-      return {
-        total: 12,
-        programadas: 5,
-        enCurso: 3,
-        completadas: 4
-      };
-    }
-  });
-  
-  // Consulta para obtener estadísticas de nómina
-  const {
-    data: estadisticasNomina,
-    isLoading: isLoadingEstadisticasNomina
-  } = useQuery({
-    queryKey: ['/api/recursos-humanos/nomina/estadisticas'],
-    queryFn: async () => {
-      // Esta es una implementación simulada hasta que tengamos la API real
-      return {
-        totalMes: 185000,
-        empleadosPagados: 32,
-        empleadosPendientes: 3,
-        nominaProyectadaAnual: 2220000
-      };
-    }
-  });
-  
-  // Función para renderizar los KPIs principales
-  const renderizarKPIs = () => {
-    if (isLoadingMetricas || isLoadingEstadisticasEvaluaciones || 
-        isLoadingEstadisticasCapacitaciones || isLoadingEstadisticasNomina) {
-      return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map(i => (
-            <Skeleton key={i} className="h-[160px] w-full" />
-          ))}
-        </div>
-      );
-    }
-    
-    if (isErrorMetricas || !metricasGenerales) {
-      return (
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <p className="text-destructive mb-4">Error al cargar las métricas.</p>
-            <Button onClick={() => refetchMetricas()} variant="outline">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Reintentar
-            </Button>
-          </CardContent>
-        </Card>
-      );
-    }
-    
-    return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard 
-          title="Empleados Activos"
-          value={metricasGenerales.empleadosActivos}
-          description={`${metricasGenerales.nuevosDelMes} nuevos este mes`}
-          icon="users"
-          color="primary"
-        />
-        
-        <KpiCard 
-          title="Evaluaciones"
-          value={estadisticasEvaluaciones?.completadas || 0}
-          description={`Calificación: ${estadisticasEvaluaciones?.calificacionPromedio?.toFixed(1) || 0}`}
-          icon="custom"
-          customIcon={<ClipboardCheck className="h-5 w-5" />}
-          color="success"
-        />
-        
-        <KpiCard 
-          title="Capacitaciones"
-          value={estadisticasCapacitaciones?.enCurso || 0}
-          description={`${estadisticasCapacitaciones?.programadas || 0} programadas`}
-          icon="custom"
-          customIcon={<GraduationCap className="h-5 w-5" />}
-          color="warning"
-        />
-        
-        <KpiCard 
-          title="Nómina Mensual"
-          value={`$${(estadisticasNomina?.totalMes || 0).toLocaleString('es-ES')}`}
-          description={`${estadisticasNomina?.empleadosPagados || 0} empleados pagados`}
-          icon="money"
-          color="info"
-        />
-      </div>
-    );
-  };
-  
   return (
     <div className="space-y-6 pb-8">
       {/* Header principal */}
@@ -227,141 +40,194 @@ export const TalentoHumanoDashboard: React.FC = () => {
         </p>
       </div>
       
+      <Alert variant="warning" className="mb-4">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Módulo en construcción</AlertTitle>
+        <AlertDescription>
+          El módulo de Talento Humano se encuentra actualmente en desarrollo. Algunas funcionalidades
+          pueden no estar completamente disponibles.
+        </AlertDescription>
+      </Alert>
+      
       {/* KPIs principales */}
-      {renderizarKPIs()}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <KpiCard 
+          title="Empleados Activos"
+          value={32}
+          description="2 nuevos este mes"
+          icon="users"
+          color="primary"
+        />
+        
+        <KpiCard 
+          title="Evaluaciones"
+          value={18}
+          description="Calificación: 4.2"
+          icon="custom"
+          customIcon={<ClipboardCheck className="h-5 w-5" />}
+          color="success"
+        />
+        
+        <KpiCard 
+          title="Capacitaciones"
+          value={3}
+          description="5 programadas"
+          icon="custom"
+          customIcon={<GraduationCap className="h-5 w-5" />}
+          color="warning"
+        />
+        
+        <KpiCard 
+          title="Nómina Mensual"
+          value="$185,000"
+          description="32 empleados pagados"
+          icon="money"
+          color="info"
+        />
+      </div>
       
       <Separator className="my-6" />
       
-      {/* Navegación por tabs */}
-      <Tabs 
-        value={tabActivo} 
-        onValueChange={setTabActivo}
-        className="w-full"
-      >
-        <div className="flex justify-between items-center">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5">
-            <TabsTrigger value="empleados" className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline-block">Empleados</span>
-            </TabsTrigger>
-            
-            <TabsTrigger value="evaluaciones" className="flex items-center space-x-2">
-              <ClipboardCheck className="h-4 w-4" />
-              <span className="hidden sm:inline-block">Evaluaciones</span>
-            </TabsTrigger>
-            
-            <TabsTrigger value="capacitaciones" className="flex items-center space-x-2">
-              <GraduationCap className="h-4 w-4" />
-              <span className="hidden sm:inline-block">Capacitaciones</span>
-            </TabsTrigger>
-            
-            <TabsTrigger value="nomina" className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4" />
-              <span className="hidden sm:inline-block">Nómina</span>
-            </TabsTrigger>
-            
-            <TabsTrigger value="metricas" className="flex items-center space-x-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline-block">Métricas</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          {/* Botones específicos por tab */}
-          <div>
-            {tabActivo === 'empleados' && (
-              <Button onClick={() => setModalEmpleadoOpen(true)} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Empleado
-              </Button>
-            )}
-            
-            {tabActivo === 'evaluaciones' && (
-              <Button onClick={() => setModalEvaluacionOpen(true)} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Evaluación
-              </Button>
-            )}
-            
-            {tabActivo === 'capacitaciones' && (
-              <Button onClick={() => setModalCapacitacionOpen(true)} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Capacitación
-              </Button>
-            )}
-            
-            {tabActivo === 'nomina' && (
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Exportar Nómina
-              </Button>
-            )}
-            
-            {tabActivo === 'metricas' && (
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Exportar Informes
-              </Button>
-            )}
-          </div>
-        </div>
+      {/* Navegación por cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center">
+              <Users className="mr-2 h-5 w-5 text-primary" />
+              Gestión de Empleados
+            </CardTitle>
+            <CardDescription>
+              Administra la información de los empleados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Registra, actualiza y consulta todos los datos de los empleados de la empresa, incluyendo información personal,
+              laboral y documentos.
+            </p>
+            <Button asChild className="w-full">
+              <Link href="/recursos-humanos/empleados">
+                Ver Empleados
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
         
-        <div className="mt-6">
-          <TabsContent value="empleados" className="space-y-4">
-            <ListaEmpleados />
-          </TabsContent>
-          
-          <TabsContent value="evaluaciones" className="space-y-4">
-            <ListaEvaluaciones />
-          </TabsContent>
-          
-          <TabsContent value="capacitaciones" className="space-y-4">
-            <ListaCapacitaciones />
-          </TabsContent>
-          
-          <TabsContent value="nomina" className="space-y-4">
-            <ListaNominas />
-          </TabsContent>
-          
-          <TabsContent value="metricas" className="space-y-4">
-            <RRHHDashboard />
-          </TabsContent>
-        </div>
-      </Tabs>
-      
-      {/* Modales */}
-      <EmpleadoModal
-        open={modalEmpleadoOpen}
-        onOpenChange={setModalEmpleadoOpen}
-        onSuccess={() => {
-          toast({
-            title: "Empleado creado",
-            description: "El empleado ha sido creado correctamente",
-          });
-          refetchMetricas();
-        }}
-      />
-      
-      <EvaluacionModal
-        open={modalEvaluacionOpen}
-        onOpenChange={setModalEvaluacionOpen}
-        onSuccess={() => {
-          toast({
-            title: "Evaluación creada",
-            description: "La evaluación ha sido creada correctamente",
-          });
-        }}
-      />
-      
-      <CapacitacionModal
-        open={modalCapacitacionOpen}
-        onOpenChange={setModalCapacitacionOpen}
-        onSuccess={() => {
-          toast({
-            title: "Capacitación creada",
-            description: "La capacitación ha sido creada correctamente",
-          });
-        }}
-      />
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center">
+              <ClipboardCheck className="mr-2 h-5 w-5 text-success" />
+              Evaluaciones de Desempeño
+            </CardTitle>
+            <CardDescription>
+              Gestiona evaluaciones de rendimiento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Crea y administra evaluaciones de desempeño, establece objetivos, realiza seguimiento
+              y genera informes de rendimiento.
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/recursos-humanos/evaluaciones">
+                Ver Evaluaciones
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center">
+              <GraduationCap className="mr-2 h-5 w-5 text-warning" />
+              Capacitaciones
+            </CardTitle>
+            <CardDescription>
+              Administra programas de formación
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Planifica, ejecuta y evalúa programas de capacitación para el desarrollo profesional
+              de los empleados.
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/recursos-humanos/capacitaciones">
+                Ver Capacitaciones
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center">
+              <DollarSign className="mr-2 h-5 w-5 text-info" />
+              Nómina
+            </CardTitle>
+            <CardDescription>
+              Gestiona pagos y compensaciones
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Procesa nóminas, administra salarios, beneficios, deducciones y genera recibos
+              de pago para los empleados.
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/recursos-humanos/nomina">
+                Ver Nómina
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center">
+              <BarChart3 className="mr-2 h-5 w-5 text-purple-500" />
+              Métricas y KPIs
+            </CardTitle>
+            <CardDescription>
+              Analiza indicadores clave
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Visualiza y analiza métricas e indicadores clave de rendimiento del departamento
+              de recursos humanos.
+            </p>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/recursos-humanos/metricas">
+                Ver Métricas
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center">
+              <FileText className="mr-2 h-5 w-5 text-rose-500" />
+              Documentación
+            </CardTitle>
+            <CardDescription>
+              Guías y manuales del módulo
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Accede a la documentación completa del módulo de Talento Humano, incluyendo manuales
+              de usuario y guías de procedimiento.
+            </p>
+            <Button asChild variant="secondary" className="w-full">
+              <Link href="/recursos-humanos/documentacion">
+                Ver Documentación
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

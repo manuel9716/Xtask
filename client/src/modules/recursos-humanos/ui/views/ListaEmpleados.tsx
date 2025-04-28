@@ -42,6 +42,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { EmpleadoCard } from "../components/EmpleadoCard";
 import { EmpleadosApi } from "../../infrastructure/api/empleadosApi";
