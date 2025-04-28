@@ -1,99 +1,219 @@
 /**
- * Caso de uso: Crear Capacitación
- * Permite crear un nuevo programa de capacitación para empleados
+ * @file Caso de uso: Crear Capacitación
+ * @description Gestiona la creación de nuevas capacitaciones
  */
 
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+
+import { 
+  CrearCapacitacionDTO, 
+  Capacitacion,
+  ESTADOS_CAPACITACION_LABELS,
+  TIPOS_CAPACITACION_LABELS,
+  MODALIDADES_CAPACITACION_LABELS
+} from "../../../domain/entities/Capacitacion";
 import { CapacitacionRepository } from "../../../domain/repositories/CapacitacionRepository";
-import { EmpleadoRepository } from "../../../domain/repositories/EmpleadoRepository";
-import { CrearCapacitacionDTO, EstadoCapacitacion, Capacitacion } from "../../../domain/entities/Capacitacion";
+import * as capacitacionesApi from "../../../infrastructure/api/capacitacionesApi";
 
-export class CrearCapacitacionUseCase {
-  constructor(
-    private capacitacionRepository: CapacitacionRepository,
-    private empleadoRepository: EmpleadoRepository
-  ) {}
+// Clave para cache de ReactQuery
+const CAPACITACIONES_QUERY_KEY = "/api/capacitaciones";
 
-  /**
-   * Ejecuta el caso de uso para crear una nueva capacitación
-   * @param capacitacionData Datos de la capacitación a crear
-   * @returns La capacitación creada
-   */
-  async execute(capacitacionData: CrearCapacitacionDTO): Promise<Capacitacion> {
-    // Validar que el responsable exista
-    await this.validarResponsable(capacitacionData.responsableId);
-    
-    // Validar datos de la capacitación
-    this.validarDatosCapacitacion(capacitacionData);
-    
-    // Lógica de aplicación: crear capacitación en estado PLANIFICADA
-    const capacitacionCompleta = {
-      ...capacitacionData,
-      // Aseguramos que el estado inicial sea siempre PLANIFICADA
-      estado: EstadoCapacitacion.PLANIFICADA
+/**
+ * Hook personalizado para crear capacitaciones
+ * @param onSuccess Callback a ejecutar cuando la capacitación se crea correctamente
+ */
+export function useCrearCapacitacion(onSuccess?: (capacitacion: Capacitacion) => void) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [errores, setErrores] = useState<Record<string, string>>({});
+
+  // Mutation para crear una capacitación
+  const mutation = useMutation({
+    mutationFn: async (nuevaCapacitacion: CrearCapacitacionDTO) => {
+      try {
+        return await capacitacionesApi.crearCapacitacion(nuevaCapacitacion);
+      } catch (error) {
+        console.error("Error al crear capacitación:", error);
+        throw new Error("No se pudo crear la capacitación");
+      }
+    },
+    onSuccess: (capacitacion) => {
+      // Limpiar errores
+      setErrores({});
+
+      // Invalidar queries para refrescar los datos
+      queryClient.invalidateQueries({ queryKey: [CAPACITACIONES_QUERY_KEY] });
+      queryClient.invalidateQueries({ 
+        queryKey: [`${CAPACITACIONES_QUERY_KEY}/estado/programadas`] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [`${CAPACITACIONES_QUERY_KEY}/estado/en-curso`] 
+      });
+
+      // Mostrar notificación de éxito
+      toast({
+        title: "Capacitación creada",
+        description: `La capacitación "${capacitacion.titulo}" ha sido creada correctamente.`,
+      });
+
+      // Ejecutar callback si existe
+      if (onSuccess) {
+        onSuccess(capacitacion);
+      }
+    },
+    onError: (error: Error) => {
+      // Mostrar notificación de error
+      toast({
+        title: "Error al crear capacitación",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Función para validar datos
+  const validarDatos = (datos: CrearCapacitacionDTO): boolean => {
+    const erroresValidacion: Record<string, string> = {};
+
+    // Validar título
+    if (!datos.titulo || datos.titulo.trim() === '') {
+      erroresValidacion.titulo = "El título es obligatorio";
+    } else if (datos.titulo.length < 5) {
+      erroresValidacion.titulo = "El título debe tener al menos 5 caracteres";
+    }
+
+    // Validar responsableId
+    if (!datos.responsableId) {
+      erroresValidacion.responsableId = "El responsable es obligatorio";
+    }
+
+    // Validar fechaInicio
+    if (!datos.fechaInicio) {
+      erroresValidacion.fechaInicio = "La fecha de inicio es obligatoria";
+    }
+
+    // Validar fechaFin
+    if (!datos.fechaFin) {
+      erroresValidacion.fechaFin = "La fecha de fin es obligatoria";
+    } else if (datos.fechaInicio && datos.fechaFin && new Date(datos.fechaInicio) > new Date(datos.fechaFin)) {
+      erroresValidacion.fechaFin = "La fecha de fin debe ser posterior a la fecha de inicio";
+    }
+
+    // Validar tipo
+    if (!datos.tipo) {
+      erroresValidacion.tipo = "El tipo de capacitación es obligatorio";
+    }
+
+    // Validar modalidad
+    if (!datos.modalidad) {
+      erroresValidacion.modalidad = "La modalidad es obligatoria";
+    }
+
+    // Validar ubicación si es presencial o híbrida
+    if ((datos.modalidad === 'PRESENCIAL' || datos.modalidad === 'HIBRIDA') && !datos.ubicacion) {
+      erroresValidacion.ubicacion = "La ubicación es obligatoria para capacitaciones presenciales o híbridas";
+    }
+
+    // Validar enlaceVirtual si es virtual o híbrida
+    if ((datos.modalidad === 'VIRTUAL' || datos.modalidad === 'HIBRIDA') && !datos.enlaceVirtual) {
+      erroresValidacion.enlaceVirtual = "El enlace virtual es obligatorio para capacitaciones virtuales o híbridas";
+    }
+
+    // Validar duracionHoras
+    if (!datos.duracionHoras || datos.duracionHoras <= 0) {
+      erroresValidacion.duracionHoras = "La duración en horas debe ser mayor a 0";
+    }
+
+    // Validar costo
+    if (datos.costo < 0) {
+      erroresValidacion.costo = "El costo no puede ser negativo";
+    }
+
+    // Validar cupoMaximo
+    if (datos.cupoMaximo !== undefined && datos.cupoMaximo <= 0) {
+      erroresValidacion.cupoMaximo = "El cupo máximo debe ser mayor a 0";
+    }
+
+    // Si hay errores, guardarlos y retornar false
+    if (Object.keys(erroresValidacion).length > 0) {
+      setErrores(erroresValidacion);
+      return false;
+    }
+
+    return true;
+  };
+
+  // Función para crear capacitación
+  const crearCapacitacion = (datos: CrearCapacitacionDTO) => {
+    // Validar datos
+    if (!validarDatos(datos)) {
+      return;
+    }
+
+    // Asegurar que estado sea PROGRAMADA si no se proporciona
+    const capacitacionConEstado: CrearCapacitacionDTO = {
+      ...datos,
+      estado: datos.estado || 'PROGRAMADA'
     };
-    
-    return this.capacitacionRepository.crearCapacitacion(capacitacionCompleta);
-  }
 
-  /**
-   * Valida que el responsable de la capacitación exista
-   * @param responsableId ID del empleado responsable
-   * @throws Error si el responsable no existe
-   */
-  private async validarResponsable(responsableId: number): Promise<void> {
-    const responsable = await this.empleadoRepository.obtenerEmpleadoPorId(responsableId);
-    if (!responsable) {
-      throw new Error(`No se encontró el responsable con ID: ${responsableId}`);
-    }
-  }
+    // Ejecutar la mutación
+    mutation.mutate(capacitacionConEstado);
+  };
 
-  /**
-   * Valida los datos de la capacitación
-   * @param capacitacionData Datos de la capacitación a validar
-   * @throws Error si los datos no cumplen las reglas del dominio
-   */
-  private validarDatosCapacitacion(capacitacionData: CrearCapacitacionDTO): void {
-    // Validar que el nombre no esté vacío
-    if (!capacitacionData.nombre || capacitacionData.nombre.trim() === '') {
-      throw new Error('El nombre de la capacitación es obligatorio');
+  return {
+    crearCapacitacion,
+    isLoading: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error,
+    errores,
+    setErrores,
+    ESTADOS_CAPACITACION_LABELS,
+    TIPOS_CAPACITACION_LABELS,
+    MODALIDADES_CAPACITACION_LABELS
+  };
+}
+
+/**
+ * Implementación del caso de uso para crear capacitaciones usando el repositorio
+ */
+export class CrearCapacitacionUseCase {
+  constructor(private capacitacionRepository: CapacitacionRepository) {}
+
+  async ejecutar(datos: CrearCapacitacionDTO): Promise<Capacitacion> {
+    // Validar datos obligatorios
+    if (!datos.titulo || !datos.responsableId || !datos.fechaInicio || !datos.fechaFin || 
+        !datos.tipo || !datos.modalidad || !datos.duracionHoras) {
+      throw new Error("Faltan datos obligatorios para crear la capacitación");
     }
-    
+
     // Validar fechas
-    if (!capacitacionData.fechaInicio || !capacitacionData.fechaFin) {
-      throw new Error('Las fechas de inicio y fin son obligatorias');
+    if (new Date(datos.fechaInicio) > new Date(datos.fechaFin)) {
+      throw new Error("La fecha de fin debe ser posterior a la fecha de inicio");
     }
-    
-    // La fecha de inicio debe ser anterior a la fecha de fin
-    const fechaInicio = new Date(capacitacionData.fechaInicio);
-    const fechaFin = new Date(capacitacionData.fechaFin);
-    
-    if (fechaInicio >= fechaFin) {
-      throw new Error('La fecha de inicio debe ser anterior a la fecha de fin');
+
+    // Validar modalidad y campos relacionados
+    if ((datos.modalidad === 'PRESENCIAL' || datos.modalidad === 'HIBRIDA') && !datos.ubicacion) {
+      throw new Error("La ubicación es obligatoria para capacitaciones presenciales o híbridas");
     }
-    
-    // Validar duración en horas
-    if (capacitacionData.duracionHoras <= 0) {
-      throw new Error('La duración de la capacitación debe ser mayor que cero');
+
+    if ((datos.modalidad === 'VIRTUAL' || datos.modalidad === 'HIBRIDA') && !datos.enlaceVirtual) {
+      throw new Error("El enlace virtual es obligatorio para capacitaciones virtuales o híbridas");
     }
-    
-    // Si es modalidad virtual, debe tener enlace virtual
-    if (capacitacionData.modalidad === 'VIRTUAL' && !capacitacionData.enlaceVirtual) {
-      throw new Error('Las capacitaciones virtuales deben tener un enlace virtual');
-    }
-    
-    // Si es modalidad presencial, debe tener ubicación
-    if (capacitacionData.modalidad === 'PRESENCIAL' && !capacitacionData.ubicacion) {
-      throw new Error('Las capacitaciones presenciales deben tener una ubicación');
-    }
-    
-    // Validar cupo máximo si se proporciona
-    if (capacitacionData.cupoMaximo !== undefined && capacitacionData.cupoMaximo <= 0) {
-      throw new Error('El cupo máximo debe ser mayor que cero');
-    }
-    
-    // Validar costo si se proporciona
-    if (capacitacionData.costo !== undefined && capacitacionData.costo < 0) {
-      throw new Error('El costo no puede ser negativo');
+
+    // Asegurar que estado sea PROGRAMADA si no se proporciona
+    const capacitacionConEstado: CrearCapacitacionDTO = {
+      ...datos,
+      estado: datos.estado || 'PROGRAMADA'
+    };
+
+    // Crear la capacitación usando el repositorio
+    try {
+      return await this.capacitacionRepository.crear(capacitacionConEstado);
+    } catch (error) {
+      console.error("Error al crear capacitación:", error);
+      throw new Error("No se pudo crear la capacitación en el sistema");
     }
   }
 }
