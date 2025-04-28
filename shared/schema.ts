@@ -2,6 +2,9 @@ import { pgTable, text, serial, integer, decimal, timestamp, boolean, uniqueInde
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Exportar esquema de microlearning
+export * from './schema/microlearning';
+
 // Enums
 export enum EstadoProyecto {
   ACTIVO = "ACTIVO",
