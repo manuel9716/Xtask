@@ -1,78 +1,92 @@
 /**
- * Interfaz del Repositorio de Capacitaciones
- * Define las operaciones disponibles para gestionar capacitaciones en el sistema
+ * @file Repositorio para Capacitaciones
+ * @description Define la interfaz del repositorio para las capacitaciones y formaciones
  */
 
-import { Capacitacion, CrearCapacitacionDTO, ActualizarCapacitacionDTO, EstadoCapacitacion, TipoCapacitacion, ModalidadCapacitacion, AsistenciaCapacitacion } from "../entities/Capacitacion";
-import { PaginatedResponse, PaginationOptions } from "./EmpleadoRepository";
+import { Capacitacion, EmpleadoCapacitacion, CrearCapacitacionDTO, ActualizarCapacitacionDTO, InscribirEmpleadoDTO, FiltrosCapacitacion } from '../entities/Capacitacion';
+import { TipoCapacitacion, EstadoCapacitacion } from '@shared/schema';
 
-export interface FiltrosCapacitacion {
-  nombre?: string;
-  tipo?: TipoCapacitacion;
-  modalidad?: ModalidadCapacitacion;
-  estado?: EstadoCapacitacion;
-  responsableId?: number;
-  participanteId?: number;
-  fechaDesde?: Date;
-  fechaHasta?: Date;
-}
-
+/**
+ * Interfaz del repositorio para capacitaciones
+ */
 export interface CapacitacionRepository {
-  // Obtener todas las capacitaciones con filtros y paginación opcional
-  listarCapacitaciones(
-    filtros?: FiltrosCapacitacion,
-    paginacion?: PaginationOptions
-  ): Promise<PaginatedResponse<Capacitacion>>;
+  /**
+   * Obtiene todas las capacitaciones según filtros opcionales
+   */
+  listar(filtros?: FiltrosCapacitacion): Promise<Capacitacion[]>;
   
-  // Obtener una capacitación por su ID
-  obtenerCapacitacionPorId(id: number): Promise<Capacitacion | null>;
+  /**
+   * Obtiene una capacitación por su ID
+   */
+  obtenerPorId(id: number): Promise<Capacitacion | null>;
   
-  // Crear una nueva capacitación
-  crearCapacitacion(capacitacion: CrearCapacitacionDTO): Promise<Capacitacion>;
+  /**
+   * Obtiene capacitaciones programadas (futuras)
+   */
+  obtenerCapacitacionesProgramadas(): Promise<Capacitacion[]>;
   
-  // Actualizar una capacitación existente
-  actualizarCapacitacion(capacitacion: ActualizarCapacitacionDTO): Promise<Capacitacion>;
+  /**
+   * Obtiene capacitaciones en curso
+   */
+  obtenerCapacitacionesEnCurso(): Promise<Capacitacion[]>;
   
-  // Eliminar una capacitación
-  eliminarCapacitacion(id: number): Promise<boolean>;
+  /**
+   * Obtiene capacitaciones finalizadas
+   */
+  obtenerCapacitacionesFinalizadas(): Promise<Capacitacion[]>;
   
-  // Cambiar el estado de una capacitación
-  cambiarEstadoCapacitacion(id: number, estado: EstadoCapacitacion): Promise<Capacitacion>;
+  /**
+   * Crea una nueva capacitación
+   */
+  crear(capacitacion: CrearCapacitacionDTO): Promise<Capacitacion>;
   
-  // Agregar un participante a la capacitación
-  agregarParticipante(capacitacionId: number, empleadoId: number): Promise<boolean>;
+  /**
+   * Actualiza una capacitación existente
+   */
+  actualizar(capacitacion: ActualizarCapacitacionDTO): Promise<Capacitacion>;
   
-  // Eliminar un participante de la capacitación
-  eliminarParticipante(capacitacionId: number, empleadoId: number): Promise<boolean>;
+  /**
+   * Elimina una capacitación por su ID
+   */
+  eliminar(id: number): Promise<boolean>;
   
-  // Registrar asistencia a una capacitación
-  registrarAsistencia(
-    capacitacionId: number, 
-    asistencia: AsistenciaCapacitacion
-  ): Promise<boolean>;
+  /**
+   * Cambia el estado de una capacitación
+   */
+  cambiarEstado(id: number, nuevoEstado: EstadoCapacitacion): Promise<Capacitacion>;
   
-  // Obtener capacitaciones por participante
-  obtenerCapacitacionesPorParticipante(empleadoId: number): Promise<Capacitacion[]>;
+  /**
+   * Inscribe un empleado en una capacitación
+   */
+  inscribirEmpleado(datos: InscribirEmpleadoDTO): Promise<EmpleadoCapacitacion>;
   
-  // Obtener capacitaciones por responsable
-  obtenerCapacitacionesPorResponsable(responsableId: number): Promise<Capacitacion[]>;
+  /**
+   * Cancela la inscripción de un empleado en una capacitación
+   */
+  cancelarInscripcion(empleadoId: number, capacitacionId: number): Promise<boolean>;
   
-  // Obtener estadísticas básicas de capacitaciones
-  obtenerEstadisticasCapacitaciones(): Promise<{
-    total: number;
-    planificadas: number;
-    enCurso: number;
-    finalizadas: number;
-    canceladas: number;
-    participantesPromedio: number;
-  }>;
+  /**
+   * Obtiene las inscripciones a una capacitación
+   */
+  obtenerInscripciones(capacitacionId: number): Promise<EmpleadoCapacitacion[]>;
   
-  // Obtener lista de asistencias para una capacitación
-  obtenerAsistencias(capacitacionId: number): Promise<AsistenciaCapacitacion[]>;
+  /**
+   * Registra la asistencia de un empleado a una capacitación
+   */
+  registrarAsistencia(empleadoId: number, capacitacionId: number, asistio: boolean): Promise<EmpleadoCapacitacion>;
   
-  // Obtener registro de asistencias por empleado para una capacitación
-  obtenerAsistenciasPorEmpleado(
-    capacitacionId: number, 
-    empleadoId: number
-  ): Promise<AsistenciaCapacitacion[]>;
+  /**
+   * Marca una capacitación como completada para un empleado
+   */
+  marcarCompletada(empleadoId: number, capacitacionId: number, calificacion?: number): Promise<EmpleadoCapacitacion>;
+  
+  /**
+   * Obtiene las capacitaciones de un empleado
+   */
+  obtenerCapacitacionesPorEmpleado(empleadoId: number): Promise<Capacitacion[]>;
+  
+  /**
+   * Obtiene estadísticas de capacitaciones
+   */
+  obtenerEstadisticasCapacitaciones(): Promise<any>;
 }

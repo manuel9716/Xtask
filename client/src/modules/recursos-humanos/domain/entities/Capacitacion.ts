@@ -1,263 +1,248 @@
 /**
- * Entidad Capacitación
- * Representa un programa de capacitación para empleados
+ * @file Entidad de dominio para Capacitaciones
+ * @description Define la entidad de dominio para las capacitaciones y programas de formación
  */
 
-// Estados posibles de una capacitación
-export enum EstadoCapacitacion {
-  PLANIFICADA = "PLANIFICADA",
-  EN_CURSO = "EN_CURSO",
-  FINALIZADA = "FINALIZADA",
-  CANCELADA = "CANCELADA"
-}
+import { TipoCapacitacion, EstadoCapacitacion } from '@shared/schema';
 
-// Tipos de capacitación
-export enum TipoCapacitacion {
-  TECNICA = "TECNICA",
-  HABILIDADES_BLANDAS = "HABILIDADES_BLANDAS",
-  LIDERAZGO = "LIDERAZGO",
-  NORMATIVA = "NORMATIVA",
-  SEGURIDAD = "SEGURIDAD",
-  OTROS = "OTROS"
-}
-
-// Modalidades de capacitación
-export enum ModalidadCapacitacion {
-  PRESENCIAL = "PRESENCIAL",
-  VIRTUAL = "VIRTUAL",
-  MIXTA = "MIXTA",
-  AUTOESTUDIO = "AUTOESTUDIO"
-}
-
-// Registro de asistencia a una capacitación
-export interface AsistenciaCapacitacion {
-  empleadoId: number;
-  fecha: Date;
-  asistio: boolean;
-  observaciones?: string;
-}
-
-// DTO para crear una capacitación
-export interface CrearCapacitacionDTO {
-  nombre: string;
-  descripcion?: string;
-  tipo: TipoCapacitacion;
-  modalidad: ModalidadCapacitacion;
-  responsableId: number;
-  fechaInicio: Date;
-  fechaFin: Date;
-  duracionHoras: number;
-  ubicacion?: string;
-  enlaceVirtual?: string;
-  cupoMaximo?: number;
-  requisitos?: string;
-  objetivos?: string;
-  contenidos?: string;
-  costo?: number;
-  proveedorExterno?: string;
-}
-
-// DTO para actualizar una capacitación
-export interface ActualizarCapacitacionDTO extends Partial<CrearCapacitacionDTO> {
-  id: number;
-  estado?: EstadoCapacitacion;
-}
-
-// Clase principal de Capacitación
+/**
+ * Entidad de dominio para las capacitaciones
+ */
 export class Capacitacion {
-  id: number;
-  nombre: string;
+  id?: number;
+  titulo: string;
   descripcion?: string;
   tipo: TipoCapacitacion;
-  modalidad: ModalidadCapacitacion;
+  estado: EstadoCapacitacion;
   responsableId: number;
   fechaInicio: Date;
   fechaFin: Date;
   duracionHoras: number;
-  estado: EstadoCapacitacion;
   ubicacion?: string;
-  enlaceVirtual?: string;
-  cupoMaximo?: number;
-  participantes: number[] = []; // Array de IDs de empleados
-  asistencias: AsistenciaCapacitacion[] = [];
-  requisitos?: string;
-  objetivos?: string;
-  contenidos?: string;
+  modalidad: string;
+  proveedor?: string;
   costo?: number;
-  proveedorExterno?: string;
-  createdAt: Date;
+  objetivos?: string;
+  contenido?: string;
+  materialUrl?: string;
+  capacidadMaxima?: number;
+  createdAt?: Date;
   updatedAt?: Date;
 
-  constructor(data: {
-    id: number;
-    nombre: string;
+  constructor(props: {
+    id?: number;
+    titulo: string;
     descripcion?: string;
     tipo: TipoCapacitacion;
-    modalidad: ModalidadCapacitacion;
+    estado?: EstadoCapacitacion;
     responsableId: number;
     fechaInicio: Date;
     fechaFin: Date;
     duracionHoras: number;
-    estado: EstadoCapacitacion;
     ubicacion?: string;
-    enlaceVirtual?: string;
-    cupoMaximo?: number;
-    participantes?: number[];
-    asistencias?: AsistenciaCapacitacion[];
-    requisitos?: string;
-    objetivos?: string;
-    contenidos?: string;
+    modalidad: string;
+    proveedor?: string;
     costo?: number;
-    proveedorExterno?: string;
-    createdAt: Date;
+    objetivos?: string;
+    contenido?: string;
+    materialUrl?: string;
+    capacidadMaxima?: number;
+    createdAt?: Date;
     updatedAt?: Date;
   }) {
-    this.id = data.id;
-    this.nombre = data.nombre;
-    this.descripcion = data.descripcion;
-    this.tipo = data.tipo;
-    this.modalidad = data.modalidad;
-    this.responsableId = data.responsableId;
-    this.fechaInicio = data.fechaInicio;
-    this.fechaFin = data.fechaFin;
-    this.duracionHoras = data.duracionHoras;
-    this.estado = data.estado;
-    this.ubicacion = data.ubicacion;
-    this.enlaceVirtual = data.enlaceVirtual;
-    this.cupoMaximo = data.cupoMaximo;
-    this.participantes = data.participantes || [];
-    this.asistencias = data.asistencias || [];
-    this.requisitos = data.requisitos;
-    this.objetivos = data.objetivos;
-    this.contenidos = data.contenidos;
-    this.costo = data.costo;
-    this.proveedorExterno = data.proveedorExterno;
-    this.createdAt = data.createdAt;
-    this.updatedAt = data.updatedAt;
+    this.id = props.id;
+    this.titulo = props.titulo;
+    this.descripcion = props.descripcion;
+    this.tipo = props.tipo;
+    this.estado = props.estado || EstadoCapacitacion.PROGRAMADA;
+    this.responsableId = props.responsableId;
+    this.fechaInicio = props.fechaInicio;
+    this.fechaFin = props.fechaFin;
+    this.duracionHoras = props.duracionHoras;
+    this.ubicacion = props.ubicacion;
+    this.modalidad = props.modalidad;
+    this.proveedor = props.proveedor;
+    this.costo = props.costo;
+    this.objetivos = props.objetivos;
+    this.contenido = props.contenido;
+    this.materialUrl = props.materialUrl;
+    this.capacidadMaxima = props.capacidadMaxima;
+    this.createdAt = props.createdAt;
+    this.updatedAt = props.updatedAt;
   }
 
-  // Métodos de dominio
-
-  // Verifica si la capacitación está en progreso
-  get estaEnCurso(): boolean {
-    return this.estado === EstadoCapacitacion.EN_CURSO;
-  }
-
-  // Verifica si la capacitación ha finalizado
-  get estaFinalizada(): boolean {
-    return this.estado === EstadoCapacitacion.FINALIZADA;
-  }
-
-  // Número de participantes inscritos
-  get numeroParticipantes(): number {
-    return this.participantes.length;
-  }
-
-  // Verifica si hay cupo disponible
-  get tieneCupoDisponible(): boolean {
-    return this.cupoMaximo === undefined || this.participantes.length < this.cupoMaximo;
-  }
-
-  // Verifica si la fecha actual está dentro del período de capacitación
-  get estaActiva(): boolean {
-    const fechaActual = new Date();
-    return fechaActual >= this.fechaInicio && fechaActual <= this.fechaFin;
-  }
-
-  // Cambiar estado de la capacitación
-  cambiarEstado(nuevoEstado: EstadoCapacitacion): void {
+  /**
+   * Cambia el estado de una capacitación
+   */
+  cambiarEstado(nuevoEstado: EstadoCapacitacion): Capacitacion {
     this.estado = nuevoEstado;
     this.updatedAt = new Date();
+    return this;
   }
 
-  // Añadir un participante a la capacitación
-  agregarParticipante(empleadoId: number): boolean {
-    if (this.participantes.includes(empleadoId)) {
-      return false; // Ya está inscrito
-    }
+  /**
+   * Verifica si la capacitación ha finalizado (fecha actual mayor a fecha de fin)
+   */
+  haFinalizado(): boolean {
+    return new Date() > this.fechaFin;
+  }
 
-    if (!this.tieneCupoDisponible) {
-      return false; // No hay cupo disponible
+  /**
+   * Marca una capacitación como completada
+   */
+  completar(): Capacitacion {
+    if (!this.haFinalizado()) {
+      throw new Error('No se puede marcar como completada una capacitación que aún no ha finalizado');
     }
-
-    this.participantes.push(empleadoId);
+    
+    this.estado = EstadoCapacitacion.COMPLETADA;
     this.updatedAt = new Date();
-    return true;
+    return this;
   }
 
-  // Eliminar un participante de la capacitación
-  eliminarParticipante(empleadoId: number): boolean {
-    const index = this.participantes.indexOf(empleadoId);
-    if (index === -1) {
-      return false; // No estaba inscrito
+  /**
+   * Pospone una capacitación para una nueva fecha
+   */
+  posponer(nuevaFechaInicio: Date, nuevaFechaFin: Date): Capacitacion {
+    if (nuevaFechaInicio >= nuevaFechaFin) {
+      throw new Error('La fecha de inicio debe ser anterior a la fecha de fin');
     }
-
-    this.participantes.splice(index, 1);
+    
+    this.fechaInicio = nuevaFechaInicio;
+    this.fechaFin = nuevaFechaFin;
+    this.estado = EstadoCapacitacion.POSPUESTA;
     this.updatedAt = new Date();
-    return true;
+    return this;
   }
 
-  // Registrar asistencia de un participante
-  registrarAsistencia(empleadoId: number, fecha: Date, asistio: boolean, observaciones?: string): boolean {
-    // Verificar que el empleado esté inscrito
-    if (!this.participantes.includes(empleadoId)) {
-      return false;
-    }
+  /**
+   * Calcula la duración en días de la capacitación
+   */
+  obtenerDuracionDias(): number {
+    const diff = this.fechaFin.getTime() - this.fechaInicio.getTime();
+    return Math.ceil(diff / (1000 * 3600 * 24));
+  }
+}
 
-    // Verificar que la fecha esté dentro del período de capacitación
-    if (fecha < this.fechaInicio || fecha > this.fechaFin) {
-      return false;
-    }
+/**
+ * DTO para la relación Empleado-Capacitación (inscripción y asistencia)
+ */
+export class EmpleadoCapacitacion {
+  id?: number;
+  empleadoId: number;
+  capacitacionId: number;
+  asistencia: boolean;
+  calificacion?: number;
+  completado: boolean;
+  comentarios?: string;
+  fechaInscripcion: Date;
+  certificadoUrl?: string;
 
-    // Buscar si ya existe un registro para ese empleado y fecha
-    const indiceExistente = this.asistencias.findIndex(
-      a => a.empleadoId === empleadoId && a.fecha.toDateString() === fecha.toDateString()
-    );
-
-    if (indiceExistente >= 0) {
-      // Actualizar registro existente
-      this.asistencias[indiceExistente] = {
-        empleadoId,
-        fecha,
-        asistio,
-        observaciones
-      };
-    } else {
-      // Crear nuevo registro
-      this.asistencias.push({
-        empleadoId,
-        fecha,
-        asistio,
-        observaciones
-      });
-    }
-
-    this.updatedAt = new Date();
-    return true;
+  constructor(props: {
+    id?: number;
+    empleadoId: number;
+    capacitacionId: number;
+    asistencia?: boolean;
+    calificacion?: number;
+    completado?: boolean;
+    comentarios?: string;
+    fechaInscripcion?: Date;
+    certificadoUrl?: string;
+  }) {
+    this.id = props.id;
+    this.empleadoId = props.empleadoId;
+    this.capacitacionId = props.capacitacionId;
+    this.asistencia = props.asistencia || false;
+    this.calificacion = props.calificacion;
+    this.completado = props.completado || false;
+    this.comentarios = props.comentarios;
+    this.fechaInscripcion = props.fechaInscripcion || new Date();
+    this.certificadoUrl = props.certificadoUrl;
   }
 
-  // Obtener porcentaje de asistencia para un empleado
-  obtenerPorcentajeAsistencia(empleadoId: number): number | null {
-    if (!this.participantes.includes(empleadoId)) {
-      return null; // El empleado no está inscrito
-    }
-
-    const asistenciasEmpleado = this.asistencias.filter(a => a.empleadoId === empleadoId);
-    if (asistenciasEmpleado.length === 0) {
-      return 0; // No hay registros de asistencia
-    }
-
-    const asistenciasPresentes = asistenciasEmpleado.filter(a => a.asistio).length;
-    return (asistenciasPresentes / asistenciasEmpleado.length) * 100;
+  /**
+   * Marca la asistencia de un empleado a la capacitación
+   */
+  marcarAsistencia(): EmpleadoCapacitacion {
+    this.asistencia = true;
+    return this;
   }
 
-  // Calcular porcentaje general de asistencia
-  calcularPorcentajeGeneralAsistencia(): number {
-    if (this.asistencias.length === 0 || this.participantes.length === 0) {
-      return 0;
+  /**
+   * Marca la capacitación como completada por el empleado
+   */
+  marcarCompletada(calificacion?: number): EmpleadoCapacitacion {
+    this.completado = true;
+    if (calificacion !== undefined) {
+      this.calificacion = calificacion;
     }
-
-    const asistenciasPresentes = this.asistencias.filter(a => a.asistio).length;
-    return (asistenciasPresentes / this.asistencias.length) * 100;
+    return this;
   }
+}
+
+/**
+ * DTO para crear una capacitación
+ */
+export interface CrearCapacitacionDTO {
+  titulo: string;
+  descripcion?: string;
+  tipo: TipoCapacitacion;
+  responsableId: number;
+  fechaInicio: Date;
+  fechaFin: Date;
+  duracionHoras: number;
+  ubicacion?: string;
+  modalidad: string;
+  proveedor?: string;
+  costo?: number;
+  objetivos?: string;
+  contenido?: string;
+  materialUrl?: string;
+  capacidadMaxima?: number;
+}
+
+/**
+ * DTO para actualizar una capacitación
+ */
+export interface ActualizarCapacitacionDTO {
+  id: number;
+  titulo?: string;
+  descripcion?: string;
+  tipo?: TipoCapacitacion;
+  estado?: EstadoCapacitacion;
+  responsableId?: number;
+  fechaInicio?: Date;
+  fechaFin?: Date;
+  duracionHoras?: number;
+  ubicacion?: string;
+  modalidad?: string;
+  proveedor?: string;
+  costo?: number;
+  objetivos?: string;
+  contenido?: string;
+  materialUrl?: string;
+  capacidadMaxima?: number;
+}
+
+/**
+ * DTO para inscribir a un empleado en una capacitación
+ */
+export interface InscribirEmpleadoDTO {
+  empleadoId: number;
+  capacitacionId: number;
+  comentarios?: string;
+}
+
+/**
+ * DTO para los filtros de búsqueda de capacitaciones
+ */
+export interface FiltrosCapacitacion {
+  responsableId?: number;
+  tipo?: TipoCapacitacion;
+  estado?: EstadoCapacitacion;
+  fechaDesde?: Date;
+  fechaHasta?: Date;
+  modalidad?: string;
+  proveedor?: string;
+  busqueda?: string;
 }

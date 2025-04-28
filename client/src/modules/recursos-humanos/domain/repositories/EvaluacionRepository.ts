@@ -1,61 +1,62 @@
 /**
- * Interfaz del Repositorio de Evaluaciones
- * Define las operaciones disponibles para gestionar evaluaciones en el sistema
+ * @file Repositorio para Evaluaciones
+ * @description Define la interfaz del repositorio para las evaluaciones de desempeño
  */
 
-import { Evaluacion, CrearEvaluacionDTO, ActualizarEvaluacionDTO, TipoEvaluacion, EstadoEvaluacion } from "../entities/Evaluacion";
-import { PaginatedResponse, PaginationOptions } from "./EmpleadoRepository";
+import { Evaluacion, CrearEvaluacionDTO, ActualizarEvaluacionDTO, FiltrosEvaluacion } from '../entities/Evaluacion';
+import { TipoEvaluacion, EstadoEvaluacion } from '@shared/schema';
 
-export interface FiltrosEvaluacion {
-  empleadoId?: number;
-  evaluadorId?: number;
-  tipo?: TipoEvaluacion;
-  estado?: EstadoEvaluacion;
-  periodo?: string;
-  fechaDesde?: Date;
-  fechaHasta?: Date;
-}
-
+/**
+ * Interfaz del repositorio para evaluaciones de desempeño
+ */
 export interface EvaluacionRepository {
-  // Obtener todas las evaluaciones con filtros y paginación opcional
-  listarEvaluaciones(
-    filtros?: FiltrosEvaluacion,
-    paginacion?: PaginationOptions
-  ): Promise<PaginatedResponse<Evaluacion>>;
+  /**
+   * Obtiene todas las evaluaciones según filtros opcionales
+   */
+  listar(filtros?: FiltrosEvaluacion): Promise<Evaluacion[]>;
   
-  // Obtener una evaluación por su ID
-  obtenerEvaluacionPorId(id: number): Promise<Evaluacion | null>;
+  /**
+   * Obtiene una evaluación por su ID
+   */
+  obtenerPorId(id: number): Promise<Evaluacion | null>;
   
-  // Crear una nueva evaluación
-  crearEvaluacion(evaluacion: CrearEvaluacionDTO): Promise<Evaluacion>;
+  /**
+   * Obtiene evaluaciones por ID de empleado
+   */
+  obtenerPorEmpleadoId(empleadoId: number): Promise<Evaluacion[]>;
   
-  // Actualizar una evaluación existente
-  actualizarEvaluacion(evaluacion: ActualizarEvaluacionDTO): Promise<Evaluacion>;
+  /**
+   * Crea una nueva evaluación
+   */
+  crear(evaluacion: CrearEvaluacionDTO): Promise<Evaluacion>;
   
-  // Eliminar una evaluación
-  eliminarEvaluacion(id: number): Promise<boolean>;
+  /**
+   * Actualiza una evaluación existente
+   */
+  actualizar(evaluacion: ActualizarEvaluacionDTO): Promise<Evaluacion>;
   
-  // Cambiar el estado de una evaluación
-  cambiarEstadoEvaluacion(id: number, estado: EstadoEvaluacion): Promise<Evaluacion>;
+  /**
+   * Elimina una evaluación por su ID
+   */
+  eliminar(id: number): Promise<boolean>;
   
-  // Obtener evaluaciones por empleado
-  obtenerEvaluacionesPorEmpleado(empleadoId: number): Promise<Evaluacion[]>;
+  /**
+   * Cambia el estado de una evaluación
+   */
+  cambiarEstado(id: number, nuevoEstado: EstadoEvaluacion): Promise<Evaluacion>;
   
-  // Obtener evaluaciones por evaluador
-  obtenerEvaluacionesPorEvaluador(evaluadorId: number): Promise<Evaluacion[]>;
+  /**
+   * Obtiene estadísticas de evaluaciones por departamento
+   */
+  obtenerEstadisticasPorDepartamento(): Promise<any>;
   
-  // Obtener estadísticas básicas de evaluaciones
-  obtenerEstadisticasEvaluaciones(): Promise<{
-    total: number;
-    pendientes: number;
-    enProceso: number;
-    completadas: number;
-    promedioCalificacion: number;
-  }>;
+  /**
+   * Obtiene estadísticas de evaluaciones por cargo/posición
+   */
+  obtenerEstadisticasPorCargo(): Promise<any>;
   
-  // Asignar calificación a una evaluación
-  asignarCalificacion(id: number, calificacion: number): Promise<Evaluacion>;
-  
-  // Agregar retroalimentación a una evaluación
-  agregarRetroalimentacion(id: number, retroalimentacion: string): Promise<Evaluacion>;
+  /**
+   * Obtiene las últimas evaluaciones
+   */
+  obtenerUltimasEvaluaciones(limite: number): Promise<Evaluacion[]>;
 }

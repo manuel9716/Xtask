@@ -216,6 +216,97 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Enumeraciones para módulo de Recursos Humanos
+export enum TipoEvaluacion {
+  DESEMPEÑO = "DESEMPEÑO",
+  PERIODO_PRUEBA = "PERIODO_PRUEBA",
+  OBJETIVOS = "OBJETIVOS",
+  COMPETENCIAS = "COMPETENCIAS",
+  ASCENSO = "ASCENSO"
+}
+
+export enum EstadoEvaluacion {
+  PENDIENTE = "PENDIENTE",
+  EN_PROGRESO = "EN_PROGRESO",
+  COMPLETADA = "COMPLETADA",
+  REVISIÓN = "REVISIÓN",
+  ARCHIVADA = "ARCHIVADA"
+}
+
+export enum TipoCapacitacion {
+  INDUCCION = "INDUCCION",
+  TECNICA = "TECNICA",
+  HABILIDADES_BLANDAS = "HABILIDADES_BLANDAS",
+  LIDERAZGO = "LIDERAZGO",
+  NORMATIVA = "NORMATIVA",
+  SEGURIDAD = "SEGURIDAD"
+}
+
+export enum EstadoCapacitacion {
+  PROGRAMADA = "PROGRAMADA",
+  EN_CURSO = "EN_CURSO",
+  COMPLETADA = "COMPLETADA",
+  CANCELADA = "CANCELADA",
+  POSPUESTA = "POSPUESTA"
+}
+
+// Evaluaciones de Desempeño
+export const evaluaciones = pgTable("evaluaciones", {
+  id: serial("id").primaryKey(),
+  empleadoId: integer("empleado_id").references(() => employees.id).notNull(),
+  evaluadorId: integer("evaluador_id").references(() => users.id).notNull(),
+  titulo: text("titulo").notNull(),
+  descripcion: text("descripcion"),
+  tipo: text("tipo").notNull(), // Usar TipoEvaluacion
+  estado: text("estado").notNull().default("PENDIENTE"), // Usar EstadoEvaluacion
+  fechaInicio: timestamp("fecha_inicio").notNull(),
+  fechaFinalizacion: timestamp("fecha_finalizacion"),
+  calificacion: decimal("calificacion", { precision: 5, scale: 2 }),
+  comentarios: text("comentarios"),
+  fortalezas: text("fortalezas"),
+  areasAMejorar: text("areas_a_mejorar"),
+  objetivosSiguientePeriodo: text("objetivos_siguiente_periodo"),
+  criteriosJson: text("criterios_json"), // JSON con criterios específicos de evaluación
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Capacitaciones y Formaciones
+export const capacitaciones = pgTable("capacitaciones", {
+  id: serial("id").primaryKey(),
+  titulo: text("titulo").notNull(),
+  descripcion: text("descripcion"),
+  tipo: text("tipo").notNull(), // Usar TipoCapacitacion
+  estado: text("estado").notNull().default("PROGRAMADA"), // Usar EstadoCapacitacion
+  responsableId: integer("responsable_id").references(() => users.id).notNull(),
+  fechaInicio: timestamp("fecha_inicio").notNull(),
+  fechaFin: timestamp("fecha_fin").notNull(),
+  duracionHoras: decimal("duracion_horas", { precision: 5, scale: 2 }).notNull(),
+  ubicacion: text("ubicacion"),
+  modalidad: text("modalidad").notNull(), // presencial, virtual, mixta
+  proveedor: text("proveedor"),
+  costo: decimal("costo", { precision: 10, scale: 2 }),
+  objetivos: text("objetivos"),
+  contenido: text("contenido"),
+  materialUrl: text("material_url"),
+  capacidadMaxima: integer("capacidad_maxima"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Relación Empleados-Capacitaciones (para seguimiento de asistencia)
+export const empleadoCapacitaciones = pgTable("empleado_capacitaciones", {
+  id: serial("id").primaryKey(),
+  empleadoId: integer("empleado_id").references(() => employees.id).notNull(),
+  capacitacionId: integer("capacitacion_id").references(() => capacitaciones.id).notNull(),
+  asistencia: boolean("asistencia").default(false),
+  calificacion: decimal("calificacion", { precision: 5, scale: 2 }),
+  completado: boolean("completado").default(false),
+  comentarios: text("comentarios"),
+  fechaInscripcion: timestamp("fecha_inscripcion").defaultNow().notNull(),
+  certificadoUrl: text("certificado_url"),
+});
+
 // Tabla de relación entre empleados y proyectos
 export const employeeProjects = pgTable("employee_projects", {
   id: serial("id").primaryKey(),
@@ -347,6 +438,11 @@ export const insertInvoiceItemSchema = createInsertSchema(invoiceItems).omit({ i
 export const insertFinancialCategorySchema = createInsertSchema(financialCategories).omit({ id: true, createdAt: true });
 export const insertFinancialAuditSchema = createInsertSchema(financialAudits).omit({ id: true, performedAt: true });
 
+// Esquemas Zod para módulo de Recursos Humanos - Evaluaciones y Capacitaciones
+export const insertEvaluacionSchema = createInsertSchema(evaluaciones).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCapacitacionSchema = createInsertSchema(capacitaciones).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEmpleadoCapacitacionSchema = createInsertSchema(empleadoCapacitaciones).omit({ id: true, fechaInscripcion: true });
+
 // Types for usage in application
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -409,3 +505,13 @@ export type InsertFinancialCategory = z.infer<typeof insertFinancialCategorySche
 
 export type FinancialAudit = typeof financialAudits.$inferSelect;
 export type InsertFinancialAudit = z.infer<typeof insertFinancialAuditSchema>;
+
+// Tipos para el módulo de Recursos Humanos - Evaluaciones y Capacitaciones
+export type Evaluacion = typeof evaluaciones.$inferSelect;
+export type InsertEvaluacion = z.infer<typeof insertEvaluacionSchema>;
+
+export type Capacitacion = typeof capacitaciones.$inferSelect;
+export type InsertCapacitacion = z.infer<typeof insertCapacitacionSchema>;
+
+export type EmpleadoCapacitacion = typeof empleadoCapacitaciones.$inferSelect;
+export type InsertEmpleadoCapacitacion = z.infer<typeof insertEmpleadoCapacitacionSchema>;
