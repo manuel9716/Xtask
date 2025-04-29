@@ -460,12 +460,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use('/api/presupuestos', presupuestosRouter);
 
-  // Rutas de Nómina (Payroll)
-  const nominaRouter = express.Router();
+  // Rutas de Nómina (Payroll) - API original, será reemplazado por router más completo
+  const nominaLegacyRouter = express.Router();
   
   // Obtener empleados para nómina - Usando directamente el repositorio de DB
   // IMPORTANTE: Esta ruta debe estar antes de la integración del router de empleados
-  nominaRouter.get('/empleados/listar', async (req: Request, res: Response) => {
+  nominaLegacyRouter.get('/empleados/listar', async (req: Request, res: Response) => {
     try {
       const { 
         page = '1', 
