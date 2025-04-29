@@ -93,7 +93,7 @@ export const ListaCapacitaciones: React.FC = () => {
     isError,
     refetch 
   } = useQuery({
-    queryKey: ['/api/recursos-humanos/capacitaciones', pagina, filtrosAplicados],
+    queryKey: ['/api/capacitaciones', pagina, filtrosAplicados],
     queryFn: () => capacitacionesApi.listarCapacitaciones(filtrosAplicados),
   });
   
@@ -309,11 +309,11 @@ export const ListaCapacitaciones: React.FC = () => {
           renderizarEsqueletos()
         ) : isError ? (
           renderizarError()
-        ) : resultadoCapacitaciones?.data.length === 0 ? (
+        ) : !resultadoCapacitaciones || resultadoCapacitaciones.length === 0 ? (
           renderizarSinResultados()
         ) : (
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {resultadoCapacitaciones?.data.map((capacitacion) => (
+            {resultadoCapacitaciones.map((capacitacion) => (
               <Card key={capacitacion.id} className="overflow-hidden">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
@@ -393,8 +393,8 @@ export const ListaCapacitaciones: React.FC = () => {
           </div>
         )}
         
-        {/* Paginación */}
-        {!isLoading && !isError && resultadoCapacitaciones?.data.length !== 0 && resultadoCapacitaciones?.totalPages > 1 && (
+        {/* Paginación básica (simplificada mientras no tengamos totalPages) */}
+        {!isLoading && !isError && resultadoCapacitaciones && resultadoCapacitaciones.length > 0 && (
           <div className="flex justify-center mt-6">
             <Pagination>
               <PaginationContent>
@@ -406,38 +406,19 @@ export const ListaCapacitaciones: React.FC = () => {
                   />
                 </PaginationItem>
                 
-                {Array.from({ length: resultadoCapacitaciones.totalPages }, (_, i) => i + 1).map(p => {
-                  // Mostrar primera, última y páginas cercanas a la actual
-                  if (p === 1 || p === resultadoCapacitaciones.totalPages || (p >= pagina - 1 && p <= pagina + 1)) {
-                    return (
-                      <PaginationItem key={p}>
-                        <PaginationLink 
-                          isActive={p === pagina}
-                          onClick={() => setPagina(p)}
-                        >
-                          {p}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  }
-                  
-                  // Mostrar puntos suspensivos para páginas omitidas
-                  if (p === 2 || p === resultadoCapacitaciones.totalPages - 1) {
-                    return (
-                      <PaginationItem key={p}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    );
-                  }
-                  
-                  return null;
-                })}
+                <PaginationItem>
+                  <PaginationLink 
+                    isActive={true}
+                    onClick={() => {}}
+                  >
+                    {pagina}
+                  </PaginationLink>
+                </PaginationItem>
                 
                 <PaginationItem>
                   <PaginationNext 
-                    onClick={() => setPagina(p => Math.min(resultadoCapacitaciones.totalPages, p + 1))}
-                    aria-disabled={pagina === resultadoCapacitaciones.totalPages}
-                    className={pagina === resultadoCapacitaciones.totalPages ? "pointer-events-none opacity-50" : ""}
+                    onClick={() => setPagina(p => p + 1)}
+                    className=""
                   />
                 </PaginationItem>
               </PaginationContent>
