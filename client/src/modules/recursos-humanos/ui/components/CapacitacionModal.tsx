@@ -488,7 +488,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Todos los departamentos</SelectItem>
+                          <SelectItem value="TODOS">Todos los departamentos</SelectItem>
                           <SelectItem value="Tecnología">Tecnología</SelectItem>
                           <SelectItem value="Ventas">Ventas</SelectItem>
                           <SelectItem value="Marketing">Marketing</SelectItem>

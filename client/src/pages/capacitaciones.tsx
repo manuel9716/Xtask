@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, Calendar, ListChecks, BarChart3, Users, Clock, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectLabel } from "@/components/ui/select";
+import { GraduationCap, Calendar, ListChecks, BarChart3, Users, Clock, CheckCircle2, ChevronLeft, ChevronRight, Edit, FileText, Check } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as capacitacionesApi from "@/modules/recursos-humanos/infrastructure/api/capacitacionesApi";
 import { CapacitacionModal } from "@/modules/recursos-humanos/ui/components/CapacitacionModal";
@@ -13,6 +14,7 @@ import { CapacitacionModal } from "@/modules/recursos-humanos/ui/components/Capa
 export default function CapacitacionesPage() {
   const [activeTab, setActiveTab] = useState("lista");
   const [modalCrearCapacitacionAbierto, setModalCrearCapacitacionAbierto] = useState(false);
+  const [capacitacionSeleccionada, setCapacitacionSeleccionada] = useState<string | undefined>(undefined);
   const queryClient = useQueryClient();
 
   // Dashboard stats
@@ -29,6 +31,52 @@ export default function CapacitacionesPage() {
   const { data: enCurso, isLoading: isLoadingEnCurso } = useQuery({
     queryKey: ['/api/capacitaciones/estado/en-curso'],
     queryFn: capacitacionesApi.obtenerCapacitacionesEnCurso
+  });
+  
+  // Obtener detalles de la capacitación seleccionada
+  const { data: capacitacionDetalle, isLoading: isLoadingDetalle } = useQuery({
+    queryKey: ['/api/capacitaciones/detalle', capacitacionSeleccionada],
+    queryFn: () => capacitacionSeleccionada ? capacitacionesApi.obtenerCapacitacionPorId(Number(capacitacionSeleccionada)) : null,
+    enabled: !!capacitacionSeleccionada
+  });
+  
+  // Obtener participantes de la capacitación (simular datos para esta demo)
+  const { data: participantes, isLoading: isLoadingParticipantes } = useQuery({
+    queryKey: ['/api/capacitaciones/participantes', capacitacionSeleccionada],
+    queryFn: async () => {
+      // Simulamos una llamada a API
+      if (!capacitacionSeleccionada) return [];
+      await new Promise(resolve => setTimeout(resolve, 700));
+      
+      // En una implementación real, esto vendría del backend
+      return [
+        { 
+          id: 1, 
+          nombreCompleto: "Carlos Ramírez", 
+          cargo: "Desarrollador Senior", 
+          departamento: "Tecnología",
+          asistencia: true,
+          evaluacion: 4
+        },
+        { 
+          id: 2, 
+          nombreCompleto: "Ana Martinez", 
+          cargo: "Product Manager", 
+          departamento: "Tecnología",
+          asistencia: true,
+          evaluacion: 5
+        },
+        { 
+          id: 3, 
+          nombreCompleto: "Miguel Sánchez", 
+          cargo: "Desarrollador Junior", 
+          departamento: "Tecnología",
+          asistencia: false,
+          evaluacion: 0
+        }
+      ];
+    },
+    enabled: !!capacitacionSeleccionada
   });
 
   return (
@@ -270,21 +318,158 @@ export default function CapacitacionesPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border">
-                  <div className="flex items-center justify-between p-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
                     <h3 className="text-md font-medium">Selecciona una capacitación para gestionar asistencias</h3>
-                    <Badge variant="outline">EN DESARROLLO</Badge>
+                    {programadas?.length === 0 && enCurso?.length === 0 && (
+                      <Badge variant="outline">No hay capacitaciones disponibles</Badge>
+                    )}
                   </div>
-                  <div className="h-[400px] flex flex-col items-center justify-center border-t">
-                    <GraduationCap className="h-12 w-12 mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">
-                      Aquí se mostrará la lista de empleados inscritos en la capacitación seleccionada
-                      para registrar su asistencia y calificaciones.
-                    </p>
-                    <Button variant="outline" className="mt-4">
-                      Seleccionar Capacitación
-                    </Button>
-                  </div>
+                  
+                  {(programadas?.length === 0 && enCurso?.length === 0) ? (
+                    <div className="h-[300px] flex flex-col items-center justify-center rounded-md border">
+                      <GraduationCap className="h-12 w-12 mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        No hay capacitaciones programadas o en curso para gestionar asistencias.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        className="mt-4"
+                        onClick={() => setModalCrearCapacitacionAbierto(true)}
+                      >
+                        Crear Nueva Capacitación
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <Select 
+                        value={capacitacionSeleccionada} 
+                        onValueChange={setCapacitacionSeleccionada}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Seleccionar capacitación" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {programadas && programadas.length > 0 && (
+                            <>
+                              <SelectLabel>Programadas</SelectLabel>
+                              {programadas.map(capacitacion => (
+                                <SelectItem key={`prog-${capacitacion.id}`} value={capacitacion.id.toString()}>
+                                  {capacitacion.titulo} - {new Date(capacitacion.fechaInicio).toLocaleDateString('es-ES')}
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
+                          {enCurso && enCurso.length > 0 && (
+                            <>
+                              <SelectLabel>En Curso</SelectLabel>
+                              {enCurso.map(capacitacion => (
+                                <SelectItem key={`curso-${capacitacion.id}`} value={capacitacion.id.toString()}>
+                                  {capacitacion.titulo} - {new Date(capacitacion.fechaInicio).toLocaleDateString('es-ES')}
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      
+                      <div className="rounded-md border">
+                        <div className="p-4 bg-muted/50">
+                          <h3 className="text-md font-medium">Participantes</h3>
+                        </div>
+                        
+                        <div className="p-0">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="p-3 text-left font-medium">Empleado</th>
+                                <th className="p-3 text-left font-medium">Departamento</th>
+                                <th className="p-3 text-center font-medium">Asistencia</th>
+                                <th className="p-3 text-center font-medium">Evaluación</th>
+                                <th className="p-3 text-right font-medium">Acciones</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {isLoadingParticipantes ? (
+                                // Estado de carga
+                                <tr>
+                                  <td colSpan={5} className="p-8 text-center">
+                                    <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                    <p className="mt-2 text-sm text-muted-foreground">Cargando participantes...</p>
+                                  </td>
+                                </tr>
+                              ) : participantes && participantes.length > 0 ? (
+                                // Mostrar participantes si hay datos
+                                participantes.map((participante) => (
+                                  <tr key={participante.id} className="border-b hover:bg-muted/50">
+                                    <td className="p-3">
+                                      <div className="font-medium">{participante.nombreCompleto}</div>
+                                      <div className="text-sm text-muted-foreground">{participante.cargo}</div>
+                                    </td>
+                                    <td className="p-3 text-sm">{participante.departamento}</td>
+                                    <td className="p-3 text-center">
+                                      <Badge variant="outline" className={participante.asistencia ? "bg-green-100 text-green-800 hover:bg-green-100" : "bg-amber-100 text-amber-800 hover:bg-amber-100"}>
+                                        {participante.asistencia ? "Asistió" : "Pendiente"}
+                                      </Badge>
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      <div className="flex items-center justify-center">
+                                        {participante.evaluacion ? (
+                                          <div className="text-amber-500">
+                                            {"★".repeat(participante.evaluacion)}
+                                            <span className="text-muted-foreground">{"★".repeat(5 - participante.evaluacion)}</span>
+                                          </div>
+                                        ) : (
+                                          <span className="text-muted-foreground text-sm">Sin evaluar</span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="p-3 text-right">
+                                      <Button variant="ghost" size="sm">
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))
+                              ) : (
+                                // Mensaje si no hay participantes
+                                <tr>
+                                  <td colSpan={5} className="p-8 text-center">
+                                    <p className="text-muted-foreground">No hay participantes registrados en esta capacitación.</p>
+                                    <Button 
+                                      variant="outline" 
+                                      className="mt-4"
+                                      onClick={() => {
+                                        setModalCrearCapacitacionAbierto(true);
+                                      }}
+                                    >
+                                      Editar Capacitación
+                                    </Button>
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                        
+                        <div className="p-4 flex justify-between items-center border-t">
+                          <div className="text-sm text-muted-foreground">
+                            {participantes?.length || 0} participantes registrados
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" disabled={!participantes?.length}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Exportar
+                            </Button>
+                            <Button size="sm" disabled={!participantes?.length}>
+                              <Check className="h-4 w-4 mr-2" />
+                              Guardar Asistencia
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
