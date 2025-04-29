@@ -72,10 +72,14 @@ export function useCrearNomina() {
       
       console.log('Enviando payload:', payload);
       
-      const response = await fetch('/api/nomina/procesarNomina', {
+      // Usando una ruta completamente diferente para evitar conflictos con Vite
+      // y añadiendo un timestamp para evitar caché
+      const randomParam = `?t=${Date.now()}`;
+      const response = await fetch(`/api/nomina/v1/procesarNomina${randomParam}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify(payload)
       });
