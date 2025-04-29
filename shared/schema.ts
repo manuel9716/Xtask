@@ -450,7 +450,19 @@ export const insertFinancialAuditSchema = createInsertSchema(financialAudits).om
 
 // Esquemas Zod para módulo de Recursos Humanos - Evaluaciones y Capacitaciones
 export const insertEvaluacionSchema = createInsertSchema(evaluaciones).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertCapacitacionSchema = createInsertSchema(capacitaciones).omit({ id: true, createdAt: true, updatedAt: true });
+
+// Esquema para capacitaciones con transformación de fechas string a Date
+export const insertCapacitacionSchema = createInsertSchema(capacitaciones)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    // Procesar fechaInicio como string ISO y convertir a Date
+    fechaInicio: z.string()
+      .transform((val) => new Date(val)),
+    // Procesar fechaFin como string ISO y convertir a Date
+    fechaFin: z.string()
+      .transform((val) => new Date(val))
+  });
+
 export const insertEmpleadoCapacitacionSchema = createInsertSchema(empleadoCapacitaciones).omit({ id: true, fechaInscripcion: true });
 
 // Types for usage in application
