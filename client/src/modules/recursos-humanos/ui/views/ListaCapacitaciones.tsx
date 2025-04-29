@@ -382,7 +382,7 @@ export const ListaCapacitaciones: React.FC = () => {
                 <CardFooter className="flex justify-between pt-2">
                   <div className="flex items-center text-sm">
                     <Users className="h-4 w-4 mr-1 text-muted-foreground" />
-                    <span>{capacitacion.empleadosIds?.length || 0} participantes</span>
+                    <span>0 participantes</span>
                   </div>
                   <Button variant="outline" size="sm">
                     Ver Detalles
