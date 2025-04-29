@@ -1,6 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { Employee } from '@shared/schema';
 
+interface BackendEmpleadosResponse {
+  empleados: Employee[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
+
 interface EmpleadosResponse {
   data: Employee[];
   total: number;
@@ -49,7 +59,30 @@ export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize
         throw new Error('Error al obtener empleados para nómina');
       }
       
-      return await response.json();
+      const data = await response.json();
+      
+      // Si el backend devuelve un array plano, lo convertimos al formato esperado
+      if (Array.isArray(data)) {
+        return {
+          data: data,
+          total: data.length,
+          currentPage: 1,
+          totalPages: 1
+        };
+      }
+      
+      // Si el backend devuelve el formato con empleados y pagination
+      if (data.empleados && data.pagination) {
+        return {
+          data: data.empleados,
+          total: data.pagination.totalItems,
+          currentPage: data.pagination.page,
+          totalPages: data.pagination.totalPages
+        };
+      }
+      
+      // Si ya tiene el formato esperado, lo devolvemos tal cual
+      return data;
     }
   });
 }
