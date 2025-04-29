@@ -550,10 +550,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Integrar las rutas de empleados al router de nómina
-  nominaRouter.use('/empleados', empleadosRouter);
+  nominaLegacyRouter.use('/empleados', empleadosRouter);
   
   // Obtener nóminas con filtros - Implementación temporal
-  nominaRouter.get('/', async (req: Request, res: Response) => {
+  nominaLegacyRouter.get('/', async (req: Request, res: Response) => {
     try {
       // Datos de muestra para responder sin error mientras se implementa la funcionalidad completa
       const nominas = [
@@ -613,7 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Obtener una nómina por ID
-  nominaRouter.get('/:id', async (req: Request, res: Response) => {
+  nominaLegacyRouter.get('/:id', async (req: Request, res: Response) => {
     try {
       // Implementación temporal mientras se crea el controlador
       const id = parseInt(req.params.id);
@@ -647,7 +647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Procesar la nómina
-  nominaRouter.post('/procesar', async (req: Request, res: Response) => {
+  nominaLegacyRouter.post('/procesar', async (req: Request, res: Response) => {
     try {
       // Implementación temporal mientras se crea el controlador
       const { empleadoId, fechaInicio, fechaFin } = req.body;
@@ -680,7 +680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Marcar una nómina como pagada
-  nominaRouter.post('/marcar-pagado/:id', async (req: Request, res: Response) => {
+  nominaLegacyRouter.post('/marcar-pagado/:id', async (req: Request, res: Response) => {
     try {
       // Implementación temporal mientras se crea el controlador
       const id = parseInt(req.params.id);
@@ -706,7 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Cambiar el estado de una nómina
-  nominaRouter.post('/cambiar-estado/:id', async (req: Request, res: Response) => {
+  nominaLegacyRouter.post('/cambiar-estado/:id', async (req: Request, res: Response) => {
     try {
       // Implementación temporal mientras se crea el controlador
       const id = parseInt(req.params.id);
@@ -746,7 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Generar un desprendible de nómina en PDF
-  nominaRouter.get('/:id/desprendible', async (req: Request, res: Response) => {
+  nominaLegacyRouter.get('/:id/desprendible', async (req: Request, res: Response) => {
     try {
       // Implementación temporal mientras se crea el controlador
       const id = parseInt(req.params.id);
@@ -803,6 +803,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.use('/api/nomina/empleados', empleadosRouter);
   app.use('/api/nomina', nominaRouter);
+  // Legacy router para compatibilidad
+  app.use('/api/nomina/legacy', nominaLegacyRouter);
   app.use('/api/proyectos', proyectosRouter);
   app.use('/api/dashboard', dashboardRouter);
   
