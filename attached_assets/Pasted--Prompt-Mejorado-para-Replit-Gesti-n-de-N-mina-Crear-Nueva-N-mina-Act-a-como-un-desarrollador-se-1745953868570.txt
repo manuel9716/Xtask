@@ -1,0 +1,111 @@
+✅ Prompt Mejorado para Replit: Gestión de Nómina - Crear Nueva Nómina
+Actúa como un desarrollador senior especializado en arquitectura hexagonal y en interfaces reactivas. Dentro del módulo nómina, específicamente desde la pestaña Gestión de Nómina, implementa el flujo completo para la creación de una nueva nómina con base en el diccionario de datos del sistema XTask.
+
+🧩 Requerimientos funcionales
+1. Creación de una nueva nómina
+Botón + Nueva Nómina en la vista NominaDashboard.tsx
+
+Al hacer clic, abrir un modal o formulario en pantalla para crear una nueva nómina
+
+2. Selección de empleados
+Mostrar una lista paginada o con checkboxes de empleados (employees.contract_status = 'active')
+
+Mostrar nombre completo, departamento, posición y salario base (salary)
+
+Permitir seleccionar múltiples empleados para incluir en esta nómina
+
+3. Visualización de contrato y cálculo por empleado
+Mostrar los valores base: salary, deducciones estimadas
+
+Calcular automáticamente (en tiempo real) los siguientes campos para cada empleado seleccionado:
+
+Salario base (base_salary)
+
+Salario bruto (gross_salary = base + complementos si los hay)
+
+Retenciones (tax_withholding)
+
+Seguridad social (social_security)
+
+Otras deducciones (additional_deductions)
+
+Salario neto (net_salary)
+
+Mostrar total general de la nómina al pie del formulario
+
+4. Definición de período de pago
+Seleccionar:
+
+Fecha de inicio del período (period_start)
+
+Fecha de finalización del período (period_end)
+
+Fecha de pago (payment_date)
+
+Método de pago (payment_method)
+
+Estado inicial (status = 'pending')
+
+🗄️ Base de datos utilizada
+Tabla principal: payrolls
+
+
+Campo	Descripción
+employee_id	ID del empleado
+period_start	Inicio del período
+period_end	Fin del período
+base_salary	Salario base
+gross_salary	Salario bruto
+tax_withholding	Retención fiscal
+social_security	Aporte de seguridad social
+additional_deductions	Otras deducciones
+net_salary	Salario neto
+payment_date	Fecha de pago
+status	Estado del pago (pending, paid, etc)
+payment_method	Método de pago
+comments	Observaciones (opcional)
+Fuente de datos base: tabla employees
+
+🎨 Interfaz esperada (UI)
+Vista:
+src/modules/nomina/ui/views/NominaDashboard.tsx
+
+Componentes clave:
+
+NominaFormModal.tsx → formulario modal para crear nómina
+
+EmpleadoSelector.tsx → lista seleccionable de empleados
+
+ResumenNomina.tsx → tabla de totales y cálculos en tiempo real
+
+NominaResumenCard.tsx → ficha por empleado con desglose
+
+⚙️ Lógica esperada (application/domain)
+crearNomina.ts → crea una o varias entradas en la tabla payrolls
+
+calcularTotalesNomina.ts → calcula dinámicamente neto/bruto/deducciones por empleado
+
+listarEmpleadosActivos.ts → busca empleados activos
+
+listarNominasPorPeriodo.ts → permite consultar nóminas existentes por fecha
+
+🔁 Interacciones esperadas
+Al enviar el formulario:
+
+Se crea una entrada de nómina por cada empleado seleccionado en payrolls
+
+Se muestra un mensaje de éxito
+
+Se actualiza la lista de nóminas en la pantalla principal (useQuery o refetch)
+
+🧠 Validaciones necesarias
+No permitir crear una nómina sin empleados seleccionados
+
+Verificar que el rango de fechas no se solape con nóminas ya existentes
+
+Asegurar que los cálculos netos no sean negativos
+
+Requerir todos los campos de fechas y método de pago
+
+🚀 Resultado esperado
+Una funcionalidad intuitiva, fluida y completamente integrada que permita al administrador crear nóminas precisas, rápidas y con visualización en tiempo real de los costos, garantizando la integridad de la información financiera de la empresa.
