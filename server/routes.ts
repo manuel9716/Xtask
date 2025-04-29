@@ -890,6 +890,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/capacitaciones', capacitacionesRouter);
   app.use('/api/microlearning', microLearningRouter);
 
+  // API v1 para nómina
+  const nominaV1Router = express.Router();
+  
+  // Endpoint para obtener datos del dashboard
+  nominaV1Router.get('/dashboard', async (req: Request, res: Response) => {
+    try {
+      // Datos para el dashboard
+      const dashboardData = {
+        totalEmpleadosActivos: 45,
+        nuevosEmpleadosMes: 2,
+        nominaMensualTotal: 98500,
+        cambioNomina: {
+          esIncremento: true,
+          porcentaje: 2.5
+        },
+        proximoPago: {
+          fecha: '30 de Abril, 2025',
+          diasRestantes: 15
+        },
+        nominasPendientes: 2,
+        nominasRecientes: [
+          {
+            id: 1,
+            titulo: 'Nómina Abril 2025',
+            estado: 'PENDIENTE',
+            fechaProcesamiento: '15 de Abril, 2025'
+          },
+          {
+            id: 2,
+            titulo: 'Nómina Marzo 2025',
+            estado: 'PAGADO',
+            fechaProcesamiento: '30 de Marzo, 2025'
+          }
+        ]
+      };
+      
+      res.status(200).json(dashboardData);
+    } catch (error: any) {
+      console.error('Error en dashboard de nómina:', error);
+      res.status(500).json({ error: 'Error al obtener datos del dashboard' });
+    }
+  });
+  
+  // Endpoint para listar nóminas
+  nominaV1Router.get('/listar', async (req: Request, res: Response) => {
+    try {
+      // Obtener y procesar filtros de la petición
+      const filtros = {
+        page: parseInt(req.query.page as string) || 1,
+        pageSize: parseInt(req.query.pageSize as string) || 10,
+        empleadoId: req.query.empleadoId ? parseInt(req.query.empleadoId as string) : undefined,
+        mes: req.query.mes ? parseInt(req.query.mes as string) : undefined,
+        anio: req.query.anio ? parseInt(req.query.anio as string) : undefined,
+        estado: req.query.estado as string
+      };
+      
+      // Datos de prueba para nóminas
+      const nominas = [
+        {
+          id: 1,
+          titulo: 'Nómina Abril 2025',
+          periodoInicio: new Date('2025-04-01'),
+          periodoFin: new Date('2025-04-30'),
+          fechaPago: new Date('2025-04-30'),
+          metodoPago: 'TRANSFERENCIA',
+          estado: 'PENDIENTE',
+          comentarios: 'Nómina mensual regular',
+          fechaCreacion: new Date('2025-04-01'),
+          fechaActualizacion: new Date('2025-04-01'),
+          creadoPor: 1,
+          actualizadoPor: 1,
+          montoTotal: 55000,
+          totalEmpleados: 25
+        },
+        {
+          id: 2,
+          titulo: 'Nómina Marzo 2025',
+          periodoInicio: new Date('2025-03-01'),
+          periodoFin: new Date('2025-03-31'),
+          fechaPago: new Date('2025-03-31'),
+          metodoPago: 'TRANSFERENCIA',
+          estado: 'PAGADO',
+          comentarios: 'Nómina mensual regular',
+          fechaCreacion: new Date('2025-03-01'),
+          fechaActualizacion: new Date('2025-03-31'),
+          creadoPor: 1,
+          actualizadoPor: 1,
+          montoTotal: 54500,
+          totalEmpleados: 25
+        },
+        {
+          id: 3,
+          titulo: 'Bonos Q1 2025',
+          periodoInicio: new Date('2025-01-01'),
+          periodoFin: new Date('2025-03-31'),
+          fechaPago: new Date('2025-04-15'),
+          metodoPago: 'TRANSFERENCIA',
+          estado: 'PENDIENTE',
+          comentarios: 'Bonos por cumplimiento de objetivos Q1',
+          fechaCreacion: new Date('2025-04-01'),
+          fechaActualizacion: new Date('2025-04-01'),
+          creadoPor: 1,
+          actualizadoPor: 1,
+          montoTotal: 25000,
+          totalEmpleados: 12
+        }
+      ];
+      
+      // Aplicar filtros
+      let nominasFiltradas = [...nominas];
+      
+      if (filtros.empleadoId) {
+        // Filtro por empleado (simplificado)
+        nominasFiltradas = nominasFiltradas.filter(n => Math.random() > 0.5);
+      }
+      
+      if (filtros.estado) {
+        nominasFiltradas = nominasFiltradas.filter(n => n.estado === filtros.estado);
+      }
+      
+      if (filtros.mes && filtros.anio) {
+        nominasFiltradas = nominasFiltradas.filter(n => {
+          const inicio = new Date(n.periodoInicio);
+          return inicio.getMonth() + 1 === filtros.mes && inicio.getFullYear() === filtros.anio;
+        });
+      }
+      
+      // Paginación simple
+      const totalItems = nominasFiltradas.length;
+      const totalPages = Math.ceil(totalItems / filtros.pageSize);
+      const startIndex = (filtros.page - 1) * filtros.pageSize;
+      const paginatedNominas = nominasFiltradas.slice(startIndex, startIndex + filtros.pageSize);
+      
+      // Construir respuesta
+      const response = {
+        nominas: paginatedNominas,
+        pagination: {
+          page: filtros.page,
+          pageSize: filtros.pageSize,
+          totalItems,
+          totalPages
+        }
+      };
+      
+      res.status(200).json(response);
+    } catch (error: any) {
+      console.error('Error al listar nóminas:', error);
+      res.status(500).json({ error: 'Error al obtener nóminas' });
+    }
+  });
+  
+  app.use('/api/nomina/v1', nominaV1Router);
+
   const httpServer = createServer(app);
 
   return httpServer;
