@@ -10,14 +10,13 @@ import { TalentoHumanoDashboard } from "./views/TalentoHumanoDashboard";
 export const RecursosHumanosRoutes: React.FC = () => {
   return (
     <>
-      {/* Ruta principal del dashboard de Recursos Humanos */}
+      {/* Rutas principales para /recursos-humanos */}
       <Route path="/recursos-humanos">
         <MainLayout>
           <TalentoHumanoDashboard />
         </MainLayout>
       </Route>
       
-      {/* Otras rutas específicas se irán agregando a medida que los componentes estén listos */}
       <Route path="/recursos-humanos/empleados">
         <MainLayout>
           <TalentoHumanoDashboard />
@@ -49,6 +48,49 @@ export const RecursosHumanosRoutes: React.FC = () => {
       </Route>
       
       <Route path="/recursos-humanos/documentacion">
+        <MainLayout>
+          <TalentoHumanoDashboard />
+        </MainLayout>
+      </Route>
+      
+      {/* Rutas duplicadas para /human-resources para mantener compatibilidad con el sidebar */}
+      <Route path="/human-resources">
+        <MainLayout>
+          <TalentoHumanoDashboard />
+        </MainLayout>
+      </Route>
+      
+      <Route path="/human-resources/empleados">
+        <MainLayout>
+          <TalentoHumanoDashboard />
+        </MainLayout>
+      </Route>
+      
+      <Route path="/human-resources/evaluaciones">
+        <MainLayout>
+          <TalentoHumanoDashboard />
+        </MainLayout>
+      </Route>
+      
+      <Route path="/human-resources/capacitaciones">
+        <MainLayout>
+          <TalentoHumanoDashboard />
+        </MainLayout>
+      </Route>
+      
+      <Route path="/human-resources/nomina">
+        <MainLayout>
+          <TalentoHumanoDashboard />
+        </MainLayout>
+      </Route>
+      
+      <Route path="/human-resources/metricas">
+        <MainLayout>
+          <TalentoHumanoDashboard />
+        </MainLayout>
+      </Route>
+      
+      <Route path="/human-resources/documentacion">
         <MainLayout>
           <TalentoHumanoDashboard />
         </MainLayout>

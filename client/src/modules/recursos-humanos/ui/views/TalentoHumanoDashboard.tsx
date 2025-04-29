@@ -129,9 +129,12 @@ export const TalentoHumanoDashboard: React.FC = () => {
   // Obtener la ruta actual para manejar visualización condicional
   const [location] = useLocation();
   const path = location.split("/").pop();
+  const basePath = location.split("/")[1]; // Obtener "recursos-humanos" o "human-resources"
 
   // Si estamos en una subruta específica, mostrar componente correspondiente
-  if (location !== "/recursos-humanos" && path) {
+  if ((basePath === "recursos-humanos" || basePath === "human-resources") && 
+      path && 
+      (location !== "/recursos-humanos" && location !== "/human-resources")) {
     switch (path) {
       case "empleados":
         return <ModuloEmpleados />;
