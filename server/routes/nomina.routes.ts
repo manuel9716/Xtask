@@ -336,6 +336,8 @@ nominaRouter.post('/generar', async (req: Request, res: Response) => {
 // Crear una nueva nómina con múltiples empleados
 nominaRouter.post('/crear', async (req: Request, res: Response) => {
   try {
+    console.log('Recibiendo petición para crear nómina:', JSON.stringify(req.body));
+    
     const { 
       periodoInicio, 
       periodoFin, 
@@ -351,53 +353,103 @@ nominaRouter.post('/crear', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Datos incompletos o inválidos' });
     }
     
-    // Cálculo del monto total de la nómina
-    const montoTotal = empleados.reduce((total, emp) => total + parseFloat(emp.salarioNeto), 0);
+    // Log para depuración
+    console.log(`Procesando nómina con ${empleados.length} empleados`);
+    console.log('Primer empleado:', empleados[0]);
     
-    // Crear la cabecera de nómina
-    const [nuevaNomina] = await db.insert(nominas)
-      .values({
-        titulo,
-        periodoInicio: new Date(periodoInicio),
-        periodoFin: new Date(periodoFin),
-        fechaPago: new Date(fechaPago),
-        metodoPago,
-        estado: EstadoNomina.PENDIENTE,
-        comentarios,
-        fechaCreacion: new Date(),
-        fechaActualizacion: new Date(),
-        creadoPor: req.user?.id || 1, // Usamos el ID del usuario autenticado o un valor por defecto
-        montoTotal: montoTotal.toString()
-      })
-      .returning();
-    
-    // Crear los detalles por cada empleado
-    const detallesPromises = empleados.map(async (empleado) => {
-      const [detalle] = await db.insert(nominaDetalles)
+    try {
+      // Cálculo del monto total de la nómina (asegurarse de que el string se pueda parsear)
+      const montoTotal = empleados.reduce((total, emp) => {
+        const salarioNeto = typeof emp.salarioNeto === 'string' 
+          ? parseFloat(emp.salarioNeto) 
+          : emp.salarioNeto;
+        
+        // Si salarioNeto no es un número válido, devolvemos total sin cambios
+        if (isNaN(salarioNeto)) {
+          console.warn(`Salario neto no válido para empleado ${emp.id}:`, emp.salarioNeto);
+          return total;
+        }
+        
+        return total + salarioNeto;
+      }, 0);
+      
+      console.log('Monto total calculado:', montoTotal);
+      
+      // Crear la cabecera de nómina
+      const [nuevaNomina] = await db.insert(nominas)
         .values({
-          nominaId: nuevaNomina.id,
-          empleadoId: empleado.id,
-          salarioBase: empleado.salarioBase.toString(),
-          totalIngresos: empleado.totalIngresos.toString(),
-          totalDeducciones: empleado.totalDeducciones.toString(),
-          salarioNeto: empleado.salarioNeto.toString(),
-          detalleIngresos: JSON.stringify(empleado.ingresos || []),
-          detalleDeducciones: JSON.stringify(empleado.deducciones || []),
+          titulo,
+          periodoInicio: new Date(periodoInicio),
+          periodoFin: new Date(periodoFin),
+          fechaPago: new Date(fechaPago),
+          metodoPago,
           estado: EstadoNomina.PENDIENTE,
-          fechaGeneracion: new Date()
+          comentarios,
+          fechaCreacion: new Date(),
+          fechaActualizacion: new Date(),
+          creadoPor: req.user?.id || 1, // Usamos el ID del usuario autenticado o un valor por defecto
+          montoTotal: montoTotal.toString()
         })
         .returning();
-      return detalle;
-    });
-    
-    // Esperar a que se creen todos los detalles
-    const detallesNomina = await Promise.all(detallesPromises);
-    
-    // Retornar la nómina creada con sus detalles
-    return res.status(201).json({
-      ...nuevaNomina,
-      empleados: detallesNomina
-    });
+      
+      console.log('Cabecera de nómina creada:', nuevaNomina);
+      
+      // Crear los detalles por cada empleado
+      const detallesPromises = empleados.map(async (empleado) => {
+        // Convertir todos los valores a string para asegurar compatibilidad
+        const salarioBase = typeof empleado.salarioBase === 'string' 
+          ? empleado.salarioBase : empleado.salarioBase.toString();
+        
+        const totalIngresos = typeof empleado.totalIngresos === 'string' 
+          ? empleado.totalIngresos : empleado.totalIngresos.toString();
+          
+        const totalDeducciones = typeof empleado.totalDeducciones === 'string' 
+          ? empleado.totalDeducciones : empleado.totalDeducciones.toString();
+          
+        const salarioNeto = typeof empleado.salarioNeto === 'string' 
+          ? empleado.salarioNeto : empleado.salarioNeto.toString();
+        
+        // Asegurarse de que los detalles de ingresos y deducciones sean strings JSON
+        const detalleIngresos = typeof empleado.ingresos === 'string' 
+          ? empleado.ingresos : JSON.stringify(empleado.ingresos || []);
+          
+        const detalleDeducciones = typeof empleado.deducciones === 'string' 
+          ? empleado.deducciones : JSON.stringify(empleado.deducciones || []);
+        
+        console.log(`Creando detalle para empleado ID ${empleado.id}`);
+        
+        const [detalle] = await db.insert(nominaDetalles)
+          .values({
+            nominaId: nuevaNomina.id,
+            empleadoId: empleado.id,
+            salarioBase,
+            totalIngresos,
+            totalDeducciones,
+            salarioNeto,
+            detalleIngresos,
+            detalleDeducciones,
+            estado: EstadoNomina.PENDIENTE,
+            fechaGeneracion: new Date()
+          })
+          .returning();
+        return detalle;
+      });
+      
+      // Esperar a que se creen todos los detalles
+      const detallesNomina = await Promise.all(detallesPromises);
+      
+      console.log(`${detallesNomina.length} detalles de nómina creados`);
+      
+      // Retornar la nómina creada con sus detalles
+      return res.status(201).json({
+        ...nuevaNomina,
+        empleados: detallesNomina
+      });
+    } catch (dbError: any) {
+      console.error('Error en la operación de BD:', dbError);
+      console.error('Stack trace:', dbError.stack);
+      throw dbError; // Re-throw para el manejo global de errores
+    }
   } catch (error: any) {
     console.error('Error al crear nómina:', error);
     return res.status(500).json({ error: 'Error al crear la nómina', details: error.message });
