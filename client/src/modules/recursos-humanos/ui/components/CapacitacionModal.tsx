@@ -90,9 +90,15 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   const [empleadosSeleccionados, setEmpleadosSeleccionados] = useState<string[]>([]);
   
   // Consulta para obtener la lista de empleados
-  const { data: empleados } = useQuery({
-    queryKey: ['/api/recursos-humanos/empleados/activos'],
-    queryFn: () => empleadosApi.listarEmpleados({ estado: EstadoEmpleado.ACTIVO }),
+  const { data: empleados, isLoading: empleadosLoading } = useQuery({
+    queryKey: ['/api/nomina/empleados/listar'],
+    queryFn: async () => {
+      const response = await fetch('/api/nomina/empleados/listar');
+      if (!response.ok) {
+        throw new Error('Error al cargar empleados');
+      }
+      return response.json();
+    },
     enabled: open,
   });
   
