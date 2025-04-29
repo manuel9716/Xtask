@@ -174,27 +174,55 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   // Mutación para crear capacitación
   const crearCapacitacionMutation = useMutation({
     mutationFn: async (data: CrearCapacitacionDTO) => {
-      // Convertir fechas de string a Date para la API
-      const apiData = {
-        ...data,
-        fechaInicio: new Date(data.fechaInicio),
-        fechaFin: new Date(data.fechaFin)
-      };
-      
-      const response = await fetch('/api/capacitaciones', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(apiData),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error ? JSON.stringify(errorData.error) : 'Error al crear capacitación');
+      try {
+        // Es importante asegurarnos que fechaInicio y fechaFin sean objetos Date
+        // Las fechas vienen en formato YYYY-MM-DD del input type="date"
+        
+        // Es crucial asegurarnos que las fechas son válidas SIEMPRE
+        if (!data.fechaInicio || !data.fechaFin) {
+          throw new Error("Las fechas de inicio y fin son obligatorias");
+        }
+        
+        // Garantizar que las fechas se convierten correctamente a Date
+        let fechaInicio = new Date(data.fechaInicio);
+        let fechaFin = new Date(data.fechaFin);
+        
+        // Verificar que son fechas válidas
+        if (isNaN(fechaInicio.getTime()) || isNaN(fechaFin.getTime())) {
+          throw new Error("Las fechas proporcionadas no son válidas");
+        }
+        
+        // Preparamos el objeto para la API con las fechas correctas
+        const apiData = {
+          ...data,
+          fechaInicio,
+          fechaFin,
+          // Otros campos que deben ser strings específicos
+          duracionHoras: String(data.duracionHoras),
+          costo: String(data.costo || 0)
+        };
+        
+        console.log("Datos enviados a la API:", JSON.stringify(apiData));
+        
+        const response = await fetch('/api/capacitaciones', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(apiData),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Error de la API:", errorData);
+          throw new Error(errorData.error ? JSON.stringify(errorData.error) : 'Error al crear capacitación');
+        }
+        
+        return response.json();
+      } catch (error) {
+        console.error("Error al enviar datos de capacitación:", error);
+        throw error;
       }
-      
-      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -218,27 +246,49 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   // Mutación para editar capacitación
   const editarCapacitacionMutation = useMutation({
     mutationFn: async (data: ActualizarCapacitacionDTO) => {
-      // Convertir fechas de string a Date para la API
-      const apiData = {
-        ...data,
-        fechaInicio: new Date(data.fechaInicio),
-        fechaFin: new Date(data.fechaFin)
-      };
-      
-      const response = await fetch(`/api/capacitaciones/${data.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(apiData),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error ? JSON.stringify(errorData.error) : 'Error al actualizar capacitación');
+      try {
+        // Garantizar que las fechas son fechas válidas - manejando tipos correctamente
+        let fechaInicio: Date | undefined = undefined;
+        let fechaFin: Date | undefined = undefined;
+        
+        // Solo convertir si las fechas existen y son strings
+        if (data.fechaInicio && typeof data.fechaInicio === 'string') {
+          fechaInicio = new Date(data.fechaInicio);
+        }
+        
+        if (data.fechaFin && typeof data.fechaFin === 'string') {
+          fechaFin = new Date(data.fechaFin);
+        }
+        
+        // Convertir fechas de string a Date para la API
+        const apiData = {
+          ...data,
+          // Solo incluir las fechas si están definidas
+          ...(fechaInicio && { fechaInicio }),
+          ...(fechaFin && { fechaFin }),
+          // Asegurar formato correcto para estos campos
+          ...(data.duracionHoras !== undefined && { duracionHoras: String(data.duracionHoras) }),
+          ...(data.costo !== undefined && { costo: String(data.costo || 0) })
+        };
+        
+        const response = await fetch(`/api/capacitaciones/${data.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(apiData),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error ? JSON.stringify(errorData.error) : 'Error al actualizar capacitación');
+        }
+        
+        return response.json();
+      } catch (error) {
+        console.error("Error al actualizar capacitación:", error);
+        throw error;
       }
-      
-      return response.json();
     },
     onSuccess: () => {
       toast({
