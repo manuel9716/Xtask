@@ -15,6 +15,20 @@ export enum EstadoProyecto {
   ARCHIVADO = "ARCHIVADO"
 }
 
+export enum EstadoNomina {
+  PENDIENTE = "PENDIENTE",
+  PROCESANDO = "PROCESANDO",
+  PAGADO = "PAGADO",
+  CANCELADO = "CANCELADO"
+}
+
+export enum MetodoPago {
+  TRANSFERENCIA = "TRANSFERENCIA",
+  CHEQUE = "CHEQUE",
+  EFECTIVO = "EFECTIVO",
+  OTRO = "OTRO"
+}
+
 export enum ModalidadCapacitacion {
   PRESENCIAL = "PRESENCIAL",
   VIRTUAL = "VIRTUAL",
@@ -114,7 +128,42 @@ export const budgetExpenses = pgTable("budget_expenses", {
   metadata: text("metadata"), // JSON data serialized
 });
 
-// Nómina de empleados
+// ========== MÓDULO DE NÓMINA ==========
+
+// Tabla de nóminas grupales (cabecera)
+export const nominas = pgTable("nominas", {
+  id: serial("id").primaryKey(),
+  titulo: text("titulo"),
+  periodoInicio: timestamp("periodo_inicio").notNull(),
+  periodoFin: timestamp("periodo_fin").notNull(),
+  fechaPago: timestamp("fecha_pago").notNull(),
+  metodoPago: text("metodo_pago").notNull(),
+  estado: text("estado").notNull().default(EstadoNomina.PENDIENTE),
+  comentarios: text("comentarios"),
+  fechaCreacion: timestamp("fecha_creacion").defaultNow().notNull(),
+  fechaActualizacion: timestamp("fecha_actualizacion").defaultNow().notNull(),
+  creadoPor: integer("creado_por").references(() => users.id).notNull(),
+  actualizadoPor: integer("actualizado_por").references(() => users.id),
+  montoTotal: decimal("monto_total", { precision: 12, scale: 2 }).notNull(),
+});
+
+// Detalle de nómina por empleado
+export const nominaDetalles = pgTable("nomina_detalles", {
+  id: serial("id").primaryKey(),
+  nominaId: integer("nomina_id").references(() => nominas.id).notNull(),
+  empleadoId: integer("empleado_id").references(() => employees.id).notNull(),
+  salarioBase: decimal("salario_base", { precision: 10, scale: 2 }).notNull(),
+  totalIngresos: decimal("total_ingresos", { precision: 10, scale: 2 }).notNull(),
+  totalDeducciones: decimal("total_deducciones", { precision: 10, scale: 2 }).notNull(),
+  salarioNeto: decimal("salario_neto", { precision: 10, scale: 2 }).notNull(),
+  detalleIngresos: text("detalle_ingresos"), // JSON con descripción y montos
+  detalleDeducciones: text("detalle_deducciones"), // JSON con descripción y montos
+  estado: text("estado").notNull().default(EstadoNomina.PENDIENTE),
+  pdfUrl: text("pdf_url"), // URL del desprendible generado
+  fechaGeneracion: timestamp("fecha_generacion").defaultNow().notNull(),
+});
+
+// Dejamos la tabla original de payrolls por compatibilidad con código existente
 export const payrolls = pgTable("payrolls", {
   id: serial("id").primaryKey(),
   employeeId: integer("employee_id").references(() => employees.id).notNull(),
@@ -448,6 +497,50 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true,
 export const insertInvoiceItemSchema = createInsertSchema(invoiceItems).omit({ id: true, createdAt: true });
 export const insertFinancialCategorySchema = createInsertSchema(financialCategories).omit({ id: true, createdAt: true });
 export const insertFinancialAuditSchema = createInsertSchema(financialAudits).omit({ id: true, performedAt: true });
+
+// Esquemas Zod para el módulo de Nómina
+export const insertNominaSchema = createInsertSchema(nominas).omit({ 
+  id: true, 
+  fechaCreacion: true, 
+  fechaActualizacion: true, 
+  actualizadoPor: true
+}).extend({
+  periodoInicio: z.preprocess(
+    (arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+      return undefined;
+    },
+    z.date({
+      required_error: "La fecha de inicio del período es requerida",
+      invalid_type_error: "La fecha de inicio debe ser una fecha válida",
+    })
+  ),
+  periodoFin: z.preprocess(
+    (arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+      return undefined;
+    },
+    z.date({
+      required_error: "La fecha de fin del período es requerida",
+      invalid_type_error: "La fecha de fin debe ser una fecha válida",
+    })
+  ),
+  fechaPago: z.preprocess(
+    (arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+      return undefined;
+    },
+    z.date({
+      required_error: "La fecha de pago es requerida",
+      invalid_type_error: "La fecha de pago debe ser una fecha válida",
+    })
+  ),
+});
+
+export const insertNominaDetalleSchema = createInsertSchema(nominaDetalles).omit({ 
+  id: true, 
+  fechaGeneracion: true
+});
 
 // Esquemas Zod para módulo de Recursos Humanos - Evaluaciones y Capacitaciones
 export const insertEvaluacionSchema = createInsertSchema(evaluaciones).omit({ id: true, createdAt: true, updatedAt: true });
