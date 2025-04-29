@@ -14,6 +14,7 @@ import Tasks from "@/pages/tasks";
 import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import NominaDashboard from "@/pages/nomina-dashboard";
+import CapacitacionesPage from "@/pages/capacitaciones";
 import { MainLayout } from "@/layouts/main-layout";
 import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
@@ -39,7 +40,11 @@ function Router() {
           <Finances />
         </MainLayout>
       </Route>
-      {/* La ruta /human-resources ahora se maneja en RecursosHumanosRoutes */}
+      <Route path="/human-resources">
+        <MainLayout>
+          <SimpleHumanResources />
+        </MainLayout>
+      </Route>
       <Route path="/suppliers">
         <MainLayout>
           <Suppliers />
@@ -66,6 +71,11 @@ function Router() {
         <MainLayout>
           <NominaDashboard />
         </MainLayout>
+      </Route>
+      
+      {/* Ruta directa a Capacitaciones */}
+      <Route path="/capacitaciones">
+        <CapacitacionesPage />
       </Route>
       
       {/* Rutas de los módulos específicos */}

@@ -268,7 +268,7 @@ export const TalentoHumanoDashboard: React.FC = () => {
               de los empleados.
             </p>
             <Button asChild variant="outline" className="w-full">
-              <Link href="/recursos-humanos/capacitaciones">
+              <Link href="/capacitaciones">
                 Ver Capacitaciones
               </Link>
             </Button>

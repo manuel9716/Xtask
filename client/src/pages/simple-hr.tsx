@@ -87,7 +87,7 @@ export default function SimpleHumanResources() {
               </Button>
               
               <Button asChild variant="outline" className="justify-start">
-                <Link href="/recursos-humanos/capacitaciones">
+                <Link href="/capacitaciones">
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Capacitaciones
                 </Link>
