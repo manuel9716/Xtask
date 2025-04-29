@@ -443,8 +443,8 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
                         <SelectContent>
                           <SelectItem value={ModalidadCapacitacion.PRESENCIAL}>Presencial</SelectItem>
                           <SelectItem value={ModalidadCapacitacion.VIRTUAL}>Virtual</SelectItem>
-                          <SelectItem value={ModalidadCapacitacion.HIBRIDA}>Híbrida</SelectItem>
-                          <SelectItem value={ModalidadCapacitacion.AUTOAPRENDIZAJE}>Autoaprendizaje</SelectItem>
+                          <SelectItem value={ModalidadCapacitacion.MIXTA}>Mixta/Híbrida</SelectItem>
+                          <SelectItem value={ModalidadCapacitacion.AUTOESTUDIO}>Autoestudio</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

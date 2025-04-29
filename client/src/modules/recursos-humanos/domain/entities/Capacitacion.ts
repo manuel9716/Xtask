@@ -137,13 +137,12 @@ export const ESTADOS_CAPACITACION_LABELS: Record<EstadoCapacitacion, string> = {
  * Mapeo de tipos de capacitación para mostrar en la interfaz
  */
 export const TIPOS_CAPACITACION_LABELS: Record<TipoCapacitacion, string> = {
+  [TipoCapacitacion.INDUCCION]: 'Inducción',
   [TipoCapacitacion.TECNICA]: 'Técnica',
   [TipoCapacitacion.HABILIDADES_BLANDAS]: 'Habilidades Blandas',
-  [TipoCapacitacion.SEGURIDAD]: 'Seguridad',
-  [TipoCapacitacion.LEGAL]: 'Legal/Normativa',
-  [TipoCapacitacion.TECNOLOGIA]: 'Tecnología',
   [TipoCapacitacion.LIDERAZGO]: 'Liderazgo',
-  [TipoCapacitacion.ONBOARDING]: 'Onboarding'
+  [TipoCapacitacion.NORMATIVA]: 'Normativa/Compliance',
+  [TipoCapacitacion.SEGURIDAD]: 'Seguridad'
 };
 
 /**
@@ -152,6 +151,6 @@ export const TIPOS_CAPACITACION_LABELS: Record<TipoCapacitacion, string> = {
 export const MODALIDADES_CAPACITACION_LABELS: Record<ModalidadCapacitacion, string> = {
   [ModalidadCapacitacion.PRESENCIAL]: 'Presencial',
   [ModalidadCapacitacion.VIRTUAL]: 'Virtual',
-  [ModalidadCapacitacion.HIBRIDA]: 'Híbrida',
-  [ModalidadCapacitacion.AUTOAPRENDIZAJE]: 'Autoaprendizaje'
+  [ModalidadCapacitacion.MIXTA]: 'Mixta/Híbrida',
+  [ModalidadCapacitacion.AUTOESTUDIO]: 'Autoestudio'
 };
