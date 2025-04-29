@@ -314,8 +314,9 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
     const capacitacionData = {
       ...data,
       empleadosIds: data.empleadosIds?.map(id => Number(id)) || [],
-      fechaInicio: data.fechaInicio, // String en formato YYYY-MM-DD
-      fechaFin: data.fechaFin, // String en formato YYYY-MM-DD
+      // Convertir a objeto Date para asegurar formato correcto para PostgreSQL
+      fechaInicio: new Date(data.fechaInicio),
+      fechaFin: new Date(data.fechaFin),
       responsableId: 1, // Usando el ID 1 como default (admin)
       tipo: data.tipo as TipoCapacitacion,
       modalidad: data.modalidad as ModalidadCapacitacion,
@@ -323,6 +324,9 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
       duracionHoras: String(data.duracionHoras), // Convertir a string
       costo: String(data.costo) // Convertir a string
     };
+    
+    // Debug para verificar el formato de las fechas
+    console.log("Datos enviados a la API:", JSON.stringify(capacitacionData));
     
     if (esEdicion) {
       editarCapacitacionMutation.mutate({

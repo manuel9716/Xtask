@@ -456,12 +456,27 @@ export const insertEvaluacionSchema = createInsertSchema(evaluaciones).omit({ id
 export const insertCapacitacionSchema = createInsertSchema(capacitaciones)
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
-    // Procesar fechaInicio como string ISO y convertir a Date
-    fechaInicio: z.string()
-      .transform((val) => new Date(val)),
-    // Procesar fechaFin como string ISO y convertir a Date
-    fechaFin: z.string()
-      .transform((val) => new Date(val))
+    // Para que funcione con los strings ISO que manda el frontend
+    fechaInicio: z.preprocess(
+      (arg) => {
+        if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+        return undefined;
+      },
+      z.date({
+        required_error: "La fecha de inicio es requerida",
+        invalid_type_error: "La fecha de inicio debe ser una fecha válida",
+      })
+    ),
+    fechaFin: z.preprocess(
+      (arg) => {
+        if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+        return undefined;
+      },
+      z.date({
+        required_error: "La fecha de fin es requerida",
+        invalid_type_error: "La fecha de fin debe ser una fecha válida",
+      })
+    )
   });
 
 export const insertEmpleadoCapacitacionSchema = createInsertSchema(empleadoCapacitaciones).omit({ id: true, fechaInscripcion: true });
