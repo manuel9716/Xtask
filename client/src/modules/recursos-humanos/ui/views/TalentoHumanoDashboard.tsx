@@ -1,5 +1,5 @@
 /**
- * Vista TalentoHumanoDashboard (Versión Provisional)
+ * Vista TalentoHumanoDashboard
  * Pantalla principal del módulo de Talento Humano que integra todas las funcionalidades
  * de gestión de empleados, evaluaciones, capacitaciones y nóminas.
  */
@@ -32,7 +32,13 @@ import {
 // Componentes del módulo
 import { KpiCard } from "../components/KpiCard";
 
-// Componente para vistas bajo construcción
+// Importamos los componentes reales implementados anteriormente
+import { ListaEmpleados } from "./ListaEmpleados";
+import { ListaEvaluaciones } from "./ListaEvaluaciones";
+import { ListaCapacitaciones } from "./ListaCapacitaciones";
+import { ListaNominas } from "./ListaNominas";
+
+// Componente para vistas bajo construcción (lo mantenemos para lo que aún no está implementado)
 const ModuloEnConstruccion: React.FC<{
   title: string;
   description: string;
@@ -65,46 +71,24 @@ const ModuloEnConstruccion: React.FC<{
   );
 };
 
+// Reemplazamos los módulos de construcción por los componentes reales
 export const ModuloEmpleados: React.FC = () => {
-  return (
-    <ModuloEnConstruccion
-      title="Gestión de Empleados"
-      description="Este módulo para gestionar la información de los empleados está en desarrollo. Pronto estará disponible con todas las funcionalidades."
-      icon={<Users className="h-12 w-12 text-primary" />}
-    />
-  );
+  return <ListaEmpleados />;
 };
 
 export const ModuloEvaluaciones: React.FC = () => {
-  return (
-    <ModuloEnConstruccion
-      title="Evaluaciones de Desempeño"
-      description="El módulo de evaluaciones de desempeño está en construcción. Aquí podrás crear y administrar las evaluaciones de tus empleados."
-      icon={<ClipboardCheck className="h-12 w-12 text-success" />}
-    />
-  );
+  return <ListaEvaluaciones />;
 };
 
 export const ModuloCapacitaciones: React.FC = () => {
-  return (
-    <ModuloEnConstruccion
-      title="Capacitaciones"
-      description="El módulo de capacitaciones está siendo implementado. Pronto podrás gestionar todos los programas de formación de tu empresa."
-      icon={<GraduationCap className="h-12 w-12 text-warning" />}
-    />
-  );
+  return <ListaCapacitaciones />;
 };
 
 export const ModuloNomina: React.FC = () => {
-  return (
-    <ModuloEnConstruccion
-      title="Nómina"
-      description="El módulo de nómina está siendo implementado. Aquí podrás gestionar todos los pagos y compensaciones de tus empleados."
-      icon={<DollarSign className="h-12 w-12 text-info" />}
-    />
-  );
+  return <ListaNominas />;
 };
 
+// Estos componentes aún usan el mensaje de "en construcción"
 export const ModuloMetricas: React.FC = () => {
   return (
     <ModuloEnConstruccion

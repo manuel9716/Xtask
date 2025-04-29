@@ -39,9 +39,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Empleado } from "../../domain/entities/Empleado";
-import { Evaluacion, TipoEvaluacion, CrearEvaluacionDTO, ActualizarEvaluacionDTO } from "../../domain/entities/Evaluacion";
+import { Evaluacion, CrearEvaluacionDTO, ActualizarEvaluacionDTO } from "../../domain/entities/Evaluacion";
+import { TipoEvaluacion } from "@shared/schema";
 import { EmpleadosApi } from "../../infrastructure/api/empleadosApi";
-import { EvaluacionesApi } from "../../infrastructure/api/evaluacionesApi";
+import * as evaluacionesApi from "../../infrastructure/api/evaluacionesApi";
 import { ListarEmpleadosUseCase } from "../../application/useCases/empleados/listarEmpleados";
 import { CrearEvaluacionUseCase } from "../../application/useCases/evaluaciones/crearEvaluacion";
 import { EditarEvaluacionUseCase } from "../../application/useCases/evaluaciones/editarEvaluacion";
@@ -89,7 +90,7 @@ export const EvaluacionModal: React.FC<EvaluacionModalProps> = ({
 }) => {
   const { toast } = useToast();
   const empleadosApi = new EmpleadosApi();
-  const evaluacionesApi = new EvaluacionesApi();
+  // Ya no necesitamos instanciar la API ya que importamos las funciones directamente
   const listarEmpleadosUseCase = new ListarEmpleadosUseCase(empleadosApi);
   const crearEvaluacionUseCase = new CrearEvaluacionUseCase(evaluacionesApi);
   const editarEvaluacionUseCase = new EditarEvaluacionUseCase(evaluacionesApi);

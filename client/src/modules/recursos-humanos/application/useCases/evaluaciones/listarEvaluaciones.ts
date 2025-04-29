@@ -84,7 +84,7 @@ export function useListarEvaluaciones() {
       }
 
       // Aplicar filtros adicionales en memoria (filtros complejos)
-      const filtered = evaluaciones.filter(eval => {
+      const filtered = evaluaciones.filter(evaluacion => {
         // Filtrado en cliente si es necesario para búsquedas más complejas
         // que no se puedan manejar fácilmente en el backend
         return true;

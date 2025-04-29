@@ -3,7 +3,16 @@
  * @description Define la estructura de datos de evaluaciones de desempeño
  */
 
-import { EstadoEvaluacion, TipoEvaluacion } from '@shared/schema';
+import { TipoEvaluacion } from '@shared/schema';
+
+// Re-exportamos para uso en este módulo
+export enum EstadoEvaluacion {
+  PENDIENTE = "PENDIENTE",
+  EN_PROGRESO = "EN_PROGRESO",
+  COMPLETADA = "COMPLETADA",
+  REVISIÓN = "REVISIÓN",
+  ARCHIVADA = "ARCHIVADA"
+}
 
 /**
  * Entidad Evaluación de desempeño
@@ -126,22 +135,19 @@ export const CRITERIOS_EVALUACION = {
  */
 export const ESTADOS_EVALUACION_LABELS: Record<EstadoEvaluacion, string> = {
   [EstadoEvaluacion.PENDIENTE]: 'Pendiente',
-  [EstadoEvaluacion.EN_CURSO]: 'En Curso',
+  [EstadoEvaluacion.EN_PROGRESO]: 'En Progreso',
   [EstadoEvaluacion.COMPLETADA]: 'Completada',
-  [EstadoEvaluacion.REVISADA]: 'Revisada',
-  [EstadoEvaluacion.ARCHIVADA]: 'Archivada',
-  [EstadoEvaluacion.CANCELADA]: 'Cancelada'
+  [EstadoEvaluacion.REVISIÓN]: 'Revisión',
+  [EstadoEvaluacion.ARCHIVADA]: 'Archivada'
 };
 
 /**
  * Mapeo de tipos de evaluación para mostrar en la interfaz
  */
 export const TIPOS_EVALUACION_LABELS: Record<TipoEvaluacion, string> = {
-  [TipoEvaluacion.PERIODO]: 'Evaluación de Periodo',
+  [TipoEvaluacion.DESEMPEÑO]: 'Evaluación de Desempeño',
+  [TipoEvaluacion.PERIODO_PRUEBA]: 'Evaluación de Periodo de Prueba',
   [TipoEvaluacion.OBJETIVOS]: 'Evaluación por Objetivos',
-  [TipoEvaluacion.DESEMPENO]: 'Evaluación de Desempeño',
   [TipoEvaluacion.COMPETENCIAS]: 'Evaluación de Competencias',
-  [TipoEvaluacion.PROYECTO]: 'Evaluación de Proyecto',
-  [TipoEvaluacion.INICIAL]: 'Evaluación Inicial',
-  [TipoEvaluacion.ANUAL]: 'Evaluación Anual'
+  [TipoEvaluacion.ASCENSO]: 'Evaluación para Ascenso'
 };

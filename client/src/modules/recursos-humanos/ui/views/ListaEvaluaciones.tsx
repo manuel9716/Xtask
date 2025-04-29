@@ -51,9 +51,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
-import { Evaluacion, TipoEvaluacion } from "../../domain/entities/Evaluacion";
-import { EvaluacionesApi } from "../../infrastructure/api/evaluacionesApi";
-import { ListarEvaluacionesUseCase } from "../../application/useCases/evaluaciones/listarEvaluaciones";
+import { Evaluacion, TIPOS_EVALUACION_LABELS } from "../../domain/entities/Evaluacion";
+import { TipoEvaluacion } from "@shared/schema";
+import * as evaluacionesApi from "../../infrastructure/api/evaluacionesApi";
+import { useListarEvaluaciones } from "../../application/useCases/evaluaciones/listarEvaluaciones";
 import { EliminarEvaluacionUseCase } from "../../application/useCases/evaluaciones/eliminarEvaluacion";
 import { EvaluacionModal } from "../components/EvaluacionModal";
 import {
@@ -80,9 +81,17 @@ const PAGE_SIZE = 10;
 
 export const ListaEvaluaciones: React.FC = () => {
   const { toast } = useToast();
-  const evaluacionesApi = new EvaluacionesApi();
-  const listarEvaluacionesUseCase = new ListarEvaluacionesUseCase(evaluacionesApi);
-  const eliminarEvaluacionUseCase = new EliminarEvaluacionUseCase(evaluacionesApi);
+  // Usando el hook personalizado para listar evaluaciones
+  const { 
+    evaluaciones: resultadoEvaluaciones, 
+    isLoading, 
+    isError,
+    error,
+    refrescarDatos: refetch 
+  } = useListarEvaluaciones();
+  
+  // Para la eliminación usamos la API directamente
+  const eliminarEvaluacion = evaluacionesApi.eliminarEvaluacion;
   
   // Estados
   const [pagina, setPagina] = useState(1);
@@ -93,20 +102,11 @@ export const ListaEvaluaciones: React.FC = () => {
   const [evaluacionEditar, setEvaluacionEditar] = useState<Evaluacion | null>(null);
   const [busqueda, setBusqueda] = useState("");
   
-  // Consulta para obtener evaluaciones
-  const { 
-    data: resultadoEvaluaciones, 
-    isLoading, 
-    isError,
-    refetch 
-  } = useQuery({
-    queryKey: ['/api/recursos-humanos/evaluaciones', pagina, filtrosAplicados],
-    queryFn: () => listarEvaluacionesUseCase.execute(filtrosAplicados, { page: pagina, pageSize: PAGE_SIZE }),
-  });
+  // Ya no necesitamos esta consulta ya que usamos useListarEvaluaciones arriba
   
   // Mutación para eliminar evaluación
   const eliminarMutation = useMutation({
-    mutationFn: (id: number) => eliminarEvaluacionUseCase.execute(id),
+    mutationFn: (id: number) => eliminarEvaluacion(id),
     onSuccess: () => {
       toast({
         title: "Evaluación eliminada",
@@ -170,14 +170,16 @@ export const ListaEvaluaciones: React.FC = () => {
   // Obtener badge para tipo de evaluación
   const getBadgeTipoEvaluacion = (tipo: string) => {
     switch (tipo) {
-      case TipoEvaluacion.RENDIMIENTO:
-        return <Badge className="bg-blue-500 hover:bg-blue-500">Rendimiento</Badge>;
+      case TipoEvaluacion.DESEMPEÑO:
+        return <Badge className="bg-blue-500 hover:bg-blue-500">Desempeño</Badge>;
       case TipoEvaluacion.OBJETIVOS:
         return <Badge className="bg-green-500 hover:bg-green-500">Objetivos</Badge>;
       case TipoEvaluacion.COMPETENCIAS:
         return <Badge className="bg-purple-500 hover:bg-purple-500">Competencias</Badge>;
       case TipoEvaluacion.PERIODO_PRUEBA:
         return <Badge className="bg-amber-500 hover:bg-amber-500">Período de Prueba</Badge>;
+      case TipoEvaluacion.ASCENSO:
+        return <Badge className="bg-indigo-500 hover:bg-indigo-500">Ascenso</Badge>;
       default:
         return <Badge variant="outline">{tipo}</Badge>;
     }
@@ -339,7 +341,7 @@ export const ListaEvaluaciones: React.FC = () => {
           renderizarEsqueletos()
         ) : isError ? (
           renderizarError()
-        ) : resultadoEvaluaciones?.data.length === 0 ? (
+        ) : resultadoEvaluaciones?.length === 0 ? (
           renderizarSinResultados()
         ) : (
           <Card>
@@ -356,7 +358,7 @@ export const ListaEvaluaciones: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {resultadoEvaluaciones?.data.map((evaluacion) => (
+                  {resultadoEvaluaciones?.map((evaluacion) => (
                     <TableRow key={evaluacion.id}>
                       <TableCell className="font-medium">{evaluacion.titulo}</TableCell>
                       <TableCell>
@@ -399,57 +401,30 @@ export const ListaEvaluaciones: React.FC = () => {
               </Table>
             </CardContent>
             
-            {/* Paginación */}
-            {resultadoEvaluaciones && resultadoEvaluaciones.totalPages > 1 && (
-              <CardFooter className="flex justify-center py-4">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => setPagina(p => Math.max(1, p - 1))}
-                        aria-disabled={pagina === 1}
-                        className={pagina === 1 ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                    
-                    {Array.from({ length: resultadoEvaluaciones.totalPages }, (_, i) => i + 1).map(p => {
-                      // Mostrar primera, última y páginas cercanas a la actual
-                      if (p === 1 || p === resultadoEvaluaciones.totalPages || (p >= pagina - 1 && p <= pagina + 1)) {
-                        return (
-                          <PaginationItem key={p}>
-                            <PaginationLink 
-                              isActive={p === pagina}
-                              onClick={() => setPagina(p)}
-                            >
-                              {p}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      }
-                      
-                      // Mostrar puntos suspensivos para páginas omitidas
-                      if (p === 2 || p === resultadoEvaluaciones.totalPages - 1) {
-                        return (
-                          <PaginationItem key={p}>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        );
-                      }
-                      
-                      return null;
-                    })}
-                    
-                    <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => setPagina(p => Math.min(resultadoEvaluaciones.totalPages, p + 1))}
-                        aria-disabled={pagina === resultadoEvaluaciones.totalPages}
-                        className={pagina === resultadoEvaluaciones.totalPages ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </CardFooter>
-            )}
+            {/* Paginación básica (mientras no tengamos totalPages) */}
+            <CardFooter className="flex justify-center py-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setPagina(p => Math.max(1, p - 1))}
+                      aria-disabled={pagina === 1}
+                      className={pagina === 1 ? "pointer-events-none opacity-50" : ""}
+                    />
+                  </PaginationItem>
+                  
+                  <PaginationItem>
+                    <PaginationLink isActive={true}>{pagina}</PaginationLink>
+                  </PaginationItem>
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setPagina(p => p + 1)}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </CardFooter>
           </Card>
         )}
       </div>
@@ -479,10 +454,11 @@ export const ListaEvaluaciones: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value={TipoEvaluacion.RENDIMIENTO}>Rendimiento</SelectItem>
+                  <SelectItem value={TipoEvaluacion.DESEMPEÑO}>Desempeño</SelectItem>
                   <SelectItem value={TipoEvaluacion.OBJETIVOS}>Objetivos</SelectItem>
                   <SelectItem value={TipoEvaluacion.COMPETENCIAS}>Competencias</SelectItem>
                   <SelectItem value={TipoEvaluacion.PERIODO_PRUEBA}>Período de Prueba</SelectItem>
+                  <SelectItem value={TipoEvaluacion.ASCENSO}>Ascenso</SelectItem>
                 </SelectContent>
               </Select>
             </div>
