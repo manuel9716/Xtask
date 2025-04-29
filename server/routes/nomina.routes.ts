@@ -334,7 +334,7 @@ nominaRouter.post('/generar', async (req: Request, res: Response) => {
 });
 
 // Crear una nueva nómina con múltiples empleados
-nominaRouter.post('/crear', async (req: Request, res: Response) => {
+nominaRouter.post('/procesarNomina', async (req: Request, res: Response) => {
   try {
     console.log('Recibiendo petición para crear nómina:', JSON.stringify(req.body));
     

@@ -72,7 +72,7 @@ export function useCrearNomina() {
       
       console.log('Enviando payload:', payload);
       
-      const response = await fetch('/api/nomina/crear', {
+      const response = await fetch('/api/nomina/procesarNomina', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
