@@ -84,6 +84,14 @@ nominaRouter.get('/empleados/listar', async (req: Request, res: Response) => {
     // Ejecutar la consulta con los filtros
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     
+    // Log para depuración
+    console.log("Filtros aplicados:", {
+      search,
+      department,
+      contractStatus,
+      whereClause
+    });
+
     // Obtener empleados filtrados
     const empleadosFiltrados = await db
       .select()
@@ -91,6 +99,9 @@ nominaRouter.get('/empleados/listar', async (req: Request, res: Response) => {
       .where(whereClause)
       .limit(pageSize)
       .offset(offset);
+    
+    // Log para depuración
+    console.log(`Empleados encontrados: ${empleadosFiltrados.length}`);
     
     // Obtener conteo total para la paginación
     const [totalCount] = await db

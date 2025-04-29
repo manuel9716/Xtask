@@ -21,7 +21,7 @@ interface EmpleadosParams {
  * 
  * Por defecto, trae solo empleados activos
  */
-export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize: 100, contractStatus: 'ACTIVO' }) {
+export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize: 100, contractStatus: 'active' }) {
   console.log('Enviando filtros:', params);
   
   return useQuery<EmpleadosResponse>({
