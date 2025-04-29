@@ -39,13 +39,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Empleado } from "../../domain/entities/Empleado";
-import { Evaluacion, CrearEvaluacionDTO, ActualizarEvaluacionDTO } from "../../domain/entities/Evaluacion";
+import { Evaluacion } from "../../domain/entities/Evaluacion";
 import { TipoEvaluacion } from "@shared/schema";
-import { EmpleadosApi } from "../../infrastructure/api/empleadosApi";
-import * as evaluacionesApi from "../../infrastructure/api/evaluacionesApi";
-import { ListarEmpleadosUseCase } from "../../application/useCases/empleados/listarEmpleados";
-import { CrearEvaluacionUseCase } from "../../application/useCases/evaluaciones/crearEvaluacion";
-import { EditarEvaluacionUseCase } from "../../application/useCases/evaluaciones/editarEvaluacion";
 import { RefreshCw } from "lucide-react";
 
 // Esquema de validación con zod
@@ -89,11 +84,6 @@ export const EvaluacionModal: React.FC<EvaluacionModalProps> = ({
   onSuccess,
 }) => {
   const { toast } = useToast();
-  const empleadosApi = new EmpleadosApi();
-  // Ya no necesitamos instanciar la API ya que importamos las funciones directamente
-  const listarEmpleadosUseCase = new ListarEmpleadosUseCase(empleadosApi);
-  const crearEvaluacionUseCase = new CrearEvaluacionUseCase(evaluacionesApi);
-  const editarEvaluacionUseCase = new EditarEvaluacionUseCase(evaluacionesApi);
   
   const esEdicion = !!evaluacion;
   
@@ -119,8 +109,15 @@ export const EvaluacionModal: React.FC<EvaluacionModalProps> = ({
   
   // Consulta para obtener la lista de empleados
   const { data: empleados } = useQuery({
-    queryKey: ['/api/recursos-humanos/empleados/activos'],
-    queryFn: () => listarEmpleadosUseCase.execute({ estado: 'ACTIVO' }),
+    queryKey: ['/api/empleados/activos'],
+    queryFn: async () => {
+      // Query a la API de empleados
+      const response = await fetch('/api/empleados?estado=ACTIVO');
+      if (!response.ok) {
+        throw new Error('Error al obtener empleados');
+      }
+      return await response.json();
+    },
     enabled: open,
   });
   
@@ -180,7 +177,22 @@ export const EvaluacionModal: React.FC<EvaluacionModalProps> = ({
   
   // Mutación para crear evaluación
   const crearEvaluacionMutation = useMutation({
-    mutationFn: (data: CrearEvaluacionDTO) => crearEvaluacionUseCase.execute(data),
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/recursos-humanos/evaluaciones', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear evaluación');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Evaluación creada",
@@ -201,7 +213,22 @@ export const EvaluacionModal: React.FC<EvaluacionModalProps> = ({
   
   // Mutación para editar evaluación
   const editarEvaluacionMutation = useMutation({
-    mutationFn: (data: ActualizarEvaluacionDTO) => editarEvaluacionUseCase.execute(data),
+    mutationFn: async (data: any) => {
+      const response = await fetch(`/api/recursos-humanos/evaluaciones/${data.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar evaluación');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Evaluación actualizada",
@@ -235,7 +262,7 @@ export const EvaluacionModal: React.FC<EvaluacionModalProps> = ({
         id: evaluacion.id,
       });
     } else {
-      crearEvaluacionMutation.mutate(evaluacionData as CrearEvaluacionDTO);
+      crearEvaluacionMutation.mutate(evaluacionData);
     }
   };
   

@@ -47,8 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 import { EmpleadoCard } from "../components/EmpleadoCard";
 import { EmpleadosApi } from "../../infrastructure/api/empleadosApi";
 import { Empleado, EstadoEmpleado, FiltrosEmpleadoRRHH } from "../../domain/entities/Empleado";
-import { ListarEmpleadosUseCase } from "../../application/useCases/empleados/listarEmpleados";
-import { EliminarEmpleadoUseCase } from "../../application/useCases/empleados/eliminarEmpleado";
+// Ya no necesitamos importar EliminarEmpleadoUseCase
 import { 
   Plus, 
   Search, 
@@ -66,9 +65,8 @@ const PAGE_SIZE = 10;
 export const ListaEmpleados: React.FC = () => {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
+  // Creamos una instancia del API
   const empleadosApi = new EmpleadosApi();
-  const listarEmpleadosUseCase = new ListarEmpleadosUseCase(empleadosApi);
-  const eliminarEmpleadoUseCase = new EliminarEmpleadoUseCase(empleadosApi);
   
   // Estados
   const [pagina, setPagina] = useState(1);
@@ -87,12 +85,12 @@ export const ListaEmpleados: React.FC = () => {
     refetch 
   } = useQuery({
     queryKey: ['/api/recursos-humanos/empleados', pagina, filtrosAplicados],
-    queryFn: () => listarEmpleadosUseCase.execute(filtrosAplicados, { page: pagina, pageSize: PAGE_SIZE }),
+    queryFn: () => empleadosApi.listar(filtrosAplicados, { page: pagina, pageSize: PAGE_SIZE }),
   });
 
   // Mutación para eliminar empleado
   const eliminarMutation = useMutation({
-    mutationFn: (id: number) => eliminarEmpleadoUseCase.execute(id, true),
+    mutationFn: (id: number) => empleadosApi.eliminar(id, true),
     onSuccess: () => {
       toast({
         title: "Empleado eliminado",

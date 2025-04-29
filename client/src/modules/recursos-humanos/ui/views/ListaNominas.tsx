@@ -52,10 +52,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 
-import { Nomina, EstadoNomina } from "../../domain/entities/Nomina";
-import { NominasApi } from "../../infrastructure/api/nominasApi";
-import { ListarNominasUseCase } from "../../application/useCases/nominas/listarNominas";
-import { CambiarEstadoNominaUseCase } from "../../application/useCases/nominas/cambiarEstadoNomina";
+import { Nomina, EstadoNomina } from "@/modules/nomina/domain/entities/Nomina";
+import { NominasApi } from "@/modules/nomina/infrastructure/api/nominasApi";
 import {
   Search,
   Filter,
@@ -85,8 +83,6 @@ const PAGE_SIZE = 10;
 export const ListaNominas: React.FC = () => {
   const { toast } = useToast();
   const nominasApi = new NominasApi();
-  const listarNominasUseCase = new ListarNominasUseCase(nominasApi);
-  const cambiarEstadoNominaUseCase = new CambiarEstadoNominaUseCase(nominasApi);
   
   // Estados
   const [pagina, setPagina] = useState(1);
@@ -105,13 +101,13 @@ export const ListaNominas: React.FC = () => {
     refetch 
   } = useQuery({
     queryKey: ['/api/recursos-humanos/nominas', pagina, filtrosAplicados],
-    queryFn: () => listarNominasUseCase.execute(filtrosAplicados, { page: pagina, pageSize: PAGE_SIZE }),
+    queryFn: () => nominasApi.listar(filtrosAplicados, { page: pagina, pageSize: PAGE_SIZE }),
   });
   
   // Mutación para cambiar estado de una nómina (pagada/pendiente)
   const cambiarEstadoMutation = useMutation({
     mutationFn: ({ id, estado }: { id: number, estado: EstadoNomina }) => 
-      cambiarEstadoNominaUseCase.execute(id, estado),
+      nominasApi.cambiarEstado(id, estado),
     onSuccess: () => {
       toast({
         title: "Estado actualizado",
