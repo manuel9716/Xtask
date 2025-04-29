@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Employee } from '@shared/schema';
 import { ResultadoCalculoNomina } from '../domain/services/calculadoraNomina';
+import axios from 'axios';
 
 export interface EmpleadoConCalculos {
   empleado: Employee;
@@ -72,61 +73,34 @@ export function useCrearNomina() {
       
       console.log('Enviando payload:', payload);
       
-      // Usamos un servicio de mock para probar la funcionalidad
-      // Simulamos la respuesta del servidor
-      console.log('Simulando creación de nómina con:', payload);
-      
-      // Simulamos el procesamiento en el servidor
-      const nuevaNomina = {
-        id: Date.now(),
-        titulo: `Nómina ${new Date(payload.periodoInicio).toLocaleDateString()} a ${new Date(payload.periodoFin).toLocaleDateString()}`,
-        periodoInicio: payload.periodoInicio,
-        periodoFin: payload.periodoFin,
-        fechaPago: payload.fechaPago,
-        metodoPago: payload.metodoPago,
-        estado: 'PENDIENTE',
-        comentarios: payload.comentarios || '',
-        fechaCreacion: new Date().toISOString(),
-        fechaActualizacion: new Date().toISOString(),
-        montoTotal: payload.empleados.reduce((total, emp) => {
-          return total + parseFloat(emp.salarioNeto.toString());
-        }, 0).toString(),
-        empleados: payload.empleados.map(emp => ({
-          id: Date.now() + emp.id,
-          nominaId: Date.now(),
-          empleadoId: emp.id,
-          salarioBase: emp.salarioBase,
-          totalIngresos: emp.totalIngresos,
-          totalDeducciones: emp.totalDeducciones,
-          salarioNeto: emp.salarioNeto,
-          detalleIngresos: JSON.stringify(emp.ingresos),
-          detalleDeducciones: JSON.stringify(emp.deducciones),
-          estado: 'PENDIENTE',
-          fechaGeneracion: new Date().toISOString()
-        }))
-      };
-      
-      // Simular una respuesta HTTP
-      const response = {
-        ok: true,
-        json: async () => nuevaNomina
-      } as Response;
-      
-      if (!response.ok) {
-        let errorMessage = 'Error al crear la nómina';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-          console.error('Error en respuesta:', errorData);
-        } catch (e) {
-          // Si no podemos parsear el JSON, intentamos obtener el texto
-          const errorText = await response.text();
-          console.error('Error en respuesta (texto):', errorText);
+      try {
+        // Agregar un timestamp para evitar caché
+        const timestamp = Date.now();
+        const url = `/api/nomina/v1/procesarNomina?t=${timestamp}`;
+        
+        console.log('Enviando solicitud a:', url);
+        
+        const axiosResponse = await axios.post(url, payload, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Request-ID': `nomina-${timestamp}`
+          }
+        });
+        
+        console.log('Respuesta recibida:', axiosResponse);
+        
+        return axiosResponse.data;
+      } catch (error) {
+        console.error('Error en la solicitud axios:', error);
+        
+        if (axios.isAxiosError(error) && error.response) {
+          console.error('Detalles de error:', error.response.data);
+          throw new Error(error.response.data?.error || 'Error en la solicitud');
+        } else {
+          throw new Error('Error de conexión al servidor');
         }
-        throw new Error(errorMessage);
       }
-      
-      return await response.json();
     },
     onSuccess: () => {
       // Invalidar consultas relacionadas para actualizar datos
