@@ -52,16 +52,16 @@ export interface EmpleadoCapacitacion {
 export interface CrearCapacitacionDTO {
   titulo: string;
   descripcion?: string;
-  fechaInicio: Date;
-  fechaFin: Date;
+  fechaInicio: string; // YYYY-MM-DD format
+  fechaFin: string; // YYYY-MM-DD format
   tipo: TipoCapacitacion;
   modalidad: ModalidadCapacitacion;
   estado?: EstadoCapacitacion;
-  duracionHoras: number;
+  duracionHoras: string; // String number
   responsableId: number;
   ubicacion?: string;
   enlaceVirtual?: string;
-  costo: number;
+  costo: string; // String number
   proveedor?: string;
   materialUrl?: string;
   certificado?: boolean;
@@ -69,6 +69,7 @@ export interface CrearCapacitacionDTO {
   contenido?: string;
   cupoMaximo?: number;
   notas?: string;
+  empleadosIds?: number[];
 }
 
 /**
@@ -78,16 +79,16 @@ export interface ActualizarCapacitacionDTO {
   id: number;
   titulo?: string;
   descripcion?: string;
-  fechaInicio?: Date;
-  fechaFin?: Date;
+  fechaInicio?: string; // YYYY-MM-DD format
+  fechaFin?: string; // YYYY-MM-DD format
   tipo?: TipoCapacitacion;
   modalidad?: ModalidadCapacitacion;
   estado?: EstadoCapacitacion;
-  duracionHoras?: number;
+  duracionHoras?: string; // String number
   responsableId?: number;
   ubicacion?: string;
   enlaceVirtual?: string;
-  costo?: number;
+  costo?: string; // String number
   proveedor?: string;
   materialUrl?: string;
   certificado?: boolean;
@@ -95,6 +96,7 @@ export interface ActualizarCapacitacionDTO {
   contenido?: string;
   cupoMaximo?: number;
   notas?: string;
+  empleadosIds?: number[];
 }
 
 /**

@@ -246,16 +246,18 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   
   // Manejar envío del formulario
   const onSubmit = (data: z.infer<typeof capacitacionSchema>) => {
-    // Convertir empleadosIds a números y fechas a objetos Date
+    // Convertir empleadosIds a números y ajustar formatos de datos
     const capacitacionData = {
       ...data,
       empleadosIds: data.empleadosIds?.map(id => Number(id)) || [],
-      fechaInicio: new Date(data.fechaInicio),
-      fechaFin: new Date(data.fechaFin),
+      fechaInicio: data.fechaInicio, // String en formato YYYY-MM-DD
+      fechaFin: data.fechaFin, // String en formato YYYY-MM-DD
       responsableId: 1, // Usando el ID 1 como default (admin)
       tipo: data.tipo as TipoCapacitacion,
       modalidad: data.modalidad as ModalidadCapacitacion,
-      estado: data.estado as EstadoCapacitacion
+      estado: data.estado as EstadoCapacitacion,
+      duracionHoras: String(data.duracionHoras), // Convertir a string
+      costo: String(data.costo) // Convertir a string
     };
     
     if (esEdicion) {
@@ -439,10 +441,10 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Presencial">Presencial</SelectItem>
-                          <SelectItem value="Virtual">Virtual</SelectItem>
-                          <SelectItem value="Híbrida">Híbrida</SelectItem>
-                          <SelectItem value="Autoaprendizaje">Autoaprendizaje</SelectItem>
+                          <SelectItem value={ModalidadCapacitacion.PRESENCIAL}>Presencial</SelectItem>
+                          <SelectItem value={ModalidadCapacitacion.VIRTUAL}>Virtual</SelectItem>
+                          <SelectItem value={ModalidadCapacitacion.HIBRIDA}>Híbrida</SelectItem>
+                          <SelectItem value={ModalidadCapacitacion.AUTOAPRENDIZAJE}>Autoaprendizaje</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
