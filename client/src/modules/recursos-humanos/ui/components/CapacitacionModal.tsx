@@ -174,12 +174,19 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   // Mutación para crear capacitación
   const crearCapacitacionMutation = useMutation({
     mutationFn: async (data: CrearCapacitacionDTO) => {
+      // Convertir fechas de string a Date para la API
+      const apiData = {
+        ...data,
+        fechaInicio: new Date(data.fechaInicio),
+        fechaFin: new Date(data.fechaFin)
+      };
+      
       const response = await fetch('/api/capacitaciones', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(apiData),
       });
       
       if (!response.ok) {
@@ -211,12 +218,19 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   // Mutación para editar capacitación
   const editarCapacitacionMutation = useMutation({
     mutationFn: async (data: ActualizarCapacitacionDTO) => {
+      // Convertir fechas de string a Date para la API
+      const apiData = {
+        ...data,
+        fechaInicio: new Date(data.fechaInicio),
+        fechaFin: new Date(data.fechaFin)
+      };
+      
       const response = await fetch(`/api/capacitaciones/${data.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(apiData),
       });
       
       if (!response.ok) {
