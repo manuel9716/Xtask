@@ -43,10 +43,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
-import { Capacitacion, EstadoCapacitacion, TipoCapacitacion } from "../../domain/entities/Capacitacion";
-import { CapacitacionesApi } from "../../infrastructure/api/capacitacionesApi";
-import { ListarCapacitacionesUseCase } from "../../application/useCases/capacitaciones/listarCapacitaciones";
-import { EliminarCapacitacionUseCase } from "../../application/useCases/capacitaciones/eliminarCapacitacion";
+import { Capacitacion } from "../../domain/entities/Capacitacion";
+import { EstadoCapacitacion, TipoCapacitacion } from "@shared/schema";
+import * as capacitacionesApi from "../../infrastructure/api/capacitacionesApi";
 import { CapacitacionModal } from "../components/CapacitacionModal";
 import {
   Search,
@@ -77,9 +76,6 @@ const PAGE_SIZE = 6;
 
 export const ListaCapacitaciones: React.FC = () => {
   const { toast } = useToast();
-  const capacitacionesApi = new CapacitacionesApi();
-  const listarCapacitacionesUseCase = new ListarCapacitacionesUseCase(capacitacionesApi);
-  const eliminarCapacitacionUseCase = new EliminarCapacitacionUseCase(capacitacionesApi);
   
   // Estados
   const [pagina, setPagina] = useState(1);
@@ -98,12 +94,12 @@ export const ListaCapacitaciones: React.FC = () => {
     refetch 
   } = useQuery({
     queryKey: ['/api/recursos-humanos/capacitaciones', pagina, filtrosAplicados],
-    queryFn: () => listarCapacitacionesUseCase.execute(filtrosAplicados, { page: pagina, pageSize: PAGE_SIZE }),
+    queryFn: () => capacitacionesApi.listarCapacitaciones(filtrosAplicados),
   });
   
   // Mutación para eliminar capacitación
   const eliminarMutation = useMutation({
-    mutationFn: (id: number) => eliminarCapacitacionUseCase.execute(id),
+    mutationFn: (id: number) => capacitacionesApi.eliminarCapacitacion(id),
     onSuccess: () => {
       toast({
         title: "Capacitación eliminada",
@@ -167,8 +163,8 @@ export const ListaCapacitaciones: React.FC = () => {
   // Obtener badge para estado de capacitación
   const getBadgeEstadoCapacitacion = (estado: string) => {
     switch (estado) {
-      case EstadoCapacitacion.PLANIFICADA:
-        return <Badge className="bg-blue-500 hover:bg-blue-500">Planificada</Badge>;
+      case EstadoCapacitacion.PROGRAMADA:
+        return <Badge className="bg-blue-500 hover:bg-blue-500">Programada</Badge>;
       case EstadoCapacitacion.EN_CURSO:
         return <Badge className="bg-green-500 hover:bg-green-500">En Curso</Badge>;
       case EstadoCapacitacion.COMPLETADA:
@@ -475,7 +471,7 @@ export const ListaCapacitaciones: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value={EstadoCapacitacion.PLANIFICADA}>Planificada</SelectItem>
+                  <SelectItem value={EstadoCapacitacion.PROGRAMADA}>Programada</SelectItem>
                   <SelectItem value={EstadoCapacitacion.EN_CURSO}>En Curso</SelectItem>
                   <SelectItem value={EstadoCapacitacion.COMPLETADA}>Completada</SelectItem>
                   <SelectItem value={EstadoCapacitacion.CANCELADA}>Cancelada</SelectItem>

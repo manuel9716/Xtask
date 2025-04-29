@@ -38,13 +38,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Capacitacion, EstadoCapacitacion, TipoCapacitacion, CrearCapacitacionDTO, ActualizarCapacitacionDTO } from "../../domain/entities/Capacitacion";
-import { Empleado } from "../../domain/entities/Empleado";
-import { EmpleadosApi } from "../../infrastructure/api/empleadosApi";
-import { CapacitacionesApi } from "../../infrastructure/api/capacitacionesApi";
-import { ListarEmpleadosUseCase } from "../../application/useCases/empleados/listarEmpleados";
-import { CrearCapacitacionUseCase } from "../../application/useCases/capacitaciones/crearCapacitacion";
-import { EditarCapacitacionUseCase } from "../../application/useCases/capacitaciones/editarCapacitacion";
+import { Capacitacion, CrearCapacitacionDTO, ActualizarCapacitacionDTO } from "../../domain/entities/Capacitacion";
+import { EstadoCapacitacion, TipoCapacitacion, ModalidadCapacitacion } from "@shared/schema";
+import { Empleado, EstadoEmpleado } from "../../domain/entities/Empleado";
+import * as empleadosApi from "../../infrastructure/api/empleadosApi";
+import * as capacitacionesApi from "../../infrastructure/api/capacitacionesApi";
+import { ESTADOS_CAPACITACION_LABELS, TIPOS_CAPACITACION_LABELS, MODALIDADES_CAPACITACION_LABELS } from "../../domain/entities/Capacitacion";
+import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 
 // Esquema de validación con zod
@@ -60,7 +60,7 @@ const capacitacionSchema = z.object({
   ubicacion: z.string().optional(),
   modalidad: z.string().min(1, "Debe seleccionar una modalidad"),
   costo: z.coerce.number().min(0, "El costo no puede ser negativo"),
-  materialesUrl: z.string().optional(),
+  materialUrl: z.string().optional(),
   requisitosObligatorios: z.boolean().default(false),
   departamentoObjetivo: z.string().optional(),
   cupoMaximo: z.coerce.number().optional(),
@@ -82,11 +82,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   onSuccess,
 }) => {
   const { toast } = useToast();
-  const empleadosApi = new EmpleadosApi();
-  const capacitacionesApi = new CapacitacionesApi();
-  const listarEmpleadosUseCase = new ListarEmpleadosUseCase(empleadosApi);
-  const crearCapacitacionUseCase = new CrearCapacitacionUseCase(capacitacionesApi);
-  const editarCapacitacionUseCase = new EditarCapacitacionUseCase(capacitacionesApi);
+  const queryClient = useQueryClient();
   
   const esEdicion = !!capacitacion;
   
@@ -96,7 +92,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   // Consulta para obtener la lista de empleados
   const { data: empleados } = useQuery({
     queryKey: ['/api/recursos-humanos/empleados/activos'],
-    queryFn: () => listarEmpleadosUseCase.execute({ estado: 'ACTIVO' }),
+    queryFn: () => empleadosApi.listarEmpleados({ estado: EstadoEmpleado.ACTIVO }),
     enabled: open,
   });
   
@@ -116,7 +112,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
           ubicacion: capacitacion.ubicacion || "",
           modalidad: capacitacion.modalidad,
           costo: capacitacion.costo,
-          materialesUrl: capacitacion.materialesUrl || "",
+          materialUrl: capacitacion.materialUrl || "",
           requisitosObligatorios: capacitacion.requisitosObligatorios,
           departamentoObjetivo: capacitacion.departamentoObjetivo || "",
           cupoMaximo: capacitacion.cupoMaximo || 0,
@@ -129,13 +125,13 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
           descripcion: "",
           fechaInicio: new Date().toISOString().split('T')[0],
           fechaFin: new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split('T')[0],
-          estado: EstadoCapacitacion.PLANIFICADA,
+          estado: EstadoCapacitacion.PROGRAMADA,
           duracionHoras: 8,
           instructor: "",
           ubicacion: "",
           modalidad: "Presencial",
           costo: 0,
-          materialesUrl: "",
+          materialUrl: "",
           requisitosObligatorios: false,
           departamentoObjetivo: "",
           cupoMaximo: 0,
@@ -171,7 +167,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   
   // Mutación para crear capacitación
   const crearCapacitacionMutation = useMutation({
-    mutationFn: (data: CrearCapacitacionDTO) => crearCapacitacionUseCase.execute(data),
+    mutationFn: (data: CrearCapacitacionDTO) => capacitacionesApi.crearCapacitacion(data),
     onSuccess: () => {
       toast({
         title: "Capacitación creada",
@@ -179,6 +175,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
       });
       form.reset();
       onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/recursos-humanos/capacitaciones'] });
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
@@ -192,13 +189,14 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   
   // Mutación para editar capacitación
   const editarCapacitacionMutation = useMutation({
-    mutationFn: (data: ActualizarCapacitacionDTO) => editarCapacitacionUseCase.execute(data),
+    mutationFn: (data: ActualizarCapacitacionDTO) => capacitacionesApi.actualizarCapacitacion(data),
     onSuccess: () => {
       toast({
         title: "Capacitación actualizada",
         description: "La capacitación ha sido actualizada correctamente",
       });
       onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/recursos-humanos/capacitaciones'] });
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
@@ -327,7 +325,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value={EstadoCapacitacion.PLANIFICADA}>Planificada</SelectItem>
+                          <SelectItem value={EstadoCapacitacion.PROGRAMADA}>Programada</SelectItem>
                           <SelectItem value={EstadoCapacitacion.EN_CURSO}>En Curso</SelectItem>
                           <SelectItem value={EstadoCapacitacion.COMPLETADA}>Completada</SelectItem>
                           <SelectItem value={EstadoCapacitacion.CANCELADA}>Cancelada</SelectItem>
@@ -462,7 +460,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
                 
                 <FormField
                   control={form.control}
-                  name="materialesUrl"
+                  name="materialUrl"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>URL de Materiales</FormLabel>

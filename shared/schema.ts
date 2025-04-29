@@ -15,6 +15,21 @@ export enum EstadoProyecto {
   ARCHIVADO = "ARCHIVADO"
 }
 
+export enum ModalidadCapacitacion {
+  PRESENCIAL = "PRESENCIAL",
+  VIRTUAL = "VIRTUAL",
+  MIXTA = "MIXTA",
+  AUTOESTUDIO = "AUTOESTUDIO"
+}
+
+export enum TipoEvaluacion {
+  DESEMPEÑO = "DESEMPEÑO",
+  PERIODO_PRUEBA = "PERIODO_PRUEBA",
+  OBJETIVOS = "OBJETIVOS",
+  COMPETENCIAS = "COMPETENCIAS",
+  ASCENSO = "ASCENSO"
+}
+
 // Interfaces
 export interface FiltrosProyecto {
   busqueda?: string;
@@ -220,14 +235,6 @@ export const tasks = pgTable("tasks", {
 });
 
 // Enumeraciones para módulo de Recursos Humanos
-export enum TipoEvaluacion {
-  DESEMPEÑO = "DESEMPEÑO",
-  PERIODO_PRUEBA = "PERIODO_PRUEBA",
-  OBJETIVOS = "OBJETIVOS",
-  COMPETENCIAS = "COMPETENCIAS",
-  ASCENSO = "ASCENSO"
-}
-
 export enum EstadoEvaluacion {
   PENDIENTE = "PENDIENTE",
   EN_PROGRESO = "EN_PROGRESO",
