@@ -173,7 +173,22 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   
   // Mutación para crear capacitación
   const crearCapacitacionMutation = useMutation({
-    mutationFn: (data: CrearCapacitacionDTO) => capacitacionesApi.crearCapacitacion(data),
+    mutationFn: async (data: CrearCapacitacionDTO) => {
+      const response = await fetch('/api/capacitaciones', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error ? JSON.stringify(errorData.error) : 'Error al crear capacitación');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Capacitación creada",
@@ -181,7 +196,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
       });
       form.reset();
       onOpenChange(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/recursos-humanos/capacitaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/capacitaciones'] });
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
@@ -195,14 +210,29 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
   
   // Mutación para editar capacitación
   const editarCapacitacionMutation = useMutation({
-    mutationFn: (data: ActualizarCapacitacionDTO) => capacitacionesApi.actualizarCapacitacion(data),
+    mutationFn: async (data: ActualizarCapacitacionDTO) => {
+      const response = await fetch(`/api/capacitaciones/${data.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error ? JSON.stringify(errorData.error) : 'Error al actualizar capacitación');
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Capacitación actualizada",
         description: "La capacitación ha sido actualizada correctamente",
       });
       onOpenChange(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/recursos-humanos/capacitaciones'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/capacitaciones'] });
       if (onSuccess) onSuccess();
     },
     onError: (error) => {
@@ -222,13 +252,17 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
       empleadosIds: data.empleadosIds?.map(id => Number(id)) || [],
       fechaInicio: new Date(data.fechaInicio),
       fechaFin: new Date(data.fechaFin),
+      responsableId: 1, // Usando el ID 1 como default (admin)
+      tipo: data.tipo as TipoCapacitacion,
+      modalidad: data.modalidad as ModalidadCapacitacion,
+      estado: data.estado as EstadoCapacitacion
     };
     
     if (esEdicion) {
       editarCapacitacionMutation.mutate({
         ...capacitacionData,
         id: capacitacion.id,
-      });
+      } as ActualizarCapacitacionDTO);
     } else {
       crearCapacitacionMutation.mutate(capacitacionData as CrearCapacitacionDTO);
     }
@@ -582,11 +616,13 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
                   Seleccione los empleados que participarán en la capacitación:
                 </p>
                 <div className="h-[200px] overflow-y-auto border rounded-md p-4">
-                  {empleados?.data.length === 0 ? (
+                  {empleadosLoading ? (
+                    <p className="text-muted-foreground text-center">Cargando empleados...</p>
+                  ) : !empleados || empleados.length === 0 ? (
                     <p className="text-muted-foreground text-center">No hay empleados disponibles</p>
                   ) : (
                     <div className="space-y-2">
-                      {empleados?.data.map((empleado) => (
+                      {empleados.map((empleado) => (
                         <div key={empleado.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={`empleado-${empleado.id}`} 
@@ -599,7 +635,7 @@ export const CapacitacionModal: React.FC<CapacitacionModalProps> = ({
                             htmlFor={`empleado-${empleado.id}`}
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                           >
-                            {empleado.nombreCompleto} - {empleado.cargo}
+                            {empleado.firstName} {empleado.lastName} - {empleado.position}
                           </label>
                         </div>
                       ))}
