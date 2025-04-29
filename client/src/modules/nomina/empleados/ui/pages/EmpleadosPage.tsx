@@ -415,7 +415,7 @@ export default function EmpleadosPage() {
           )}
         </CardContent>
         
-        {data && data.totalPages > 1 && (
+        {data && (
           <CardFooter className="flex justify-between">
             <div className="text-sm text-muted-foreground">
               Mostrando {(data.page - 1) * data.pageSize + 1} a {

@@ -498,6 +498,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalPages
         }
       });
+      
+      // Imprimimos logs para depuración
+      console.log('Enviando respuesta paginada:', {
+        total: empleados.length,
+        paginados: empleadosPaginados.length,
+        página: pageNum, 
+        totalPáginas: totalPages
+      });
     } catch (error: any) {
       console.error('Error en la ruta de obtener empleados:', error);
       res.status(500).json({ error: 'Error al obtener empleados' });
