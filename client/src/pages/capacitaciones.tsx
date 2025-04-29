@@ -5,12 +5,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, Calendar, ListChecks, BarChart3, Users, Clock, CheckCircle2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { GraduationCap, Calendar, ListChecks, BarChart3, Users, Clock, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as capacitacionesApi from "@/modules/recursos-humanos/infrastructure/api/capacitacionesApi";
+import { CapacitacionModal } from "@/modules/recursos-humanos/ui/components/CapacitacionModal";
 
 export default function CapacitacionesPage() {
   const [activeTab, setActiveTab] = useState("lista");
+  const [modalCrearCapacitacionAbierto, setModalCrearCapacitacionAbierto] = useState(false);
+  const queryClient = useQueryClient();
 
   // Dashboard stats
   const { data: estadisticas, isLoading: isLoadingStats } = useQuery({
@@ -99,6 +102,10 @@ export default function CapacitacionesPage() {
                 Asistencias
               </TabsTrigger>
             </TabsList>
+            <Button onClick={() => setModalCrearCapacitacionAbierto(true)} className="bg-primary">
+              <GraduationCap className="h-4 w-4 mr-2" />
+              Nueva Capacitación
+            </Button>
           </div>
 
           <TabsContent value="lista" className="space-y-4">
@@ -144,20 +151,111 @@ export default function CapacitacionesPage() {
 
           <TabsContent value="calendario" className="space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle>Calendario de Capacitaciones</CardTitle>
-                <CardDescription>
-                  Visualiza programación de capacitaciones en formato calendario
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Calendario de Capacitaciones</CardTitle>
+                  <CardDescription>
+                    Visualiza programación de capacitaciones en formato calendario
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => {}}>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Hoy
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {}}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => {}}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
-              <CardContent className="h-[500px] flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded-md">
-                <div className="text-center">
-                  <GraduationCap className="h-12 w-12 mb-4 mx-auto text-muted-foreground" />
-                  <h3 className="text-lg font-medium">Visualización de Calendario</h3>
-                  <p className="text-muted-foreground mt-2 max-w-md">
-                    Esta vista mostrará las capacitaciones programadas en un formato de calendario
-                    para visualizar fácilmente la distribución temporal.
-                  </p>
+              <CardContent className="p-0 border-t">
+                <div className="flex h-[600px]">
+                  {/* Sidebar */}
+                  <div className="w-24 border-r border-gray-200 dark:border-gray-800 flex flex-col flex-shrink-0">
+                    <div className="h-14 border-b border-gray-200 dark:border-gray-800"></div>
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div key={i} className="h-14 flex items-center justify-center text-sm text-muted-foreground">
+                        {`${8 + i}:00`}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Calendar Body */}
+                  <div className="flex-1 overflow-auto">
+                    {/* Header Row - Days */}
+                    <div className="flex border-b border-gray-200 dark:border-gray-800">
+                      {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].map(day => (
+                        <div key={day} className="flex-1 h-14 p-2 text-center">
+                          <div className="font-medium">{day}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(new Date().setDate(new Date().getDate() + ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].indexOf(day))).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Calendar Grid */}
+                    <div className="relative">
+                      {/* Time Slots */}
+                      <div className="grid grid-cols-5">
+                        {Array.from({ length: 5 }).map((_, dayIndex) => (
+                          <div key={dayIndex} className="border-r border-gray-200 dark:border-gray-800">
+                            {Array.from({ length: 10 }).map((_, timeIndex) => (
+                              <div 
+                                key={timeIndex} 
+                                className="h-14 border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900"
+                              ></div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Eventos de capacitaciones */}
+                      {programadas && programadas.map((capacitacion) => {
+                        // Determinar en qué día de la semana está la capacitación
+                        const fecha = new Date(capacitacion.fechaInicio);
+                        const diaSemana = fecha.getDay(); // 0 es domingo, 1 es lunes, etc.
+                        
+                        // Si es sábado o domingo, no mostrar
+                        if (diaSemana === 0 || diaSemana === 6) return null;
+                        
+                        // Convertir a índice 0-4 (lunes a viernes)
+                        const dayIndex = diaSemana - 1;
+                        
+                        // Calcular hora de inicio
+                        const horaInicio = fecha.getHours();
+                        const horaFin = new Date(capacitacion.fechaFin).getHours();
+                        
+                        // Sólo mostrar si la hora está entre 8 y 18
+                        if (horaInicio < 8 || horaInicio >= 18) return null;
+                        
+                        // Calcular posición y altura
+                        const topPosition = (horaInicio - 8) * 56; // 56px por hora (14px * 4 cuartos de hora)
+                        const height = (horaFin - horaInicio) * 56;
+                        
+                        return (
+                          <div 
+                            key={capacitacion.id}
+                            className={`absolute rounded-md p-2 overflow-hidden shadow-sm border-l-4 ${capacitacion.estado === 'PROGRAMADA' ? 'bg-blue-50 dark:bg-blue-950 border-blue-500' : 'bg-green-50 dark:bg-green-950 border-green-500'}`}
+                            style={{
+                              top: `${topPosition + 56}px`, // +56px por el header
+                              left: `${(dayIndex * 20) + 24 + 0.5}%`, // 20% por columna, 24% por el sidebar
+                              height: `${height}px`,
+                              width: '19%'
+                            }}
+                          >
+                            <div className="text-xs font-medium truncate">{capacitacion.titulo}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {`${horaInicio}:00 - ${horaFin}:00`}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -193,6 +291,16 @@ export default function CapacitacionesPage() {
           </TabsContent>
         </Tabs>
       </div>
+      <CapacitacionModal 
+        open={modalCrearCapacitacionAbierto} 
+        onOpenChange={setModalCrearCapacitacionAbierto}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/capacitaciones'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/capacitaciones/estado/programadas'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/capacitaciones/estado/en-curso'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/capacitaciones/estadisticas/resumen'] });
+        }}
+      />
     </MainLayout>
   );
 }
