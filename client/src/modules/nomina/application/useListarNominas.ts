@@ -40,7 +40,7 @@ export function useListarNominas() {
       params.append('pageSize', filtros.pageSize.toString());
     }
     
-    return `/api/finanzas/nomina?${params.toString()}`;
+    return `/api/nomina/v1/listar?${params.toString()}`;
   };
   
   // Consulta para obtener las nóminas
@@ -51,8 +51,9 @@ export function useListarNominas() {
     error,
     refetch
   } = useQuery({
-    queryKey: ['/api/finanzas/nomina', filtros],
+    queryKey: ['/api/nomina/v1/listar', filtros],
     queryFn: async () => {
+      console.log("Enviando filtros:", filtros);
       const response = await fetch(construirURL());
       
       if (!response.ok) {
