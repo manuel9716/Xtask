@@ -467,17 +467,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // IMPORTANTE: Esta ruta debe estar antes de la integración del router de empleados
   nominaRouter.get('/empleados/listar', async (req: Request, res: Response) => {
     try {
-      const { page = '1', pageSize = '10' } = req.query;
+      const { 
+        page = '1', 
+        pageSize = '10',
+        search = '',
+        contractStatus = '',
+        department = ''
+      } = req.query;
+      
       const pageNum = parseInt(page as string);
       const pageSizeNum = parseInt(pageSize as string);
       const offset = (pageNum - 1) * pageSizeNum;
       
+      // Log de los filtros recibidos para depuración
+      console.log('Filtros recibidos:', { 
+        page, 
+        pageSize, 
+        search, 
+        contractStatus, 
+        department 
+      });
+      
       // Obtenemos los empleados directamente desde la BD
-      const empleados = await storage.getAllEmployees();
+      let empleados = await storage.getAllEmployees();
+      
+      // Aplicamos filtros
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        empleados = empleados.filter(emp => 
+          emp.firstName?.toLowerCase().includes(searchLower) || 
+          emp.lastName?.toLowerCase().includes(searchLower) ||
+          emp.documentId?.toLowerCase().includes(searchLower) ||
+          `${emp.firstName || ''} ${emp.lastName || ''}`.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      if (contractStatus) {
+        empleados = empleados.filter(emp => emp.contractStatus === contractStatus);
+      }
+      
+      if (department) {
+        empleados = empleados.filter(emp => emp.department === department);
+      }
       
       // Calculamos el total de elementos y páginas
       const totalItems = empleados.length;
-      const totalPages = Math.ceil(totalItems / pageSizeNum);
+      const totalPages = Math.ceil(totalItems / pageSizeNum) || 1; // Aseguramos al menos 1 página
       
       // Paginamos los resultados
       const empleadosPaginados = empleados.slice(offset, offset + pageSizeNum);
@@ -501,7 +536,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Imprimimos logs para depuración
       console.log('Enviando respuesta paginada:', {
-        total: empleados.length,
+        filtrosAplicados: { search, contractStatus, department },
+        totalSinFiltrar: (await storage.getAllEmployees()).length,
+        totalFiltrado: empleados.length,
         paginados: empleadosPaginados.length,
         página: pageNum, 
         totalPáginas: totalPages

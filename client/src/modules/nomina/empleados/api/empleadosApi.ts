@@ -11,11 +11,14 @@ export interface Usuario {
 }
 
 /**
- * Interfaz para las opciones de paginación
+ * Interfaz para los filtros de empleados
  */
-export interface PaginationOptions {
+export interface FiltrosEmpleado {
   page?: number;
   pageSize?: number;
+  search?: string;
+  contractStatus?: string;
+  department?: string;
 }
 
 /**
@@ -48,17 +51,41 @@ export interface NominaProcesada {
 
 /**
  * Obtiene una lista paginada de empleados
- * @param options Opciones de paginación
+ * @param filtros Filtros para la búsqueda de empleados
  * @returns Promesa con la respuesta paginada
  */
 export async function obtenerEmpleados(
-  options: PaginationOptions = {}
+  filtros: FiltrosEmpleado = {}
 ): Promise<PaginatedEmployeesResponse> {
-  const { page = 1, pageSize = 10 } = options;
-  const queryParams = new URLSearchParams({
-    page: page.toString(),
-    pageSize: pageSize.toString()
-  });
+  const { 
+    page = 1, 
+    pageSize = 10,
+    search = '',
+    contractStatus = '',
+    department = ''
+  } = filtros;
+  
+  // Creamos un objeto URLSearchParams para construir la cadena de consulta
+  const queryParams = new URLSearchParams();
+  
+  // Agregamos los parámetros de paginación
+  queryParams.append('page', page.toString());
+  queryParams.append('pageSize', pageSize.toString());
+  
+  // Agregamos los filtros solo si tienen valor
+  if (search) {
+    queryParams.append('search', search);
+  }
+  
+  if (contractStatus) {
+    queryParams.append('contractStatus', contractStatus);
+  }
+  
+  if (department) {
+    queryParams.append('department', department);
+  }
+  
+  console.log('Enviando filtros:', Object.fromEntries(queryParams.entries()));
   
   const response = await apiRequest(
     'GET',
