@@ -484,16 +484,38 @@ nominaRouter.patch('/:id/cancelar', async (req: Request, res: Response) => {
   }
 });
 
-// Descargar desprendible de nómina
+// Obtener URL del desprendible de nómina
 nominaRouter.get('/:id/desprendible-url', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const nominaId = parseInt(id);
     
-    // Aquí deberíamos buscar la URL del desprendible en la tabla de nóminas
-    // Esta es una implementación de muestra, se debería expandir
+    // Buscar en la tabla de detalles de nómina si hay un PDF guardado
+    const [detalle] = await db.select({
+      pdfUrl: nominaDetalles.pdfUrl,
+      empleadoId: nominaDetalles.empleadoId,
+      nominaId: nominaDetalles.nominaId
+    })
+    .from(nominaDetalles)
+    .where(eq(nominaDetalles.nominaId, nominaId))
+    .limit(1);
+    
+    if (!detalle) {
+      return res.status(404).json({ error: 'Detalle de nómina no encontrado' });
+    }
+    
+    // Si ya existe una URL guardada, devolverla
+    if (detalle.pdfUrl) {
+      return res.status(200).json({ pdfUrl: detalle.pdfUrl });
+    }
+    
+    // Si no, generamos una URL basada en el ID de la nómina y el empleado
+    const pdfUrl = `/api/nomina/${nominaId}/desprendible`;
     
     return res.status(200).json({
-      pdfUrl: `/uploads/nomina/desprendible-${id}.pdf`
+      pdfUrl,
+      generado: false,
+      mensaje: 'El desprendible se generará en tiempo real'
     });
   } catch (error: any) {
     console.error(`Error al obtener URL del desprendible ${req.params.id}:`, error);
@@ -508,24 +530,175 @@ nominaRouter.get('/:id/desprendible-url', async (req: Request, res: Response) =>
 nominaRouter.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const nominaId = parseInt(id);
     
-    // Buscar en la base de datos (simulado)
-    const pdfPath = path.resolve(`./uploads/nomina/desprendible-${id}.pdf`);
+    // Verificar si existe un PDF guardado para esta nómina
+    const [detalle] = await db.select({
+      pdfUrl: nominaDetalles.pdfUrl,
+      empleadoId: nominaDetalles.empleadoId,
+      nominaId: nominaDetalles.nominaId,
+      salarioBase: nominaDetalles.salarioBase,
+      totalIngresos: nominaDetalles.totalIngresos,
+      totalDeducciones: nominaDetalles.totalDeducciones,
+      salarioNeto: nominaDetalles.salarioNeto,
+      detalleIngresos: nominaDetalles.detalleIngresos,
+      detalleDeducciones: nominaDetalles.detalleDeducciones,
+      fechaGeneracion: nominaDetalles.fechaGeneracion
+    })
+    .from(nominaDetalles)
+    .where(eq(nominaDetalles.nominaId, nominaId))
+    .limit(1);
     
-    // Verificar si existe
-    if (!fs.existsSync(pdfPath)) {
-      return res.status(404).json({ error: 'Desprendible no encontrado' });
+    if (!detalle) {
+      return res.status(404).json({ error: 'Detalle de nómina no encontrado' });
     }
     
-    // Enviar el archivo
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="desprendible-${id}.pdf"`);
+    // Si hay una URL de PDF guardada, intentar enviar ese archivo
+    if (detalle.pdfUrl && detalle.pdfUrl.startsWith('/uploads/')) {
+      const pdfPath = path.resolve(`.${detalle.pdfUrl}`);
+      
+      if (fs.existsSync(pdfPath)) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="desprendible-${nominaId}.pdf"`);
+        
+        const fileStream = fs.createReadStream(pdfPath);
+        return fileStream.pipe(res);
+      }
+    }
     
-    const fileStream = fs.createReadStream(pdfPath);
-    fileStream.pipe(res);
-  } catch (error) {
+    // Si no hay un PDF o no se encuentra, generamos uno nuevo
+    // Obtener datos adicionales
+    const [empleado] = await db.select()
+      .from(employees)
+      .where(eq(employees.id, detalle.empleadoId));
+      
+    const [cabeceraNomina] = await db.select()
+      .from(nominas)
+      .where(eq(nominas.id, detalle.nominaId));
+    
+    if (!empleado || !cabeceraNomina) {
+      return res.status(404).json({ error: 'Datos incompletos para generar el desprendible' });
+    }
+    
+    // Parsear los datos de ingresos y deducciones
+    const ingresos = JSON.parse(detalle.detalleIngresos || '[]');
+    const deducciones = JSON.parse(detalle.detalleDeducciones || '[]');
+    
+    // Preparar directorio para PDFs
+    const pdfDir = path.resolve('./uploads/nomina');
+    if (!fs.existsSync(pdfDir)) {
+      fs.mkdirSync(pdfDir, { recursive: true });
+    }
+    
+    // Generar nombre para el archivo
+    const nombreArchivo = `desprendible-${detalle.nominaId}-${detalle.empleadoId}.pdf`;
+    const rutaArchivo = path.join(pdfDir, nombreArchivo);
+    
+    // Crear PDF
+    const doc = new PDFDocument({ margin: 50 });
+    
+    // Pipe el PDF a un archivo en el servidor y a la respuesta HTTP
+    const writeStream = fs.createWriteStream(rutaArchivo);
+    doc.pipe(writeStream);
+    doc.pipe(res);
+    
+    // Configurar headers para descarga
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
+    
+    // Añadir contenido al PDF
+    const nombreEmpleado = `${empleado.firstName || ''} ${empleado.lastName || ''}`.trim();
+    const periodoStr = `${new Date(cabeceraNomina.periodoInicio).toLocaleDateString()} al ${new Date(cabeceraNomina.periodoFin).toLocaleDateString()}`;
+    
+    // Título y encabezado
+    doc.fontSize(25).text('Desprendible de Nómina', { align: 'center' });
+    doc.moveDown();
+    
+    doc.fontSize(12).text(`Empleado: ${nombreEmpleado}`);
+    doc.fontSize(10).text(`Período: ${periodoStr}`);
+    doc.fontSize(10).text(`Fecha de generación: ${new Date().toLocaleDateString()}`);
+    doc.moveDown();
+    
+    // Línea divisoria
+    doc.moveTo(50, doc.y)
+       .lineTo(550, doc.y)
+       .stroke();
+    doc.moveDown();
+    
+    // Ingresos
+    doc.fontSize(14).text('Ingresos', { underline: true });
+    doc.moveDown(0.5);
+    
+    // Incluir el salario base como primer ingreso si no está en el detalle
+    if (!ingresos.some((i: any) => i.nombre === 'Salario base')) {
+      doc.fontSize(10).text('Salario base', { continued: true, width: 300 });
+      doc.text(`$${parseFloat(detalle.salarioBase).toLocaleString('es-CO')}`, { align: 'right' });
+    }
+    
+    ingresos.forEach((ingreso: any) => {
+      doc.fontSize(10).text(ingreso.nombre, { continued: true, width: 300 });
+      doc.text(`$${parseFloat(ingreso.valor).toLocaleString('es-CO')}`, { align: 'right' });
+    });
+    
+    doc.moveDown();
+    doc.fontSize(12).text('Total Ingresos:', { continued: true, width: 300 });
+    doc.text(`$${parseFloat(detalle.totalIngresos).toLocaleString('es-CO')}`, { align: 'right' });
+    doc.moveDown();
+    
+    // Línea divisoria
+    doc.moveTo(50, doc.y)
+       .lineTo(550, doc.y)
+       .stroke();
+    doc.moveDown();
+    
+    // Deducciones
+    doc.fontSize(14).text('Deducciones', { underline: true });
+    doc.moveDown(0.5);
+    
+    deducciones.forEach((deduccion: any) => {
+      doc.fontSize(10).text(deduccion.nombre, { continued: true, width: 300 });
+      doc.text(`$${parseFloat(deduccion.valor).toLocaleString('es-CO')}`, { align: 'right' });
+    });
+    
+    doc.moveDown();
+    doc.fontSize(12).text('Total Deducciones:', { continued: true, width: 300 });
+    doc.text(`$${parseFloat(detalle.totalDeducciones).toLocaleString('es-CO')}`, { align: 'right' });
+    doc.moveDown();
+    
+    // Línea divisoria
+    doc.moveTo(50, doc.y)
+       .lineTo(550, doc.y)
+       .stroke();
+    doc.moveDown();
+    
+    // Total a pagar
+    doc.fontSize(14).text('Salario Neto a Pagar:', { continued: true, width: 300 });
+    doc.text(`$${parseFloat(detalle.salarioNeto).toLocaleString('es-CO')}`, { align: 'right' });
+    
+    // Agregar método de pago y fecha
+    doc.moveDown(2);
+    doc.fontSize(10).text(`Método de pago: ${cabeceraNomina.metodoPago}`);
+    doc.fontSize(10).text(`Fecha de pago: ${new Date(cabeceraNomina.fechaPago).toLocaleDateString()}`);
+    
+    // Finalizar PDF
+    doc.end();
+    
+    // Guardar la ruta del PDF en la base de datos para futuras consultas
+    const pdfUrl = `/uploads/nomina/${nombreArchivo}`;
+    await db.update(nominaDetalles)
+      .set({ pdfUrl })
+      .where(and(
+        eq(nominaDetalles.nominaId, detalle.nominaId),
+        eq(nominaDetalles.empleadoId, detalle.empleadoId)
+      ));
+    
+    // No necesitamos return ya que el stream se está enviando directamente
+  } catch (error: any) {
     console.error(`Error al descargar desprendible ${req.params.id}:`, error);
-    return res.status(500).json({ error: 'Error al descargar el desprendible' });
+    return res.status(500).json({ 
+      error: 'Error al descargar el desprendible',
+      details: error.message
+    });
   }
 });
 
