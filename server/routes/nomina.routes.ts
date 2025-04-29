@@ -336,7 +336,8 @@ nominaRouter.post('/generar', async (req: Request, res: Response) => {
 // Crear una nueva nómina con múltiples empleados
 nominaRouter.post('/v1/procesarNomina', async (req: Request, res: Response) => {
   try {
-    console.log('Recibiendo petición para crear nómina:', JSON.stringify(req.body));
+    console.log('Recibiendo petición para crear nómina v1:', JSON.stringify(req.body));
+    console.log('Headers:', JSON.stringify(req.headers));
     
     const { 
       periodoInicio, 
@@ -348,8 +349,20 @@ nominaRouter.post('/v1/procesarNomina', async (req: Request, res: Response) => {
       titulo = `Nómina ${new Date(periodoInicio).toLocaleDateString()} a ${new Date(periodoFin).toLocaleDateString()}`
     } = req.body;
     
+    // Validación detallada de datos
+    console.log('Datos extraídos:');
+    console.log('- periodoInicio:', periodoInicio);
+    console.log('- periodoFin:', periodoFin);
+    console.log('- fechaPago:', fechaPago);
+    console.log('- metodoPago:', metodoPago);
+    console.log('- empleados existe:', !!empleados);
+    console.log('- empleados es array:', Array.isArray(empleados));
+    console.log('- comentarios:', comentarios);
+    console.log('- titulo:', titulo);
+    
     // Validación básica de datos
     if (!periodoInicio || !periodoFin || !fechaPago || !metodoPago || !empleados || !Array.isArray(empleados)) {
+      console.error('Validación fallida: datos incompletos');
       return res.status(400).json({ error: 'Datos incompletos o inválidos' });
     }
     
@@ -441,6 +454,10 @@ nominaRouter.post('/v1/procesarNomina', async (req: Request, res: Response) => {
       console.log(`${detallesNomina.length} detalles de nómina creados`);
       
       // Retornar la nómina creada con sus detalles
+      console.log('Operación completada con éxito. Enviando respuesta 201...');
+      console.log('nuevaNomina:', nuevaNomina);
+      console.log('detallesNomina:', detallesNomina);
+      
       return res.status(201).json({
         ...nuevaNomina,
         empleados: detallesNomina
@@ -448,6 +465,9 @@ nominaRouter.post('/v1/procesarNomina', async (req: Request, res: Response) => {
     } catch (dbError: any) {
       console.error('Error en la operación de BD:', dbError);
       console.error('Stack trace:', dbError.stack);
+      console.error('Mensaje de error:', dbError.message);
+      console.error('Consulta SQL (si está disponible):', dbError.query || 'No disponible');
+      console.error('Parámetros (si están disponibles):', dbError.parameters || 'No disponibles');
       throw dbError; // Re-throw para el manejo global de errores
     }
   } catch (error: any) {
