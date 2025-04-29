@@ -33,6 +33,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { EmpleadoForm } from '@/modules/nomina/empleados/ui/forms/EmpleadoForm';
 import EmpleadosPage from '@/modules/nomina/empleados/ui/pages/EmpleadosPage';
+import GestionNominasPage from '@/modules/nomina/ui/pages/GestionNominasPage';
 import { NominaFormModal } from '@/modules/nomina/ui/components/NominaFormModal';
 import { useCrearNomina } from '@/modules/nomina/application/useCrearNomina';
 import { useDashboardNomina } from '@/modules/nomina/application/useDashboardNomina';
@@ -289,102 +290,7 @@ export default function NominaDashboard() {
         </TabsContent>
         
         <TabsContent value="nominas">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gestión de Nóminas</CardTitle>
-              <CardDescription>
-                Crear, procesar y revisar nóminas del personal
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Alert className="mb-6">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Atención</AlertTitle>
-                <AlertDescription>
-                  Estamos trabajando en esta sección. Pronto estará disponible la gestión completa de nóminas.
-                </AlertDescription>
-              </Alert>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Nóminas Pendientes</h3>
-                  <Separator className="mb-4" />
-                  
-                  <div className="space-y-4">
-                    <div className="p-4 border rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">Abril 2025</p>
-                          <p className="text-sm text-muted-foreground">Para 45 empleados</p>
-                        </div>
-                        <Badge variant="outline">Pendiente</Badge>
-                      </div>
-                      <div className="mt-4 flex justify-end">
-                        <Button variant="outline" size="sm">Ver Detalles</Button>
-                        <Button variant="default" size="sm" className="ml-2">Procesar</Button>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">Extra - Bonos Q1</p>
-                          <p className="text-sm text-muted-foreground">Para 12 empleados</p>
-                        </div>
-                        <Badge variant="outline">Pendiente</Badge>
-                      </div>
-                      <div className="mt-4 flex justify-end">
-                        <Button variant="outline" size="sm">Ver Detalles</Button>
-                        <Button variant="default" size="sm" className="ml-2">Procesar</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Nóminas Recientes</h3>
-                  <Separator className="mb-4" />
-                  
-                  <div className="space-y-4">
-                    <div className="p-4 border rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">Marzo 2025</p>
-                          <p className="text-sm text-muted-foreground">43 empleados - €98,250</p>
-                        </div>
-                        <Badge variant="secondary">Pagada</Badge>
-                      </div>
-                      <div className="mt-4 flex justify-end">
-                        <Button variant="outline" size="sm">Ver Detalles</Button>
-                        <Button variant="outline" size="sm" className="ml-2">Descargar</Button>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">Febrero 2025</p>
-                          <p className="text-sm text-muted-foreground">43 empleados - €97,800</p>
-                        </div>
-                        <Badge variant="secondary">Pagada</Badge>
-                      </div>
-                      <div className="mt-4 flex justify-end">
-                        <Button variant="outline" size="sm">Ver Detalles</Button>
-                        <Button variant="outline" size="sm" className="ml-2">Descargar</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline">Ver Historial Completo</Button>
-              <Button onClick={() => setShowNuevaForma(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Crear Nueva Nómina
-              </Button>
-            </CardFooter>
-          </Card>
+          <GestionNominasPage />
         </TabsContent>
         
         <TabsContent value="configuracion">
