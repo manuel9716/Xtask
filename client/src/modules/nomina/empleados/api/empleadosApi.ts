@@ -69,10 +69,23 @@ export async function obtenerEmpleados(
     throw new Error('Error al obtener la lista de empleados');
   }
   
-  // Obtener la lista de empleados
-  const empleados = await response.json();
+  // Obtener los datos de respuesta
+  const data = await response.json();
   
-  // Construir manualmente el objeto PaginatedEmployeesResponse
+  // Si la respuesta ya viene con formato paginado (estructura correcta)
+  if (data && data.empleados && data.pagination) {
+    return {
+      empleados: data.empleados,
+      total: data.pagination.totalItems,
+      page: data.pagination.page,
+      pageSize: data.pagination.pageSize,
+      totalPages: data.pagination.totalPages
+    };
+  }
+  
+  // Fallback por si la respuesta viene en el formato antiguo
+  // Esto es para mantener compatibilidad en caso de que haya otros endpoints que aún no estén actualizados
+  const empleados = Array.isArray(data) ? data : [];
   return {
     empleados,
     total: empleados.length,

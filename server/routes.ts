@@ -467,16 +467,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // IMPORTANTE: Esta ruta debe estar antes de la integración del router de empleados
   nominaRouter.get('/empleados/listar', async (req: Request, res: Response) => {
     try {
+      const { page = '1', pageSize = '10' } = req.query;
+      const pageNum = parseInt(page as string);
+      const pageSizeNum = parseInt(pageSize as string);
+      const offset = (pageNum - 1) * pageSizeNum;
+      
       // Obtenemos los empleados directamente desde la BD
       const empleados = await storage.getAllEmployees();
       
+      // Calculamos el total de elementos y páginas
+      const totalItems = empleados.length;
+      const totalPages = Math.ceil(totalItems / pageSizeNum);
+      
+      // Paginamos los resultados
+      const empleadosPaginados = empleados.slice(offset, offset + pageSizeNum);
+      
       // Preparamos la respuesta con el nombre
-      const empleadosFormateados = empleados.map(emp => ({
+      const empleadosFormateados = empleadosPaginados.map(emp => ({
         ...emp,
-        nombre: `Empleado #${emp.id}`
+        nombre: `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || `Empleado #${emp.id}`
       }));
       
-      res.status(200).json(empleadosFormateados);
+      // Devolvemos la respuesta paginada
+      res.status(200).json({
+        empleados: empleadosFormateados,
+        pagination: {
+          page: pageNum,
+          pageSize: pageSizeNum,
+          totalItems,
+          totalPages
+        }
+      });
     } catch (error: any) {
       console.error('Error en la ruta de obtener empleados:', error);
       res.status(500).json({ error: 'Error al obtener empleados' });
