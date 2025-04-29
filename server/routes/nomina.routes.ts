@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { and, eq, like, or, ilike, sql } from 'drizzle-orm';
-import { employees } from '@shared/schema';
+import { employees, nominas, nominaDetalles, EstadoNomina } from '@shared/schema';
 import { z } from 'zod';
 import path from 'path';
 import fs from 'fs';
@@ -245,42 +245,60 @@ nominaRouter.post('/desprendible/generar', async (req: Request, res: Response) =
 nominaRouter.get('/empleado/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const empleadoId = parseInt(id);
     
-    // Aquí deberíamos consultar la tabla de nóminas 
-    // Esta es una implementación de muestra, se debería expandir
-    const nominasMuestra = [
-      {
-        id: 1,
-        empleadoId: parseInt(id),
-        periodo: '2025-03-01 al 2025-03-31',
-        fechaGeneracion: '2025-04-01',
-        salarioBase: '2000000',
-        totalIngresos: '2200000',
-        totalDeducciones: '420000',
-        salarioNeto: '1780000',
-        estado: 'pagada',
-        fechaPago: '2025-04-05',
-        pdfUrl: '/uploads/nomina/desprendible-1-1715456789.pdf'
-      },
-      {
-        id: 2,
-        empleadoId: parseInt(id),
-        periodo: '2025-02-01 al 2025-02-29',
-        fechaGeneracion: '2025-03-01',
-        salarioBase: '2000000',
-        totalIngresos: '2150000',
-        totalDeducciones: '410000',
-        salarioNeto: '1740000',
-        estado: 'pagada',
-        fechaPago: '2025-03-05',
-        pdfUrl: '/uploads/nomina/desprendible-1-1712778543.pdf'
-      }
-    ];
+    // Buscar todas las nóminas donde el empleado tiene un detalle
+    const detallesNomina = await db.select({
+      nominaId: nominaDetalles.nominaId,
+      salarioBase: nominaDetalles.salarioBase,
+      totalIngresos: nominaDetalles.totalIngresos,
+      totalDeducciones: nominaDetalles.totalDeducciones,
+      salarioNeto: nominaDetalles.salarioNeto,
+      estado: nominaDetalles.estado,
+      pdfUrl: nominaDetalles.pdfUrl,
+      fechaGeneracion: nominaDetalles.fechaGeneracion
+    })
+    .from(nominaDetalles)
+    .where(eq(nominaDetalles.empleadoId, empleadoId))
+    .orderBy(sql`${nominaDetalles.fechaGeneracion} DESC`);
     
-    return res.status(200).json(nominasMuestra);
-  } catch (error) {
+    // Si no hay resultados, devolver un array vacío
+    if (!detallesNomina.length) {
+      return res.status(200).json([]);
+    }
+    
+    // Obtener las cabeceras de nómina para cada detalle
+    const nominaIds = detallesNomina.map(detalle => detalle.nominaId);
+    
+    const cabecerasNomina = await db.select()
+      .from(nominas)
+      .where(sql`${nominas.id} IN (${nominaIds.join(',')})`);
+      
+    // Combinar la información
+    const nominasCompletas = detallesNomina.map(detalle => {
+      const cabecera = cabecerasNomina.find(c => c.id === detalle.nominaId);
+      return {
+        id: detalle.nominaId,
+        empleadoId,
+        periodo: `${new Date(cabecera?.periodoInicio || '').toLocaleDateString()} al ${new Date(cabecera?.periodoFin || '').toLocaleDateString()}`,
+        fechaGeneracion: new Date(detalle.fechaGeneracion).toISOString(),
+        salarioBase: detalle.salarioBase,
+        totalIngresos: detalle.totalIngresos,
+        totalDeducciones: detalle.totalDeducciones,
+        salarioNeto: detalle.salarioNeto,
+        estado: detalle.estado,
+        fechaPago: cabecera?.fechaPago ? new Date(cabecera.fechaPago).toISOString() : null,
+        pdfUrl: detalle.pdfUrl || `/api/nomina/${detalle.nominaId}/desprendible`
+      };
+    });
+    
+    return res.status(200).json(nominasCompletas);
+  } catch (error: any) {
     console.error(`Error al obtener nóminas del empleado ${req.params.id}:`, error);
-    return res.status(500).json({ error: 'Error al obtener las nóminas del empleado' });
+    return res.status(500).json({ 
+      error: 'Error al obtener las nóminas del empleado',
+      details: error.message
+    });
   }
 });
 
@@ -306,9 +324,12 @@ nominaRouter.post('/generar', async (req: Request, res: Response) => {
       fechaGeneracion: new Date().toISOString(),
       pdfUrl: '/uploads/nomina/desprendible-nuevo.pdf'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al generar nómina:', error);
-    return res.status(500).json({ error: 'Error al generar la nómina' });
+    return res.status(500).json({ 
+      error: 'Error al generar la nómina',
+      details: error.message
+    });
   }
 });
 
@@ -321,7 +342,8 @@ nominaRouter.post('/crear', async (req: Request, res: Response) => {
       fechaPago, 
       metodoPago, 
       empleados, 
-      comentarios 
+      comentarios,
+      titulo = `Nómina ${new Date(periodoInicio).toLocaleDateString()} a ${new Date(periodoFin).toLocaleDateString()}`
     } = req.body;
     
     // Validación básica de datos
@@ -329,25 +351,56 @@ nominaRouter.post('/crear', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Datos incompletos o inválidos' });
     }
     
-    // En una implementación real, aquí guardaríamos los datos en la base de datos
-    // creando registros tanto para la nómina como para cada empleado incluido
+    // Cálculo del monto total de la nómina
+    const montoTotal = empleados.reduce((total, emp) => total + parseFloat(emp.salarioNeto), 0);
     
-    // Simulación de respuesta exitosa
-    return res.status(201).json({
-      id: Math.floor(Math.random() * 1000) + 100, // ID simulado
-      periodoInicio,
-      periodoFin,
-      fechaPago,
-      metodoPago,
-      fechaCreacion: new Date().toISOString(),
-      estado: 'PENDIENTE',
-      montoTotal: empleados.reduce((total, emp) => total + emp.salarioNeto, 0),
-      comentarios,
-      empleados
+    // Crear la cabecera de nómina
+    const [nuevaNomina] = await db.insert(nominas)
+      .values({
+        titulo,
+        periodoInicio: new Date(periodoInicio),
+        periodoFin: new Date(periodoFin),
+        fechaPago: new Date(fechaPago),
+        metodoPago,
+        estado: EstadoNomina.PENDIENTE,
+        comentarios,
+        fechaCreacion: new Date(),
+        fechaActualizacion: new Date(),
+        creadoPor: req.user?.id || 1, // Usamos el ID del usuario autenticado o un valor por defecto
+        montoTotal: montoTotal.toString()
+      })
+      .returning();
+    
+    // Crear los detalles por cada empleado
+    const detallesPromises = empleados.map(async (empleado) => {
+      const [detalle] = await db.insert(nominaDetalles)
+        .values({
+          nominaId: nuevaNomina.id,
+          empleadoId: empleado.id,
+          salarioBase: empleado.salarioBase.toString(),
+          totalIngresos: empleado.totalIngresos.toString(),
+          totalDeducciones: empleado.totalDeducciones.toString(),
+          salarioNeto: empleado.salarioNeto.toString(),
+          detalleIngresos: JSON.stringify(empleado.ingresos || []),
+          detalleDeducciones: JSON.stringify(empleado.deducciones || []),
+          estado: EstadoNomina.PENDIENTE,
+          fechaGeneracion: new Date()
+        })
+        .returning();
+      return detalle;
     });
-  } catch (error) {
+    
+    // Esperar a que se creen todos los detalles
+    const detallesNomina = await Promise.all(detallesPromises);
+    
+    // Retornar la nómina creada con sus detalles
+    return res.status(201).json({
+      ...nuevaNomina,
+      empleados: detallesNomina
+    });
+  } catch (error: any) {
     console.error('Error al crear nómina:', error);
-    return res.status(500).json({ error: 'Error al crear la nómina' });
+    return res.status(500).json({ error: 'Error al crear la nómina', details: error.message });
   }
 });
 
@@ -355,18 +408,39 @@ nominaRouter.post('/crear', async (req: Request, res: Response) => {
 nominaRouter.patch('/:id/marcar-pagada', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const nominaId = parseInt(id);
     
-    // Aquí deberíamos actualizar el estado en la tabla de nóminas
-    // Esta es una implementación de muestra, se debería expandir
+    // Verificar que la nómina existe
+    const [nominaExistente] = await db.select()
+      .from(nominas)
+      .where(eq(nominas.id, nominaId));
+      
+    if (!nominaExistente) {
+      return res.status(404).json({ error: 'Nómina no encontrada' });
+    }
     
-    return res.status(200).json({
-      id: parseInt(id),
-      estado: 'pagada',
-      fechaPago: new Date().toISOString()
-    });
-  } catch (error) {
+    // Actualizar estado de la nómina
+    const [nominaActualizada] = await db.update(nominas)
+      .set({ 
+        estado: EstadoNomina.PAGADO,
+        fechaActualizacion: new Date(),
+        actualizadoPor: req.user?.id || 1 
+      })
+      .where(eq(nominas.id, nominaId))
+      .returning();
+      
+    // Actualizar estado de todos los detalles de nómina asociados
+    await db.update(nominaDetalles)
+      .set({ estado: EstadoNomina.PAGADO })
+      .where(eq(nominaDetalles.nominaId, nominaId));
+    
+    return res.status(200).json(nominaActualizada);
+  } catch (error: any) {
     console.error(`Error al marcar nómina ${req.params.id} como pagada:`, error);
-    return res.status(500).json({ error: 'Error al marcar la nómina como pagada' });
+    return res.status(500).json({ 
+      error: 'Error al marcar la nómina como pagada',
+      details: error.message
+    });
   }
 });
 
@@ -374,17 +448,39 @@ nominaRouter.patch('/:id/marcar-pagada', async (req: Request, res: Response) => 
 nominaRouter.patch('/:id/cancelar', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const nominaId = parseInt(id);
     
-    // Aquí deberíamos actualizar el estado en la tabla de nóminas
-    // Esta es una implementación de muestra, se debería expandir
+    // Verificar que la nómina existe
+    const [nominaExistente] = await db.select()
+      .from(nominas)
+      .where(eq(nominas.id, nominaId));
+      
+    if (!nominaExistente) {
+      return res.status(404).json({ error: 'Nómina no encontrada' });
+    }
     
-    return res.status(200).json({
-      id: parseInt(id),
-      estado: 'cancelada'
-    });
-  } catch (error) {
+    // Actualizar estado de la nómina
+    const [nominaActualizada] = await db.update(nominas)
+      .set({ 
+        estado: EstadoNomina.CANCELADO,
+        fechaActualizacion: new Date(),
+        actualizadoPor: req.user?.id || 1 
+      })
+      .where(eq(nominas.id, nominaId))
+      .returning();
+      
+    // Actualizar estado de todos los detalles de nómina asociados
+    await db.update(nominaDetalles)
+      .set({ estado: EstadoNomina.CANCELADO })
+      .where(eq(nominaDetalles.nominaId, nominaId));
+    
+    return res.status(200).json(nominaActualizada);
+  } catch (error: any) {
     console.error(`Error al cancelar nómina ${req.params.id}:`, error);
-    return res.status(500).json({ error: 'Error al cancelar la nómina' });
+    return res.status(500).json({ 
+      error: 'Error al cancelar la nómina',
+      details: error.message
+    });
   }
 });
 
@@ -399,9 +495,12 @@ nominaRouter.get('/:id/desprendible-url', async (req: Request, res: Response) =>
     return res.status(200).json({
       pdfUrl: `/uploads/nomina/desprendible-${id}.pdf`
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error al obtener URL del desprendible ${req.params.id}:`, error);
-    return res.status(500).json({ error: 'Error al obtener la URL del desprendible' });
+    return res.status(500).json({ 
+      error: 'Error al obtener la URL del desprendible',
+      details: error.message 
+    });
   }
 });
 

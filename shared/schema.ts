@@ -637,6 +637,13 @@ export type InsertFinancialCategory = z.infer<typeof insertFinancialCategorySche
 export type FinancialAudit = typeof financialAudits.$inferSelect;
 export type InsertFinancialAudit = z.infer<typeof insertFinancialAuditSchema>;
 
+// Tipos para el módulo de Nómina
+export type Nomina = typeof nominas.$inferSelect;
+export type InsertNomina = z.infer<typeof insertNominaSchema>;
+
+export type NominaDetalle = typeof nominaDetalles.$inferSelect;
+export type InsertNominaDetalle = z.infer<typeof insertNominaDetalleSchema>;
+
 // Tipos para el módulo de Recursos Humanos - Evaluaciones y Capacitaciones
 export type Evaluacion = typeof evaluaciones.$inferSelect;
 export type InsertEvaluacion = z.infer<typeof insertEvaluacionSchema>;
