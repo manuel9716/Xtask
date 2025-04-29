@@ -112,19 +112,27 @@ export const ModuloDocumentacion: React.FC = () => {
 export const TalentoHumanoDashboard: React.FC = () => {
   // Obtener la ruta actual para manejar visualización condicional
   const [location] = useLocation();
-  const path = location.split("/").pop();
-  const basePath = location.split("/")[1]; // Obtener "recursos-humanos" o "human-resources"
+  console.log("Current location:", location);
+  
+  // Extraer partes de la URL para routing
+  const pathParts = location.split("/").filter(Boolean);
+  console.log("Path parts:", pathParts);
+  
+  const basePath = pathParts[0]; // "recursos-humanos" o "human-resources"
+  const subPath = pathParts[1];  // "capacitaciones", "empleados", etc.
+  
+  console.log("Base path:", basePath, "Sub path:", subPath);
 
-  // Si estamos en una subruta específica, mostrar componente correspondiente
-  if ((basePath === "recursos-humanos" || basePath === "human-resources") && 
-      path && 
-      (location !== "/recursos-humanos" && location !== "/human-resources")) {
-    switch (path) {
+  // Si tenemos un subpath válido
+  if ((basePath === "recursos-humanos" || basePath === "human-resources") && subPath) {
+    console.log("Rendering submodule:", subPath);
+    switch (subPath) {
       case "empleados":
         return <ModuloEmpleados />;
       case "evaluaciones":
         return <ModuloEvaluaciones />;
       case "capacitaciones":
+        console.log("Rendering ModuloCapacitaciones");
         return <ModuloCapacitaciones />;
       case "nomina":
         return <ModuloNomina />;
@@ -132,6 +140,8 @@ export const TalentoHumanoDashboard: React.FC = () => {
         return <ModuloMetricas />;
       case "documentacion":
         return <ModuloDocumentacion />;
+      default:
+        console.log("No matching module for subpath:", subPath);
     }
   }
   
