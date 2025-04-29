@@ -896,34 +896,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint para obtener datos del dashboard
   nominaV1Router.get('/dashboard', async (req: Request, res: Response) => {
     try {
-      // Datos para el dashboard
+      // Consultar datos reales de la base de datos
+      const { db } = await import("./db");
+      const { nominas, employees } = await import("@shared/schema");
+      const { eq, desc, sql } = await import("drizzle-orm");
+      
+      // Obtener total de empleados activos
+      const empleadosActivos = await db
+        .select()
+        .from(employees)
+        .where(eq(employees.contractStatus, 'active'));
+      
+      const totalEmpleadosActivos = empleadosActivos.length;
+      
+      // Obtener nóminas pendientes
+      const nominasPendientesDB = await db
+        .select()
+        .from(nominas)
+        .where(eq(nominas.estado, 'PENDIENTE'));
+      
+      // Obtener nóminas recientes (últimas creadas)
+      const nominasRecientesDB = await db
+        .select()
+        .from(nominas)
+        .orderBy(desc(nominas.fechaCreacion))
+        .limit(5);
+      
+      // Calcular último mes (para calcular nuevos empleados)
+      const hoy = new Date();
+      const mesAnterior = new Date(hoy);
+      mesAnterior.setMonth(hoy.getMonth() - 1);
+      
+      // Obtener empleados contratados el último mes
+      const empleadosNuevos = await db
+        .select()
+        .from(employees)
+        .where(sql`${employees.hireDate} >= ${mesAnterior}`);
+      
+      // Calcular nómina mensual total (último mes)
+      let nominaMensualTotal = 0;
+      try {
+        const ultimaNomina = await db
+          .select()
+          .from(nominas)
+          .orderBy(desc(nominas.fechaCreacion))
+          .limit(1);
+        
+        if (ultimaNomina.length > 0) {
+          nominaMensualTotal = Number(ultimaNomina[0].montoTotal);
+        }
+      } catch (error) {
+        console.error('Error al calcular nómina mensual:', error);
+      }
+      
+      // Calcular próximo pago
+      let proximoPago = {
+        fecha: 'No hay pagos programados',
+        diasRestantes: 0
+      };
+      
+      try {
+        const proximasNominas = await db
+          .select()
+          .from(nominas)
+          .where(eq(nominas.estado, 'PENDIENTE'))
+          .orderBy(nominas.fechaPago);
+        
+        if (proximasNominas.length > 0) {
+          const fechaPago = new Date(proximasNominas[0].fechaPago);
+          const diasRestantes = Math.max(0, Math.floor((fechaPago.getTime() - hoy.getTime()) / (1000 * 3600 * 24)));
+          
+          const options = { year: 'numeric', month: 'long', day: 'numeric' };
+          proximoPago = {
+            fecha: fechaPago.toLocaleDateString('es-ES', options as any),
+            diasRestantes
+          };
+        }
+      } catch (error) {
+        console.error('Error al calcular próximo pago:', error);
+      }
+      
+      // Formatear datos recientes para respuesta
+      const nominasRecientes = nominasRecientesDB.map(nomina => ({
+        id: nomina.id,
+        titulo: nomina.titulo,
+        estado: nomina.estado,
+        fechaProcesamiento: new Date(nomina.fechaCreacion).toLocaleDateString('es-ES', {
+          year: 'numeric', month: 'long', day: 'numeric'
+        } as any)
+      }));
+      
+      // Construcción de respuesta
       const dashboardData = {
-        totalEmpleadosActivos: 45,
-        nuevosEmpleadosMes: 2,
-        nominaMensualTotal: 98500,
+        totalEmpleadosActivos,
+        nuevosEmpleadosMes: empleadosNuevos.length,
+        nominaMensualTotal,
         cambioNomina: {
           esIncremento: true,
-          porcentaje: 2.5
+          porcentaje: 0 // Temporalmente deshabilitado (requiere comparación con histórico)
         },
-        proximoPago: {
-          fecha: '30 de Abril, 2025',
-          diasRestantes: 15
-        },
-        nominasPendientes: 2,
-        nominasRecientes: [
-          {
-            id: 1,
-            titulo: 'Nómina Abril 2025',
-            estado: 'PENDIENTE',
-            fechaProcesamiento: '15 de Abril, 2025'
-          },
-          {
-            id: 2,
-            titulo: 'Nómina Marzo 2025',
-            estado: 'PAGADO',
-            fechaProcesamiento: '30 de Marzo, 2025'
-          }
-        ]
+        proximoPago,
+        nominasPendientes: nominasPendientesDB.length,
+        nominasRecientes
       };
       
       res.status(200).json(dashboardData);
@@ -946,82 +1020,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         estado: req.query.estado as string
       };
       
-      // Datos de prueba para nóminas
-      const nominas = [
-        {
-          id: 1,
-          titulo: 'Nómina Abril 2025',
-          periodoInicio: new Date('2025-04-01'),
-          periodoFin: new Date('2025-04-30'),
-          fechaPago: new Date('2025-04-30'),
-          metodoPago: 'TRANSFERENCIA',
-          estado: 'PENDIENTE',
-          comentarios: 'Nómina mensual regular',
-          fechaCreacion: new Date('2025-04-01'),
-          fechaActualizacion: new Date('2025-04-01'),
-          creadoPor: 1,
-          actualizadoPor: 1,
-          montoTotal: 55000,
-          totalEmpleados: 25
-        },
-        {
-          id: 2,
-          titulo: 'Nómina Marzo 2025',
-          periodoInicio: new Date('2025-03-01'),
-          periodoFin: new Date('2025-03-31'),
-          fechaPago: new Date('2025-03-31'),
-          metodoPago: 'TRANSFERENCIA',
-          estado: 'PAGADO',
-          comentarios: 'Nómina mensual regular',
-          fechaCreacion: new Date('2025-03-01'),
-          fechaActualizacion: new Date('2025-03-31'),
-          creadoPor: 1,
-          actualizadoPor: 1,
-          montoTotal: 54500,
-          totalEmpleados: 25
-        },
-        {
-          id: 3,
-          titulo: 'Bonos Q1 2025',
-          periodoInicio: new Date('2025-01-01'),
-          periodoFin: new Date('2025-03-31'),
-          fechaPago: new Date('2025-04-15'),
-          metodoPago: 'TRANSFERENCIA',
-          estado: 'PENDIENTE',
-          comentarios: 'Bonos por cumplimiento de objetivos Q1',
-          fechaCreacion: new Date('2025-04-01'),
-          fechaActualizacion: new Date('2025-04-01'),
-          creadoPor: 1,
-          actualizadoPor: 1,
-          montoTotal: 25000,
-          totalEmpleados: 12
-        }
-      ];
+      // Consultar datos reales de la base de datos
+      const { db } = await import("./db");
+      const { nominas, nominaDetalles } = await import("@shared/schema");
+      const { eq, and, sql, desc } = await import("drizzle-orm");
+      
+      // Crear la consulta base
+      let query = db.select().from(nominas).orderBy(desc(nominas.id));
       
       // Aplicar filtros
-      let nominasFiltradas = [...nominas];
-      
-      if (filtros.empleadoId) {
-        // Filtro por empleado (simplificado)
-        nominasFiltradas = nominasFiltradas.filter(n => Math.random() > 0.5);
-      }
-      
       if (filtros.estado) {
-        nominasFiltradas = nominasFiltradas.filter(n => n.estado === filtros.estado);
+        query = query.where(eq(nominas.estado, filtros.estado));
       }
       
       if (filtros.mes && filtros.anio) {
-        nominasFiltradas = nominasFiltradas.filter(n => {
-          const inicio = new Date(n.periodoInicio);
-          return inicio.getMonth() + 1 === filtros.mes && inicio.getFullYear() === filtros.anio;
-        });
+        const startDate = new Date(filtros.anio, filtros.mes - 1, 1);
+        const endDate = new Date(filtros.anio, filtros.mes, 0);
+        
+        query = query.where(and(
+          sql`${nominas.periodoInicio} >= ${startDate}`,
+          sql`${nominas.periodoInicio} <= ${endDate}`
+        ));
       }
       
+      // Ejecutar consulta
+      const nominasDB = await query;
+      
+      console.log('Nóminas obtenidas de la BD:', nominasDB);
+      
+      // Si hay filtro por empleado, necesitamos filtrar después de obtener los datos
+      let nominasFiltradas = [...nominasDB];
+      
+      if (filtros.empleadoId) {
+        // Obtener IDs de nóminas donde el empleado está incluido
+        const nominasDetalleEmpleado = await db
+          .select({ nominaId: nominaDetalles.nominaId })
+          .from(nominaDetalles)
+          .where(eq(nominaDetalles.empleadoId, filtros.empleadoId));
+        
+        const nominasIdsConEmpleado = nominasDetalleEmpleado.map(det => det.nominaId);
+        
+        // Filtrar nóminas por IDs
+        nominasFiltradas = nominasFiltradas.filter(nomina => 
+          nominasIdsConEmpleado.includes(nomina.id)
+        );
+      }
+      
+      // Obtener el total de empleados por nómina
+      const nominasConTotalEmpleados = await Promise.all(
+        nominasFiltradas.map(async (nomina) => {
+          const detalles = await db
+            .select()
+            .from(nominaDetalles)
+            .where(eq(nominaDetalles.nominaId, nomina.id));
+          
+          return {
+            ...nomina,
+            totalEmpleados: detalles.length
+          };
+        })
+      );
+      
       // Paginación simple
-      const totalItems = nominasFiltradas.length;
+      const totalItems = nominasConTotalEmpleados.length;
       const totalPages = Math.ceil(totalItems / filtros.pageSize);
       const startIndex = (filtros.page - 1) * filtros.pageSize;
-      const paginatedNominas = nominasFiltradas.slice(startIndex, startIndex + filtros.pageSize);
+      const paginatedNominas = nominasConTotalEmpleados.slice(startIndex, startIndex + filtros.pageSize);
       
       // Construir respuesta
       const response = {
