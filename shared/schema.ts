@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, decimal, timestamp, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, decimal, timestamp, boolean, uniqueIndex, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -289,6 +289,7 @@ export const capacitaciones = pgTable("capacitaciones", {
   tipo: text("tipo").notNull(), // Usar TipoCapacitacion
   estado: text("estado").notNull().default("PROGRAMADA"), // Usar EstadoCapacitacion
   responsableId: integer("responsable_id").references(() => users.id).notNull(),
+  // Volvemos a timestamp para mantener compatibilidad
   fechaInicio: timestamp("fecha_inicio").notNull(),
   fechaFin: timestamp("fecha_fin").notNull(),
   duracionHoras: decimal("duracion_horas", { precision: 5, scale: 2 }).notNull(),
