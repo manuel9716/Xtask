@@ -39,11 +39,7 @@ function Router() {
           <Finances />
         </MainLayout>
       </Route>
-      <Route path="/human-resources">
-        <MainLayout>
-          <SimpleHumanResources />
-        </MainLayout>
-      </Route>
+      {/* La ruta /human-resources ahora se maneja en RecursosHumanosRoutes */}
       <Route path="/suppliers">
         <MainLayout>
           <Suppliers />
