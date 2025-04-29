@@ -355,7 +355,7 @@ export default function NominaDashboard() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline">Ver Historial Completo</Button>
-              <Button>
+              <Button onClick={() => setShowNuevaForma(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Crear Nueva Nómina
               </Button>

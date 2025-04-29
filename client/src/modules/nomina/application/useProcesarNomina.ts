@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { ProcesarNominaParams } from '../domain/entities/Nomina';
+import { apiRequest } from '@/lib/queryClient';
 
 /**
  * Hook para procesar nóminas
@@ -11,13 +12,11 @@ export function useProcesarNomina() {
   // Mutación para procesar nómina
   const { mutate: procesarNominaMutate, isPending } = useMutation({
     mutationFn: async (params: ProcesarNominaParams) => {
-      const response = await fetch('/api/finanzas/nomina/procesar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(params),
-      });
+      const response = await apiRequest(
+        'POST',
+        '/api/nomina/procesar',
+        params
+      );
       
       if (!response.ok) {
         const error = await response.json();

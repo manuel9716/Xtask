@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Employee } from '@shared/schema';
+import { obtenerEmpleados, FiltrosEmpleado } from '../empleados/api/empleadosApi';
 
 /**
  * Hook para obtener empleados disponibles para nómina
@@ -12,23 +13,25 @@ export function useEmpleadosNomina() {
     error,
     refetch
   } = useQuery({
-    queryKey: ['/api/finanzas/nomina/empleados/listar'],
+    queryKey: ['/api/nomina/empleados/listar'],
     queryFn: async () => {
-      const response = await fetch('/api/finanzas/nomina/empleados/listar');
-      if (!response.ok) {
-        throw new Error('Error al obtener empleados');
-      }
-      return await response.json();
+      // Solo traemos empleados activos para la nómina
+      const filtros: FiltrosEmpleado = {
+        contractStatus: 'ACTIVO',
+        pageSize: 100 // Traer suficientes para mostrar en el selector
+      };
+      const response = await obtenerEmpleados(filtros);
+      return response.empleados;
     }
   });
 
   // Extraer y normalizar datos
-  const empleados: (Employee & { nombre: string })[] = data || [];
+  const empleados: (Employee & { nombre?: string })[] = data || [];
   
   // Obtener empleados transformados para componentes UI
   const empleadosParaSelect = empleados.map(emp => ({
     value: emp.id.toString(),
-    label: emp.nombre || `Empleado #${emp.id}`,
+    label: emp.firstName ? `${emp.firstName} ${emp.lastName || ''}` : `Empleado #${emp.id}`,
     data: emp
   }));
 
