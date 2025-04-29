@@ -1,119 +1,108 @@
-import React, { useMemo } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { ResultadoCalculoNomina } from '../../domain/services/calculadoraNomina';
 import { formatCurrency } from '@/lib/utils';
-import { EmpleadoConCalculos } from './NominaFormModal';
+import { 
+  Card, 
+  CardContent,
+  CardHeader,
+  CardTitle 
+} from '@/components/ui/card';
+import { DollarSign, AlertCircle, Minus, Plus } from 'lucide-react';
 
 interface ResumenNominaProps {
-  empleados: EmpleadoConCalculos[];
+  totales: ResultadoCalculoNomina;
+  cantidadEmpleados: number;
 }
 
-export function ResumenNomina({ empleados }: ResumenNominaProps) {
-  // Cálculo de totales generales
-  const totales = useMemo(() => {
-    if (empleados.length === 0) return null;
-    
-    return empleados.reduce(
-      (acc, empleado) => {
-        acc.salarioBase += empleado.calculosNomina.salarioBase;
-        acc.salarioBruto += empleado.calculosNomina.salarioBruto;
-        acc.retencionFiscal += empleado.calculosNomina.retencionFiscal;
-        acc.seguridadSocial += empleado.calculosNomina.seguridadSocial;
-        acc.otrasDeduciones += empleado.calculosNomina.otrasDeduciones;
-        acc.salarioNeto += empleado.calculosNomina.salarioNeto;
-        return acc;
-      },
-      {
-        salarioBase: 0,
-        salarioBruto: 0,
-        retencionFiscal: 0,
-        seguridadSocial: 0,
-        otrasDeduciones: 0,
-        salarioNeto: 0,
-      }
-    );
-  }, [empleados]);
-
-  if (!totales) return null;
-
+export function ResumenNomina({ totales, cantidadEmpleados }: ResumenNominaProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Resumen de nómina</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Empleado</TableHead>
-              <TableHead className="text-right">Salario Base</TableHead>
-              <TableHead className="text-right">Salario Bruto</TableHead>
-              <TableHead className="text-right">Retención</TableHead>
-              <TableHead className="text-right">Seg. Social</TableHead>
-              <TableHead className="text-right">Otras Deduc.</TableHead>
-              <TableHead className="text-right">Salario Neto</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {empleados.map((empleado) => (
-              <TableRow key={empleado.id}>
-                <TableCell className="font-medium">
-                  {empleado.firstName} {empleado.lastName}
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(empleado.calculosNomina.salarioBase)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(empleado.calculosNomina.salarioBruto)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(empleado.calculosNomina.retencionFiscal)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(empleado.calculosNomina.seguridadSocial)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(empleado.calculosNomina.otrasDeduciones)}
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  {formatCurrency(empleado.calculosNomina.salarioNeto)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell className="font-medium">TOTAL</TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(totales.salarioBase)}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(totales.salarioBruto)}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(totales.retencionFiscal)}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(totales.seguridadSocial)}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(totales.otrasDeduciones)}
-              </TableCell>
-              <TableCell className="text-right font-medium">
-                {formatCurrency(totales.salarioNeto)}
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <h3 className="text-xl font-semibold mb-2">Resumen de Nómina</h3>
+      
+      {/* Tarjeta principal con el total a pagar */}
+      <Card className="bg-primary/5 border-primary/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center">
+            <DollarSign className="h-5 w-5 mr-1" />
+            Total a Pagar
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col">
+            <div className="text-3xl font-bold mb-1">
+              {formatCurrency(totales.salarioNeto)}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {cantidadEmpleados} {cantidadEmpleados === 1 ? 'empleado' : 'empleados'} incluidos
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Desglose de valores */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Salario Base */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium flex items-center">
+                <Plus className="h-4 w-4 mr-1 text-green-500" /> 
+                Salario Base
+              </div>
+              <div className="font-semibold">{formatCurrency(totales.salarioBase)}</div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Retención Fiscal */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium flex items-center">
+                <Minus className="h-4 w-4 mr-1 text-destructive" /> 
+                Retención Fiscal
+              </div>
+              <div className="font-semibold">-{formatCurrency(totales.retencionFiscal)}</div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Seguridad Social */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium flex items-center">
+                <Minus className="h-4 w-4 mr-1 text-destructive" /> 
+                Seguridad Social
+              </div>
+              <div className="font-semibold">-{formatCurrency(totales.seguridadSocial)}</div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Otras Deducciones */}
+        {totales.otrasDeduciones > 0 && (
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-medium flex items-center">
+                  <Minus className="h-4 w-4 mr-1 text-destructive" /> 
+                  Otras Deducciones
+                </div>
+                <div className="font-semibold">-{formatCurrency(totales.otrasDeduciones)}</div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+      
+      {/* Mensaje informativo */}
+      {totales.salarioNeto === 0 && (
+        <div className="flex items-center p-4 bg-amber-50 text-amber-700 rounded-md border border-amber-200">
+          <AlertCircle className="h-5 w-5 mr-2 text-amber-600" />
+          <span>Seleccione al menos un empleado para ver el cálculo de la nómina.</span>
+        </div>
+      )}
+    </div>
   );
 }

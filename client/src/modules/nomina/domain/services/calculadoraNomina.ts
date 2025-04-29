@@ -1,10 +1,5 @@
-/**
- * Servicio para cálculos de nómina
- */
+import { Employee } from "@shared/schema";
 
-/**
- * Estructura de resultados de cálculo de nómina
- */
 export interface ResultadoCalculoNomina {
   salarioBase: number;
   salarioBruto: number;
@@ -14,106 +9,86 @@ export interface ResultadoCalculoNomina {
   salarioNeto: number;
 }
 
-/**
- * Constantes para cálculos de nómina (porcentajes)
- */
-export const PORCENTAJES_NOMINA = {
-  RETENCION_FISCAL: 0.12, // 12% de retención fiscal
-  SEGURIDAD_SOCIAL: 0.04, // 4% de seguridad social
-  OTRAS_DEDUCCIONES: 0.02, // 2% de otras deducciones (fondo de pensiones, etc)
+interface ConfiguracionCalculos {
+  retencionFiscalPorcentaje: number;
+  seguridadSocialPorcentaje: number;
+  otrasDeducciones: number;
+}
+
+// Configuración por defecto para cálculos de nómina
+const configuracionPorDefecto: ConfiguracionCalculos = {
+  retencionFiscalPorcentaje: 10, // 10% retención fiscal
+  seguridadSocialPorcentaje: 8,  // 8% seguridad social
+  otrasDeducciones: 0            // Otras deducciones en valor absoluto
 };
 
-/**
- * Calcula todos los valores de nómina para un empleado
- * @param salarioBase Salario base del empleado
- * @param complementos Complementos salariales (bonos, horas extra, etc) - opcional
- * @returns Objeto con todos los cálculos de nómina
- */
-export function calcularTotalesNomina(
-  salarioBase: number,
-  complementos: number = 0
+export function calcularNominaEmpleado(
+  empleado: Employee, 
+  config: Partial<ConfiguracionCalculos> = {}
 ): ResultadoCalculoNomina {
-  // Cálculo de salario bruto (base + complementos)
-  const salarioBruto = salarioBase + complementos;
+  // Combinamos la configuración por defecto con la proporcionada
+  const configuracion = {
+    ...configuracionPorDefecto,
+    ...config
+  };
+
+  // Obtener el salario base del empleado
+  const salarioBase = empleado.salary ? parseFloat(empleado.salary) : 0;
   
-  // Cálculo de retenciones
-  const retencionFiscal = salarioBruto * PORCENTAJES_NOMINA.RETENCION_FISCAL;
-  const seguridadSocial = salarioBruto * PORCENTAJES_NOMINA.SEGURIDAD_SOCIAL;
-  const otrasDeduciones = salarioBruto * PORCENTAJES_NOMINA.OTRAS_DEDUCCIONES;
+  // Si no hay salario base, devolvemos valores en cero
+  if (salarioBase === 0) {
+    return {
+      salarioBase: 0,
+      salarioBruto: 0,
+      retencionFiscal: 0,
+      seguridadSocial: 0,
+      otrasDeduciones: 0,
+      salarioNeto: 0
+    };
+  }
   
-  // Total deducciones
-  const totalDeducciones = retencionFiscal + seguridadSocial + otrasDeduciones;
+  // Por ahora, el salario bruto es igual al salario base
+  // En una implementación más completa, podría incluir bonificaciones, horas extra, etc.
+  const salarioBruto = salarioBase;
   
-  // Salario neto (bruto - deducciones)
-  const salarioNeto = salarioBruto - totalDeducciones;
+  // Calcular deducciones
+  const retencionFiscal = salarioBruto * (configuracion.retencionFiscalPorcentaje / 100);
+  const seguridadSocial = salarioBruto * (configuracion.seguridadSocialPorcentaje / 100);
+  const otrasDeduciones = configuracion.otrasDeducciones;
+  
+  // Calcular salario neto
+  const salarioNeto = salarioBruto - retencionFiscal - seguridadSocial - otrasDeduciones;
   
   return {
     salarioBase,
     salarioBruto,
     retencionFiscal,
-    seguridadSocial, 
+    seguridadSocial,
     otrasDeduciones,
-    salarioNeto,
+    salarioNeto
   };
 }
 
-/**
- * Calcula los totales para un grupo de empleados
- * @param calculosIndividuales Array de cálculos individuales
- * @returns Objeto con los totales de nómina
- */
-export function calcularTotalesGenerales(
-  calculosIndividuales: ResultadoCalculoNomina[]
-): ResultadoCalculoNomina {
+export function calcularTotalNomina(resultados: ResultadoCalculoNomina[]): ResultadoCalculoNomina {
+  // Inicializar totales
   const totales: ResultadoCalculoNomina = {
     salarioBase: 0,
     salarioBruto: 0,
     retencionFiscal: 0,
     seguridadSocial: 0,
     otrasDeduciones: 0,
-    salarioNeto: 0,
+    salarioNeto: 0
   };
   
-  // Sumar todos los valores
-  calculosIndividuales.forEach((calculo) => {
-    totales.salarioBase += calculo.salarioBase;
-    totales.salarioBruto += calculo.salarioBruto;
-    totales.retencionFiscal += calculo.retencionFiscal;
-    totales.seguridadSocial += calculo.seguridadSocial;
-    totales.otrasDeduciones += calculo.otrasDeduciones;
-    totales.salarioNeto += calculo.salarioNeto;
+  // Sumar los valores de todos los empleados
+  resultados.forEach(resultado => {
+    totales.salarioBase += resultado.salarioBase;
+    totales.salarioBruto += resultado.salarioBruto;
+    totales.retencionFiscal += resultado.retencionFiscal;
+    totales.seguridadSocial += resultado.seguridadSocial;
+    totales.otrasDeduciones += resultado.otrasDeduciones;
+    totales.salarioNeto += resultado.salarioNeto;
   });
   
   return totales;
-}
-
-/**
- * Valida que los cálculos de nómina sean correctos
- * @param calculo Objeto con los cálculos a validar
- * @returns true si los cálculos son válidos, false en caso contrario
- */
-export function validarCalculosNomina(calculo: ResultadoCalculoNomina): boolean {
-  // Verificar que no haya valores negativos
-  if (
-    calculo.salarioBase < 0 ||
-    calculo.salarioBruto < 0 ||
-    calculo.retencionFiscal < 0 ||
-    calculo.seguridadSocial < 0 ||
-    calculo.otrasDeduciones < 0 ||
-    calculo.salarioNeto < 0
-  ) {
-    return false;
-  }
-  
-  // Verificar que el salario neto sea correcto (bruto - deducciones)
-  const totalDeducciones = 
-    calculo.retencionFiscal + 
-    calculo.seguridadSocial + 
-    calculo.otrasDeduciones;
-  
-  const salarioNetoCalculado = calculo.salarioBruto - totalDeducciones;
-  
-  // Permitir un pequeño margen de error por redondeos
-  const margenError = 0.01;
-  return Math.abs(calculo.salarioNeto - salarioNetoCalculado) <= margenError;
 }

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, like, or, ilike, sql } from 'drizzle-orm';
 import { employees } from '@shared/schema';
 import { z } from 'zod';
 import path from 'path';
@@ -45,6 +45,73 @@ const crearNominaSchema = z.object({
 });
 
 const nominaRouter = Router();
+
+// Listar empleados para nómina con filtros
+nominaRouter.get('/empleados/listar', async (req: Request, res: Response) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 10;
+    const search = req.query.search as string;
+    const department = req.query.department as string;
+    const contractStatus = req.query.contractStatus as string;
+    
+    const offset = (page - 1) * pageSize;
+    
+    // Construir las condiciones para el filtrado
+    const conditions = [];
+    
+    // Si hay búsqueda de texto
+    if (search) {
+      conditions.push(
+        or(
+          ilike(employees.firstName, `%${search}%`),
+          ilike(employees.lastName, `%${search}%`),
+          ilike(employees.position, `%${search}%`)
+        )
+      );
+    }
+    
+    // Si hay filtro por departamento
+    if (department) {
+      conditions.push(eq(employees.department, department));
+    }
+    
+    // Si hay filtro por estado de contrato
+    if (contractStatus) {
+      conditions.push(eq(employees.contractStatus, contractStatus));
+    }
+    
+    // Ejecutar la consulta con los filtros
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    // Obtener empleados filtrados
+    const empleadosFiltrados = await db
+      .select()
+      .from(employees)
+      .where(whereClause)
+      .limit(pageSize)
+      .offset(offset);
+    
+    // Obtener conteo total para la paginación
+    const [totalCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(employees)
+      .where(whereClause);
+    
+    const total = totalCount?.count || 0;
+    const totalPages = Math.ceil(total / pageSize);
+    
+    return res.status(200).json({
+      data: empleadosFiltrados,
+      total,
+      currentPage: page,
+      totalPages
+    });
+  } catch (error) {
+    console.error('Error al listar empleados para nómina:', error);
+    return res.status(500).json({ error: 'Error al listar empleados para nómina' });
+  }
+});
 
 // Procesar y generar el PDF de nómina
 nominaRouter.post('/desprendible/generar', async (req: Request, res: Response) => {
@@ -231,6 +298,45 @@ nominaRouter.post('/generar', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error al generar nómina:', error);
     return res.status(500).json({ error: 'Error al generar la nómina' });
+  }
+});
+
+// Crear una nueva nómina con múltiples empleados
+nominaRouter.post('/crear', async (req: Request, res: Response) => {
+  try {
+    const { 
+      periodoInicio, 
+      periodoFin, 
+      fechaPago, 
+      metodoPago, 
+      empleados, 
+      comentarios 
+    } = req.body;
+    
+    // Validación básica de datos
+    if (!periodoInicio || !periodoFin || !fechaPago || !metodoPago || !empleados || !Array.isArray(empleados)) {
+      return res.status(400).json({ error: 'Datos incompletos o inválidos' });
+    }
+    
+    // En una implementación real, aquí guardaríamos los datos en la base de datos
+    // creando registros tanto para la nómina como para cada empleado incluido
+    
+    // Simulación de respuesta exitosa
+    return res.status(201).json({
+      id: Math.floor(Math.random() * 1000) + 100, // ID simulado
+      periodoInicio,
+      periodoFin,
+      fechaPago,
+      metodoPago,
+      fechaCreacion: new Date().toISOString(),
+      estado: 'PENDIENTE',
+      montoTotal: empleados.reduce((total, emp) => total + emp.salarioNeto, 0),
+      comentarios,
+      empleados
+    });
+  } catch (error) {
+    console.error('Error al crear nómina:', error);
+    return res.status(500).json({ error: 'Error al crear la nómina' });
   }
 });
 

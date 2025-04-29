@@ -41,7 +41,7 @@ export default function NominaDashboard() {
   const [showNuevaForma, setShowNuevaForma] = useState(false);
   
   // Hook para crear nómina
-  const { crearNomina, isPending: creandoNomina } = useCrearNomina();
+  const crearNominaMutation = useCrearNomina();
   
   // Datos de ejemplo para el dashboard
   const dashboardData = {
@@ -412,13 +412,8 @@ export default function NominaDashboard() {
       
       {/* Modal de creación de nómina */}
       <NominaFormModal 
-        isOpen={showNuevaForma}
-        onClose={() => setShowNuevaForma(false)}
-        onSubmit={(datos) => {
-          crearNomina(datos);
-          setShowNuevaForma(false);
-        }}
-        isPending={creandoNomina}
+        open={showNuevaForma}
+        onOpenChange={setShowNuevaForma}
       />
     </div>
   );

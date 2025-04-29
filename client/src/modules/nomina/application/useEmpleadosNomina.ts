@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { Employee } from '@shared/schema';
-import { apiRequest } from '@/lib/queryClient';
 
 interface EmpleadosResponse {
   data: Employee[];
@@ -9,45 +8,48 @@ interface EmpleadosResponse {
   totalPages: number;
 }
 
+interface EmpleadosParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  department?: string;
+  contractStatus?: string;
+}
+
 /**
  * Hook para obtener empleados para nómina
  * 
  * Por defecto, trae solo empleados activos
  */
-export function useEmpleadosNomina(params = { page: 1, pageSize: 100, contractStatus: 'ACTIVO' }) {
+export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize: 100, contractStatus: 'ACTIVO' }) {
   console.log('Enviando filtros:', params);
   
-  const { data, isLoading, error } = useQuery<EmpleadosResponse, Error>({
-    queryKey: ['/api/nomina/empleados/listar', params],
-    queryFn: async () => {
-      // Construir URL con parámetros
+  return useQuery<EmpleadosResponse>({
+    queryKey: [
+      '/api/nomina/empleados/listar',
+      params.page,
+      params.pageSize,
+      params.search,
+      params.department,
+      params.contractStatus
+    ],
+    queryFn: async ({ queryKey }) => {
+      const [_, page, pageSize, search, department, contractStatus] = queryKey;
+      
       const searchParams = new URLSearchParams();
+      if (page) searchParams.append('page', page.toString());
+      if (pageSize) searchParams.append('pageSize', pageSize.toString());
+      if (search) searchParams.append('search', search.toString());
+      if (department) searchParams.append('department', department.toString());
+      if (contractStatus) searchParams.append('contractStatus', contractStatus.toString());
       
-      // Agregar todos los parámetros no vacíos
-      for (const [key, value] of Object.entries(params)) {
-        if (value !== null && value !== undefined && value !== '') {
-          searchParams.append(key, value.toString());
-        }
-      }
-      
-      const url = `/api/nomina/empleados/listar?${searchParams.toString()}`;
-      const response = await apiRequest('GET', url);
+      const response = await fetch(`/api/nomina/empleados/listar?${searchParams.toString()}`);
       
       if (!response.ok) {
-        const errorMessage = await response.text();
-        throw new Error(`Error al obtener empleados: ${errorMessage}`);
+        throw new Error('Error al obtener empleados para nómina');
       }
       
-      return response.json();
-    },
+      return await response.json();
+    }
   });
-
-  return {
-    empleados: data?.data,
-    total: data?.total || 0,
-    currentPage: data?.currentPage || 1,
-    totalPages: data?.totalPages || 1,
-    isLoading,
-    error,
-  };
 }
