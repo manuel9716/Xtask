@@ -1,46 +1,53 @@
 import { useQuery } from '@tanstack/react-query';
 import { Employee } from '@shared/schema';
-import { obtenerEmpleados, FiltrosEmpleado } from '../empleados/api/empleadosApi';
+import { apiRequest } from '@/lib/queryClient';
+
+interface EmpleadosResponse {
+  data: Employee[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+}
 
 /**
- * Hook para obtener empleados disponibles para nómina
+ * Hook para obtener empleados para nómina
+ * 
+ * Por defecto, trae solo empleados activos
  */
-export function useEmpleadosNomina() {
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['/api/nomina/empleados/listar'],
+export function useEmpleadosNomina(params = { page: 1, pageSize: 100, contractStatus: 'ACTIVO' }) {
+  console.log('Enviando filtros:', params);
+  
+  const { data, isLoading, error } = useQuery<EmpleadosResponse, Error>({
+    queryKey: ['/api/nomina/empleados/listar', params],
     queryFn: async () => {
-      // Solo traemos empleados activos para la nómina
-      const filtros: FiltrosEmpleado = {
-        contractStatus: 'ACTIVO',
-        pageSize: 100 // Traer suficientes para mostrar en el selector
-      };
-      const response = await obtenerEmpleados(filtros);
-      return response.empleados;
-    }
+      // Construir URL con parámetros
+      const searchParams = new URLSearchParams();
+      
+      // Agregar todos los parámetros no vacíos
+      for (const [key, value] of Object.entries(params)) {
+        if (value !== null && value !== undefined && value !== '') {
+          searchParams.append(key, value.toString());
+        }
+      }
+      
+      const url = `/api/nomina/empleados/listar?${searchParams.toString()}`;
+      const response = await apiRequest('GET', url);
+      
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        throw new Error(`Error al obtener empleados: ${errorMessage}`);
+      }
+      
+      return response.json();
+    },
   });
 
-  // Extraer y normalizar datos
-  const empleados: (Employee & { nombre?: string })[] = data || [];
-  
-  // Obtener empleados transformados para componentes UI
-  const empleadosParaSelect = empleados.map(emp => ({
-    value: emp.id.toString(),
-    label: emp.firstName ? `${emp.firstName} ${emp.lastName || ''}` : `Empleado #${emp.id}`,
-    data: emp
-  }));
-
   return {
-    empleados,
-    empleadosParaSelect,
+    empleados: data?.data,
+    total: data?.total || 0,
+    currentPage: data?.currentPage || 1,
+    totalPages: data?.totalPages || 1,
     isLoading,
-    isError,
     error,
-    refetch
   };
 }

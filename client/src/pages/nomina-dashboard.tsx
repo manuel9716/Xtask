@@ -32,10 +32,16 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { EmpleadoForm } from '@/modules/nomina/empleados/ui/forms/EmpleadoForm';
 import EmpleadosPage from '@/modules/nomina/empleados/ui/pages/EmpleadosPage';
+import { NominaFormModal } from '@/modules/nomina/ui/components/NominaFormModal';
+import { useCrearNomina } from '@/modules/nomina/application/useCrearNomina';
 
 export default function NominaDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isCrearEmpleadoOpen, setIsCrearEmpleadoOpen] = useState(false);
+  const [showNuevaForma, setShowNuevaForma] = useState(false);
+  
+  // Hook para crear nómina
+  const { crearNomina, isPending: creandoNomina } = useCrearNomina();
   
   // Datos de ejemplo para el dashboard
   const dashboardData = {
@@ -403,6 +409,17 @@ export default function NominaDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Modal de creación de nómina */}
+      <NominaFormModal 
+        isOpen={showNuevaForma}
+        onClose={() => setShowNuevaForma(false)}
+        onSubmit={(datos) => {
+          crearNomina(datos);
+          setShowNuevaForma(false);
+        }}
+        isPending={creandoNomina}
+      />
     </div>
   );
 }

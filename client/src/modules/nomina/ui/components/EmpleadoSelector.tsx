@@ -82,7 +82,7 @@ export function EmpleadoSelector({
     } else {
       // Marcar todos en la página actual
       const idsEnPagina = empleadosPaginados.map(emp => emp.id);
-      const nuevosIds = [...new Set([...selectedIds, ...idsEnPagina])];
+      const nuevosIds = [...selectedIds, ...idsEnPagina.filter(id => !selectedIds.includes(id))];
       onChange(nuevosIds);
     }
   };
