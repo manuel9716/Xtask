@@ -75,6 +75,8 @@ export function useListarNominas() {
     }
   };
   
+  console.log("Datos recibidos:", data);
+  
   // Función para cambiar los filtros
   const cambiarFiltros = (nuevosFiltros: Partial<FiltrosNomina>) => {
     setFiltros(prev => ({
