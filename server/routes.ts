@@ -11,8 +11,11 @@ import employeeProjectsRouter from "./routes/employee-projects.routes";
 import evaluacionesRouter from "./routes/evaluaciones.routes";
 import capacitacionesRouter from "./routes/capacitaciones.routes";
 import microLearningRouter from "./routes/microlearning.routes";
+import authRouter from "./routes/auth.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Rutas de autenticación
+  app.use('/api/auth', authRouter);
   // Projects routes
   app.get("/api/projects", async (req, res) => {
     try {
