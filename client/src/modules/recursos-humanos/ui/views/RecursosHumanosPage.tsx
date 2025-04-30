@@ -30,7 +30,7 @@ import { KpiCard } from "../components/KpiCard";
 // Importamos los componentes reales
 import { ListaEvaluaciones } from "./ListaEvaluaciones";
 import { ListaCapacitaciones } from "./ListaCapacitaciones";
-import { ModuloMetricas } from "./TalentoHumanoDashboard";
+import MetricasComponent from "../components/MetricasComponent";
 
 export const RecursosHumanosPage: React.FC = () => {
   // Obtener la ruta actual para manejar visualización condicional
@@ -42,18 +42,28 @@ export const RecursosHumanosPage: React.FC = () => {
   const basePath = pathParts[0]; // "recursos-humanos" o "human-resources"
   const subPath = pathParts[1];  // "capacitaciones", "evaluaciones", etc.
   
+  // Log específico para depuración
+  console.log("RecursosHumanosPage - Ruta actual:", location);
+  console.log("RecursosHumanosPage - pathParts:", pathParts);
+  console.log("RecursosHumanosPage - basePath:", basePath, "subPath:", subPath);
+
   // Si tenemos un subpath válido
   if ((basePath === "recursos-humanos" || basePath === "human-resources") && subPath) {
-    switch (subPath) {
-      case "evaluaciones":
-        return <ListaEvaluaciones />;
-      case "capacitaciones":
-        return <ListaCapacitaciones />;
-      case "metricas":
-        return <ModuloMetricas />;
-      default:
-        // En caso de una ruta no reconocida, mostrar la página principal
-        break;
+    console.log("RecursosHumanosPage - Entrando a subPath switch:", subPath);
+    
+    if (subPath === "metricas") {
+      console.log("RecursosHumanosPage - Renderizando MetricasComponent");
+      return <MetricasComponent />;
+    }
+    
+    if (subPath === "evaluaciones") {
+      console.log("RecursosHumanosPage - Renderizando ListaEvaluaciones");
+      return <ListaEvaluaciones />;
+    }
+    
+    if (subPath === "capacitaciones") {
+      console.log("RecursosHumanosPage - Renderizando ListaCapacitaciones");
+      return <ListaCapacitaciones />;
     }
   }
   
