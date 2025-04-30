@@ -83,16 +83,14 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
         </p>
 
         {NavItems.map((item) => (
-          <React.Fragment key={item.href}>
-            <NavItem
-              href={item.href}
-              icon={item.icon}
-              active={location === item.href}
-            >
-              {item.label}
-            </NavItem>
-
-          </React.Fragment>
+          <NavItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            active={location === item.href}
+          >
+            {item.label}
+          </NavItem>
         ))}
 
         <p className="text-secondary text-xs font-medium uppercase tracking-wider mt-6 mb-2 font-heading">
