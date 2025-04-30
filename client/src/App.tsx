@@ -74,16 +74,6 @@ function Router() {
         </MainLayout>
       </Route>
       
-      {/* Ruta directa a Capacitaciones */}
-      <Route path="/capacitaciones">
-        <CapacitacionesPage />
-      </Route>
-      
-      {/* Ruta directa a Métricas */}
-      <Route path="/metricas">
-        <MetricasPage />
-      </Route>
-      
       {/* Rutas de los módulos específicos */}
       <FinanzasRoutes />
       <NominaRoutes />

@@ -6,7 +6,7 @@ import React from "react";
 import { Route } from "wouter";
 import { MainLayout } from "@/layouts/main-layout";
 import RecursosHumanosPage from "./views/RecursosHumanosPage";
-import { TalentoHumanoDashboard, ModuloMetricas, ModuloEvaluaciones, ModuloCapacitaciones } from "./views/TalentoHumanoDashboard";
+import { TalentoHumanoDashboard } from "./views/TalentoHumanoDashboard";
 
 export const RecursosHumanosRoutes: React.FC = () => {
   return (
@@ -18,22 +18,10 @@ export const RecursosHumanosRoutes: React.FC = () => {
         </MainLayout>
       </Route>
       
-      {/* Rutas específicas para los submódulos con sus componentes correspondientes */}
-      <Route path="/recursos-humanos/evaluaciones">
+      {/* Rutas específicas que usan TalentoHumanoDashboard para la navegación interna */}
+      <Route path="/recursos-humanos/:submodulo">
         <MainLayout>
-          <ModuloEvaluaciones />
-        </MainLayout>
-      </Route>
-      
-      <Route path="/recursos-humanos/capacitaciones">
-        <MainLayout>
-          <ModuloCapacitaciones />
-        </MainLayout>
-      </Route>
-      
-      <Route path="/recursos-humanos/metricas">
-        <MainLayout>
-          <ModuloMetricas />
+          <RecursosHumanosPage />
         </MainLayout>
       </Route>
       
@@ -44,21 +32,9 @@ export const RecursosHumanosRoutes: React.FC = () => {
         </MainLayout>
       </Route>
       
-      <Route path="/human-resources/evaluaciones">
+      <Route path="/human-resources/:submodulo">
         <MainLayout>
-          <ModuloEvaluaciones />
-        </MainLayout>
-      </Route>
-      
-      <Route path="/human-resources/capacitaciones">
-        <MainLayout>
-          <ModuloCapacitaciones />
-        </MainLayout>
-      </Route>
-      
-      <Route path="/human-resources/metricas">
-        <MainLayout>
-          <ModuloMetricas />
+          <RecursosHumanosPage />
         </MainLayout>
       </Route>
     </>
