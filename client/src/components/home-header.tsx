@@ -12,11 +12,8 @@ export function HomeHeader() {
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
           <div className="flex items-center">
-            <span className="text-2xl font-bold text-[#6d28d9] cursor-pointer flex items-center gap-1" onClick={() => setLocation('/')}>
-              <div className="bg-white flex items-center justify-center p-1 rounded w-8 h-8 border border-[#6d28d9]/20">
-                <span className="text-[#6d28d9] font-bold text-xl">X</span>
-              </div>
-              task
+            <span className="text-2xl font-bold text-[#251948] cursor-pointer flex items-center" onClick={() => setLocation('/')}>
+              <span className="text-[#02BDEA]">X</span>task
             </span>
           </div>
           

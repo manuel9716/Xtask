@@ -28,14 +28,14 @@ export function Logo({ className, textClassName, size = "md", showText = true }:
   return (
     <Link href="/" className="cursor-pointer">
       <div className={cn("flex items-center gap-2", className)}>
-        {/* Logo cuadrado con X */}
-        <div className="bg-white flex items-center justify-center p-1 rounded w-8 h-8 border border-[#6d28d9]/20">
-          <div className="text-[#6d28d9] font-bold text-xl">X</div>
-        </div>
-        
+        <img 
+          src={XTaskLogo} 
+          alt={t("common.appName")} 
+          className={cn(sizeClasses[size], "w-auto rounded")} 
+        />
         {showText && (
-          <span className={cn("font-bold tracking-tight text-[#6d28d9]", textSize[size], textClassName)}>
-            Task
+          <span className={cn("font-bold tracking-tight", textSize[size], textClassName)}>
+            {t("common.appName")}
           </span>
         )}
       </div>
