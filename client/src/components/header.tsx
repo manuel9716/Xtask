@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Bell, HelpCircle, Menu, Search, User, LogOut } from "lucide-react";
+import { Bell, HelpCircle, Menu, Search, User, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
