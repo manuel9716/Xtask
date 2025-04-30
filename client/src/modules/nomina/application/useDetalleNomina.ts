@@ -1,112 +1,84 @@
 import { useQuery } from '@tanstack/react-query';
-import { Payroll, Employee } from '@shared/schema';
+import { useToast } from '@/hooks/use-toast';
 
-/**
- * Hook para obtener el detalle completo de una nómina
- */
-export function useDetalleNomina(nominaId: number | undefined) {
-  // Si no hay ID, no hacer la consulta
-  const enabled = nominaId !== undefined;
+export interface DetalleNominaEmpleado {
+  id: number;
+  nominaId: number;
+  empleadoId: number;
+  salarioBase: string;
+  totalIngresos: string;
+  totalDeducciones: string;
+  salarioNeto: string;
+  detalleIngresos: Array<{
+    concepto: string;
+    valor: number;
+    tipo: string;
+  }>;
+  detalleDeducciones: Array<{
+    concepto: string;
+    valor: number;
+    tipo: string;
+  }>;
+  estado: string;
+  pdfUrl: string | null;
+  fechaGeneracion: string;
+  empleado: {
+    id: number;
+    nombre: string;
+    puesto: string;
+    departamento: string;
+  } | null;
+}
+
+export interface DetalleNominaResponse {
+  cabecera: {
+    id: number;
+    titulo: string;
+    periodoInicio: string;
+    periodoFin: string;
+    fechaPago: string;
+    metodoPago: string;
+    estado: string;
+    comentarios: string;
+    fechaCreacion: string;
+    fechaActualizacion: string;
+    creadoPor: number;
+    actualizadoPor: number | null;
+    montoTotal: string;
+  };
+  detalles: DetalleNominaEmpleado[];
+  resumen: {
+    totalEmpleados: number;
+    montoTotal: string;
+  };
+}
+
+export function useDetalleNomina(nominaId: number | null) {
+  const { toast } = useToast();
   
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: [`/api/finanzas/nomina/${nominaId}`],
-    queryFn: async () => {
-      // Si no hay ID, no ejecutar la consulta
-      if (!nominaId) {
-        throw new Error('ID de nómina no especificado');
+  return useQuery<DetalleNominaResponse>({
+    queryKey: [`/api/nomina/v1/detalle/${nominaId}`],
+    queryFn: async ({ queryKey }) => {
+      if (!nominaId) throw new Error('ID de nómina no proporcionado');
+      
+      const response = await fetch(queryKey[0] as string);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || 'Error al obtener detalle de nómina';
+        throw new Error(errorMessage);
       }
       
-      const response = await fetch(`/api/finanzas/nomina/${nominaId}`);
-      if (!response.ok) {
-        throw new Error('Error al obtener el detalle de la nómina');
-      }
-      return await response.json();
+      return response.json();
     },
-    enabled
+    enabled: nominaId !== null,
+    staleTime: 60000, // 1 minuto
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
   });
-
-  // Función para descargar el desprendible
-  const descargarDesprendible = async () => {
-    if (!nominaId) {
-      throw new Error('ID de nómina no especificado');
-    }
-    
-    try {
-      // Realizar la petición para obtener el PDF
-      const response = await fetch(`/api/finanzas/nomina/${nominaId}/desprendible`);
-      
-      if (!response.ok) {
-        throw new Error('Error al descargar el desprendible');
-      }
-      
-      // Crear un blob para descargar el PDF
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      
-      // Crear un enlace temporal y simular un clic para descargar
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `desprendible_${nominaId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      
-      // Limpiar
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      return true;
-    } catch (error) {
-      console.error('Error al descargar desprendible:', error);
-      throw error;
-    }
-  };
-
-  // Extracción de datos para facilitar su uso
-  const nomina: Payroll | undefined = data;
-  const empleado: Employee | undefined = data?.empleado;
-  const nombreEmpleado: string = data?.nombreEmpleado || '';
-  
-  // Información estructurada para facilitar su uso en la UI
-  const detallesFormateados = nomina ? {
-    id: nomina.id,
-    empleado: nombreEmpleado,
-    periodo: {
-      inicio: nomina.periodStart ? new Date(nomina.periodStart).toLocaleDateString() : '',
-      fin: nomina.periodEnd ? new Date(nomina.periodEnd).toLocaleDateString() : '',
-    },
-    montos: {
-      sueldoBruto: parseFloat(nomina.grossSalary),
-      sueldoNeto: parseFloat(nomina.netSalary),
-      deducciones: parseFloat(nomina.deductions),
-      beneficios: parseFloat(nomina.benefits),
-      impuestos: parseFloat(nomina.taxes)
-    },
-    estado: nomina.status,
-    pago: nomina.paymentDate ? {
-      fecha: new Date(nomina.paymentDate).toLocaleDateString(),
-      metodo: nomina.paymentMethod,
-      referencia: nomina.paymentReference
-    } : null,
-    fechaCreacion: nomina.createdAt ? new Date(nomina.createdAt).toLocaleDateString() : '',
-    fechaActualizacion: nomina.updatedAt ? new Date(nomina.updatedAt).toLocaleDateString() : ''
-  } : undefined;
-
-  return {
-    nomina,
-    empleado,
-    nombreEmpleado,
-    detallesFormateados,
-    isLoading,
-    isError,
-    error,
-    refetch,
-    descargarDesprendible
-  };
 }

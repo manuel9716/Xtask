@@ -3,7 +3,7 @@ import { useListarNominas } from '@/modules/nomina/application/useListarNominas'
 import { EstadoNomina } from '@/modules/nomina/domain/entities/Nomina';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { PlusCircle, AlertTriangle, FileText } from 'lucide-react';
+import { PlusCircle, AlertTriangle, FileText, Eye, Download } from 'lucide-react';
 
 import {
   Card,
@@ -19,12 +19,21 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
 import { NominaFormModal } from '../components/NominaFormModal';
+import { DetalleNominaModal } from '../components/DetalleNominaModal';
 
 export default function GestionNominasPage() {
   const [showNuevaForma, setShowNuevaForma] = useState(false);
+  const [nominaSeleccionadaId, setNominaSeleccionadaId] = useState<number | null>(null);
+  const [showDetalleModal, setShowDetalleModal] = useState(false);
 
   // Obtener datos de nóminas
   const { nominas = [], isLoading, isError, refetch } = useListarNominas();
+
+  // Función para manejar el click en "Ver Detalles"
+  const handleVerDetalles = (nominaId: number) => {
+    setNominaSeleccionadaId(nominaId);
+    setShowDetalleModal(true);
+  };
 
   // Filtrar nóminas pendientes y recientes
   const nominasPendientes = Array.isArray(nominas) ? nominas.filter(nomina => 

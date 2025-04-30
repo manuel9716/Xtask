@@ -1018,6 +1018,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint para obtener detalle de una nómina específica
+  nominaV1Router.get('/detalle/:id', async (req: Request, res: Response) => {
+    try {
+      const nominaId = Number(req.params.id);
+      
+      // Importar módulos necesarios
+      const { db } = await import("./db");
+      const { nominas, nominaDetalles, employees } = await import("@shared/schema");
+      const { eq, and, sql } = await import("drizzle-orm");
+      
+      // Obtener la cabecera de la nómina
+      const cabeceraNomina = await db
+        .select()
+        .from(nominas)
+        .where(eq(nominas.id, nominaId))
+        .limit(1);
+      
+      if (cabeceraNomina.length === 0) {
+        return res.status(404).json({ error: 'Nómina no encontrada' });
+      }
+      
+      // Obtener todos los detalles de esta nómina
+      const detallesDB = await db
+        .select()
+        .from(nominaDetalles)
+        .where(eq(nominaDetalles.nominaId, nominaId));
+      
+      // Obtener información de los empleados asociados a esta nómina
+      const empleadosIds = detallesDB.map(detalle => detalle.empleadoId);
+      
+      // Obtener información de los empleados asociados a esta nómina
+      const empleadosInfo = empleadosIds.length > 0 ? await db
+        .select()
+        .from(employees)
+        .where(sql`${employees.id} IN (${empleadosIds.join(',')})`)
+        : [];
+      
+      // Agregar información de empleados a los detalles
+      const detallesCompletos = detallesDB.map(detalle => {
+        const empleado = empleadosInfo.find(e => e.id === detalle.empleadoId);
+        return {
+          ...detalle,
+          // Convertir de string a objeto para ingresos y deducciones
+          detalleIngresos: detalle.detalleIngresos ? JSON.parse(detalle.detalleIngresos) : [],
+          detalleDeducciones: detalle.detalleDeducciones ? JSON.parse(detalle.detalleDeducciones) : [],
+          // Agregar información del empleado
+          empleado: empleado ? {
+            id: empleado.id,
+            nombre: `${empleado.firstName} ${empleado.lastName}`,
+            puesto: empleado.position || 'No especificado',
+            departamento: empleado.department || 'No especificado',
+          } : null
+        };
+      });
+      
+      // Construir la respuesta
+      const respuesta = {
+        cabecera: cabeceraNomina[0],
+        detalles: detallesCompletos,
+        resumen: {
+          totalEmpleados: detallesCompletos.length,
+          montoTotal: cabeceraNomina[0].montoTotal,
+        }
+      };
+      
+      res.status(200).json(respuesta);
+    } catch (error: any) {
+      console.error('Error al obtener detalle de nómina:', error);
+      res.status(500).json({ error: 'Error al obtener el detalle de la nómina' });
+    }
+  });
+
   // Endpoint para listar nóminas
   nominaV1Router.get('/listar', async (req: Request, res: Response) => {
     try {
