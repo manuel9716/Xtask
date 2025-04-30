@@ -15,6 +15,7 @@ import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import NominaDashboard from "@/pages/nomina-dashboard";
 import CapacitacionesPage from "@/pages/capacitaciones";
+import MetricasPage from "@/pages/metricas";
 import { MainLayout } from "@/layouts/main-layout";
 import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
@@ -76,6 +77,11 @@ function Router() {
       {/* Ruta directa a Capacitaciones */}
       <Route path="/capacitaciones">
         <CapacitacionesPage />
+      </Route>
+      
+      {/* Ruta directa a Métricas */}
+      <Route path="/metricas">
+        <MetricasPage />
       </Route>
       
       {/* Rutas de los módulos específicos */}
