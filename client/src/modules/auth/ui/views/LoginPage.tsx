@@ -1,11 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { LoginForm } from '../components/LoginForm';
+import { RegisterForm } from '../components/RegisterForm';
 import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  
+  // Determinar si se debe mostrar la forma de registro basado en la URL
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    if (currentPath === '/auth/register') {
+      setShowRegisterForm(true);
+    } else {
+      setShowRegisterForm(false);
+    }
+  }, []);
   
   // Redirigir al dashboard si ya está autenticado
   useEffect(() => {
@@ -13,6 +25,15 @@ export function LoginPage() {
       navigate('/dashboard');
     }
   }, [isAuthenticated, isLoading, navigate]);
+  
+  // Alternar entre login y registro
+  const toggleForm = () => {
+    setShowRegisterForm(!showRegisterForm);
+    
+    // Actualizar la URL sin recargar la página
+    const newPath = showRegisterForm ? '/auth/login' : '/auth/register';
+    window.history.pushState({}, '', newPath);
+  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
@@ -79,7 +100,10 @@ export function LoginPage() {
       
       {/* Columna derecha - Formulario */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 order-1 md:order-2">
-        <LoginForm />
+        {showRegisterForm 
+          ? <RegisterForm onLoginClick={toggleForm} /> 
+          : <LoginForm onRegisterClick={toggleForm} />
+        }
       </div>
     </div>
   );

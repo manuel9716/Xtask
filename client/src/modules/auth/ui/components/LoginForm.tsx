@@ -22,7 +22,11 @@ const loginSchema = z.object({
   })
 });
 
-export function LoginForm() {
+interface LoginFormProps {
+  onRegisterClick?: () => void;
+}
+
+export function LoginForm({ onRegisterClick }: LoginFormProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { login, isLoading } = useAuth();
   const [, navigate] = useLocation();
@@ -126,7 +130,7 @@ export function LoginForm() {
           <Button 
             variant="link" 
             className="p-0 h-auto text-[#02BDEA] hover:text-[#02a6ce]"
-            onClick={() => navigate('/auth/register')}
+            onClick={onRegisterClick || (() => navigate('/auth/register'))}
             disabled={isLoading}
           >
             Regístrate aquí
