@@ -12,10 +12,7 @@ import {
   UserCog, 
   Settings, 
   User,
-  Receipt,
-  BarChart3,
-  GraduationCap,
-  ClipboardCheck
+  Receipt
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -59,17 +56,8 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
     { href: "/projects", label: t("navigation.projects"), icon: <Briefcase className="h-5 w-5" /> },
     { href: "/finances", label: t("navigation.finances"), icon: <DollarSign className="h-5 w-5" /> },
     { href: "/nomina", label: "Nómina", icon: <Receipt className="h-5 w-5" /> },
-    { href: "/human-resources", label: t("navigation.humanResources"), icon: <Users className="h-5 w-5" /> },
     { href: "/suppliers", label: t("navigation.suppliers"), icon: <Store className="h-5 w-5" /> },
     { href: "/tasks", label: t("navigation.tasks"), icon: <CheckSquare className="h-5 w-5" /> },
-  ];
-  
-  // Submenu de Recursos Humanos (solo se muestra cuando el usuario está en esa sección)
-  const isHumanResourcesSection = location.includes('/human-resources') || location.includes('/recursos-humanos');
-  const HRSubItems = [
-    { href: "/recursos-humanos/metricas", label: "Métricas y KPIs", icon: <BarChart3 className="h-5 w-5" /> },
-    { href: "/recursos-humanos/capacitaciones", label: "Capacitaciones", icon: <GraduationCap className="h-5 w-5" /> },
-    { href: "/recursos-humanos/evaluaciones", label: "Evaluaciones", icon: <ClipboardCheck className="h-5 w-5" /> },
   ];
 
   const SystemItems = [
@@ -103,22 +91,7 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
             >
               {item.label}
             </NavItem>
-            
-            {/* Submenu de Recursos Humanos */}
-            {item.href === "/human-resources" && isHumanResourcesSection && (
-              <div className="pl-4 mt-1 mb-1 border-l-2 border-secondary/30 ml-4">
-                {HRSubItems.map((subItem) => (
-                  <NavItem
-                    key={subItem.href}
-                    href={subItem.href}
-                    icon={subItem.icon}
-                    active={location === subItem.href}
-                  >
-                    {subItem.label}
-                  </NavItem>
-                ))}
-              </div>
-            )}
+
           </React.Fragment>
         ))}
 

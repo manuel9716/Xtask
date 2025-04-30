@@ -7,21 +7,16 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Projects from "@/pages/projects";
 import Finances from "@/pages/finances";
-// Entrada para el módulo de Recursos Humanos
-import SimpleHumanResources from "@/pages/simple-hr";
 import Suppliers from "@/pages/suppliers";
 import Tasks from "@/pages/tasks";
 import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import NominaDashboard from "@/pages/nomina-dashboard";
-import CapacitacionesPage from "@/pages/capacitaciones";
-import MetricasPage from "@/pages/metricas";
 import { MainLayout } from "@/layouts/main-layout";
 import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
 import { EmpleadosRoutes } from "@/modules/nomina/empleados/ui/routes";
 import { ProyectosRoutes } from "@/modules/proyectos/ui/routes";
-import { RecursosHumanosRoutes } from "@/modules/recursos-humanos/ui/routes";
 
 function Router() {
   return (
@@ -39,11 +34,6 @@ function Router() {
       <Route path="/finances">
         <MainLayout>
           <Finances />
-        </MainLayout>
-      </Route>
-      <Route path="/human-resources">
-        <MainLayout>
-          <SimpleHumanResources />
         </MainLayout>
       </Route>
       <Route path="/suppliers">
@@ -79,7 +69,6 @@ function Router() {
       <NominaRoutes />
       <EmpleadosRoutes />
       <ProyectosRoutes />
-      <RecursosHumanosRoutes />
       
       <Route component={NotFound} />
     </Switch>
