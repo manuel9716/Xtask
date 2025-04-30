@@ -54,15 +54,17 @@ export function RegisterForm({ onLoginClick }: RegisterFormProps) {
       // Eliminar confirmPassword ya que no es parte del modelo de usuario
       const { confirmPassword, ...userData } = data;
       
-      await registerUser({
+      const success = await registerUser({
         ...userData,
         role: 'user', // Rol por defecto
       });
       
-      toast({
-        title: "Registro exitoso",
-        description: "Tu cuenta ha sido creada correctamente.",
-      });
+      if (success) {
+        toast({
+          title: "Registro exitoso",
+          description: "Tu cuenta ha sido creada correctamente.",
+        });
+      }
       
     } catch (error) {
       toast({
