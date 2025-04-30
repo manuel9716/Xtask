@@ -1,0 +1,97 @@
+Prompt para Replit: Implementar Módulo de Login de Usuarios
+Actúa como un desarrollador senior especializado en autenticación y arquitectura hexagonal. Requiero crear el módulo completo de inicio de sesión (login) para los usuarios registrados en el sistema XTask. Este módulo debe estar alineado con la arquitectura del proyecto y usar los datos definidos en la tabla users del diccionario de datos.
+
+📁 Estructura esperada
+css
+Copiar
+Editar
+src/
+  modules/
+    auth/
+      application/
+        useCases/
+          loginUsuario.ts
+      domain/
+        entities/
+          Usuario.ts
+        repositories/
+          AuthRepository.ts
+      infrastructure/
+        api/
+          authApi.ts
+        db/
+          AuthDbAdapter.ts
+      ui/
+        components/
+          LoginForm.tsx
+        views/
+          LoginPage.tsx
+🔑 Funcionalidad esperada
+1. Inicio de sesión (/login)
+Formulario con campos:
+
+email o username
+
+password
+
+Botón Iniciar sesión
+
+Validación básica antes de enviar (formato, no vacío)
+
+2. Lógica de autenticación
+Verificar si el usuario existe (users.username o users.email)
+
+Verificar si la contraseña coincide (hasheada con bcrypt o similar)
+
+Si es correcto, devolver:
+
+Un token de sesión (JWT o session cookie)
+
+Datos del usuario (nombre, rol, id)
+
+Redirigir al usuario al dashboard correspondiente según su rol
+
+🔐 Seguridad esperada
+Contraseñas nunca en texto plano
+
+Comparación con hash seguro (bcrypt.compare)
+
+Prevención de ataques por fuerza bruta (opcional: throttling)
+
+Manejo de errores claros (credenciales incorrectas, usuario inactivo, etc.)
+
+🗄️ Base de datos utilizada
+Tabla: users
+
+
+Campo	Uso esperado
+email	Campo de acceso (login)
+username	Alternativa opcional
+password	Verificación segura
+role	Definición de permisos
+full_name	Visualización de sesión
+🧠 Casos de uso esperados
+loginUsuario.ts → verifica credenciales y retorna token
+
+AuthService.ts → lógica de hash y validación de usuarios
+
+authApi.ts → cliente para enviar credenciales al backend
+
+🎨 Interfaz esperada
+Vista: LoginPage.tsx
+Formulario: LoginForm.tsx
+
+Características:
+
+Responsive
+
+Icono de visibilidad de contraseña
+
+Toast o mensaje de error en fallo de login
+
+Botón de login deshabilitado si campos están vacíos
+
+🧩 Resultado esperado
+Un módulo de login moderno, funcional y seguro, que permita iniciar sesión correctamente y mantenga la arquitectura desacoplada.
+Debe permitir escalar a futuro a recuperación de contraseña, autenticación de dos factores o integración con redes sociales si se desea.
+
