@@ -7,30 +7,33 @@ export function HomeHeader() {
   const [, setLocation] = useLocation();
   
   return (
-    <header className="bg-[#251948] w-full">
+    <header className="bg-white w-full border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
           <div className="flex items-center">
-            <span className="text-2xl font-bold text-white cursor-pointer" onClick={() => setLocation('/')}>
-              XTask
+            <span className="text-2xl font-bold text-[#251948] cursor-pointer flex items-center" onClick={() => setLocation('/')}>
+              <span className="text-[#02BDEA]">X</span>task
             </span>
           </div>
           
           {/* Enlaces y botones de acción */}
           <div className="flex items-center space-x-6">
             <nav className="hidden md:flex items-center space-x-6">
-              <a href="#features" className="text-white hover:text-[#02BDEA] text-sm font-medium">
-                Características
+              <a href="#aplicaciones" className="text-gray-600 hover:text-[#02BDEA] text-sm font-medium">
+                Aplicaciones
               </a>
-              <a href="#pricing" className="text-white hover:text-[#02BDEA] text-sm font-medium">
+              <a href="#sectores" className="text-gray-600 hover:text-[#02BDEA] text-sm font-medium">
+                Sectores
+              </a>
+              <a href="#comunidad" className="text-gray-600 hover:text-[#02BDEA] text-sm font-medium">
+                Comunidad
+              </a>
+              <a href="#precios" className="text-gray-600 hover:text-[#02BDEA] text-sm font-medium">
                 Precios
               </a>
-              <a href="#resources" className="text-white hover:text-[#02BDEA] text-sm font-medium">
-                Recursos
-              </a>
-              <a href="#about" className="text-white hover:text-[#02BDEA] text-sm font-medium">
-                Acerca de
+              <a href="#ayuda" className="text-gray-600 hover:text-[#02BDEA] text-sm font-medium">
+                Ayuda
               </a>
             </nav>
             
@@ -39,17 +42,17 @@ export function HomeHeader() {
               
               <Button 
                 variant="ghost" 
-                className="text-white hover:text-[#02BDEA]"
-                onClick={() => setLocation('/login')}
+                className="text-gray-600 hover:text-[#02BDEA]"
+                onClick={() => setLocation('/dashboard')}
               >
-                Iniciar Sesión
+                Identificarse
               </Button>
               
               <Button 
-                className="bg-[#02BDEA] hover:bg-[#01a0c8] text-white"
+                className="bg-[#6d28d9] hover:bg-[#5b21b6] text-white"
                 onClick={() => setLocation('/register')}
               >
-                Registrarse
+                Pruébalo gratis
               </Button>
             </div>
           </div>

@@ -91,12 +91,9 @@ export default function HomePage() {
       <HomeHeader />
       
       {/* Banner */}
-      <div className="text-center py-16 bg-[#251948] w-full text-white">
-        <h1 className="text-4xl mb-3 font-bold">XTask</h1>
-        <p className="text-xl">Plataforma de Gestión Empresarial</p>
-        <p className="mt-6 max-w-3xl mx-auto text-gray-300">
-          Una solución integral para la gestión de tu empresa. Selecciona los módulos que necesitas y comienza a utilizar la plataforma de inmediato.
-        </p>
+      <div className="text-center py-10 bg-[#251948] w-full text-white">
+        <h1 className="text-4xl font-bold uppercase">XTASK DASHBOARD</h1>
+        <p className="text-lg mt-2">Selecciona los módulos de funcionalidad que necesitas</p>
       </div>
 
       {/* Contenido principal */}
@@ -139,7 +136,7 @@ export default function HomePage() {
             </div>
 
             <Button 
-              className="w-full bg-[#02BDEA] hover:bg-[#01a0c8] text-white flex items-center justify-center"
+              className="w-full bg-[#6d28d9] hover:bg-[#5b21b6] text-white flex items-center justify-center"
               onClick={handleContinue}
             >
               Continuar <ChevronRight className="ml-1 h-4 w-4" />
@@ -175,7 +172,7 @@ export default function HomePage() {
         {selectedModules.length === 0 && (
           <div className="mt-16 flex justify-center">
             <Button 
-              className="bg-[#02BDEA] hover:bg-[#01a0c8] text-white px-8 py-6 text-lg rounded-lg shadow-lg"
+              className="bg-[#6d28d9] hover:bg-[#5b21b6] text-white px-8 py-6 text-lg rounded-lg shadow-lg"
               onClick={() => setLocation('/dashboard')}
             >
               Ir al Dashboard <ChevronRight className="ml-2 h-5 w-5" />
