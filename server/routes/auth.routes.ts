@@ -47,8 +47,8 @@ authRouter.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Credenciales incorrectas' });
     }
 
-    // Verificar si la cuenta está activa
-    if (!user.isActive) {
+    // Verificar si la cuenta está activa (si el campo existe)
+    if (user.isActive === false) {
       return res.status(403).json({ message: 'Esta cuenta ha sido desactivada' });
     }
 
