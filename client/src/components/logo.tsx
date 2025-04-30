@@ -29,12 +29,12 @@ export function Logo({ className, textClassName, size = "md", showText = true }:
     <Link href="/" className="cursor-pointer">
       <div className={cn("flex items-center gap-2", className)}>
         {/* Logo cuadrado con X */}
-        <div className="bg-[#251948] flex items-center justify-center p-1 rounded w-8 h-8">
-          <div className="text-[#02BDEA] font-bold text-xl">X</div>
+        <div className="bg-white flex items-center justify-center p-1 rounded w-8 h-8 border border-[#6d28d9]/20">
+          <div className="text-[#6d28d9] font-bold text-xl">X</div>
         </div>
         
         {showText && (
-          <span className={cn("font-bold tracking-tight text-white", textSize[size], textClassName)}>
+          <span className={cn("font-bold tracking-tight text-[#6d28d9]", textSize[size], textClassName)}>
             Task
           </span>
         )}
