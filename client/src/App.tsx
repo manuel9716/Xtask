@@ -19,62 +19,88 @@ import { NominaRoutes } from "@/modules/nomina/ui/routes";
 import { EmpleadosRoutes } from "@/modules/nomina/empleados/ui/routes";
 import { ProyectosRoutes } from "@/modules/proyectos/ui/routes";
 
+// Importaciones para el módulo de autenticación
+import LoginPage from "@/modules/auth/ui/views/LoginPage";
+import { AuthProvider } from "@/modules/auth/ui/context/AuthContext";
+import { ProtectedRoute } from "@/modules/auth/ui/components/ProtectedRoute";
+
 function Router() {
   return (
     <Switch>
       {/* Página de inicio (Home) */}
       <Route path="/" component={HomePage} />
       
-      {/* Dashboard (ahora como ruta secundaria) */}
+      {/* Ruta de autenticación */}
+      <Route path="/login" component={LoginPage} />
+      
+      {/* Dashboard (ahora como ruta secundaria) - Protegida */}
       <Route path="/dashboard">
-        <MainLayout>
-          <Dashboard />
-        </MainLayout>
+        <ProtectedRoute>
+          <MainLayout>
+            <Dashboard />
+          </MainLayout>
+        </ProtectedRoute>
       </Route>
       
       <Route path="/projects">
-        <MainLayout>
-          <Projects />
-        </MainLayout>
+        <ProtectedRoute>
+          <MainLayout>
+            <Projects />
+          </MainLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/finances">
-        <MainLayout>
-          <Finances />
-        </MainLayout>
+        <ProtectedRoute>
+          <MainLayout>
+            <Finances />
+          </MainLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/suppliers">
-        <MainLayout>
-          <Suppliers />
-        </MainLayout>
+        <ProtectedRoute>
+          <MainLayout>
+            <Suppliers />
+          </MainLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/tasks">
-        <MainLayout>
-          <Tasks />
-        </MainLayout>
+        <ProtectedRoute>
+          <MainLayout>
+            <Tasks />
+          </MainLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/user-management">
-        <MainLayout>
-          <UserManagement />
-        </MainLayout>
+        <ProtectedRoute>
+          <MainLayout>
+            <UserManagement />
+          </MainLayout>
+        </ProtectedRoute>
       </Route>
       <Route path="/settings">
-        <MainLayout>
-          <Settings />
-        </MainLayout>
+        <ProtectedRoute>
+          <MainLayout>
+            <Settings />
+          </MainLayout>
+        </ProtectedRoute>
       </Route>
       
-      {/* Ruta directa a Nómina */}
+      {/* Ruta directa a Nómina - Protegida */}
       <Route path="/nomina">
-        <MainLayout>
-          <NominaDashboard />
-        </MainLayout>
+        <ProtectedRoute>
+          <MainLayout>
+            <NominaDashboard />
+          </MainLayout>
+        </ProtectedRoute>
       </Route>
       
-      {/* Rutas de los módulos específicos */}
-      <FinanzasRoutes />
-      <NominaRoutes />
-      <EmpleadosRoutes />
-      <ProyectosRoutes />
+      {/* Rutas de los módulos específicos - Protegidas */}
+      <ProtectedRoute>
+        <FinanzasRoutes />
+        <NominaRoutes />
+        <EmpleadosRoutes />
+        <ProyectosRoutes />
+      </ProtectedRoute>
       
       <Route component={NotFound} />
     </Switch>
@@ -85,8 +111,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <AuthProvider>
+          <Toaster />
+          <Router />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

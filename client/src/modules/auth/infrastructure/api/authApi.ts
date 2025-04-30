@@ -39,10 +39,13 @@ export class AuthApiRepository implements AuthRepository {
 
   async getUserByToken(token: string): Promise<Omit<Usuario, 'password'> | null> {
     try {
-      const response = await apiRequest('GET', '/api/auth/me', undefined, {
+      // Como no podemos pasar headers directamente, usamos fetch en su lugar
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -57,10 +60,13 @@ export class AuthApiRepository implements AuthRepository {
 
   async logout(token: string): Promise<void> {
     try {
-      await apiRequest('POST', '/api/auth/logout', undefined, {
+      // Como no podemos pasar headers directamente, usamos fetch en su lugar
+      await fetch('/api/auth/logout', {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        credentials: 'include'
       });
       
       // Eliminar el token almacenado
