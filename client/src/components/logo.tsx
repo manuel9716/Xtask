@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import XTaskLogo from "@/assets/xtask-logo.png";
 import { useTranslation } from "react-i18next";
+import { Link } from "wouter";
 
 interface LogoProps {
   className?: string;
@@ -25,17 +26,19 @@ export function Logo({ className, textClassName, size = "md", showText = true }:
   };
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <img 
-        src={XTaskLogo} 
-        alt={t("common.appName")} 
-        className={cn(sizeClasses[size], "w-auto rounded")} 
-      />
-      {showText && (
-        <span className={cn("font-bold tracking-tight", textSize[size], textClassName)}>
-          {t("common.appName")}
-        </span>
-      )}
-    </div>
+    <Link href="/" className="cursor-pointer">
+      <div className={cn("flex items-center gap-2", className)}>
+        <img 
+          src={XTaskLogo} 
+          alt={t("common.appName")} 
+          className={cn(sizeClasses[size], "w-auto rounded")} 
+        />
+        {showText && (
+          <span className={cn("font-bold tracking-tight", textSize[size], textClassName)}>
+            {t("common.appName")}
+          </span>
+        )}
+      </div>
+    </Link>
   );
 }

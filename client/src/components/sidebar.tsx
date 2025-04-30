@@ -52,7 +52,7 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
   const { t } = useTranslation();
 
   const NavItems = [
-    { href: "/", label: t("navigation.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
+    { href: "/dashboard", label: t("navigation.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
     { href: "/projects", label: t("navigation.projects"), icon: <Briefcase className="h-5 w-5" /> },
     { href: "/finances", label: t("navigation.finances"), icon: <DollarSign className="h-5 w-5" /> },
     { href: "/nomina", label: "Nómina", icon: <Receipt className="h-5 w-5" /> },
