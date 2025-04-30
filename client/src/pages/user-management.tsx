@@ -351,7 +351,7 @@ export default function UserManagement() {
         <TabsContent value="activity" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Activity Log</CardTitle>
+              <CardTitle>Registro de Actividad</CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-8">
@@ -359,10 +359,10 @@ export default function UserManagement() {
                   <div className="absolute left-[-8px] top-0 bg-green-500 w-4 h-4 rounded-full border-4 border-white"></div>
                   <div className="flex justify-between">
                     <div>
-                      <p className="font-medium">User Login</p>
-                      <p className="text-sm text-gray-500">User John Doe logged into the system</p>
+                      <p className="font-medium">Inicio de Sesión</p>
+                      <p className="text-sm text-gray-500">El usuario John Doe inició sesión en el sistema</p>
                     </div>
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Today, 10:45 AM</Badge>
+                    <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Hoy, 10:45 AM</Badge>
                   </div>
                 </div>
                 
@@ -370,10 +370,10 @@ export default function UserManagement() {
                   <div className="absolute left-[-8px] top-0 bg-amber-500 w-4 h-4 rounded-full border-4 border-white"></div>
                   <div className="flex justify-between">
                     <div>
-                      <p className="font-medium">Password Changed</p>
-                      <p className="text-sm text-gray-500">User Sarah Johnson changed their password</p>
+                      <p className="font-medium">Contraseña Cambiada</p>
+                      <p className="text-sm text-gray-500">El usuario Sarah Johnson cambió su contraseña</p>
                     </div>
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Yesterday, 2:30 PM</Badge>
+                    <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Ayer, 2:30 PM</Badge>
                   </div>
                 </div>
                 
@@ -381,8 +381,8 @@ export default function UserManagement() {
                   <div className="absolute left-[-8px] top-0 bg-blue-500 w-4 h-4 rounded-full border-4 border-white"></div>
                   <div className="flex justify-between">
                     <div>
-                      <p className="font-medium">User Added</p>
-                      <p className="text-sm text-gray-500">Administrator added new user Michael Foster</p>
+                      <p className="font-medium">Usuario Agregado</p>
+                      <p className="text-sm text-gray-500">El administrador agregó al nuevo usuario Michael Foster</p>
                     </div>
                     <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Sep 15, 9:15 AM</Badge>
                   </div>
@@ -392,8 +392,8 @@ export default function UserManagement() {
                   <div className="absolute left-[-8px] top-0 bg-red-500 w-4 h-4 rounded-full border-4 border-white"></div>
                   <div className="flex justify-between">
                     <div>
-                      <p className="font-medium">User Removed</p>
-                      <p className="text-sm text-gray-500">Administrator removed user Tom Wilson</p>
+                      <p className="font-medium">Usuario Eliminado</p>
+                      <p className="text-sm text-gray-500">El administrador eliminó al usuario Tom Wilson</p>
                     </div>
                     <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Sep 12, 4:25 PM</Badge>
                   </div>
@@ -403,15 +403,15 @@ export default function UserManagement() {
                   <div className="absolute left-[-8px] top-0 bg-purple-500 w-4 h-4 rounded-full border-4 border-white"></div>
                   <div className="flex justify-between">
                     <div>
-                      <p className="font-medium">Role Modified</p>
-                      <p className="text-sm text-gray-500">Administrator updated permissions for role 'Project Manager'</p>
+                      <p className="font-medium">Rol Modificado</p>
+                      <p className="text-sm text-gray-500">El administrador actualizó los permisos para el rol 'Gestor de Proyectos'</p>
                     </div>
                     <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200">Sep 10, 11:05 AM</Badge>
                   </div>
                 </div>
               </div>
               
-              <Button variant="outline" className="w-full mt-6">Load More Activity</Button>
+              <Button variant="outline" className="w-full mt-6">Cargar Más Actividad</Button>
             </CardContent>
           </Card>
         </TabsContent>
