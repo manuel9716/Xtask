@@ -16,14 +16,9 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-      {/* Columna izquierda - Formulario */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12">
-        <LoginForm />
-      </div>
-      
-      {/* Columna derecha - Hero */}
-      <div className="w-full md:w-1/2 bg-[#251948] text-white p-6 md:p-12 flex flex-col justify-center">
-        <div className="max-w-lg">
+      {/* Columna izquierda - Hero */}
+      <div className="w-full md:w-1/2 bg-[#251948] text-white p-6 md:p-12 flex flex-col justify-center order-2 md:order-1">
+        <div className="max-w-lg ml-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-6">
             <span className="text-[#02BDEA]">X</span>Task: Plataforma de gestión empresarial
           </h1>
@@ -70,6 +65,11 @@ export function LoginPage() {
             </div>
           </div>
         </div>
+      </div>
+      
+      {/* Columna derecha - Formulario */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 order-1 md:order-2">
+        <LoginForm />
       </div>
     </div>
   );
