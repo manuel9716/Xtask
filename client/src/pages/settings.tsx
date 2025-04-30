@@ -164,20 +164,7 @@ export default function Settings() {
               
               <div className="space-y-2">
                 <Label>Theme Mode</Label>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <input type="radio" id="light-mode" name="theme-mode" defaultChecked className="text-primary-600 focus:ring-primary-500" />
-                    <Label htmlFor="light-mode" className="text-sm">Light</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input type="radio" id="dark-mode" name="theme-mode" className="text-primary-600 focus:ring-primary-500" />
-                    <Label htmlFor="dark-mode" className="text-sm">Dark</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input type="radio" id="system-mode" name="theme-mode" className="text-primary-600 focus:ring-primary-500" />
-                    <Label htmlFor="system-mode" className="text-sm">System Default</Label>
-                  </div>
-                </div>
+                <ThemeSelector />
               </div>
             </CardContent>
             <CardFooter>
