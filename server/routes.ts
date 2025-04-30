@@ -873,11 +873,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   ];
   
-  // Sobrescribir la ruta de proyectos para retornar datos de ejemplo
+  // Usar datos reales de la base de datos para la ruta de proyectos
   app.get('/api/projects', async (req, res) => {
     try {
-      res.json(proyectosEjemplo);
+      // Importar db y projects
+      const { db } = await import('./db');
+      const { projects } = await import('@shared/schema');
+      
+      // Obtener todos los proyectos de la base de datos real
+      const proyectosDB = await db
+        .select()
+        .from(projects)
+        .orderBy(projects.id);
+      
+      res.json(proyectosDB);
     } catch (error: any) {
+      console.error('Error al obtener proyectos:', error);
       res.status(500).json({ message: error.message });
     }
   });
