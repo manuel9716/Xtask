@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Logo } from "@/components/logo";
+import { ThemeSelector } from "@/components/theme-selector";
+import { Badge } from "@/components/ui/badge";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("general");
@@ -584,10 +586,4 @@ export default function Settings() {
   );
 }
 
-function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={`px-2 py-1 text-xs font-medium rounded-full ${className}`}>
-      {children}
-    </span>
-  );
-}
+
