@@ -12,6 +12,7 @@ import Tasks from "@/pages/tasks";
 import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import NominaDashboard from "@/pages/nomina-dashboard";
+import HomePage from "@/pages/home";
 import { MainLayout } from "@/layouts/main-layout";
 import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
@@ -21,11 +22,16 @@ import { ProyectosRoutes } from "@/modules/proyectos/ui/routes";
 function Router() {
   return (
     <Switch>
-      <Route path="/">
+      {/* Página de inicio (Home) */}
+      <Route path="/" component={HomePage} />
+      
+      {/* Dashboard (ahora como ruta secundaria) */}
+      <Route path="/dashboard">
         <MainLayout>
           <Dashboard />
         </MainLayout>
       </Route>
+      
       <Route path="/projects">
         <MainLayout>
           <Projects />

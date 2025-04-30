@@ -1,0 +1,597 @@
+Basado en todos los archivos que he examinado, aquí te presento un compilado completo del proyecto Xtask que podrás compartir con el agente del proyecto Xtask_Flow para que pueda recrear las funcionalidades:
+
+Compilado del Proyecto Xtask - Home Module
+Estructura del Proyecto
+client/
+├── src/
+│   ├── application/
+│   │   └── home/
+│   │       ├── Home.tsx                # Componente principal de la pantalla de inicio
+│   │       └── homeService.ts          # Servicios relacionados con la pantalla de inicio
+│   ├── assets/
+│   │   ├── xtask-logo-white-bg.png     # Logo para el header
+│   │   └── xtask-logo-footer.png       # Logo para el footer
+│   ├── components/
+│   │   └── ui/                         # Componentes UI reutilizables (shadcn)
+│   ├── domain/
+│   │   ├── features/
+│   │   │   ├── featureTypes.ts         # Tipos para características/módulos
+│   │   │   └── modulesData.ts          # Datos de los módulos disponibles
+│   │   └── user/
+│   │       └── userTypes.ts            # Tipos relacionados con usuarios
+│   ├── hooks/
+│   │   ├── use-mobile.tsx              # Hook para detectar dispositivos móviles
+│   │   └── use-toast.ts                # Hook para mostrar notificaciones
+│   ├── infrastructure/
+│   │   ├── api/
+│   │   │   └── userApi.ts              # API para interactuar con usuarios
+│   │   └── auth/
+│   │       └── authService.ts          # Servicios de autenticación
+│   ├── lib/
+│   │   ├── i18n/
+│   │   │   ├── LanguageContext.tsx     # Contexto para manejo de idiomas
+│   │   │   └── translations.ts         # Archivo de traducciones
+│   │   ├── queryClient.ts              # Configuración de React Query
+│   │   └── utils.ts                    # Utilidades generales
+│   ├── pages/
+│   │   ├── home.tsx                    # Página principal
+│   │   └── not-found.tsx               # Página 404
+│   ├── shared/
+│   │   ├── components/
+│   │   │   ├── ActivitySection.tsx     # Sección de actividades
+│   │   │   ├── FeatureCard.tsx         # Tarjeta de características
+│   │   │   ├── Footer.tsx              # Componente de pie de página
+│   │   │   ├── Header.tsx              # Componente de encabezado
+│   │   │   ├── ModuleCard.tsx          # Tarjeta de módulo seleccionable
+│   │   │   └── UserMenu.tsx            # Menú de usuario
+│   │   ├── hooks/
+│   │   │   └── useGreeting.ts          # Hook para mensajes de saludo
+│   │   └── layouts/
+│   │       └── AppLayout.tsx           # Layout principal de la aplicación
+│   ├── App.tsx                         # Componente principal de la aplicación
+│   ├── index.css                       # Estilos globales
+│   └── main.tsx                        # Punto de entrada de la aplicación
+└── index.html                          # HTML base
+Componentes Principales
+1. ModuleCard.tsx
+Este componente representa cada módulo seleccionable en la pantalla de inicio.
+
+import * as LucideIcons from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import React, { useState, useEffect } from 'react';
+interface ModuleCardProps {
+  nombre: string;
+  icono: string;
+  ruta: string;
+  onSelect?: (module: { nombre: string, icono: string, ruta: string }, selected: boolean) => void;
+  selected?: boolean;
+}
+export function ModuleCard({ nombre, icono, ruta, onSelect, selected = false }: ModuleCardProps) {
+  const [isSelected, setIsSelected] = useState(selected);
+  
+  // Actualizar el estado cuando cambia la prop selected
+  useEffect(() => {
+    setIsSelected(selected);
+  }, [selected]);
+  
+  // Función para convertir el nombre del icono a la nomenclatura de componentes de React
+  const getIconComponent = (iconName: string) => {
+    // Convertir el nombre del icono a PascalCase
+    const formattedIconName = iconName
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join('');
+    
+    // Obtener el componente del icono de Lucide
+    const IconComponent = (LucideIcons as any)[formattedIconName] || LucideIcons.Box;
+    
+    return IconComponent;
+  };
+  
+  // Función para personalizar los iconos con colores específicos
+  const customizeIcon = (IconComponent: any) => {
+    return (props: any) => (
+      <IconComponent 
+        {...props} 
+        strokeWidth={1.5}
+        className={`${props.className || ''} stroke-[#02BDEA] text-[#02BDEA]`}
+      />
+    );
+  };
+  
+  const BaseIconComponent = getIconComponent(icono);
+  const IconComponent = customizeIcon(BaseIconComponent);
+  
+  const handleCheckboxChange = (checked: boolean) => {
+    setIsSelected(checked);
+    if (onSelect) {
+      onSelect({ nombre, icono, ruta }, checked);
+    }
+  };
+  
+  const handleClick = (e: React.MouseEvent) => {
+    // Evitar que el clic en el checkbox propague al div contenedor
+    if ((e.target as HTMLElement).closest('.checkbox-container')) {
+      return;
+    }
+    
+    // Si no hay callback de selección, navegar directamente
+    if (!onSelect) {
+      window.location.href = ruta;
+    } else {
+      // Si hay callback, alternar la selección
+      const newSelectedState = !isSelected;
+      setIsSelected(newSelectedState);
+      onSelect({ nombre, icono, ruta }, newSelectedState);
+    }
+  };
+  
+  return (
+    <div 
+      onClick={handleClick}
+      className={`bg-white p-3 rounded-lg shadow-sm hover:shadow transition-all cursor-pointer border relative flex items-center w-full h-[60px]
+      ${isSelected ? 'border-[#02BDEA] ring-1 ring-[#02BDEA]/20' : 'border-gray-200 hover:border-[#02BDEA]/30'}`}
+    >
+      {/* Checkbox en la esquina derecha */}
+      <div className="absolute right-3 checkbox-container z-10">
+        <Checkbox 
+          id={`checkbox-${nombre}`}
+          checked={isSelected}
+          onCheckedChange={handleCheckboxChange}
+          className="h-4 w-4 border-gray-300 data-[state=checked]:bg-[#02BDEA] data-[state=checked]:border-[#02BDEA]"
+        />
+      </div>
+      
+      <div className="flex items-center gap-3 py-1">
+        <div className="bg-[#251948] p-2 rounded-lg flex items-center justify-center shadow-inner" style={{ width: '40px', height: '40px' }}>
+          <IconComponent className="h-5 w-5 stroke-[1.5]" />
+        </div>
+        <span className="font-medium text-gray-800 text-left title-bermont text-sm leading-tight">{nombre}</span>
+      </div>
+    </div>
+  );
+}
+2. Home.tsx
+Este es el componente principal de la pantalla de inicio que muestra todos los módulos disponibles.
+
+import { useState } from 'react';
+import { User } from '@/domain/user/userTypes';
+import { ModuleCard } from '@/shared/components/ModuleCard';
+import { modulesData } from '@/domain/features/modulesData';
+import { Button } from '@/components/ui/button';
+import { ChevronRight } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+interface HomeProps {
+  user: User;
+}
+interface SelectedModule {
+  nombre: string;
+  seccion: string;
+  ruta: string;
+  icono: string;
+}
+export function Home({ user }: HomeProps) {
+  const [selectedModules, setSelectedModules] = useState<SelectedModule[]>([]);
+  const { t } = useLanguage();
+  
+  // Manejar la selección de un módulo
+  const handleSelectModule = (module: { nombre: string, icono: string, ruta: string }, selected: boolean, seccion: string) => {
+    if (selected) {
+      // Comprobamos si ya existe en las selecciones para evitar duplicados
+      if (!selectedModules.some(m => m.nombre === module.nombre && m.seccion === seccion)) {
+        setSelectedModules(prev => [...prev, { ...module, seccion }]);
+      }
+    } else {
+      // Eliminamos el módulo de la selección
+      setSelectedModules(prev => prev.filter(m => !(m.nombre === module.nombre && m.seccion === seccion)));
+    }
+  };
+  
+  // Limpiar todas las selecciones
+  const handleClearAllSelections = () => {
+    setSelectedModules([]);
+  };
+  
+  // Comprobar si un módulo está seleccionado
+  const isModuleSelected = (nombre: string, seccion: string) => {
+    return selectedModules.some(m => m.nombre === nombre && m.seccion === seccion);
+  };
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Banner - ocupando el ancho completo */}
+      <div className="text-center py-10 bg-[#251948] w-full text-white">
+        <h1 className="text-4xl mb-3 title-bermont uppercase">{t.home.title}</h1>
+        <p className="text-xl text-gilroy">{t.home.subtitle}</p>
+      </div>
+      
+      {/* Contenido principal con margen */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Panel de Módulos Seleccionados - Fijo a la derecha */}
+        {selectedModules.length > 0 && (
+          <div className="fixed right-10 top-32 bg-white rounded-lg shadow-xl p-5 w-60 z-10">
+            {/* Botón de cerrar */}
+            <button 
+              onClick={handleClearAllSelections}
+              className="absolute -top-3 -right-3 bg-[#251948] text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-[#3a2a63] transition-colors"
+              aria-label="Cerrar"
+            >
+              <span className="sr-only">Cerrar</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="title-bermont text-lg uppercase text-[#251948] flex items-center">
+                <span className="text-xl mr-2">{selectedModules.length}</span>
+                <span>{t.home.modulesSelected}</span>
+              </h3>
+            </div>
+            
+            <ul className="mb-4 space-y-2 max-h-48 overflow-y-auto">
+              {selectedModules.map((module, index) => (
+                <li key={`selected-${index}-${module.nombre}`} className="flex items-center text-sm">
+                  <span className="w-2 h-2 bg-[#251948] mr-2 rounded-full"></span>
+                  <span className="font-medium">{module.nombre}</span>
+                  <span className="text-gray-500 text-xs ml-1">({module.seccion})</span>
+                </li>
+              ))}
+            </ul>
+            
+            <div className="bg-[#e6f8fb] p-3 rounded-md text-sm text-[#01727e] mb-4">
+              {t.home.trialInfo}
+            </div>
+            
+            <Button className="w-full bg-[#02BDEA] hover:bg-[#01a0c8] text-white flex items-center justify-center">
+              {t.home.continueButton} <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        )}
+        
+        {/* Módulos por sección */}
+        {modulesData.map((moduleSection) => (
+          <div key={moduleSection.seccion} className="mb-12">
+            <h2 className="text-xl mb-6 text-[#251948] border-b pb-2 border-[#02BDEA]/20 title-bermont uppercase">
+              {t.modulesTitles[moduleSection.seccion] || moduleSection.seccion}
+            </h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {moduleSection.items.map((item) => (
+                <ModuleCard 
+                  key={`${moduleSection.seccion}-${item.nombre}`} 
+                  nombre={item.nombre} 
+                  icono={item.icono}
+                  ruta={item.ruta}
+                  onSelect={(module, selected) => handleSelectModule(module, selected, moduleSection.seccion)}
+                  selected={isModuleSelected(item.nombre, moduleSection.seccion)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+        
+        {/* Botón para comenzar - Solo visible si no hay selecciones */}
+        {selectedModules.length === 0 && (
+          <div className="mt-16 flex justify-center">
+            <Button className="bg-[#02BDEA] hover:bg-[#01a0c8] text-white px-8 py-6 text-lg rounded-lg shadow-lg">
+              {t.home.startButton} <ChevronRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+3. modulesData.ts
+Este archivo contiene los datos de todos los módulos disponibles agrupados por sección.
+
+interface ModuleItem {
+  nombre: string;
+  icono: string; 
+  ruta: string;
+}
+interface ModuleSection {
+  seccion: string;
+  items: ModuleItem[];
+}
+export const modulesData: ModuleSection[] = [
+  {
+    "seccion": "Sistema",
+    "items": [
+      { "nombre": "Inicio", "icono": "dashboard", "ruta": "/inicio" },
+      { "nombre": "Usuarios", "icono": "users", "ruta": "/usuarios" },
+      { "nombre": "Login 2FA", "icono": "shield", "ruta": "/login2fa" }
+    ]
+  },
+  {
+    "seccion": "Personas",
+    "items": [
+      { "nombre": "Personal", "icono": "user", "ruta": "/personal" },
+      { "nombre": "Roles", "icono": "lock", "ruta": "/roles" },
+      { "nombre": "Evaluación", "icono": "bar-chart", "ruta": "/evaluacion" },
+      { "nombre": "Agenda", "icono": "calendar", "ruta": "/agenda" }
+    ]
+  },
+  {
+    "seccion": "Proyectos",
+    "items": [
+      { "nombre": "Proyectos", "icono": "briefcase", "ruta": "/proyectos" },
+      { "nombre": "Tiempos", "icono": "clock", "ruta": "/tiempos" },
+      { "nombre": "Avance", "icono": "trending-up", "ruta": "/avance" },
+      { "nombre": "Alertas", "icono": "bell", "ruta": "/alertas" }
+    ]
+  },
+  {
+    "seccion": "Comunicación",
+    "items": [
+      { "nombre": "Mensajes", "icono": "message-square", "ruta": "/mensajes" },
+      { "nombre": "Alertas", "icono": "alert-circle", "ruta": "/com-alertas" },
+      { "nombre": "Agenda", "icono": "calendar-check", "ruta": "/com-agenda" },
+      { "nombre": "Historial", "icono": "file-text", "ruta": "/historial" }
+    ]
+  },
+  {
+    "seccion": "Admin",
+    "items": [
+      { "nombre": "Documentos", "icono": "folder", "ruta": "/documentos" },
+      { "nombre": "Asistencia", "icono": "check-square", "ruta": "/asistencia" },
+      { "nombre": "Oficinas", "icono": "map-pin", "ruta": "/oficinas" }
+    ]
+  },
+  {
+    "seccion": "Estrategia",
+    "items": [
+      { "nombre": "Metas", "icono": "target", "ruta": "/metas" },
+      { "nombre": "Indicadores", "icono": "bar-chart-2", "ruta": "/indicadores" },
+      { "nombre": "Planes", "icono": "edit", "ruta": "/planes" },
+      { "nombre": "Comparar", "icono": "activity", "ruta": "/comparar" }
+    ]
+  },
+  {
+    "seccion": "Recursos",
+    "items": [
+      { "nombre": "Activos", "icono": "package", "ruta": "/activos" },
+      { "nombre": "Mantenimiento", "icono": "tool", "ruta": "/mantenimiento" },
+      { "nombre": "Stock", "icono": "layers", "ruta": "/stock" }
+    ]
+  },
+  {
+    "seccion": "Finanzas",
+    "items": [
+      { "nombre": "Ingresos", "icono": "dollar-sign", "ruta": "/ingresos" },
+      { "nombre": "Egresos", "icono": "credit-card", "ruta": "/egresos" },
+      { "nombre": "Presupuesto", "icono": "pie-chart", "ruta": "/presupuesto" },
+      { "nombre": "Reportes", "icono": "file", "ruta": "/reportes" }
+    ]
+  }
+];
+4. Sistema de Internacionalización (i18n)
+LanguageContext.tsx
+
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { Language, Translations, getTranslations } from './translations';
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: Translations;
+}
+// Crear el contexto con valores predeterminados
+const LanguageContext = createContext<LanguageContextType>({
+  language: 'es',
+  setLanguage: () => {},
+  t: getTranslations('es'),
+});
+// Hook personalizado para usar el contexto
+export const useLanguage = () => useContext(LanguageContext);
+interface LanguageProviderProps {
+  children: ReactNode;
+}
+// Proveedor del contexto
+export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
+  // Intentar cargar la preferencia de idioma guardada o usar español por defecto
+  const [language, setLanguage] = useState<Language>(() => {
+    const savedLanguage = localStorage.getItem('language');
+    return (savedLanguage as Language) || 'es';
+  });
+  // Obtener las traducciones basadas en el idioma seleccionado
+  const [translations, setTranslations] = useState<Translations>(getTranslations(language));
+  // Actualizar las traducciones cuando cambia el idioma
+  useEffect(() => {
+    setTranslations(getTranslations(language));
+    localStorage.setItem('language', language);
+    // Opcional: también podríamos actualizar el atributo lang del documento HTML
+    document.documentElement.lang = language;
+  }, [language]);
+  // Función para cambiar el idioma
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+  };
+  return (
+    <LanguageContext.Provider 
+      value={{ 
+        language, 
+        setLanguage: handleSetLanguage, 
+        t: translations 
+      }}
+    >
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+translations.ts
+
+export type Language = 'es' | 'en';
+// Definimos la estructura de las traducciones
+export interface Translations {
+  home: {
+    title: string;
+    subtitle: string;
+    trialInfo: string;
+    continueButton: string;
+    startButton: string;
+    selectedModules: string;
+    modulesSelected: string;
+  };
+  header: {
+    settings: string;
+    profile: string;
+    logout: string;
+    language: string;
+    spanish: string;
+    english: string;
+  };
+  footer: {
+    rights: string;
+    poweredBy: string;
+  };
+  modulesTitles: {
+    [key: string]: string;
+  };
+}
+// Traducciones en español
+export const es: Translations = {
+  home: {
+    title: 'Xtask Dashboard',
+    subtitle: 'Selecciona los módulos de funcionalidad que necesitas',
+    trialInfo: '15 días de prueba gratuita, no se requiere tarjeta de crédito',
+    continueButton: 'Continuar',
+    startButton: 'Iniciar mi experiencia Xtask',
+    selectedModules: 'Módulos seleccionados',
+    modulesSelected: 'Módulos Seleccionados',
+  },
+  header: {
+    settings: 'Configuración',
+    profile: 'Perfil',
+    logout: 'Cerrar sesión',
+    language: 'Idioma',
+    spanish: 'Español',
+    english: 'Inglés',
+  },
+  footer: {
+    rights: 'Todos los derechos reservados',
+    poweredBy: 'Desarrollado por',
+  },
+  modulesTitles: {
+    'SISTEMA': 'SISTEMA',
+    'PERSONAS': 'PERSONAS',
+    'PROYECTOS': 'PROYECTOS',
+    'COMUNICACION': 'COMUNICACIÓN',
+    'ADMINISTRATIVO': 'ADMINISTRATIVO',
+    'PLAN ESTRATEGICO': 'PLAN ESTRATÉGICO',
+    'RECURSOS MATERIALES': 'RECURSOS MATERIALES',
+    'FINANZAS': 'FINANZAS',
+  },
+};
+// Traducciones en inglés
+export const en: Translations = {
+  home: {
+    title: 'Xtask Dashboard',
+    subtitle: 'Select the functionality modules you need',
+    trialInfo: '15-day free trial, no credit card required',
+    continueButton: 'Continue',
+    startButton: 'Start my Xtask experience',
+    selectedModules: 'modules selected',
+    modulesSelected: 'Selected Modules',
+  },
+  header: {
+    settings: 'Settings',
+    profile: 'Profile',
+    logout: 'Log out',
+    language: 'Language',
+    spanish: 'Spanish',
+    english: 'English',
+  },
+  footer: {
+    rights: 'All rights reserved',
+    poweredBy: 'Developed by',
+  },
+  modulesTitles: {
+    'SISTEMA': 'SYSTEM',
+    'PERSONAS': 'PEOPLE',
+    'PROYECTOS': 'PROJECTS',
+    'COMUNICACION': 'COMMUNICATION',
+    'ADMINISTRATIVO': 'ADMINISTRATIVE',
+    'PLAN ESTRATEGICO': 'STRATEGIC PLAN',
+    'RECURSOS MATERIALES': 'MATERIAL RESOURCES',
+    'FINANZAS': 'FINANCES',
+  },
+};
+// Función para obtener traducciones
+export function getTranslations(lang: Language): Translations {
+  return lang === 'es' ? es : en;
+}
+5. Estilos y Tipografía (index.css)
+@import url('https://fonts.cdnfonts.com/css/gilroy-bold');
+@import url('https://fonts.cdnfonts.com/css/bermont');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root {
+  /* Colores según el Manual de Marca Xtask */
+  /* Color principal 1 - Azul Oscuro - #251948 */
+  --xtask-purple: 262 48% 20%;
+  /* Color principal 2 - Azul Claro - #02BDEA */
+  --xtask-blue: 194 98% 46%;
+  /* Color principal 3 - Aguamarina - #01E3D5 */
+  --xtask-aqua: 175 99% 45%;
+  /* Color secundario 4 - Morado - #623BA6 */
+  --xtask-secondary-purple: 264 47% 44%;
+  /* Color secundario 5 - Amarillo - #FFA41B */
+  --xtask-yellow: 37 100% 55%;
+  /* Colores base de la UI */
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  /* ... otros colores ... */
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    font-family: 'Gilroy', sans-serif;
+    @apply antialiased bg-neutral-100 text-foreground;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Bermont', sans-serif;
+    @apply font-semibold tracking-tight;
+  }
+  .title-bermont {
+    font-family: 'Bermont', sans-serif;
+    @apply font-bold uppercase tracking-wide;
+  }
+  .text-gilroy {
+    font-family: 'Gilroy', sans-serif;
+  }
+}
+Instrucciones para la Integración
+Para integrar este proyecto con Xtask_Flow, el agente deberá:
+
+Importar las dependencias necesarias:
+
+Tailwind CSS con configuración específica
+Iconos de Lucide
+Fuentes: Bermont Regular y Gilroy
+Configurar el sistema de idiomas:
+
+Implementar el contexto de idioma (LanguageContext)
+Configurar los archivos de traducción
+Implementar los componentes principales:
+
+ModuleCard: Para representar cada módulo seleccionable
+Home: Componente principal que administra la selección de módulos
+Header y Footer: Componentes de layout
+Configurar los datos de módulos:
+
+Implementar la estructura de datos de modulesData.ts
+Asegurarse de que correspondan a las funcionalidades de Xtask_Flow
+Implementar el sistema de estilos:
+
+Paleta de colores: #251948 (morado), #02BDEA (azul)
+Tipografía: Bermont para títulos, Gilroy para contenido
+Asegurar la lógica de selección funcione correctamente:
+
+Selección/deselección de módulos
+Contador de módulos seleccionados
+Panel lateral con resumen de selecciones
+Este compilado contiene todos los componentes y lógica necesarios para recrear la funcionalidad de selección de módulos en la aplicación Xtask_Flow.
