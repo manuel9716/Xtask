@@ -1,3 +1,4 @@
+import React from "react";
 import { Logo } from "@/components/logo";
 import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -11,7 +12,10 @@ import {
   UserCog, 
   Settings, 
   User,
-  Receipt
+  Receipt,
+  BarChart3,
+  GraduationCap,
+  ClipboardCheck
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -59,6 +63,14 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
     { href: "/suppliers", label: t("navigation.suppliers"), icon: <Store className="h-5 w-5" /> },
     { href: "/tasks", label: t("navigation.tasks"), icon: <CheckSquare className="h-5 w-5" /> },
   ];
+  
+  // Submenu de Recursos Humanos (solo se muestra cuando el usuario está en esa sección)
+  const isHumanResourcesSection = location.includes('/human-resources') || location.includes('/recursos-humanos');
+  const HRSubItems = [
+    { href: "/recursos-humanos/metricas", label: "Métricas y KPIs", icon: <BarChart3 className="h-5 w-5" /> },
+    { href: "/recursos-humanos/capacitaciones", label: "Capacitaciones", icon: <GraduationCap className="h-5 w-5" /> },
+    { href: "/recursos-humanos/evaluaciones", label: "Evaluaciones", icon: <ClipboardCheck className="h-5 w-5" /> },
+  ];
 
   const SystemItems = [
     { href: "/user-management", label: t("navigation.userManagement"), icon: <UserCog className="h-5 w-5" /> },
@@ -83,14 +95,31 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
         </p>
 
         {NavItems.map((item) => (
-          <NavItem
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            active={location === item.href}
-          >
-            {item.label}
-          </NavItem>
+          <React.Fragment key={item.href}>
+            <NavItem
+              href={item.href}
+              icon={item.icon}
+              active={location === item.href}
+            >
+              {item.label}
+            </NavItem>
+            
+            {/* Submenu de Recursos Humanos */}
+            {item.href === "/human-resources" && isHumanResourcesSection && (
+              <div className="pl-4 mt-1 mb-1 border-l-2 border-secondary/30 ml-4">
+                {HRSubItems.map((subItem) => (
+                  <NavItem
+                    key={subItem.href}
+                    href={subItem.href}
+                    icon={subItem.icon}
+                    active={location === subItem.href}
+                  >
+                    {subItem.label}
+                  </NavItem>
+                ))}
+              </div>
+            )}
+          </React.Fragment>
         ))}
 
         <p className="text-secondary text-xs font-medium uppercase tracking-wider mt-6 mb-2 font-heading">
