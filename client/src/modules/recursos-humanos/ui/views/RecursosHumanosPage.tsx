@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Iconos
 import {
@@ -19,6 +20,7 @@ import {
   GraduationCap,
   BarChart3,
   ChevronRight,
+  AlertCircle,
 } from "lucide-react";
 
 // Componentes del módulo
@@ -96,7 +98,39 @@ export const RecursosHumanosPage: React.FC = () => {
       
       <Separator className="my-6" />
       
-      {/* Secciones principales */}
+      {/* Tarjeta de nuevo módulo de Talento Humano */}
+      <Card className="mb-6 border-secondary/20 bg-slate-50 dark:bg-slate-900/40">
+        <CardContent className="pt-6">
+          <h2 className="text-2xl font-bold mb-2">Talento Humano - Nuevo Módulo</h2>
+          <p className="text-muted-foreground mb-4">
+            Accede al nuevo módulo de Talento Humano con todas las funcionalidades integradas en un solo lugar:
+          </p>
+          
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <p>Dashboard de métricas y KPIs</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <p>Evaluaciones de desempeño</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <p>Gestión de capacitaciones</p>
+            </div>
+          </div>
+          
+          <div className="flex justify-center">
+            <Button className="w-full max-w-md bg-purple-800 hover:bg-purple-700" size="lg">
+              <Users className="mr-2 h-5 w-5" />
+              Acceder al Dashboard Principal
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Secciones principales con solo tres opciones */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="pb-2">
@@ -171,94 +205,17 @@ export const RecursosHumanosPage: React.FC = () => {
         </Card>
       </div>
       
-      {/* Próximas capacitaciones */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-4">Próximas Capacitaciones</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Liderazgo Efectivo</CardTitle>
-              <CardDescription>5 Mayo, 2025 • 15:00 hrs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">12 participantes registrados</p>
-              <div className="mt-2 flex justify-end">
-                <Button variant="outline" size="sm">Ver Detalles</Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Excel Avanzado</CardTitle>
-              <CardDescription>12 Mayo, 2025 • 10:00 hrs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">8 participantes registrados</p>
-              <div className="mt-2 flex justify-end">
-                <Button variant="outline" size="sm">Ver Detalles</Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Gestión del Tiempo</CardTitle>
-              <CardDescription>20 Mayo, 2025 • 14:30 hrs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">15 participantes registrados</p>
-              <div className="mt-2 flex justify-end">
-                <Button variant="outline" size="sm">Ver Detalles</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-      
-      {/* Evaluaciones recientes */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-4">Evaluaciones Recientes</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Evaluación Trimestral Q1</CardTitle>
-              <CardDescription>Periodo: Ene-Mar 2025</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">28 evaluaciones completadas</p>
-              <div className="mt-2 flex justify-end">
-                <Button variant="outline" size="sm">Ver Resultados</Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Evaluación de Desempeño</CardTitle>
-              <CardDescription>Depto. Operaciones</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">12 evaluaciones completadas</p>
-              <div className="mt-2 flex justify-end">
-                <Button variant="outline" size="sm">Ver Resultados</Button>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Evaluación de Competencias</CardTitle>
-              <CardDescription>Liderazgo y Trabajo en Equipo</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">8 evaluaciones completadas</p>
-              <div className="mt-2 flex justify-end">
-                <Button variant="outline" size="sm">Ver Resultados</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Botones de acciones alternativas */}
+      <div className="flex flex-wrap gap-4 mt-8 justify-center">
+        <Button variant="outline" className="flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          Explorar Nueva Versión
+        </Button>
+        
+        <Button variant="outline" className="flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          Gestión Completa
+        </Button>
       </div>
     </div>
   );
