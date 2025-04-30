@@ -332,7 +332,7 @@ export default function Settings() {
                       <p className="text-sm text-gray-500">August 15, 2023</p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Paid</Badge>
+                      <div className={cn(badgeVariants({ variant: "outline" }), "bg-green-100 text-green-800 border-green-200")}>Paid</div>
                       <Button variant="ghost" size="sm" className="flex items-center">
                         PDF <ExternalLink className="ml-1 h-3 w-3" />
                       </Button>
@@ -345,7 +345,7 @@ export default function Settings() {
                       <p className="text-sm text-gray-500">July 15, 2023</p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Paid</Badge>
+                      <div className={cn(badgeVariants({ variant: "outline" }), "bg-green-100 text-green-800 border-green-200")}>Paid</div>
                       <Button variant="ghost" size="sm" className="flex items-center">
                         PDF <ExternalLink className="ml-1 h-3 w-3" />
                       </Button>
@@ -533,7 +533,7 @@ export default function Settings() {
                           <p className="text-xs text-gray-400">Started 1 hour ago</p>
                         </div>
                       </div>
-                      <Badge className="bg-green-100 text-green-800 border-green-200">Active Now</Badge>
+                      <div className={cn(badgeVariants({ variant: "outline" }), "bg-green-100 text-green-800 border-green-200")}>Active Now</div>
                     </div>
                   </div>
                   
