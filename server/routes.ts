@@ -814,6 +814,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Ruta para obtener todos los usuarios (necesaria para el formulario de empleados)
   app.get('/api/users', async (req, res) => {
     try {
+      // Importar db y users
+      const { db } = await import('./db');
+      const { users } = await import('@shared/schema');
+      
       // Obtener los usuarios reales de la base de datos
       const result = await db.select().from(users);
       

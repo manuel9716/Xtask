@@ -30,7 +30,7 @@ export default function UserManagement() {
     queryKey: ["/api/users"],
   });
 
-  // Filter users by role and search query
+  // Filtrar usuarios por rol y búsqueda
   const filteredUsers = users?.filter(user => {
     const roleMatch = roleFilter === "all" || user.role === roleFilter;
     const searchMatch = !searchQuery || 
@@ -40,10 +40,10 @@ export default function UserManagement() {
     return roleMatch && searchMatch;
   });
 
-  // Get unique roles for role filter
+  // Obtener roles únicos para el filtro
   const roles = users ? [...new Set(users.map(user => user.role))] : [];
 
-  // Calculate user metrics
+  // Calcular métricas de usuarios
   const totalUsers = users?.length || 0;
   const adminUsers = users?.filter(user => user.role === "admin").length || 0;
   const recentUsers = users?.filter(user => {
@@ -56,19 +56,19 @@ export default function UserManagement() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-500">Manage users, roles, and permissions in your organization</p>
+          <h1 className="text-2xl font-heading font-bold text-gray-900">Gestión de Usuarios</h1>
+          <p className="text-gray-500">Administra usuarios, roles y permisos en tu organización</p>
         </div>
         <Button className="md:self-start" size="sm">
-          <UserPlus className="mr-2 h-4 w-4" /> Add New User
+          <UserPlus className="mr-2 h-4 w-4" /> Agregar Usuario
         </Button>
       </div>
       
-      {/* User Management Overview Stats */}
+      {/* Estadísticas de Gestión de Usuarios */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Total Users</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">Total Usuarios</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -82,7 +82,7 @@ export default function UserManagement() {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Admin Users</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">Administradores</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -96,7 +96,7 @@ export default function UserManagement() {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">New Users (30 days)</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">Nuevos Usuarios (30 días)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -112,9 +112,9 @@ export default function UserManagement() {
       {/* Tabs */}
       <Tabs defaultValue="users" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
-          <TabsTrigger value="activity">Activity Log</TabsTrigger>
+          <TabsTrigger value="users">Usuarios</TabsTrigger>
+          <TabsTrigger value="roles">Roles y Permisos</TabsTrigger>
+          <TabsTrigger value="activity">Registro de Actividad</TabsTrigger>
         </TabsList>
         
         <TabsContent value="users" className="mt-6 space-y-4">
@@ -123,7 +123,7 @@ export default function UserManagement() {
               <div className="relative w-full max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search users by name, email, or username..."
+                  placeholder="Buscar por nombre, correo o usuario..."
                   className="pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -132,19 +132,19 @@ export default function UserManagement() {
               
               <Select value={roleFilter} onValueChange={setRoleFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by role" />
+                  <SelectValue placeholder="Filtrar por rol" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="all">Todos los Roles</SelectItem>
                   {roles.map(role => (
-                    <SelectItem key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</SelectItem>
+                    <SelectItem key={role} value={role}>{role === "admin" ? "Administrador" : "Usuario"}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             
             <Button variant="outline" size="sm">
-              <Filter className="mr-2 h-4 w-4" /> Advanced Filters
+              <Filter className="mr-2 h-4 w-4" /> Filtros Avanzados
             </Button>
           </div>
           
@@ -153,12 +153,12 @@ export default function UserManagement() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <TableHead className="font-medium">User</TableHead>
-                    <TableHead className="font-medium">Email</TableHead>
-                    <TableHead className="font-medium">Role</TableHead>
-                    <TableHead className="font-medium">Status</TableHead>
-                    <TableHead className="font-medium">Created</TableHead>
-                    <TableHead className="font-medium text-right">Actions</TableHead>
+                    <TableHead className="font-medium">Usuario</TableHead>
+                    <TableHead className="font-medium">Correo</TableHead>
+                    <TableHead className="font-medium">Rol</TableHead>
+                    <TableHead className="font-medium">Estado</TableHead>
+                    <TableHead className="font-medium">Creado</TableHead>
+                    <TableHead className="font-medium text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -189,7 +189,7 @@ export default function UserManagement() {
                       const createdDate = new Date(user.createdAt).toLocaleDateString();
                       const initials = user.fullName.split(' ').map(n => n[0]).join('').toUpperCase();
                       
-                      // Role badge styling
+                      // Estilo de badge para el rol
                       const roleBadge = user.role === "admin" 
                         ? "bg-amber-100 text-amber-800 border-amber-200"
                         : "bg-blue-100 text-blue-800 border-blue-200";
@@ -212,25 +212,25 @@ export default function UserManagement() {
                           <TableCell className="text-gray-700">{user.email}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={roleBadge}>
-                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                              {user.role === "admin" ? "Administrador" : "Usuario"}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
                               <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                              <span>Active</span>
+                              <span>{user.isActive ? "Activo" : "Inactivo"}</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-gray-700">{createdDate}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0" title="Ver detalles">
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0" title="Cambiar contraseña">
                                 <Lock className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0 text-red-500">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 p-0 text-red-500" title="Eliminar usuario">
                                 <Trash className="h-4 w-4" />
                               </Button>
                             </div>
@@ -241,7 +241,7 @@ export default function UserManagement() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={6} className="h-24 text-center text-gray-500">
-                        No users found. Adjust your filters or add a new user.
+                        No se encontraron usuarios. Ajusta los filtros o agrega un nuevo usuario.
                       </TableCell>
                     </TableRow>
                   )}
@@ -254,7 +254,7 @@ export default function UserManagement() {
         <TabsContent value="roles" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Roles & Permissions</CardTitle>
+              <CardTitle>Roles y Permisos</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -263,36 +263,36 @@ export default function UserManagement() {
                   <Card>
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-center">
-                        <CardTitle className="text-lg font-medium">Administrator</CardTitle>
-                        <Badge className="bg-amber-100 text-amber-800 border-amber-200">System Role</Badge>
+                        <CardTitle className="text-lg font-medium">Administrador</CardTitle>
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-200">Rol del Sistema</Badge>
                       </div>
-                      <p className="text-sm text-gray-500">Full access to all system features and settings</p>
+                      <p className="text-sm text-gray-500">Acceso completo a todas las funciones y ajustes del sistema</p>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div className="flex items-center space-x-2">
                           <Switch id="admin-users" defaultChecked disabled />
-                          <Label htmlFor="admin-users">User Management</Label>
+                          <Label htmlFor="admin-users">Gestión de Usuarios</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="admin-projects" defaultChecked disabled />
-                          <Label htmlFor="admin-projects">Projects</Label>
+                          <Label htmlFor="admin-projects">Proyectos</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="admin-finance" defaultChecked disabled />
-                          <Label htmlFor="admin-finance">Finances</Label>
+                          <Label htmlFor="admin-finance">Finanzas</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="admin-hr" defaultChecked disabled />
-                          <Label htmlFor="admin-hr">Human Resources</Label>
+                          <Label htmlFor="admin-hr">Recursos Humanos</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="admin-suppliers" defaultChecked disabled />
-                          <Label htmlFor="admin-suppliers">Suppliers</Label>
+                          <Label htmlFor="admin-suppliers">Proveedores</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="admin-settings" defaultChecked disabled />
-                          <Label htmlFor="admin-settings">System Settings</Label>
+                          <Label htmlFor="admin-settings">Configuración del Sistema</Label>
                         </div>
                       </div>
                     </CardContent>
@@ -302,45 +302,45 @@ export default function UserManagement() {
                   <Card>
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-center">
-                        <CardTitle className="text-lg font-medium">Regular User</CardTitle>
-                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">Default Role</Badge>
+                        <CardTitle className="text-lg font-medium">Usuario Regular</CardTitle>
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">Rol Predeterminado</Badge>
                       </div>
-                      <p className="text-sm text-gray-500">Limited access to system features based on assigned permissions</p>
+                      <p className="text-sm text-gray-500">Acceso limitado a las funciones del sistema basado en permisos asignados</p>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div className="flex items-center space-x-2">
                           <Switch id="user-users" />
-                          <Label htmlFor="user-users">User Management</Label>
+                          <Label htmlFor="user-users">Gestión de Usuarios</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="user-projects" defaultChecked />
-                          <Label htmlFor="user-projects">Projects</Label>
+                          <Label htmlFor="user-projects">Proyectos</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="user-finance" />
-                          <Label htmlFor="user-finance">Finances</Label>
+                          <Label htmlFor="user-finance">Finanzas</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="user-hr" />
-                          <Label htmlFor="user-hr">Human Resources</Label>
+                          <Label htmlFor="user-hr">Recursos Humanos</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="user-suppliers" defaultChecked />
-                          <Label htmlFor="user-suppliers">Suppliers</Label>
+                          <Label htmlFor="user-suppliers">Proveedores</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch id="user-settings" />
-                          <Label htmlFor="user-settings">System Settings</Label>
+                          <Label htmlFor="user-settings">Configuración del Sistema</Label>
                         </div>
                       </div>
-                      <Button className="mt-4" variant="outline">Save Changes</Button>
+                      <Button className="mt-4" variant="outline">Guardar Cambios</Button>
                     </CardContent>
                   </Card>
                   
                   {/* Custom Role Button */}
                   <Button className="w-full py-8 border-dashed" variant="outline">
-                    <UserCog className="mr-2 h-5 w-5" /> Create Custom Role
+                    <UserCog className="mr-2 h-5 w-5" /> Crear Rol Personalizado
                   </Button>
                 </div>
               </div>
