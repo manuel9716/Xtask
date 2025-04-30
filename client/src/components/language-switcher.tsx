@@ -6,9 +6,10 @@ import { useTranslation } from "react-i18next";
 
 interface LanguageSwitcherProps {
   className?: string;
+  variant?: string;
 }
 
-export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
+export function LanguageSwitcher({ className, variant = "default" }: LanguageSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { i18n } = useTranslation();
   

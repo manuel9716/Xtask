@@ -22,11 +22,11 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { t } = useTranslation();
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   const [hasNotifications] = useState(true);
 
   const handleLogout = () => {
-    logoutMutation.mutate();
+    logout();
   };
 
   return (
@@ -83,15 +83,53 @@ export function Header({ onMenuClick }: HeaderProps) {
             </Button>
           </div>
 
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-            >
-              <User className="h-5 w-5" />
-            </Button>
-          </div>
+          {/* Menú de perfil de usuario - visible en todos los dispositivos */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center space-x-2 cursor-pointer">
+                <div className="hidden md:block text-right">
+                  <p className="text-sm font-medium text-gray-700">
+                    {user ? user.fullName : t("user.demoUser")}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {user ? user.role : t("user.role")}
+                  </p>
+                </div>
+                <Avatar className="h-9 w-9 bg-primary/10">
+                  <AvatarFallback className="bg-secondary text-white">
+                    {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuLabel>Mi cuenta</DropdownMenuLabel>
+              
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium">{user?.fullName}</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuItem onClick={() => window.location.href = "/settings/profile"}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem onClick={() => window.location.href = "/settings"}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configuración</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Cerrar sesión</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
