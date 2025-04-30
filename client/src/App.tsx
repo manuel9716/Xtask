@@ -20,7 +20,7 @@ import { EmpleadosRoutes } from "@/modules/nomina/empleados/ui/routes";
 import { ProyectosRoutes } from "@/modules/proyectos/ui/routes";
 
 // Importaciones para el módulo de autenticación
-import LoginPage from "@/modules/auth/ui/views/LoginPage";
+import { LoginPage } from "@/modules/auth/ui/views/LoginPage";
 import { AuthProvider } from "@/modules/auth/ui/context/AuthContext";
 import { ProtectedRoute } from "@/modules/auth/ui/components/ProtectedRoute";
 
@@ -30,8 +30,13 @@ function Router() {
       {/* Página de inicio (Home) */}
       <Route path="/" component={HomePage} />
       
-      {/* Ruta de autenticación */}
-      <Route path="/login" component={LoginPage} />
+      {/* Rutas de autenticación */}
+      <Route path="/auth/login">
+        <LoginPage />
+      </Route>
+      <Route path="/auth/register">
+        <LoginPage />
+      </Route>
       
       {/* Dashboard (ahora como ruta secundaria) - Protegida */}
       <Route path="/dashboard">
