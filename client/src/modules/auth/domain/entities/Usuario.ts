@@ -1,24 +1,36 @@
-// Entidad Usuario en el dominio
+// Roles de usuario en el sistema
+export enum RolUsuario {
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  USER = 'user'
+}
+
+// Entidad Usuario para manejar datos de autenticación
 export interface Usuario {
   id: number;
   username: string;
   email: string;
-  password?: string; // Opcional porque no siempre queremos exponer la contraseña
-  role: string;
   fullName: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt?: Date;
+  role: RolUsuario | string;
 }
 
-// DTO para Login (lo que se envía en el formulario)
-export interface LoginCredentials {
+// Respuesta del servidor al iniciar sesión
+export interface LoginResponse {
+  token: string;
+  user: Usuario;
+}
+
+// Datos para iniciar sesión
+export interface LoginData {
   identifier: string; // Puede ser username o email
   password: string;
 }
 
-// Respuesta de autenticación exitosa
-export interface AuthResponse {
-  user: Omit<Usuario, 'password'>; // Excluimos la contraseña
-  token: string;
+// Datos para registro
+export interface RegisterData {
+  username: string;
+  email: string;
+  password: string;
+  fullName: string;
+  role?: RolUsuario | string;
 }

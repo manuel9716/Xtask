@@ -1,153 +1,232 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { eq, or } from 'drizzle-orm';
+import jwt from 'jsonwebtoken';
+import { db } from '../db';
 import { users } from '@shared/schema';
-import { z } from 'zod';
+import { eq, and } from 'drizzle-orm';
 
+// Crear router para las rutas de autenticación
 const authRouter = Router();
 
-// Secreto para JWT - idealmente debería estar en variables de entorno
+// Configuración de JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'xtask-secret-key';
-const TOKEN_EXPIRY = '8h';
+const JWT_EXPIRES_IN = '24h';
 
-// Esquema de validación para login
-const loginSchema = z.object({
-  identifier: z.string().min(1, 'El usuario o correo es requerido'),
-  password: z.string().min(1, 'La contraseña es requerida'),
-});
+// Función para generar un token JWT
+const generateToken = (userId: number): string => {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+};
 
-// Ruta para login
+// Middleware para verificar el token JWT
+export const verifyToken = (req: Request, res: Response, next: Function) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'No se proporcionó un token de autenticación' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+    req.user = { id: decoded.userId };
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Token inválido o expirado' });
+  }
+};
+
+// Ruta para iniciar sesión
 authRouter.post('/login', async (req: Request, res: Response) => {
   try {
-    const parseResult = loginSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({ 
-        message: 'Datos de autenticación inválidos', 
-        errors: parseResult.error.errors 
-      });
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
+      return res.status(400).json({ message: 'Debe proporcionar un usuario/email y contraseña' });
     }
 
-    const { identifier, password } = parseResult.data;
-
-    // Buscar usuario por email o username
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(
-        or(
-          eq(users.email, identifier),
-          eq(users.username, identifier)
-        )
+    // Buscar usuario por username o email
+    const user = await db.query.users.findFirst({
+      where: (users, { or }) => or(
+        eq(users.username, identifier),
+        eq(users.email, identifier)
       )
-      .limit(1);
+    });
 
     if (!user) {
-      return res.status(401).json({ message: 'Credenciales incorrectas' });
+      return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    // Verificar si la cuenta está activa (si el campo existe)
-    if (user.isActive === false) {
-      return res.status(403).json({ message: 'Esta cuenta ha sido desactivada' });
+    // Verificar que el usuario esté activo
+    if (!user.isActive) {
+      return res.status(401).json({ message: 'Su cuenta está desactivada. Contacte al administrador.' });
     }
 
-    // Verificar la contraseña - asumiendo que está hasheada con bcrypt
+    // Verificar contraseña
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      return res.status(401).json({ message: 'Credenciales incorrectas' });
+      return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
     // Generar token JWT
-    const token = jwt.sign(
-      { 
-        userId: user.id,
-        username: user.username, 
-        role: user.role 
-      },
-      JWT_SECRET,
-      { expiresIn: TOKEN_EXPIRY }
-    );
+    const token = generateToken(user.id);
 
-    // Crear respuesta sin incluir la contraseña
-    const { password: _, ...userWithoutPassword } = user;
-    
     // Enviar respuesta
-    res.status(200).json({
-      user: userWithoutPassword,
-      token
+    return res.status(200).json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role
+      }
     });
-  } catch (error: any) {
-    console.error('Error en autenticación:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+  } catch (error) {
+    console.error('Error al iniciar sesión:', error);
+    return res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
   }
 });
 
-// Ruta para validar token
+// Ruta para obtener el perfil del usuario actual
+authRouter.get('/me', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Usuario no autenticado' });
+    }
+
+    // Buscar usuario por ID
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Verificar que el usuario esté activo
+    if (!user.isActive) {
+      return res.status(401).json({ message: 'Su cuenta está desactivada. Contacte al administrador.' });
+    }
+
+    // Enviar respuesta sin la contraseña
+    return res.status(200).json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role
+    });
+  } catch (error) {
+    console.error('Error al obtener perfil de usuario:', error);
+    return res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
+  }
+});
+
+// Ruta para validar un token JWT
 authRouter.post('/validate-token', async (req: Request, res: Response) => {
   try {
     const { token } = req.body;
-    
-    if (!token) {
-      return res.status(400).json({ message: 'Token no proporcionado' });
-    }
-    
-    jwt.verify(token, JWT_SECRET);
-    res.status(200).json({ valid: true });
-  } catch (error) {
-    res.status(401).json({ valid: false, message: 'Token inválido' });
-  }
-});
 
-// Ruta para obtener datos del usuario actual
-authRouter.get('/me', async (req: Request, res: Response) => {
-  try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Token no proporcionado' });
+    if (!token) {
+      return res.status(400).json({ message: 'No se proporcionó un token' });
     }
-    
-    const token = authHeader.substring(7); // Eliminar 'Bearer ' del encabezado
-    
+
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
       
-      // Buscar el usuario por ID
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, decoded.userId))
-        .limit(1);
-      
-      if (!user) {
-        return res.status(404).json({ message: 'Usuario no encontrado' });
+      // Verificar que el usuario exista y esté activo
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, decoded.userId)
+      });
+
+      if (!user || !user.isActive) {
+        return res.status(401).json({ 
+          valid: false, 
+          message: 'Token inválido o usuario desactivado' 
+        });
       }
-      
-      // Excluir la contraseña
-      const { password: _, ...userWithoutPassword } = user;
-      res.status(200).json(userWithoutPassword);
-    } catch (error) {
-      return res.status(401).json({ message: 'Token inválido' });
+
+      return res.status(200).json({ 
+        valid: true, 
+        userId: decoded.userId 
+      });
+    } catch (jwtError) {
+      return res.status(401).json({ 
+        valid: false, 
+        message: 'Token inválido o expirado' 
+      });
     }
-  } catch (error: any) {
-    console.error('Error al obtener usuario:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+  } catch (error) {
+    console.error('Error al validar token:', error);
+    return res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
   }
 });
 
-// Ruta para cerrar sesión
-// En realidad, con JWT, el logout es principalmente del lado del cliente
-// Aquí podríamos implementar una lista negra de tokens si se requiere
-authRouter.post('/logout', (req: Request, res: Response) => {
+// Ruta para cerrar sesión (invalidación de token se maneja en el cliente)
+authRouter.post('/logout', verifyToken, (req: Request, res: Response) => {
+  return res.status(200).json({ message: 'Sesión cerrada exitosamente' });
+});
+
+// Ruta para registro de usuario (opcional, dependiendo de los requisitos)
+authRouter.post('/register', async (req: Request, res: Response) => {
   try {
-    // En un sistema simple con JWT, el cliente simplemente elimina el token
-    // Si se requiere logout del servidor, aquí se añadiría el token a una lista negra
-    
-    res.status(200).json({ message: 'Sesión cerrada correctamente' });
-  } catch (error: any) {
-    console.error('Error al cerrar sesión:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    const { username, email, password, fullName, role = 'user' } = req.body;
+
+    // Validar datos requeridos
+    if (!username || !email || !password || !fullName) {
+      return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+    }
+
+    // Verificar si el usuario o email ya existen
+    const existingUser = await db.query.users.findFirst({
+      where: (users, { or }) => or(
+        eq(users.username, username),
+        eq(users.email, email)
+      )
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ message: 'El nombre de usuario o email ya están en uso' });
+    }
+
+    // Hash de la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Crear el nuevo usuario
+    const [newUser] = await db.insert(users)
+      .values({
+        username,
+        email,
+        password: hashedPassword,
+        fullName,
+        role,
+        isActive: true
+      })
+      .returning();
+
+    if (!newUser) {
+      return res.status(500).json({ message: 'Error al crear el usuario' });
+    }
+
+    // Generar token JWT
+    const token = generateToken(newUser.id);
+
+    // Enviar respuesta
+    return res.status(201).json({
+      token,
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        role: newUser.role
+      }
+    });
+  } catch (error) {
+    console.error('Error al registrar usuario:', error);
+    return res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
   }
 });
 

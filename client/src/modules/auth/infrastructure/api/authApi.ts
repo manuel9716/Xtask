@@ -1,85 +1,143 @@
 import { AuthRepository } from '../../domain/repositories/AuthRepository';
-import { LoginCredentials, AuthResponse, Usuario } from '../../domain/entities/Usuario';
-import { apiRequest } from '@/lib/queryClient';
+import { LoginData, RegisterData, Usuario, LoginResponse } from '../../domain/entities/Usuario';
+import axios from 'axios';
 
-// Implementación del repositorio que usa la API para la autenticación
+// Constantes para tokens de autenticación
+const AUTH_TOKEN_KEY = 'auth_token';
+const API_BASE_URL = '/api/auth';
+
+/**
+ * Implementación del repositorio de autenticación utilizando llamadas a la API REST
+ */
 export class AuthApiRepository implements AuthRepository {
-  private tokenKey = 'xtask_auth_token';
-
-  async authenticate(credentials: LoginCredentials): Promise<AuthResponse> {
+  /**
+   * Inicia sesión con las credenciales proporcionadas
+   * @param loginData Datos de inicio de sesión
+   * @returns Respuesta con token y datos de usuario
+   */
+  async login(loginData: LoginData): Promise<LoginResponse> {
     try {
-      const response = await apiRequest('POST', '/api/auth/login', credentials);
+      const response = await axios.post<LoginResponse>(`${API_BASE_URL}/login`, loginData);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error en la autenticación');
+      // Almacenar el token en localStorage para persistencia
+      if (response.data.token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
       }
       
-      const data = await response.json();
-      
-      // Guardar el token en localStorage para la persistencia
-      localStorage.setItem(this.tokenKey, data.token);
-      
-      return data;
-    } catch (error) {
-      throw error instanceof Error 
-        ? error 
-        : new Error('Error inesperado durante la autenticación');
+      return response.data;
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Error al iniciar sesión');
     }
   }
-
+  
+  /**
+   * Registra un nuevo usuario
+   * @param registerData Datos del nuevo usuario
+   * @returns Respuesta con token y datos del usuario creado
+   */
+  async register(registerData: RegisterData): Promise<LoginResponse> {
+    try {
+      const response = await axios.post<LoginResponse>(`${API_BASE_URL}/register`, registerData);
+      
+      // Almacenar el token en localStorage para persistencia
+      if (response.data.token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Error al registrar usuario');
+    }
+  }
+  
+  /**
+   * Cierra la sesión del usuario actual
+   * @returns Promise<boolean> indicando si la operación fue exitosa
+   */
+  async logout(): Promise<boolean> {
+    try {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      
+      if (token) {
+        await axios.post(`${API_BASE_URL}/logout`, {}, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      }
+      
+      // Eliminar el token de localStorage
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      
+      return true;
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      // Aún así, eliminar el token localmente
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      return false;
+    }
+  }
+  
+  /**
+   * Obtiene la información del usuario actual
+   * @returns Datos del usuario o null si no hay sesión
+   */
+  async getCurrentUser(): Promise<Usuario | null> {
+    try {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      
+      if (!token) {
+        return null;
+      }
+      
+      const response = await axios.get<Usuario>(`${API_BASE_URL}/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      // Si hay error, probablemente el token expiró o es inválido
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      return null;
+    }
+  }
+  
+  /**
+   * Valida un token de autenticación
+   * @param token Token JWT a validar
+   * @returns true si el token es válido, false en caso contrario
+   */
   async validateToken(token: string): Promise<boolean> {
     try {
-      const response = await apiRequest('POST', '/api/auth/validate-token', { token });
-      return response.ok;
+      const response = await axios.post<{ valid: boolean }>(`${API_BASE_URL}/validate-token`, { token });
+      return response.data.valid;
     } catch (error) {
       return false;
     }
   }
-
-  async getUserByToken(token: string): Promise<Omit<Usuario, 'password'> | null> {
-    try {
-      // Como no podemos pasar headers directamente, usamos fetch en su lugar
-      const response = await fetch('/api/auth/me', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        return null;
-      }
-      
-      return await response.json();
-    } catch (error) {
-      return null;
-    }
+  
+  /**
+   * Comprueba si hay un usuario autenticado
+   * @returns true si hay un token almacenado, false en caso contrario
+   */
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    return !!token;
   }
-
-  async logout(token: string): Promise<void> {
-    try {
-      // Como no podemos pasar headers directamente, usamos fetch en su lugar
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        credentials: 'include'
-      });
-      
-      // Eliminar el token almacenado
-      localStorage.removeItem(this.tokenKey);
-    } catch (error) {
-      // En caso de error, aún eliminamos el token local
-      localStorage.removeItem(this.tokenKey);
-      throw error;
-    }
-  }
-
-  // Método auxiliar para obtener el token actual
+  
+  /**
+   * Obtiene el token de autenticación almacenado
+   * @returns El token JWT o null si no hay sesión
+   */
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    return localStorage.getItem(AUTH_TOKEN_KEY);
   }
 }

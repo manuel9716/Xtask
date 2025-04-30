@@ -1,43 +1,32 @@
 import { AuthRepository } from '../../domain/repositories/AuthRepository';
-import { LoginCredentials, AuthResponse } from '../../domain/entities/Usuario';
+import { LoginData, LoginResponse } from '../../domain/entities/Usuario';
 
-// Clase que implementa el caso de uso de login
+/**
+ * Caso de uso para inicio de sesión
+ */
 export class LoginUsuarioUseCase {
   constructor(private authRepository: AuthRepository) {}
 
-  // Método principal del caso de uso
-  async execute(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Validar entrada
-    this.validateCredentials(credentials);
-    
+  /**
+   * Ejecuta el caso de uso de inicio de sesión
+   * @param loginData Datos de inicio de sesión
+   * @returns Respuesta del servidor con token y datos de usuario
+   * @throws Error si las credenciales son inválidas
+   */
+  async execute(loginData: LoginData): Promise<LoginResponse> {
     try {
-      // Delegar la autenticación al repositorio
-      const response = await this.authRepository.authenticate(credentials);
-      return response;
-    } catch (error) {
-      // Relanzar el error para que se maneje en la capa superior
-      throw error;
-    }
-  }
-
-  // Método privado para validación básica
-  private validateCredentials(credentials: LoginCredentials): void {
-    const { identifier, password } = credentials;
-    
-    if (!identifier || identifier.trim() === '') {
-      throw new Error('El nombre de usuario o correo electrónico es requerido');
-    }
-    
-    if (!password || password.trim() === '') {
-      throw new Error('La contraseña es requerida');
-    }
-    
-    // Si es email, validamos formato básico
-    if (identifier.includes('@')) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(identifier)) {
-        throw new Error('El formato del correo electrónico no es válido');
+      // Validar los datos de entrada
+      if (!loginData.identifier || !loginData.password) {
+        throw new Error('El usuario/email y la contraseña son obligatorios');
       }
+
+      // Llamar al repositorio para realizar la autenticación
+      const response = await this.authRepository.login(loginData);
+      
+      return response;
+    } catch (error: any) {
+      // Propagar el error para que se maneje en la capa superior
+      throw new Error(error.message || 'Error al iniciar sesión');
     }
   }
 }

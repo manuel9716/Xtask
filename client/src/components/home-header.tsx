@@ -43,14 +43,14 @@ export function HomeHeader() {
               <Button 
                 variant="ghost" 
                 className="text-gray-600 hover:text-[#02BDEA]"
-                onClick={() => setLocation('/dashboard')}
+                onClick={() => setLocation('/auth/login')}
               >
                 Identificarse
               </Button>
               
               <Button 
                 className="bg-[#6d28d9] hover:bg-[#5b21b6] text-white"
-                onClick={() => setLocation('/register')}
+                onClick={() => setLocation('/auth/register')}
               >
                 Pruébalo gratis
               </Button>
