@@ -11,11 +11,9 @@ import {
   CheckSquare, 
   UserCog, 
   Settings, 
-  User,
   Receipt
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "@/modules/auth/ui/context/AuthContext";
 
 interface NavItemProps {
   href: string;
@@ -51,7 +49,6 @@ interface SidebarProps {
 export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
   const [location] = useLocation();
   const { t } = useTranslation();
-  const { user } = useAuth();
 
   const NavItems = [
     { href: "/dashboard", label: t("navigation.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -75,23 +72,9 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
         className
       )}
     >
-      {/* Header con logo a la izquierda y datos de usuario a la derecha */}
-      <div className="p-4 border-b border-accent/20 flex justify-between items-center">
+      {/* Header solo con logo a la izquierda */}
+      <div className="p-4 border-b border-accent/20">
         <Logo />
-        
-        <div className="flex items-center">
-          <div className="mr-2 flex flex-col items-end">
-            <p className="text-sm font-medium text-white truncate max-w-[120px]">
-              {user ? user.fullName : t("user.demoUser")}
-            </p>
-            <p className="text-xs text-secondary truncate capitalize">
-              {user ? user.role : t("user.role")}
-            </p>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-primary font-medium">
-            <User className="h-4 w-4" />
-          </div>
-        </div>
       </div>
 
       {/* Sección principal de navegación */}

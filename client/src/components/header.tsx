@@ -1,10 +1,20 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Bell, HelpCircle, Menu, Search, User } from "lucide-react";
+import { Bell, HelpCircle, Menu, Search, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "./language-switcher";
+import { useAuth } from "@/modules/auth/ui/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -12,7 +22,12 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { t } = useTranslation();
+  const { user, logoutMutation } = useAuth();
   const [hasNotifications] = useState(true);
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
