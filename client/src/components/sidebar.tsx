@@ -75,57 +75,63 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
         className
       )}
     >
-      <div className="p-4 border-b border-accent/20">
+      {/* Header con logo a la izquierda y datos de usuario a la derecha */}
+      <div className="p-4 border-b border-accent/20 flex justify-between items-center">
         <Logo />
-      </div>
-
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
-        <p className="text-secondary text-xs font-medium uppercase tracking-wider mt-6 mb-2 font-heading">
-          {t("navigation.mainSection")}
-        </p>
-
-        {NavItems.map((item) => (
-          <NavItem
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            active={location === item.href}
-          >
-            {item.label}
-          </NavItem>
-        ))}
-
-        <p className="text-secondary text-xs font-medium uppercase tracking-wider mt-6 mb-2 font-heading">
-          {t("navigation.systemSection")}
-        </p>
-
-        {SystemItems.map((item) => (
-          <NavItem
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            active={location === item.href}
-          >
-            {item.label}
-          </NavItem>
-        ))}
-      </nav>
-
-      <div className="p-4 border-t border-accent/20">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary font-medium">
-            <User className="h-5 w-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">
+        
+        <div className="flex items-center">
+          <div className="mr-2 flex flex-col items-end">
+            <p className="text-sm font-medium text-white truncate max-w-[120px]">
               {user ? user.fullName : t("user.demoUser")}
             </p>
             <p className="text-xs text-secondary truncate capitalize">
               {user ? user.role : t("user.role")}
             </p>
           </div>
+          <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-primary font-medium">
+            <User className="h-4 w-4" />
+          </div>
         </div>
       </div>
+
+      {/* Sección principal de navegación */}
+      <nav className="flex-1 p-4 overflow-y-auto scrollbar-hide flex flex-col justify-between">
+        {/* Sección MAIN */}
+        <div className="space-y-1">
+          <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-2 font-heading">
+            {t("navigation.mainSection")}
+          </p>
+
+          {NavItems.map((item) => (
+            <NavItem
+              key={item.href}
+              href={item.href}
+              icon={item.icon}
+              active={location === item.href}
+            >
+              {item.label}
+            </NavItem>
+          ))}
+        </div>
+        
+        {/* Sección SYSTEM en la parte inferior */}
+        <div className="space-y-1 mt-auto pt-4">
+          <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-2 font-heading">
+            {t("navigation.systemSection")}
+          </p>
+
+          {SystemItems.map((item) => (
+            <NavItem
+              key={item.href}
+              href={item.href}
+              icon={item.icon}
+              active={location === item.href}
+            >
+              {item.label}
+            </NavItem>
+          ))}
+        </div>
+      </nav>
     </aside>
   );
 }
