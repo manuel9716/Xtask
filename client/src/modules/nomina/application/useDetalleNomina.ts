@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
@@ -56,7 +57,7 @@ export interface DetalleNominaResponse {
 export function useDetalleNomina(nominaId: number | null) {
   const { toast } = useToast();
   
-  return useQuery<DetalleNominaResponse>({
+  const query = useQuery<DetalleNominaResponse>({
     queryKey: [`/api/nomina/v1/detalle/${nominaId}`],
     queryFn: async ({ queryKey }) => {
       if (!nominaId) throw new Error('ID de nómina no proporcionado');
@@ -73,12 +74,18 @@ export function useDetalleNomina(nominaId: number | null) {
     },
     enabled: nominaId !== null,
     staleTime: 60000, // 1 minuto
-    onError: (error: Error) => {
+  });
+  
+  // Manejar errores fuera del useQuery
+  useEffect(() => {
+    if (query.error) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: query.error instanceof Error ? query.error.message : 'Error desconocido',
         variant: 'destructive',
       });
-    },
-  });
+    }
+  }, [query.error, toast]);
+  
+  return query;
 }

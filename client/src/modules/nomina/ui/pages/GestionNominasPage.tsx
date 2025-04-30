@@ -130,7 +130,14 @@ export default function GestionNominasPage() {
                         <Badge variant="outline">Pendiente</Badge>
                       </div>
                       <div className="mt-4 flex justify-end">
-                        <Button variant="outline" size="sm">Ver Detalles</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleVerDetalles(nomina.id)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Ver Detalles
+                        </Button>
                         <Button variant="default" size="sm" className="ml-2">Procesar</Button>
                       </div>
                     </div>
@@ -164,8 +171,18 @@ export default function GestionNominasPage() {
                         </Badge>
                       </div>
                       <div className="mt-4 flex justify-end">
-                        <Button variant="outline" size="sm">Ver Detalles</Button>
-                        <Button variant="outline" size="sm" className="ml-2">Descargar</Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleVerDetalles(nomina.id)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          Ver Detalles
+                        </Button>
+                        <Button variant="outline" size="sm" className="ml-2">
+                          <Download className="mr-2 h-4 w-4" />
+                          Descargar
+                        </Button>
                       </div>
                     </div>
                   ))
@@ -189,6 +206,13 @@ export default function GestionNominasPage() {
       <NominaFormModal 
         open={showNuevaForma}
         onOpenChange={setShowNuevaForma}
+      />
+
+      {/* Modal de detalle de nómina */}
+      <DetalleNominaModal
+        open={showDetalleModal}
+        onOpenChange={setShowDetalleModal}
+        nominaId={nominaSeleccionadaId}
       />
     </Card>
   );
