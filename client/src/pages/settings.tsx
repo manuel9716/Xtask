@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Logo } from "@/components/logo";
 import { ThemeSelector } from "@/components/theme-selector";
-import { Badge } from "@/components/ui/badge";
+import { badgeVariants } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("general");
@@ -297,7 +298,7 @@ export default function Settings() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Default</Badge>
+                    <div className={cn(badgeVariants({ variant: "outline" }), "bg-green-100 text-green-800 border-green-200")}>Default</div>
                     <Button variant="ghost" size="sm">Edit</Button>
                   </div>
                 </div>
@@ -318,7 +319,7 @@ export default function Settings() {
                       <p className="text-sm text-gray-500">September 15, 2023</p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">Paid</Badge>
+                      <div className={cn(badgeVariants({ variant: "outline" }), "bg-green-100 text-green-800 border-green-200")}>Paid</div>
                       <Button variant="ghost" size="sm" className="flex items-center">
                         PDF <ExternalLink className="ml-1 h-3 w-3" />
                       </Button>
