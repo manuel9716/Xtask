@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Globe } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface LanguageSwitcherProps {
   className?: string;
@@ -9,26 +10,34 @@ interface LanguageSwitcherProps {
 
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentLanguage, setCurrentLanguage] = useState('es');
+  const { i18n } = useTranslation();
+  
+  // Inicializar con el idioma actual
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.language || 'es');
   
   const languages = [
     { code: 'es', name: 'Español' },
     { code: 'en', name: 'English' },
   ];
   
+  // Actualizar cuando cambia el idioma externamente
+  useEffect(() => {
+    setCurrentLanguage(i18n.language);
+  }, [i18n.language]);
+  
   const toggleDropdown = () => setIsOpen(!isOpen);
   
   const selectLanguage = (code: string) => {
+    i18n.changeLanguage(code);
     setCurrentLanguage(code);
     setIsOpen(false);
-    // Aquí implementaríamos el cambio real de idioma
   };
   
   return (
     <div className={cn("relative", className)}>
       <Button
         variant="ghost"
-        className="flex items-center space-x-1 text-white"
+        className="flex items-center space-x-1 text-gray-600"
         onClick={toggleDropdown}
       >
         <Globe className="h-4 w-4" />
