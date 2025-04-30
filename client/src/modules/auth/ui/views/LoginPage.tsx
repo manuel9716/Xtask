@@ -17,10 +17,17 @@ export function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
       {/* Columna izquierda - Hero */}
-      <div className="w-full md:w-1/2 bg-[#251948] text-white p-6 md:p-12 flex flex-col justify-center order-2 md:order-1">
+      <div className="w-full md:w-1/2 bg-[#251948] text-white p-6 md:p-12 flex flex-col justify-center order-2 md:order-1 relative">
+        {/* Logo en la parte superior derecha */}
+        <div className="absolute top-4 right-4 md:top-6 md:right-6">
+          <div className="text-2xl md:text-3xl font-bold">
+            <span className="text-[#02BDEA]">X</span>Task
+          </div>
+        </div>
+        
         <div className="max-w-lg ml-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-6">
-            <span className="text-[#02BDEA]">X</span>Task: Plataforma de gestión empresarial
+            Plataforma de gestión empresarial
           </h1>
           
           <p className="text-lg mb-8">
