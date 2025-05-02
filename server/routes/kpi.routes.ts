@@ -154,11 +154,8 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
       return res.status(400).json({ error: "El porcentaje de peso debe estar entre 0 y 100" });
     }
     
-    // Validar valor esperado
-    const valorEsperadoNum = parseFloat(valorEsperado);
-    if (isNaN(valorEsperadoNum) || valorEsperadoNum <= 0) {
-      return res.status(400).json({ error: "El valor esperado debe ser un número mayor que cero" });
-    }
+    // Asignamos un valor predeterminado a valorEsperado (ya no se valida)
+    const valorEsperadoNum = valorEsperado ? parseFloat(valorEsperado) : 1;
     
     // Crear KPI
     const [kpi] = await db
@@ -234,7 +231,7 @@ kpiRouter.patch("/:id", isAuthenticated, async (req: Request, res: Response) => 
       .set({
         ...(descripcion && { descripcion }),
         ...(formula && { formula }),
-        ...(valorEsperado && { valorEsperado: parseFloat(valorEsperado) }),
+        ...(valorEsperado && { valorEsperado: 1 }), // Siempre usar valor 1
         ...(porcentajePeso && { porcentajePeso: porcentajePesoNum }),
         ...(mes && { mes }),
         updatedAt: new Date()
@@ -294,11 +291,11 @@ kpiRouter.patch("/:id/resultado", isAuthenticated, async (req: Request, res: Res
       return res.status(400).json({ error: "No se puede modificar un KPI que ya ha sido validado" });
     }
     
-    // Calcular porcentaje de cumplimiento
-    const valorEsperado = Number(existingKpi.valorEsperado);
-    const porcentajeCumplimiento = calcularPorcentajeCumplimiento(valorObtenidoNum, valorEsperado);
+    // Usar el valor obtenido directamente como porcentaje de cumplimiento
+    // Con la nueva fórmula, el valor obtenido representa directamente el porcentaje
+    const porcentajeCumplimiento = valorObtenidoNum;
     
-    // Determinar el estado del KPI
+    // Determinar el estado del KPI según el porcentaje obtenido
     const estado = determinarEstadoKpi(porcentajeCumplimiento);
     
     // Actualizar KPI con el resultado y cálculos
