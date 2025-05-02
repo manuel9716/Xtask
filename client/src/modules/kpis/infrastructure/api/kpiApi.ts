@@ -1,150 +1,157 @@
+import { apiRequest } from "@/lib/queryClient";
 import { Indicador } from "../../domain/entities/Indicador";
 import { Bonificacion } from "../../domain/entities/Bonificacion";
-import { apiRequest } from "@/lib/queryClient";
+import { KpiRepository } from "../../domain/repositories/KpiRepository";
 
 /**
- * Clase que encapsula las llamadas a la API para el módulo de KPIs
+ * Adaptador API para comunicarse con el servidor
+ * e implementar el repositorio de KPIs
  */
-export class KpiApi {
-  private readonly basePath = "/api/kpis";
-
+export class KpiApi implements KpiRepository {
   /**
-   * Obtiene los KPIs de un usuario para un mes específico
+   * Obtiene los KPIs del usuario para un mes específico
    */
   async getKpisByUserAndMonth(userId: number, mes: string): Promise<Indicador[]> {
-    const response = await apiRequest(
-      "GET",
-      `${this.basePath}/mis-kpis?mes=${mes}`
-    );
-    return await response.json();
+    const response = await apiRequest("GET", `/api/kpis/mis-kpis?mes=${mes}`);
+    const data = await response.json();
+    return data;
   }
 
   /**
-   * Obtiene un KPI específico por su ID
+   * Obtiene un KPI específico por ID
    */
-  async getKpiById(id: number): Promise<Indicador> {
-    const response = await apiRequest(
-      "GET",
-      `${this.basePath}/${id}`
-    );
-    return await response.json();
+  async getKpiById(id: number): Promise<Indicador | null> {
+    try {
+      const response = await apiRequest("GET", `/api/kpis/${id}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      if ((error as Response).status === 404) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
    * Crea un nuevo KPI
    */
   async createKpi(kpi: Omit<Indicador, "id" | "createdAt" | "updatedAt">): Promise<Indicador> {
-    const response = await apiRequest(
-      "POST",
-      this.basePath,
-      kpi
-    );
-    return await response.json();
+    const response = await apiRequest("POST", "/api/kpis", kpi);
+    const data = await response.json();
+    return data;
   }
 
   /**
    * Actualiza un KPI existente
    */
   async updateKpi(id: number, kpi: Partial<Indicador>): Promise<Indicador> {
-    const response = await apiRequest(
-      "PATCH",
-      `${this.basePath}/${id}`,
-      kpi
-    );
-    return await response.json();
+    const response = await apiRequest("PATCH", `/api/kpis/${id}`, kpi);
+    const data = await response.json();
+    return data;
   }
 
   /**
-   * Registra el resultado de un KPI
+   * Evalúa un KPI registrando el valor obtenido
    */
   async evaluarKpi(id: number, valorObtenido: number): Promise<Indicador> {
-    const response = await apiRequest(
-      "PATCH",
-      `${this.basePath}/${id}/resultado`,
-      { valorObtenido }
-    );
-    return await response.json();
+    const response = await apiRequest("PATCH", `/api/kpis/${id}/resultado`, { valorObtenido });
+    const data = await response.json();
+    return data;
   }
 
   /**
-   * Valida un KPI por parte de un supervisor
+   * Valida un KPI (acción de supervisor)
    */
   async validarKpi(
     id: number, 
+    validadorId: number, 
     aprobado: boolean, 
     comentarios?: string
   ): Promise<Indicador> {
-    const response = await apiRequest(
-      "PATCH",
-      `${this.basePath}/${id}/validar`,
-      { aprobado, comentarios }
-    );
-    return await response.json();
+    const response = await apiRequest("PATCH", `/api/kpis/${id}/validar`, {
+      aprobado,
+      comentarios
+    });
+    const data = await response.json();
+    return data;
   }
 
   /**
    * Elimina un KPI
    */
   async deleteKpi(id: number): Promise<boolean> {
-    const response = await apiRequest(
-      "DELETE",
-      `${this.basePath}/${id}`
-    );
-    const result = await response.json();
-    return result.success || false;
+    await apiRequest("DELETE", `/api/kpis/${id}`);
+    return true;
   }
 
   /**
-   * Obtiene la bonificación de un usuario para un mes específico
+   * Obtiene la bonificación del usuario para un mes específico
+   * En la API, el userId se ignora porque se toma del usuario autenticado
    */
-  async getBonificacionByUserAndMonth(mes: string): Promise<Bonificacion> {
-    const response = await apiRequest(
-      "GET",
-      `${this.basePath}/bonificacion?mes=${mes}`
-    );
-    return await response.json();
+  async getBonificacionByUserAndMonth(userId: number, mes: string): Promise<Bonificacion | null> {
+    try {
+      const response = await apiRequest("GET", `/api/kpis/bonificacion?mes=${mes}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      if ((error as Response).status === 404) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
-   * Obtiene todas las bonificaciones de un usuario
+   * Obtiene todas las bonificaciones del usuario
+   * En la API, el userId se ignora porque se toma del usuario autenticado
+   */
+  async getBonificacionesByUser(userId: number): Promise<Bonificacion[]> {
+    const response = await apiRequest("GET", "/api/kpis/bonificaciones/historial");
+    const data = await response.json();
+    return data;
+  }
+
+  /**
+   * Alias para el historial de bonificaciones
    */
   async getBonificacionesHistory(): Promise<Bonificacion[]> {
-    const response = await apiRequest(
-      "GET",
-      `${this.basePath}/bonificaciones/historial`
-    );
-    return await response.json();
+    return this.getBonificacionesByUser(0); // El ID se ignora en la API
   }
 
   /**
-   * Calcula la bonificación mensual para un usuario
+   * Calcula la bonificación del usuario para un mes
+   * En la API, el userId se ignora porque se toma del usuario autenticado
    */
   async calcularBonificacion(
+    userId: number,
     mes: string,
     salarioBase: number,
     salarioVariable: number
   ): Promise<Bonificacion> {
-    const response = await apiRequest(
-      "POST",
-      `${this.basePath}/calcular-bonificacion`,
-      { mes, salarioBase, salarioVariable }
-    );
-    return await response.json();
+    const response = await apiRequest("POST", "/api/kpis/calcular-bonificacion", {
+      mes,
+      salarioBase,
+      salarioVariable
+    });
+    const data = await response.json();
+    return data;
   }
 
   /**
-   * Aprueba una bonificación por parte de un supervisor
+   * Aprueba o rechaza una bonificación (acción de supervisor)
    */
   async aprobarBonificacion(
-    id: number,
-    aprobada: boolean,
+    id: number, 
+    aprobadorId: number, 
+    aprobada: boolean, 
     comentarios?: string
   ): Promise<Bonificacion> {
-    const response = await apiRequest(
-      "PATCH",
-      `${this.basePath}/bonificacion/${id}/aprobar`,
-      { aprobada, comentarios }
-    );
-    return await response.json();
+    const response = await apiRequest("PATCH", `/api/kpis/bonificacion/${id}/aprobar`, {
+      aprobada,
+      comentarios
+    });
+    const data = await response.json();
+    return data;
   }
 }

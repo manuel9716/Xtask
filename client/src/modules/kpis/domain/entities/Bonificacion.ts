@@ -1,17 +1,21 @@
 /**
- * Entidad de dominio que representa una bonificación mensual de un usuario
+ * Estados posibles de una bonificación
  */
 export enum EstadoBonificacion {
   CALCULADO = "CALCULADO",
   APROBADO = "APROBADO",
-  PAGADO = "PAGADO",
-  RECHAZADO = "RECHAZADO"
+  RECHAZADO = "RECHAZADO",
+  PAGADO = "PAGADO"
 }
 
+/**
+ * Entidad Bonificación
+ * Representa una bonificación por cumplimiento de KPIs
+ */
 export interface Bonificacion {
   id?: number;
   userId: number;
-  mes: string; // Formato: "YYYY-MM"
+  mes: string; // YYYY-MM
   salarioBase: number;
   salarioVariable: number;
   bonificacionTotal: number;
@@ -25,49 +29,43 @@ export interface Bonificacion {
 }
 
 /**
- * Calcula el monto de bonificación mensual basado en el salario variable
- * y el porcentaje de cumplimiento global de los KPIs
- * @param salarioVariable Monto del salario variable (bonificable)
- * @param porcentajeCumplimientoGlobal Porcentaje global de cumplimiento de KPIs
- * @returns Monto de bonificación a pagar
+ * Tipo auxiliar para el cálculo de bonificación
  */
-export function calcularBonificacion(
-  salarioVariable: number, 
-  porcentajeCumplimientoGlobal: number
-): number {
-  // La fórmula básica es: salario_variable * (porcentaje_cumplimiento / 100)
-  return salarioVariable * (porcentajeCumplimientoGlobal / 100);
+export interface KpiResultado {
+  porcentajeCumplimiento: number;
+  porcentajePeso: number;
 }
 
 /**
- * Calcula el porcentaje global de cumplimiento basado en los KPIs individuales
- * y sus pesos respectivos
- * @param kpisConResultados Array de KPIs con sus resultados y pesos
- * @returns Porcentaje global de cumplimiento
+ * Calcula el porcentaje de cumplimiento global de un conjunto de KPIs
  */
 export function calcularPorcentajeCumplimientoGlobal(
-  kpisConResultados: { 
-    porcentajeCumplimiento: number, 
-    porcentajePeso: number 
-  }[]
+  kpisResultados: KpiResultado[]
 ): number {
-  // Si no hay KPIs, el cumplimiento es 0
-  if (kpisConResultados.length === 0) return 0;
+  if (kpisResultados.length === 0) return 0;
+
+  let sumaPonderada = 0;
+  let sumaPesos = 0;
+
+  kpisResultados.forEach(kpi => {
+    sumaPonderada += kpi.porcentajeCumplimiento * kpi.porcentajePeso;
+    sumaPesos += kpi.porcentajePeso;
+  });
+
+  if (sumaPesos === 0) return 0;
   
-  // Validamos que la suma de los porcentajes de peso sea 100%
-  const sumaPesos = kpisConResultados.reduce(
-    (suma, kpi) => suma + kpi.porcentajePeso, 
-    0
-  );
-  
-  // Normalizamos los pesos si la suma no es exactamente 100
-  const factor = sumaPesos > 0 ? 100 / sumaPesos : 0;
-  
-  // Calculamos el promedio ponderado de los porcentajes de cumplimiento
-  const cumplimientoGlobal = kpisConResultados.reduce(
-    (suma, kpi) => suma + (kpi.porcentajeCumplimiento * (kpi.porcentajePeso * factor / 100)),
-    0
-  );
-  
-  return Math.min(Math.max(cumplimientoGlobal, 0), 100);
+  return Math.round(sumaPonderada / sumaPesos);
+}
+
+/**
+ * Calcula la bonificación basada en el salario variable y el % de cumplimiento
+ */
+export function calcularBonificacion(
+  salarioVariable: number,
+  porcentajeCumplimiento: number
+): number {
+  // El cálculo básico es proporcional al porcentaje de cumplimiento
+  // Con un tope en 100% (no se paga extra por sobrecumplimiento)
+  const porcentajeAplicable = Math.min(porcentajeCumplimiento, 100) / 100;
+  return Math.round(salarioVariable * porcentajeAplicable);
 }

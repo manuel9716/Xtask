@@ -1,13 +1,19 @@
 /**
- * Entidad de dominio que representa un Indicador Clave de Desempeño (KPI) de un usuario
+ * Estados posibles de un KPI
  */
 export enum EstadoKpi {
   PENDIENTE = "PENDIENTE",
+  EN_PROGRESO = "EN_PROGRESO",
   CUMPLIDO = "CUMPLIDO",
-  PARCIAL = "PARCIAL",
-  NO_CUMPLIDO = "NO_CUMPLIDO"
+  NO_CUMPLIDO = "NO_CUMPLIDO",
+  VALIDADO = "VALIDADO",
+  RECHAZADO = "RECHAZADO"
 }
 
+/**
+ * Entidad Indicador (KPI)
+ * Representa un indicador de desempeño personal
+ */
 export interface Indicador {
   id?: number;
   userId: number;
@@ -17,7 +23,7 @@ export interface Indicador {
   valorObtenido?: number;
   porcentajePeso: number;
   porcentajeCumplimiento?: number;
-  mes: string; // Formato: "YYYY-MM"
+  mes: string; // YYYY-MM
   estado: EstadoKpi;
   validadoPor?: number;
   fechaValidacion?: Date;
@@ -27,35 +33,22 @@ export interface Indicador {
 }
 
 /**
- * Calcula el porcentaje de cumplimiento de un indicador basado en el valor obtenido
- * y el valor esperado
- * @param valorObtenido Valor obtenido en el KPI
- * @param valorEsperado Valor esperado o meta del KPI
- * @returns Porcentaje de cumplimiento (de 0 a 100)
+ * Calcula el porcentaje de cumplimiento basado en valor obtenido y esperado
  */
 export function calcularPorcentajeCumplimiento(
-  valorObtenido: number, 
+  valorObtenido: number,
   valorEsperado: number
 ): number {
-  // Si el valor esperado es 0, evitamos división por cero
   if (valorEsperado === 0) return 0;
-  
-  const porcentaje = (valorObtenido / valorEsperado) * 100;
-  
-  // Limitamos el porcentaje a un máximo de 100%
-  return Math.min(Math.max(porcentaje, 0), 100);
+  return Math.min(Math.round((valorObtenido / valorEsperado) * 100), 200);
 }
 
 /**
- * Determina el estado de un KPI basado en su porcentaje de cumplimiento
- * @param porcentajeCumplimiento Porcentaje de cumplimiento del KPI
- * @returns Estado del KPI
+ * Determina el estado del KPI basándose en su porcentaje de cumplimiento
  */
 export function determinarEstadoKpi(porcentajeCumplimiento: number): EstadoKpi {
   if (porcentajeCumplimiento >= 100) {
     return EstadoKpi.CUMPLIDO;
-  } else if (porcentajeCumplimiento >= 70) {
-    return EstadoKpi.PARCIAL;
   } else {
     return EstadoKpi.NO_CUMPLIDO;
   }

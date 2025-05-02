@@ -1,149 +1,132 @@
-import React from "react";
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent, 
-  CardFooter 
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Indicador, EstadoKpi } from "../../domain/entities/Indicador";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, CheckCircle, XCircle, AlertCircle, Calculator } from "lucide-react";
-import { Indicador, EstadoKpi } from "../../domain/entities/Indicador";
+import { CheckCircle, XCircle, AlertCircle, HelpCircle, Clock, ArrowUpRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
-// Función auxiliar para obtener el color según el estado
-const getEstadoColor = (estado: EstadoKpi) => {
-  switch (estado) {
-    case EstadoKpi.CUMPLIDO:
-      return "bg-green-100 text-green-800 border-green-200";
-    case EstadoKpi.PARCIAL:
-      return "bg-amber-100 text-amber-800 border-amber-200";
-    case EstadoKpi.NO_CUMPLIDO:
-      return "bg-red-100 text-red-800 border-red-200";
-    case EstadoKpi.PENDIENTE:
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
-  }
-};
-
-// Función auxiliar para obtener el icono según el estado
-const getEstadoIcon = (estado: EstadoKpi) => {
-  switch (estado) {
-    case EstadoKpi.CUMPLIDO:
-      return <CheckCircle className="h-4 w-4" />;
-    case EstadoKpi.PARCIAL:
-      return <AlertCircle className="h-4 w-4" />;
-    case EstadoKpi.NO_CUMPLIDO:
-      return <XCircle className="h-4 w-4" />;
-    case EstadoKpi.PENDIENTE:
-    default:
-      return <Calculator className="h-4 w-4" />;
-  }
-};
-
-interface KpiCardProps {
+export interface KpiCardProps {
   kpi: Indicador;
-  onEdit?: () => void;
   onRegisterResult?: () => void;
-  className?: string;
 }
 
-/**
- * Componente que muestra un KPI en forma de tarjeta
- */
-export const KpiCard: React.FC<KpiCardProps> = ({ 
-  kpi, 
-  onEdit, 
-  onRegisterResult,
-  className = "" 
-}) => {
-  const porcentajeCumplimiento = kpi.porcentajeCumplimiento ?? 0;
-  const tieneResultado = kpi.valorObtenido !== undefined;
-  
+export function KpiCard({ kpi, onRegisterResult }: KpiCardProps) {
+  // Determinar color y icono según el estado
+  const getBadgeDetails = (estado: EstadoKpi) => {
+    switch (estado) {
+      case EstadoKpi.PENDIENTE:
+        return { color: "bg-amber-100 text-amber-800 hover:bg-amber-100", icon: <Clock className="h-4 w-4" /> };
+      case EstadoKpi.EN_PROGRESO:
+        return { color: "bg-blue-100 text-blue-800 hover:bg-blue-100", icon: <ArrowUpRight className="h-4 w-4" /> };
+      case EstadoKpi.CUMPLIDO:
+        return { color: "bg-green-100 text-green-800 hover:bg-green-100", icon: <CheckCircle className="h-4 w-4" /> };
+      case EstadoKpi.NO_CUMPLIDO:
+        return { color: "bg-red-100 text-red-800 hover:bg-red-100", icon: <XCircle className="h-4 w-4" /> };
+      case EstadoKpi.VALIDADO:
+        return { color: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100", icon: <CheckCircle className="h-4 w-4" /> };
+      case EstadoKpi.RECHAZADO:
+        return { color: "bg-red-100 text-red-800 hover:bg-red-100", icon: <XCircle className="h-4 w-4" /> };
+      default:
+        return { color: "bg-gray-100 text-gray-800 hover:bg-gray-100", icon: <HelpCircle className="h-4 w-4" /> };
+    }
+  };
+
+  // Formatear texto de estado
+  const getEstadoText = (estado: EstadoKpi) => {
+    switch (estado) {
+      case EstadoKpi.PENDIENTE:
+        return "Pendiente";
+      case EstadoKpi.EN_PROGRESO:
+        return "En progreso";
+      case EstadoKpi.CUMPLIDO:
+        return "Cumplido";
+      case EstadoKpi.NO_CUMPLIDO:
+        return "No cumplido";
+      case EstadoKpi.VALIDADO:
+        return "Validado";
+      case EstadoKpi.RECHAZADO:
+        return "Rechazado";
+      default:
+        return "Desconocido";
+    }
+  };
+
+  // Color para la barra de progreso
+  const getProgressColor = (porcentaje?: number) => {
+    if (!porcentaje) return "bg-gray-200";
+    if (porcentaje >= 100) return "bg-green-500";
+    if (porcentaje >= 75) return "bg-amber-500";
+    return "bg-red-500";
+  };
+
+  const { color, icon } = getBadgeDetails(kpi.estado);
+  const canRegisterResult = kpi.estado === EstadoKpi.PENDIENTE && onRegisterResult;
+  const showProgress = kpi.valorObtenido !== undefined && kpi.porcentajeCumplimiento !== undefined;
+
   return (
-    <Card className={`shadow-sm hover:shadow-md transition-shadow ${className}`}>
+    <Card className="shadow-sm hover:shadow transition-shadow duration-300">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{kpi.descripcion}</CardTitle>
-          <Badge variant="outline" className={getEstadoColor(kpi.estado)}>
+          <CardTitle className="text-base font-medium">{kpi.descripcion}</CardTitle>
+          <Badge variant="outline" className={color}>
             <span className="flex items-center">
-              {getEstadoIcon(kpi.estado)}
-              <span className="ml-1">{kpi.estado}</span>
+              {icon}
+              <span className="ml-1 text-xs">{getEstadoText(kpi.estado)}</span>
             </span>
           </Badge>
         </div>
-        
-        <CardDescription>
-          <div className="text-xs text-muted-foreground">
-            Peso: <span className="font-medium">{kpi.porcentajePeso}%</span>
-          </div>
-          <div className="text-xs italic mt-1">
-            Fórmula: <span className="font-mono">{kpi.formula}</span>
-          </div>
-        </CardDescription>
       </CardHeader>
-      
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">Meta:</span>
-            <span className="font-medium">{kpi.valorEsperado}</span>
+      <CardContent className="pb-2 text-sm">
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <div>
+            <p className="text-xs text-muted-foreground">Fórmula</p>
+            <p className="font-medium">{kpi.formula}</p>
           </div>
-          
-          {tieneResultado && (
-            <>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Resultado:</span>
-                <span className="font-medium">{kpi.valorObtenido}</span>
-              </div>
-              
-              <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Cumplimiento:</span>
-                  <span className="font-medium">{porcentajeCumplimiento.toFixed(1)}%</span>
-                </div>
-                <Progress value={porcentajeCumplimiento} className="h-2" />
-              </div>
-            </>
-          )}
-          
-          {kpi.validadoPor && (
-            <div className="border-t pt-2 text-xs text-muted-foreground">
-              <div>Validado por: {kpi.validadoPor}</div>
-              {kpi.comentariosValidacion && (
-                <div className="italic mt-1">"{kpi.comentariosValidacion}"</div>
-              )}
-            </div>
-          )}
+          <div>
+            <p className="text-xs text-muted-foreground">Peso</p>
+            <p className="font-medium">{kpi.porcentajePeso}%</p>
+          </div>
         </div>
+        
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <p className="text-xs text-muted-foreground">Meta</p>
+            <p className="font-medium">{kpi.valorEsperado}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Obtenido</p>
+            <p className="font-medium">
+              {kpi.valorObtenido !== undefined ? kpi.valorObtenido : "-"}
+            </p>
+          </div>
+        </div>
+
+        {showProgress && (
+          <div className="mt-3">
+            <div className="flex justify-between mb-1">
+              <p className="text-xs text-muted-foreground">Cumplimiento</p>
+              <p className="text-xs font-medium">{kpi.porcentajeCumplimiento}%</p>
+            </div>
+            <Progress 
+              value={kpi.porcentajeCumplimiento} 
+              max={100}
+              className={`h-2 ${getProgressColor(kpi.porcentajeCumplimiento)}`}
+            />
+          </div>
+        )}
       </CardContent>
-      
-      <CardFooter className="flex justify-end gap-2 pt-2">
-        {onEdit && (
+      <CardFooter className="pt-0">
+        {canRegisterResult && (
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={onEdit}
-            disabled={kpi.validadoPor !== undefined}
-          >
-            <Pencil className="h-4 w-4 mr-1" /> Editar
-          </Button>
-        )}
-        
-        {onRegisterResult && kpi.estado === EstadoKpi.PENDIENTE && (
-          <Button 
-            variant="default" 
-            size="sm" 
+            className="w-full text-xs"
             onClick={onRegisterResult}
           >
-            <Calculator className="h-4 w-4 mr-1" /> Registrar Resultado
+            Registrar resultado
           </Button>
         )}
       </CardFooter>
     </Card>
   );
-};
-
-export default KpiCard;
+}

@@ -90,7 +90,7 @@ export const PanelKpis: React.FC = () => {
     isLoading: isLoadingBonificacion
   } = useQuery<Bonificacion | null>({
     queryKey: ['/api/kpis/bonificacion', selectedMonth],
-    queryFn: () => kpiApi.getBonificacionByUserAndMonth(selectedMonth),
+    queryFn: () => kpiApi.getBonificacionByUserAndMonth(0, selectedMonth),
   });
   
   // Mutaciones
@@ -137,7 +137,7 @@ export const PanelKpis: React.FC = () => {
   
   const calculateBonusMutation = useMutation({
     mutationFn: (data: { mes: string, salarioBase: number, salarioVariable: number }) => 
-      kpiApi.calcularBonificacion(data.mes, data.salarioBase, data.salarioVariable),
+      kpiApi.calcularBonificacion(0, data.mes, data.salarioBase, data.salarioVariable),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/kpis/bonificacion', selectedMonth] });
       setIsBonusDialogOpen(false);
