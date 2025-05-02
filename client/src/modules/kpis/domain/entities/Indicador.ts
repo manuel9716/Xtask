@@ -11,8 +11,8 @@ export enum EstadoKpi {
 }
 
 /**
- * Entidad Indicador (KPI)
- * Representa un indicador de desempeño personal
+ * Entidad KPI (Indicador)
+ * Representa un indicador de desempeño
  */
 export interface Indicador {
   id?: number;
@@ -21,8 +21,8 @@ export interface Indicador {
   formula: string;
   valorEsperado: number;
   valorObtenido?: number;
-  porcentajePeso: number;
   porcentajeCumplimiento?: number;
+  porcentajePeso: number;
   mes: string; // YYYY-MM
   estado: EstadoKpi;
   validadoPor?: number;
@@ -33,23 +33,24 @@ export interface Indicador {
 }
 
 /**
- * Calcula el porcentaje de cumplimiento basado en valor obtenido y esperado
+ * Calcula el porcentaje de cumplimiento de un KPI
+ * @param valorEsperado Meta a alcanzar
+ * @param valorObtenido Valor real obtenido
+ * @returns Porcentaje de cumplimiento (0-100+)
  */
 export function calcularPorcentajeCumplimiento(
-  valorObtenido: number,
-  valorEsperado: number
+  valorEsperado: number,
+  valorObtenido: number
 ): number {
   if (valorEsperado === 0) return 0;
-  return Math.min(Math.round((valorObtenido / valorEsperado) * 100), 200);
+  return Math.round((valorObtenido / valorEsperado) * 100);
 }
 
 /**
- * Determina el estado del KPI basándose en su porcentaje de cumplimiento
+ * Determina el estado de un KPI basado en su porcentaje de cumplimiento
+ * @param porcentajeCumplimiento Porcentaje de cumplimiento calculado
+ * @returns Estado del KPI (CUMPLIDO o NO_CUMPLIDO)
  */
 export function determinarEstadoKpi(porcentajeCumplimiento: number): EstadoKpi {
-  if (porcentajeCumplimiento >= 100) {
-    return EstadoKpi.CUMPLIDO;
-  } else {
-    return EstadoKpi.NO_CUMPLIDO;
-  }
+  return porcentajeCumplimiento >= 100 ? EstadoKpi.CUMPLIDO : EstadoKpi.NO_CUMPLIDO;
 }

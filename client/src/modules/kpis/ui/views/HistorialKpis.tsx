@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
 } from "@/components/ui/card";
 import {
   Table,
@@ -15,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
+import { 
   Select,
   SelectContent,
   SelectItem,
@@ -23,368 +25,216 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { KpiApi } from "../../infrastructure/api/kpiApi";
+import { 
+  Calculator, 
+  CheckCircle, 
+  Ban, 
+  Clock,
+  CalendarClock
+} from "lucide-react";
 import { Bonificacion, EstadoBonificacion } from "../../domain/entities/Bonificacion";
-import { Indicador, EstadoKpi } from "../../domain/entities/Indicador";
-import { BarChart3, TrendingUp, FileBarChart, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-
-const kpiApi = new KpiApi();
+import { kpiApi } from "../../infrastructure/api/kpiApi";
 
 /**
- * Vista de historial de KPIs y bonificaciones
+ * Vista del historial de bonificaciones por KPIs
  */
 export const HistorialKpis: React.FC = () => {
-  // Estado para filtros
-  const [year, setYear] = useState<string>(() => new Date().getFullYear().toString());
-  
-  // Consultas
-  const {
-    data: bonificaciones,
-    isLoading: isLoadingBonificaciones
-  } = useQuery<Bonificacion[]>({
+  // Estado para filtrado por año
+  const [selectedYear, setSelectedYear] = useState<string>("todos");
+
+  // Consulta de bonificaciones históricas
+  const { data: bonificaciones, isLoading } = useQuery<Bonificacion[]>({
     queryKey: ['/api/kpis/bonificaciones/historial'],
-    queryFn: () => kpiApi.getBonificacionesHistory()
+    queryFn: () => kpiApi.getBonificacionesHistory(),
   });
-  
-  // Obtener datos del año seleccionado
-  const filteredBonificaciones = bonificaciones?.filter(b => {
-    return b.mes.startsWith(year);
-  }) || [];
-  
-  // Ordenar por mes (más reciente primero)
-  const sortedBonificaciones = [...filteredBonificaciones].sort((a, b) => {
-    return b.mes.localeCompare(a.mes);
-  });
-  
-  // Calcular estadísticas
-  const calcularEstadisticas = () => {
-    if (!sortedBonificaciones.length) {
-      return {
-        totalBonificaciones: 0,
-        promedioCumplimiento: 0,
-        mejorMes: null,
-        peorMes: null,
-      };
-    }
-    
-    const totalBonificaciones = sortedBonificaciones.reduce(
-      (sum, b) => sum + b.bonificacionTotal, 
-      0
-    );
-    
-    const promedioCumplimiento = sortedBonificaciones.reduce(
-      (sum, b) => sum + b.porcentajeCumplimientoGlobal, 
-      0
-    ) / sortedBonificaciones.length;
-    
-    const mejorMes = [...sortedBonificaciones].sort(
-      (a, b) => b.porcentajeCumplimientoGlobal - a.porcentajeCumplimientoGlobal
-    )[0];
-    
-    const peorMes = [...sortedBonificaciones].sort(
-      (a, b) => a.porcentajeCumplimientoGlobal - b.porcentajeCumplimientoGlobal
-    )[0];
-    
-    return {
-      totalBonificaciones,
-      promedioCumplimiento,
-      mejorMes,
-      peorMes,
-    };
+
+  // Formatear fecha para mostrar
+  const formatearFecha = (fecha: Date | string | undefined) => {
+    if (!fecha) return "-";
+    const date = typeof fecha === 'string' ? parseISO(fecha) : fecha;
+    return format(date, 'dd MMM yyyy, HH:mm', { locale: es });
   };
-  
-  const estadisticas = calcularEstadisticas();
-  
-  // Formatear mes para mostrarlo más amigable (ej: Mayo 2025)
-  const formatearMes = (mesString: string) => {
-    if (!mesString) return "";
-    try {
-      const [year, month] = mesString.split("-");
-      const date = new Date(parseInt(year), parseInt(month) - 1);
-      return date.toLocaleDateString("es-ES", { 
-        month: "long", 
-        year: "numeric" 
-      });
-    } catch (error) {
-      return mesString;
-    }
+
+  // Formatear número como cantidad monetaria
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
-  
-  // Obtener color según estado bonificación
-  const getEstadoColor = (estado: EstadoBonificacion) => {
+
+  // Formatear mes para mostrar
+  const formatearMes = (mes: string) => {
+    const [year, month] = mes.split('-');
+    const fecha = new Date(parseInt(year), parseInt(month) - 1, 1);
+    return format(fecha, 'MMMM yyyy', { locale: es });
+  };
+
+  // Determinar estilo de badge según el estado
+  const getBadgeDetails = (estado: EstadoBonificacion) => {
     switch (estado) {
-      case EstadoBonificacion.APROBADO:
-        return "bg-green-100 text-green-800 border-green-200";
-      case EstadoBonificacion.PAGADO:
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case EstadoBonificacion.RECHAZADO:
-        return "bg-red-100 text-red-800 border-red-200";
       case EstadoBonificacion.CALCULADO:
+        return { 
+          color: "bg-blue-100 text-blue-800 hover:bg-blue-100", 
+          icon: <Calculator className="h-4 w-4 mr-1" /> 
+        };
+      case EstadoBonificacion.APROBADO:
+        return { 
+          color: "bg-green-100 text-green-800 hover:bg-green-100", 
+          icon: <CheckCircle className="h-4 w-4 mr-1" /> 
+        };
+      case EstadoBonificacion.RECHAZADO:
+        return { 
+          color: "bg-red-100 text-red-800 hover:bg-red-100", 
+          icon: <Ban className="h-4 w-4 mr-1" /> 
+        };
+      case EstadoBonificacion.PAGADO:
+        return { 
+          color: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100", 
+          icon: <CheckCircle className="h-4 w-4 mr-1" /> 
+        };
       default:
-        return "bg-amber-100 text-amber-800 border-amber-200";
+        return { 
+          color: "bg-amber-100 text-amber-800 hover:bg-amber-100", 
+          icon: <Clock className="h-4 w-4 mr-1" /> 
+        };
     }
   };
-  
-  // Generar opciones de años
-  const getYearOptions = () => {
-    const currentYear = new Date().getFullYear();
-    const options = [];
-    
-    for (let i = 0; i < 5; i++) {
-      const year = currentYear - i;
-      options.push({ value: year.toString(), label: year.toString() });
+
+  // Formatear texto de estado
+  const getEstadoText = (estado: EstadoBonificacion) => {
+    switch (estado) {
+      case EstadoBonificacion.CALCULADO:
+        return "Calculado";
+      case EstadoBonificacion.APROBADO:
+        return "Aprobado";
+      case EstadoBonificacion.RECHAZADO:
+        return "Rechazado";
+      case EstadoBonificacion.PAGADO:
+        return "Pagado";
+      default:
+        return "Desconocido";
+    }
+  };
+
+  // Obtener años disponibles para filtrado
+  const getYearsOptions = () => {
+    if (!bonificaciones || bonificaciones.length === 0) {
+      return [];
     }
     
-    return options;
+    const years = new Set<string>();
+    bonificaciones.forEach(b => {
+      const year = b.mes.split('-')[0];
+      years.add(year);
+    });
+    
+    return Array.from(years).sort((a, b) => b.localeCompare(a)); // Ordenar descendente
   };
-  
+
+  // Filtrar bonificaciones por año seleccionado
+  const bonificacionesFiltradas = bonificaciones?.filter(b => {
+    if (selectedYear === "todos") return true;
+    return b.mes.startsWith(selectedYear);
+  }).sort((a, b) => b.mes.localeCompare(a.mes)); // Ordenar por mes, más reciente primero
+
   return (
-    <div className="container py-6 space-y-6">
+    <div className="container py-6 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Historial de KPIs</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Historial de Bonificaciones</h1>
           <p className="text-muted-foreground">
-            Revisa tu desempeño y bonificaciones históricas
+            Histórico de bonificaciones por cumplimiento de KPIs
           </p>
         </div>
         
-        <div>
+        <div className="flex items-center gap-2">
+          <CalendarClock className="h-5 w-5 text-muted-foreground" />
           <Select
-            value={year}
-            onValueChange={setYear}
+            value={selectedYear}
+            onValueChange={setSelectedYear}
           >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Año" />
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Filtrar por año" />
             </SelectTrigger>
             <SelectContent>
-              {getYearOptions().map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
+              <SelectItem value="todos">Todos los años</SelectItem>
+              {getYearsOptions().map(year => (
+                <SelectItem key={year} value={year}>{year}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
       </div>
       
-      <Tabs defaultValue="resumen">
-        <TabsList className="mb-4">
-          <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="bonificaciones">Bonificaciones</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="resumen" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Bonificaciones ({year})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <BarChart3 className="h-5 w-5 text-primary mr-2" />
-                  <span className="text-2xl font-bold">
-                    {formatCurrency(estadisticas.totalBonificaciones)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Promedio Cumplimiento
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center">
-                  <TrendingUp className="h-5 w-5 text-primary mr-2" />
-                  <span className="text-2xl font-bold">
-                    {estadisticas.promedioCumplimiento.toFixed(1)}%
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Mejor Desempeño
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {estadisticas.mejorMes ? (
-                  <div className="space-y-2">
-                    <div className="text-lg font-medium">
-                      {formatearMes(estadisticas.mejorMes.mes)}
-                    </div>
-                    <div className="flex items-center text-green-600">
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      <span className="font-medium">
-                        {estadisticas.mejorMes.porcentajeCumplimientoGlobal.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-muted-foreground text-sm">
-                    Sin datos para este año
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Menor Desempeño
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {estadisticas.peorMes ? (
-                  <div className="space-y-2">
-                    <div className="text-lg font-medium">
-                      {formatearMes(estadisticas.peorMes.mes)}
-                    </div>
-                    <div className="flex items-center text-amber-600">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      <span className="font-medium">
-                        {estadisticas.peorMes.porcentajeCumplimientoGlobal.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-muted-foreground text-sm">
-                    Sin datos para este año
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Rendimiento mensual</CardTitle>
-              <CardDescription>
-                Visión general de tu desempeño durante {year}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingBonificaciones ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin w-12 h-12 border-t-2 border-b-2 border-primary rounded-full"></div>
-                </div>
-              ) : sortedBonificaciones.length > 0 ? (
-                <div className="space-y-6">
-                  {sortedBonificaciones.map(bonificacion => (
-                    <div key={bonificacion.id} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <FileBarChart className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span className="font-medium">
-                            {formatearMes(bonificacion.mes)}
-                          </span>
-                        </div>
-                        <Badge variant="outline" className={getEstadoColor(bonificacion.estado as EstadoBonificacion)}>
-                          {bonificacion.estado}
-                        </Badge>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-sm">
-                          <span>Cumplimiento: {bonificacion.porcentajeCumplimientoGlobal.toFixed(1)}%</span>
-                          <span className="font-medium">{formatCurrency(bonificacion.bonificacionTotal)}</span>
-                        </div>
-                        <Progress value={bonificacion.porcentajeCumplimientoGlobal} className="h-2" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center">
-                  <p className="text-muted-foreground">
-                    No hay datos de bonificaciones para {year}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="bonificaciones">
-          <Card>
-            <CardHeader>
-              <CardTitle>Bonificaciones del {year}</CardTitle>
-              <CardDescription>
-                Detalle de todas tus bonificaciones durante el año
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingBonificaciones ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin w-12 h-12 border-t-2 border-b-2 border-primary rounded-full"></div>
-                </div>
-              ) : sortedBonificaciones.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mes</TableHead>
-                      <TableHead>Cumplimiento</TableHead>
-                      <TableHead>Salario Base</TableHead>
-                      <TableHead>Salario Variable</TableHead>
-                      <TableHead>Bonificación</TableHead>
-                      <TableHead>Estado</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedBonificaciones.map(bonificacion => (
+      <Card>
+        <CardHeader>
+          <CardTitle>Bonificaciones por periodo</CardTitle>
+          <CardDescription>
+            Historial de bonificaciones calculadas y su estado actual
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin w-12 h-12 border-t-2 border-b-2 border-primary rounded-full"></div>
+            </div>
+          ) : !bonificaciones || bonificaciones.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">
+                No hay bonificaciones registradas en el historial.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Periodo</TableHead>
+                    <TableHead>Cumplimiento</TableHead>
+                    <TableHead>Bonificación</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="hidden md:table-cell">Fecha cálculo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {bonificacionesFiltradas?.map((bonificacion) => {
+                    const { color, icon } = getBadgeDetails(bonificacion.estado);
+                    return (
                       <TableRow key={bonificacion.id}>
                         <TableCell className="font-medium">
                           {formatearMes(bonificacion.mes)}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center">
-                            <span className="mr-2">{bonificacion.porcentajeCumplimientoGlobal.toFixed(1)}%</span>
-                            <Progress 
-                              value={bonificacion.porcentajeCumplimientoGlobal} 
-                              className="h-2 w-16" 
-                            />
-                          </div>
+                          <span className={bonificacion.porcentajeCumplimientoGlobal >= 100 ? 'text-green-600' : 'text-amber-600'}>
+                            {bonificacion.porcentajeCumplimientoGlobal}%
+                          </span>
                         </TableCell>
-                        <TableCell>{formatCurrency(bonificacion.salarioBase)}</TableCell>
-                        <TableCell>{formatCurrency(bonificacion.salarioVariable)}</TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell>
                           {formatCurrency(bonificacion.bonificacionTotal)}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={getEstadoColor(bonificacion.estado as EstadoBonificacion)}>
-                            {bonificacion.estado}
+                          <Badge variant="outline" className={color}>
+                            <span className="flex items-center">
+                              {icon}
+                              <span>{getEstadoText(bonificacion.estado)}</span>
+                            </span>
                           </Badge>
                         </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                          {formatearFecha(bonificacion.createdAt)}
+                        </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="py-12 text-center">
-                  <p className="text-muted-foreground">
-                    No hay datos de bonificaciones para {year}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
-
-export default HistorialKpis;

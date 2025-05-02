@@ -1,54 +1,49 @@
-import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+import { useEffect, useState } from "react";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+import { 
+  Card, 
+  CardContent 
+} from "@/components/ui/card";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle 
 } from "@/components/ui/dialog";
+import { 
+  Sheet, 
+  SheetContent, 
+  SheetDescription, 
+  SheetHeader, 
+  SheetTitle
+} from "@/components/ui/sheet";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, BarChart3, AlertTriangle } from "lucide-react";
-import { KpiApi } from "../../infrastructure/api/kpiApi";
-import { KpiCard } from "../components/KpiCard";
-import { BonificacionResumen } from "../components/BonificacionResumen";
-import { KpiForm } from "../components/KpiForm";
+import { AlertTriangle, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Indicador, EstadoKpi } from "../../domain/entities/Indicador";
 import { Bonificacion } from "../../domain/entities/Bonificacion";
-
-const kpiApi = new KpiApi();
+import { KpiForm } from "../components/KpiForm";
+import { KpiCard } from "../components/KpiCard";
+import { BonificacionResumen } from "../components/BonificacionResumen";
+import { kpiApi } from "../../infrastructure/api/kpiApi";
 
 /**
  * Vista principal del panel de KPIs
@@ -56,30 +51,24 @@ const kpiApi = new KpiApi();
 export const PanelKpis: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Estado para selección de mes
+
+  // Estados
   const [selectedMonth, setSelectedMonth] = useState(() => {
-    // Inicializar con el mes actual
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-  
-  // Estado para los diálogos
   const [isKpiFormOpen, setIsKpiFormOpen] = useState(false);
   const [isRegisterResultOpen, setIsRegisterResultOpen] = useState(false);
-  const [selectedKpi, setSelectedKpi] = useState<Indicador | null>(null);
-  const [resultValue, setResultValue] = useState<string>("");
-  
-  // Estado para el cálculo de bonificación
   const [isBonusDialogOpen, setIsBonusDialogOpen] = useState(false);
-  const [salarioBase, setSalarioBase] = useState<string>("1500");
-  const [salarioVariable, setSalarioVariable] = useState<string>("500");
-  
-  // Consultas para obtener KPIs y bonificación
+  const [selectedKpi, setSelectedKpi] = useState<Indicador | null>(null);
+  const [resultValue, setResultValue] = useState("");
+  const [salarioBase, setSalarioBase] = useState("0");
+  const [salarioVariable, setSalarioVariable] = useState("0");
+
+  // Consultas
   const {
     data: kpis,
-    isLoading: isLoadingKpis,
-    error: kpisError
+    isLoading: isLoadingKpis
   } = useQuery<Indicador[]>({
     queryKey: ['/api/kpis/mis-kpis', selectedMonth],
     queryFn: () => kpiApi.getKpisByUserAndMonth(0, selectedMonth)
@@ -92,7 +81,7 @@ export const PanelKpis: React.FC = () => {
     queryKey: ['/api/kpis/bonificacion', selectedMonth],
     queryFn: () => kpiApi.getBonificacionByUserAndMonth(0, selectedMonth),
   });
-  
+
   // Mutaciones
   const createKpiMutation = useMutation({
     mutationFn: (kpi: Omit<Indicador, "id" | "createdAt" | "updatedAt">) => 
@@ -154,7 +143,7 @@ export const PanelKpis: React.FC = () => {
       });
     }
   });
-  
+
   // Handlers
   const handleCreateKpi = (data: any) => {
     createKpiMutation.mutate({
@@ -167,13 +156,13 @@ export const PanelKpis: React.FC = () => {
       estado: EstadoKpi.PENDIENTE
     });
   };
-  
+
   const handleOpenRegisterResult = (kpi: Indicador) => {
     setSelectedKpi(kpi);
     setResultValue(kpi.valorObtenido?.toString() || "");
     setIsRegisterResultOpen(true);
   };
-  
+
   const handleRegisterResult = () => {
     if (!selectedKpi) return;
     
@@ -192,7 +181,7 @@ export const PanelKpis: React.FC = () => {
       valor: valor 
     });
   };
-  
+
   const handleCalculateBonus = () => {
     const base = parseFloat(salarioBase);
     const variable = parseFloat(salarioVariable);
@@ -212,7 +201,7 @@ export const PanelKpis: React.FC = () => {
       salarioVariable: variable
     });
   };
-  
+
   // Generar opciones de meses para el selector
   const getMonthOptions = () => {
     const options = [];
@@ -229,13 +218,13 @@ export const PanelKpis: React.FC = () => {
     
     return options;
   };
-  
+
   // Verificar si podemos calcular la bonificación (todos los KPIs tienen resultados)
   const canCalculateBonus = () => {
     if (!kpis || kpis.length === 0) return false;
     return !kpis.some(kpi => kpi.valorObtenido === undefined);
   };
-  
+
   return (
     <div className="container py-6 space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -473,14 +462,14 @@ export const PanelKpis: React.FC = () => {
               onClick={handleRegisterResult}
               disabled={registerResultMutation.isPending}
             >
-              {registerResultMutation.isPending ? 'Guardando...' : 'Guardar'}
+              {registerResultMutation.isPending ? "Guardando..." : "Guardar resultado"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
       
       {/* Diálogo para calcular bonificación */}
-      <Dialog 
+      <Dialog
         open={isBonusDialogOpen}
         onOpenChange={setIsBonusDialogOpen}
       >
@@ -488,35 +477,40 @@ export const PanelKpis: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Calcular Bonificación</DialogTitle>
             <DialogDescription>
-              Ingresa los datos salariales para calcular tu bonificación
+              Ingresa los datos salariales para calcular tu bonificación mensual
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="salario-base">Salario base</Label>
+              <Label htmlFor="salario-base">Salario base mensual</Label>
               <Input
                 id="salario-base"
                 value={salarioBase}
                 onChange={(e) => setSalarioBase(e.target.value)}
                 type="number"
-                step="0.01"
-                placeholder="Ingresa tu salario base"
+                min="0"
+                step="1000"
+                placeholder="Ej: 15000"
               />
+              <p className="text-xs text-muted-foreground">
+                Componente fijo de tu salario (no afectado por KPIs)
+              </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="salario-variable">Salario variable</Label>
+              <Label htmlFor="salario-variable">Salario variable mensual</Label>
               <Input
                 id="salario-variable"
                 value={salarioVariable}
                 onChange={(e) => setSalarioVariable(e.target.value)}
                 type="number"
-                step="0.01"
-                placeholder="Ingresa tu salario variable"
+                min="0"
+                step="1000"
+                placeholder="Ej: 5000"
               />
               <p className="text-xs text-muted-foreground">
-                Este es el monto máximo de bonificación que puedes recibir con un 100% de cumplimiento.
+                Componente variable de tu salario (afectado por KPIs)
               </p>
             </div>
           </div>
@@ -533,7 +527,7 @@ export const PanelKpis: React.FC = () => {
               onClick={handleCalculateBonus}
               disabled={calculateBonusMutation.isPending}
             >
-              {calculateBonusMutation.isPending ? 'Calculando...' : 'Calcular'}
+              {calculateBonusMutation.isPending ? "Calculando..." : "Calcular bonificación"}
             </Button>
           </div>
         </DialogContent>
@@ -541,5 +535,3 @@ export const PanelKpis: React.FC = () => {
     </div>
   );
 };
-
-export default PanelKpis;

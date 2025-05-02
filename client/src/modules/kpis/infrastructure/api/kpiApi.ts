@@ -4,154 +4,75 @@ import { Bonificacion } from "../../domain/entities/Bonificacion";
 import { KpiRepository } from "../../domain/repositories/KpiRepository";
 
 /**
- * Adaptador API para comunicarse con el servidor
- * e implementar el repositorio de KPIs
+ * Implementación de KpiRepository para comunicarse con la API
  */
 export class KpiApi implements KpiRepository {
   /**
-   * Obtiene los KPIs del usuario para un mes específico
+   * Obtiene los KPIs de un usuario para un mes específico
    */
   async getKpisByUserAndMonth(userId: number, mes: string): Promise<Indicador[]> {
-    const response = await apiRequest("GET", `/api/kpis/mis-kpis?mes=${mes}`);
-    const data = await response.json();
-    return data;
+    const res = await apiRequest("GET", `/api/kpis/user/${userId}/mes/${mes}`);
+    return await res.json();
   }
 
   /**
-   * Obtiene un KPI específico por ID
+   * Obtiene un KPI por su ID
    */
   async getKpiById(id: number): Promise<Indicador | null> {
-    try {
-      const response = await apiRequest("GET", `/api/kpis/${id}`);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      if ((error as Response).status === 404) {
-        return null;
-      }
-      throw error;
-    }
+    const res = await apiRequest("GET", `/api/kpis/${id}`);
+    return await res.json();
   }
 
   /**
    * Crea un nuevo KPI
    */
   async createKpi(kpi: Omit<Indicador, "id" | "createdAt" | "updatedAt">): Promise<Indicador> {
-    const response = await apiRequest("POST", "/api/kpis", kpi);
-    const data = await response.json();
-    return data;
+    const res = await apiRequest("POST", "/api/kpis", kpi);
+    return await res.json();
   }
 
   /**
-   * Actualiza un KPI existente
-   */
-  async updateKpi(id: number, kpi: Partial<Indicador>): Promise<Indicador> {
-    const response = await apiRequest("PATCH", `/api/kpis/${id}`, kpi);
-    const data = await response.json();
-    return data;
-  }
-
-  /**
-   * Evalúa un KPI registrando el valor obtenido
+   * Registra el resultado de un KPI y lo evalúa
    */
   async evaluarKpi(id: number, valorObtenido: number): Promise<Indicador> {
-    const response = await apiRequest("PATCH", `/api/kpis/${id}/resultado`, { valorObtenido });
-    const data = await response.json();
-    return data;
+    const res = await apiRequest("POST", `/api/kpis/${id}/evaluar`, { valorObtenido });
+    return await res.json();
   }
 
   /**
-   * Valida un KPI (acción de supervisor)
-   */
-  async validarKpi(
-    id: number, 
-    validadorId: number, 
-    aprobado: boolean, 
-    comentarios?: string
-  ): Promise<Indicador> {
-    const response = await apiRequest("PATCH", `/api/kpis/${id}/validar`, {
-      aprobado,
-      comentarios
-    });
-    const data = await response.json();
-    return data;
-  }
-
-  /**
-   * Elimina un KPI
-   */
-  async deleteKpi(id: number): Promise<boolean> {
-    await apiRequest("DELETE", `/api/kpis/${id}`);
-    return true;
-  }
-
-  /**
-   * Obtiene la bonificación del usuario para un mes específico
-   * En la API, el userId se ignora porque se toma del usuario autenticado
+   * Obtiene la bonificación de un usuario para un mes específico
    */
   async getBonificacionByUserAndMonth(userId: number, mes: string): Promise<Bonificacion | null> {
-    try {
-      const response = await apiRequest("GET", `/api/kpis/bonificacion?mes=${mes}`);
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      if ((error as Response).status === 404) {
-        return null;
-      }
-      throw error;
-    }
+    const res = await apiRequest("GET", `/api/kpis/bonificaciones/user/${userId}/mes/${mes}`);
+    return await res.json();
   }
 
   /**
-   * Obtiene todas las bonificaciones del usuario
-   * En la API, el userId se ignora porque se toma del usuario autenticado
-   */
-  async getBonificacionesByUser(userId: number): Promise<Bonificacion[]> {
-    const response = await apiRequest("GET", "/api/kpis/bonificaciones/historial");
-    const data = await response.json();
-    return data;
-  }
-
-  /**
-   * Alias para el historial de bonificaciones
-   */
-  async getBonificacionesHistory(): Promise<Bonificacion[]> {
-    return this.getBonificacionesByUser(0); // El ID se ignora en la API
-  }
-
-  /**
-   * Calcula la bonificación del usuario para un mes
-   * En la API, el userId se ignora porque se toma del usuario autenticado
+   * Calcula la bonificación para un usuario en un mes específico
    */
   async calcularBonificacion(
-    userId: number,
-    mes: string,
-    salarioBase: number,
+    userId: number, 
+    mes: string, 
+    salarioBase: number, 
     salarioVariable: number
   ): Promise<Bonificacion> {
-    const response = await apiRequest("POST", "/api/kpis/calcular-bonificacion", {
+    const res = await apiRequest("POST", "/api/kpis/bonificaciones/calcular", {
+      userId,
       mes,
       salarioBase,
       salarioVariable
     });
-    const data = await response.json();
-    return data;
+    return await res.json();
   }
 
   /**
-   * Aprueba o rechaza una bonificación (acción de supervisor)
+   * Obtiene el historial de bonificaciones
    */
-  async aprobarBonificacion(
-    id: number, 
-    aprobadorId: number, 
-    aprobada: boolean, 
-    comentarios?: string
-  ): Promise<Bonificacion> {
-    const response = await apiRequest("PATCH", `/api/kpis/bonificacion/${id}/aprobar`, {
-      aprobada,
-      comentarios
-    });
-    const data = await response.json();
-    return data;
+  async getBonificacionesHistory(): Promise<Bonificacion[]> {
+    const res = await apiRequest("GET", "/api/kpis/bonificaciones/historial");
+    return await res.json();
   }
 }
+
+// Instancia única para usar en la aplicación
+export const kpiApi = new KpiApi();
