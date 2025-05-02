@@ -1,131 +1,148 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Indicador, EstadoKpi } from "../../domain/entities/Indicador";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, AlertCircle, HelpCircle, Clock, ArrowUpRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Pencil, Check, X, Clock, AlertCircle, ChevronRight } from "lucide-react";
+import { EstadoKpi, Indicador } from "../../domain/entities/Indicador";
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-export interface KpiCardProps {
+interface KpiCardProps {
   kpi: Indicador;
-  onRegisterResult?: () => void;
+  onEdit?: (kpi: Indicador) => void;
+  onResult?: (kpi: Indicador) => void;
+  onValidate?: (kpi: Indicador) => void;
 }
 
-export function KpiCard({ kpi, onRegisterResult }: KpiCardProps) {
-  // Determinar color y icono según el estado
-  const getBadgeDetails = (estado: EstadoKpi) => {
-    switch (estado) {
-      case EstadoKpi.PENDIENTE:
-        return { color: "bg-amber-100 text-amber-800 hover:bg-amber-100", icon: <Clock className="h-4 w-4" /> };
-      case EstadoKpi.EN_PROGRESO:
-        return { color: "bg-blue-100 text-blue-800 hover:bg-blue-100", icon: <ArrowUpRight className="h-4 w-4" /> };
+export function KpiCard({ kpi, onEdit, onResult, onValidate }: KpiCardProps) {
+  // Función para determinar color según estado
+  const getStatusColor = () => {
+    switch (kpi.estado) {
       case EstadoKpi.CUMPLIDO:
-        return { color: "bg-green-100 text-green-800 hover:bg-green-100", icon: <CheckCircle className="h-4 w-4" /> };
-      case EstadoKpi.NO_CUMPLIDO:
-        return { color: "bg-red-100 text-red-800 hover:bg-red-100", icon: <XCircle className="h-4 w-4" /> };
+        return "bg-green-500";
+      case EstadoKpi.INCUMPLIDO:
+        return "bg-red-500";
+      case EstadoKpi.PARCIAL:
+        return "bg-amber-500";
+      case EstadoKpi.EN_PROGRESO:
+        return "bg-blue-500";
+      case EstadoKpi.PENDIENTE:
+        return "bg-slate-500";
       case EstadoKpi.VALIDADO:
-        return { color: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100", icon: <CheckCircle className="h-4 w-4" /> };
-      case EstadoKpi.RECHAZADO:
-        return { color: "bg-red-100 text-red-800 hover:bg-red-100", icon: <XCircle className="h-4 w-4" /> };
+        return "bg-green-700";
+      case EstadoKpi.COMPLETADO:
+        return "bg-violet-500";
       default:
-        return { color: "bg-gray-100 text-gray-800 hover:bg-gray-100", icon: <HelpCircle className="h-4 w-4" /> };
+        return "bg-gray-500";
     }
   };
 
-  // Formatear texto de estado
-  const getEstadoText = (estado: EstadoKpi) => {
-    switch (estado) {
-      case EstadoKpi.PENDIENTE:
-        return "Pendiente";
-      case EstadoKpi.EN_PROGRESO:
-        return "En progreso";
+  // Icono según estado
+  const getStatusIcon = () => {
+    switch (kpi.estado) {
       case EstadoKpi.CUMPLIDO:
-        return "Cumplido";
-      case EstadoKpi.NO_CUMPLIDO:
-        return "No cumplido";
+        return <Check className="h-4 w-4" />;
+      case EstadoKpi.INCUMPLIDO:
+        return <X className="h-4 w-4" />;
+      case EstadoKpi.PARCIAL:
+        return <AlertCircle className="h-4 w-4" />;
+      case EstadoKpi.EN_PROGRESO:
+      case EstadoKpi.PENDIENTE:
+        return <Clock className="h-4 w-4" />;
       case EstadoKpi.VALIDADO:
-        return "Validado";
-      case EstadoKpi.RECHAZADO:
-        return "Rechazado";
+        return <Check className="h-4 w-4" />;
+      case EstadoKpi.COMPLETADO:
+        return <ChevronRight className="h-4 w-4" />;
       default:
-        return "Desconocido";
+        return <AlertCircle className="h-4 w-4" />;
     }
   };
 
-  // Color para la barra de progreso
-  const getProgressColor = (porcentaje?: number) => {
-    if (!porcentaje) return "bg-gray-200";
-    if (porcentaje >= 100) return "bg-green-500";
-    if (porcentaje >= 75) return "bg-amber-500";
-    return "bg-red-500";
-  };
+  // Verificar si el KPI tiene medición (valor actual)
+  const hasMeasurement = kpi.valorActual !== undefined && kpi.valorActual !== null;
 
-  const { color, icon } = getBadgeDetails(kpi.estado);
-  const canRegisterResult = kpi.estado === EstadoKpi.PENDIENTE && onRegisterResult;
-  const showProgress = kpi.valorObtenido !== undefined && kpi.porcentajeCumplimiento !== undefined;
+  // Formatear fechas
+  const formatDate = (date: Date) => {
+    if (!date) return '';
+    return format(new Date(date), 'dd MMM yyyy', { locale: es });
+  };
 
   return (
-    <Card className="shadow-sm hover:shadow transition-shadow duration-300">
+    <Card className="w-full">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-base font-medium">{kpi.descripcion}</CardTitle>
-          <Badge variant="outline" className={color}>
-            <span className="flex items-center">
-              {icon}
-              <span className="ml-1 text-xs">{getEstadoText(kpi.estado)}</span>
-            </span>
+          <CardTitle className="text-lg">{kpi.nombre}</CardTitle>
+          <Badge className={`${getStatusColor()} text-white flex items-center gap-1 ml-2`}>
+            {getStatusIcon()}
+            {kpi.estado}
           </Badge>
         </div>
+        <CardDescription>{kpi.descripcion}</CardDescription>
       </CardHeader>
-      <CardContent className="pb-2 text-sm">
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <div>
-            <p className="text-xs text-muted-foreground">Fórmula</p>
-            <p className="font-medium">{kpi.formula}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Peso</p>
-            <p className="font-medium">{kpi.porcentajePeso}%</p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <p className="text-xs text-muted-foreground">Meta</p>
-            <p className="font-medium">{kpi.valorEsperado}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Obtenido</p>
-            <p className="font-medium">
-              {kpi.valorObtenido !== undefined ? kpi.valorObtenido : "-"}
-            </p>
-          </div>
-        </div>
+      <CardContent className="pb-1">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
+            <span className="text-muted-foreground">Meta:</span>
+            <span className="font-medium text-right">{kpi.valorMeta} {kpi.unidadMedida}</span>
+            
+            <span className="text-muted-foreground">Base:</span>
+            <span className="font-medium text-right">{kpi.valorBase} {kpi.unidadMedida}</span>
 
-        {showProgress && (
-          <div className="mt-3">
-            <div className="flex justify-between mb-1">
-              <p className="text-xs text-muted-foreground">Cumplimiento</p>
-              <p className="text-xs font-medium">{kpi.porcentajeCumplimiento}%</p>
-            </div>
-            <Progress 
-              value={kpi.porcentajeCumplimiento} 
-              max={100}
-              className={`h-2 ${getProgressColor(kpi.porcentajeCumplimiento)}`}
-            />
+            {hasMeasurement && (
+              <>
+                <span className="text-muted-foreground">Actual:</span>
+                <span className="font-medium text-right">{kpi.valorActual} {kpi.unidadMedida}</span>
+              </>
+            )}
+
+            <span className="text-muted-foreground">Período:</span>
+            <span className="font-medium text-right">{kpi.periodicidad}</span>
+            
+            <span className="text-muted-foreground">Peso:</span>
+            <span className="font-medium text-right">{kpi.porcentajePeso}%</span>
           </div>
-        )}
+
+          {hasMeasurement && kpi.porcentajeCumplimiento !== undefined && (
+            <div className="mt-3 mb-1">
+              <span className="text-sm text-muted-foreground mb-1 block">
+                Cumplimiento: <span className="font-medium">{kpi.porcentajeCumplimiento}%</span>
+              </span>
+              <Progress 
+                value={kpi.porcentajeCumplimiento} 
+                max={100}
+                className={`h-2 ${
+                  kpi.porcentajeCumplimiento >= 100 ? 'bg-green-200' :
+                  kpi.porcentajeCumplimiento >= 50 ? 'bg-amber-200' : 'bg-red-200'
+                }`}
+              />
+            </div>
+          )}
+        </div>
       </CardContent>
-      <CardFooter className="pt-0">
-        {canRegisterResult && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full text-xs"
-            onClick={onRegisterResult}
-          >
-            Registrar resultado
-          </Button>
-        )}
+      <CardFooter className="flex justify-between pt-2">
+        <div className="text-xs text-muted-foreground">
+          {formatDate(kpi.fechaInicio)} - {formatDate(kpi.fechaFin)}
+        </div>
+        <div className="flex gap-2">
+          {onEdit && (
+            <Button variant="outline" size="sm" onClick={() => onEdit(kpi)}>
+              <Pencil className="h-3.5 w-3.5 mr-1" />
+              Editar
+            </Button>
+          )}
+          {onResult && !kpi.validadoPor && (
+            <Button variant="secondary" size="sm" onClick={() => onResult(kpi)}>
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Resultado
+            </Button>
+          )}
+          {onValidate && hasMeasurement && !kpi.validadoPor && (
+            <Button variant="default" size="sm" onClick={() => onValidate(kpi)}>
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Validar
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

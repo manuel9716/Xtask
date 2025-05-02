@@ -43,7 +43,7 @@ import { Bonificacion } from "../../domain/entities/Bonificacion";
 import { KpiForm } from "../components/KpiForm";
 import { KpiCard } from "../components/KpiCard";
 import { BonificacionResumen } from "../components/BonificacionResumen";
-import { kpiApi } from "../../infrastructure/api/kpiApi";
+import { KpiApi } from "../../infrastructure/api/kpiApi";
 
 /**
  * Vista principal del panel de KPIs
@@ -71,7 +71,11 @@ export const PanelKpis: React.FC = () => {
     isLoading: isLoadingKpis
   } = useQuery<Indicador[]>({
     queryKey: ['/api/kpis/mis-kpis', selectedMonth],
-    queryFn: () => kpiApi.getKpisByUserAndMonth(0, selectedMonth)
+    queryFn: async () => {
+      // Instanciamos el repositorio KPI
+      const kpiRepository = new KpiApi();
+      return kpiRepository.getUserKpis(0);
+    }
   });
   
   const {
@@ -79,13 +83,18 @@ export const PanelKpis: React.FC = () => {
     isLoading: isLoadingBonificacion
   } = useQuery<Bonificacion | null>({
     queryKey: ['/api/kpis/bonificacion', selectedMonth],
-    queryFn: () => kpiApi.getBonificacionByUserAndMonth(0, selectedMonth),
+    queryFn: async () => {
+      const kpiRepository = new KpiApi();
+      return kpiRepository.getBonificacionByUserAndMonth(0, selectedMonth);
+    },
   });
 
   // Mutaciones
   const createKpiMutation = useMutation({
-    mutationFn: (kpi: Omit<Indicador, "id" | "createdAt" | "updatedAt">) => 
-      kpiApi.createKpi(kpi),
+    mutationFn: async (kpi: Omit<Indicador, "id" | "createdAt" | "updatedAt">) => {
+      const kpiRepository = new KpiApi();
+      return kpiRepository.createKpi(kpi as Indicador);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/kpis/mis-kpis', selectedMonth] });
       setIsKpiFormOpen(false);
@@ -104,8 +113,10 @@ export const PanelKpis: React.FC = () => {
   });
   
   const registerResultMutation = useMutation({
-    mutationFn: ({ id, valor }: { id: number, valor: number }) => 
-      kpiApi.evaluarKpi(id, valor),
+    mutationFn: async ({ id, valor }: { id: number, valor: number }) => {
+      const kpiRepository = new KpiApi();
+      return kpiRepository.evaluarKpi(id, valor);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/kpis/mis-kpis', selectedMonth] });
       setIsRegisterResultOpen(false);
@@ -125,8 +136,10 @@ export const PanelKpis: React.FC = () => {
   });
   
   const calculateBonusMutation = useMutation({
-    mutationFn: (data: { mes: string, salarioBase: number, salarioVariable: number }) => 
-      kpiApi.calcularBonificacion(0, data.mes, data.salarioBase, data.salarioVariable),
+    mutationFn: async (data: { mes: string, salarioBase: number, salarioVariable: number }) => {
+      const kpiRepository = new KpiApi();
+      return kpiRepository.calcularBonificacion(0, data.mes, data.salarioBase, data.salarioVariable);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/kpis/bonificacion', selectedMonth] });
       setIsBonusDialogOpen(false);

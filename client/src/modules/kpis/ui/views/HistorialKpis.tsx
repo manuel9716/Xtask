@@ -33,7 +33,7 @@ import {
   CalendarClock
 } from "lucide-react";
 import { Bonificacion, EstadoBonificacion } from "../../domain/entities/Bonificacion";
-import { kpiApi } from "../../infrastructure/api/kpiApi";
+import { KpiApi } from "../../infrastructure/api/kpiApi";
 
 /**
  * Vista del historial de bonificaciones por KPIs
@@ -45,7 +45,10 @@ export const HistorialKpis: React.FC = () => {
   // Consulta de bonificaciones históricas
   const { data: bonificaciones, isLoading } = useQuery<Bonificacion[]>({
     queryKey: ['/api/kpis/bonificaciones/historial'],
-    queryFn: () => kpiApi.getBonificacionesHistory(),
+    queryFn: async () => {
+      const kpiRepository = new KpiApi();
+      return kpiRepository.getBonificacionesHistory(0);
+    },
   });
 
   // Formatear fecha para mostrar
@@ -75,22 +78,22 @@ export const HistorialKpis: React.FC = () => {
   // Determinar estilo de badge según el estado
   const getBadgeDetails = (estado: EstadoBonificacion) => {
     switch (estado) {
-      case EstadoBonificacion.CALCULADO:
+      case EstadoBonificacion.CALCULADA:
         return { 
           color: "bg-blue-100 text-blue-800 hover:bg-blue-100", 
           icon: <Calculator className="h-4 w-4 mr-1" /> 
         };
-      case EstadoBonificacion.APROBADO:
+      case EstadoBonificacion.APROBADA:
         return { 
           color: "bg-green-100 text-green-800 hover:bg-green-100", 
           icon: <CheckCircle className="h-4 w-4 mr-1" /> 
         };
-      case EstadoBonificacion.RECHAZADO:
+      case EstadoBonificacion.RECHAZADA:
         return { 
           color: "bg-red-100 text-red-800 hover:bg-red-100", 
           icon: <Ban className="h-4 w-4 mr-1" /> 
         };
-      case EstadoBonificacion.PAGADO:
+      case EstadoBonificacion.PAGADA:
         return { 
           color: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100", 
           icon: <CheckCircle className="h-4 w-4 mr-1" /> 
@@ -106,13 +109,13 @@ export const HistorialKpis: React.FC = () => {
   // Formatear texto de estado
   const getEstadoText = (estado: EstadoBonificacion) => {
     switch (estado) {
-      case EstadoBonificacion.CALCULADO:
+      case EstadoBonificacion.CALCULADA:
         return "Calculado";
-      case EstadoBonificacion.APROBADO:
+      case EstadoBonificacion.APROBADA:
         return "Aprobado";
-      case EstadoBonificacion.RECHAZADO:
+      case EstadoBonificacion.RECHAZADA:
         return "Rechazado";
-      case EstadoBonificacion.PAGADO:
+      case EstadoBonificacion.PAGADA:
         return "Pagado";
       default:
         return "Desconocido";

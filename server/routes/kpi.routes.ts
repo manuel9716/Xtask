@@ -12,7 +12,7 @@ import {
   determinarEstadoKpi 
 } from "../../client/src/modules/kpis/domain/entities/Indicador";
 import { 
-  calcularBonificacion, 
+  calcularMontoBonificacion,
   calcularPorcentajeCumplimientoGlobal 
 } from "../../client/src/modules/kpis/domain/entities/Bonificacion";
 
@@ -471,7 +471,7 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
     const porcentajeCumplimientoGlobal = calcularPorcentajeCumplimientoGlobal(kpisConResultados);
     
     // Calcular la bonificación
-    const bonificacionTotal = calcularBonificacion(
+    const bonificacionTotal = calcularMontoBonificacion(
       Number(salarioVariable), 
       porcentajeCumplimientoGlobal
     );
@@ -496,7 +496,7 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
           salarioVariable: Number(salarioVariable),
           bonificacionTotal,
           porcentajeCumplimientoGlobal,
-          estado: EstadoBonificacion.CALCULADO, // Si se recalcula, vuelve a estado inicial
+          estado: "CALCULADA", // Si se recalcula, vuelve a estado inicial
           updatedAt: new Date()
         })
         .where(eq(bonificacionesMensuales.id, bonificacionExistente.id))
@@ -514,7 +514,7 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
           salarioVariable: Number(salarioVariable),
           bonificacionTotal,
           porcentajeCumplimientoGlobal,
-          estado: EstadoBonificacion.CALCULADO,
+          estado: "CALCULADA",
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -563,7 +563,7 @@ kpiRouter.patch("/bonificacion/:id/aprobar", isAuthenticated, async (req: Reques
     }
     
     // Estado según aprobación o rechazo
-    const estado = aprobada ? EstadoBonificacion.APROBADO : EstadoBonificacion.RECHAZADO;
+    const estado = aprobada ? "APROBADA" : "RECHAZADA";
     
     // Actualizar bonificación
     const [updatedBonificacion] = await db

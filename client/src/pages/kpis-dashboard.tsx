@@ -18,12 +18,11 @@ export default function KpisDashboard() {
             Gestiona tus indicadores clave de desempeño y bonificaciones
           </p>
         </div>
-        <Button 
-          className="bg-primary hover:bg-primary/90"
-          onClick={() => navigate("/kpis/nuevo")}
-        >
-          <PlusIcon className="mr-2 h-4 w-4" /> Nuevo KPI
-        </Button>
+        <Link href="/kpis/panel/nuevo">
+          <Button className="bg-primary hover:bg-primary/90">
+            <PlusIcon className="mr-2 h-4 w-4" /> Nuevo KPI
+          </Button>
+        </Link>
       </div>
 
       <Tabs defaultValue="panel" value={activeTab} onValueChange={setActiveTab}>

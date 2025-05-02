@@ -108,6 +108,15 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
+      {/* Ruta directa a KPIs - Protegida */}
+      <Route path="/kpis">
+        <ProtectedRoute>
+          <MainLayout>
+            <KpisDashboard />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
       {/* Rutas de los módulos específicos - Protegidas */}
       <ProtectedRoute>
         <FinanzasRoutes />

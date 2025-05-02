@@ -1,146 +1,171 @@
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { Calculator, CheckCircle, Clock, Ban } from "lucide-react";
+import { Check, X, Clock, AlertCircle, DollarSign, Download } from "lucide-react";
 import { Bonificacion, EstadoBonificacion } from "../../domain/entities/Bonificacion";
-import { Skeleton } from "@/components/ui/skeleton";
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-export interface BonificacionResumenProps {
-  bonificacion?: Bonificacion;
-  isLoading?: boolean;
-  onCalcular?: () => void;
-  canCalculate?: boolean;
-  mesActual: string; // formato YYYY-MM
+interface BonificacionResumenProps {
+  bonificacion: Bonificacion;
+  onAprobar?: (bonificacion: Bonificacion) => void;
+  onRechazar?: (bonificacion: Bonificacion) => void;
+  onPagar?: (bonificacion: Bonificacion) => void;
+  onDescargar?: (bonificacion: Bonificacion) => void;
 }
 
-export function BonificacionResumen({
-  bonificacion,
-  isLoading = false,
-  onCalcular,
-  canCalculate = true,
-  mesActual
+export function BonificacionResumen({ 
+  bonificacion, 
+  onAprobar, 
+  onRechazar, 
+  onPagar,
+  onDescargar
 }: BonificacionResumenProps) {
-  // Formatear mes para mostrar
-  const formatearMes = (mes: string) => {
-    const [year, month] = mes.split('-');
-    const fecha = new Date(parseInt(year), parseInt(month) - 1, 1);
-    return format(fecha, 'MMMM yyyy', { locale: es });
-  };
-
-  // Determinar color y icono según el estado
-  const getBadgeDetails = (estado?: EstadoBonificacion) => {
-    switch (estado) {
-      case EstadoBonificacion.CALCULADO:
-        return { color: "bg-blue-100 text-blue-800 hover:bg-blue-100", icon: <Calculator className="h-4 w-4" /> };
-      case EstadoBonificacion.APROBADO:
-        return { color: "bg-green-100 text-green-800 hover:bg-green-100", icon: <CheckCircle className="h-4 w-4" /> };
-      case EstadoBonificacion.RECHAZADO:
-        return { color: "bg-red-100 text-red-800 hover:bg-red-100", icon: <Ban className="h-4 w-4" /> };
-      case EstadoBonificacion.PAGADO:
-        return { color: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100", icon: <CheckCircle className="h-4 w-4" /> };
+  // Función para determinar color según estado
+  const getStatusColor = () => {
+    switch (bonificacion.estado) {
+      case "APROBADA":
+        return "bg-green-500";
+      case "RECHAZADA":
+        return "bg-red-500";
+      case "PAGADA":
+        return "bg-blue-500";
+      case "CALCULADA":
       default:
-        return { color: "bg-amber-100 text-amber-800 hover:bg-amber-100", icon: <Clock className="h-4 w-4" /> };
+        return "bg-amber-500";
     }
   };
 
-  // Formatear texto de estado
-  const getEstadoText = (estado?: EstadoBonificacion) => {
-    switch (estado) {
-      case EstadoBonificacion.CALCULADO:
-        return "Calculado";
-      case EstadoBonificacion.APROBADO:
-        return "Aprobado";
-      case EstadoBonificacion.RECHAZADO:
-        return "Rechazado";
-      case EstadoBonificacion.PAGADO:
-        return "Pagado";
+  // Icono según estado
+  const getStatusIcon = () => {
+    switch (bonificacion.estado) {
+      case "APROBADA":
+        return <Check className="h-4 w-4" />;
+      case "RECHAZADA":
+        return <X className="h-4 w-4" />;
+      case "PAGADA":
+        return <DollarSign className="h-4 w-4" />;
+      case "CALCULADA":
       default:
-        return "Pendiente";
+        return <Clock className="h-4 w-4" />;
     }
   };
 
-  // Formatear número como cantidad monetaria
+  // Formatear fechas
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date) return 'N/A';
+    return format(new Date(date), 'dd MMM yyyy', { locale: es });
+  };
+
+  // Formatear montos como moneda
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
+    return new Intl.NumberFormat('es-CO', {
       style: 'currency',
-      currency: 'MXN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      currency: 'COP',
+      minimumFractionDigits: 0
     }).format(amount);
   };
 
-  const { color, icon } = getBadgeDetails(bonificacion?.estado);
-
   return (
-    <Card className="shadow-sm">
+    <Card className="w-full">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">Bonificación</CardTitle>
-          <Badge variant="outline" className={bonificacion ? color : "bg-gray-100 text-gray-800 hover:bg-gray-100"}>
-            <span className="flex items-center">
-              {bonificacion ? icon : <Clock className="h-4 w-4" />}
-              <span className="ml-1 text-xs">{bonificacion ? getEstadoText(bonificacion.estado) : "Pendiente"}</span>
-            </span>
+          <CardTitle className="text-lg">
+            Bonificación {format(new Date(bonificacion.mes + '-01'), 'MMMM yyyy', { locale: es })}
+          </CardTitle>
+          <Badge className={`${getStatusColor()} text-white flex items-center gap-1 ml-2`}>
+            {getStatusIcon()}
+            {bonificacion.estado}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Periodo: {formatearMes(mesActual)}
-        </p>
+        <CardDescription>
+          {bonificacion.comentarios ? (
+            bonificacion.comentarios
+          ) : (
+            "Bonificación mensual basada en cumplimiento de KPIs"
+          )}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="pb-2">
-        {isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        ) : bonificacion ? (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-xs text-muted-foreground">Salario base</p>
-                <p className="font-medium">{formatCurrency(bonificacion.salarioBase)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Salario variable</p>
-                <p className="font-medium">{formatCurrency(bonificacion.salarioVariable)}</p>
-              </div>
-            </div>
+      <CardContent className="pb-1">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
+            <span className="text-muted-foreground">Cumplimiento:</span>
+            <span className="font-medium text-right">
+              {bonificacion.porcentajeCumplimientoGlobal}%
+            </span>
             
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="text-xs text-muted-foreground">Cumplimiento</p>
-                <p className="font-medium">{bonificacion.porcentajeCumplimientoGlobal}%</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Bonificación</p>
-                <p className="font-medium text-green-600">{formatCurrency(bonificacion.bonificacionTotal)}</p>
-              </div>
-            </div>
+            <span className="text-muted-foreground">Salario base:</span>
+            <span className="font-medium text-right">
+              {formatCurrency(bonificacion.salarioBase)}
+            </span>
+            
+            <span className="text-muted-foreground">Salario variable:</span>
+            <span className="font-medium text-right">
+              {formatCurrency(bonificacion.salarioVariable)}
+            </span>
+            
+            <span className="text-muted-foreground">Bonificación total:</span>
+            <span className="font-medium text-right text-primary">
+              {formatCurrency(bonificacion.bonificacionTotal)}
+            </span>
+            
+            {bonificacion.aprobadoPor && (
+              <>
+                <span className="text-muted-foreground">Aprobado por:</span>
+                <span className="font-medium text-right">ID: {bonificacion.aprobadoPor}</span>
+                
+                <span className="text-muted-foreground">Fecha aprobación:</span>
+                <span className="font-medium text-right">
+                  {formatDate(bonificacion.fechaAprobacion)}
+                </span>
+              </>
+            )}
+            
+            {bonificacion.fechaPago && (
+              <>
+                <span className="text-muted-foreground">Pagado el:</span>
+                <span className="font-medium text-right">
+                  {formatDate(bonificacion.fechaPago)}
+                </span>
+              </>
+            )}
           </div>
-        ) : (
-          <div className="py-6 text-center">
-            <p className="text-muted-foreground text-sm">
-              No se ha calculado bonificación para este mes.
-            </p>
-          </div>
-        )}
+        </div>
       </CardContent>
-      {onCalcular && !bonificacion && (
-        <CardFooter>
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            disabled={!canCalculate}
-            onClick={onCalcular}
-          >
-            <Calculator className="h-4 w-4 mr-2" />
-            Calcular bonificación
-          </Button>
-        </CardFooter>
-      )}
+      <CardFooter className="flex justify-between pt-2">
+        <div className="text-xs text-muted-foreground">
+          Calculado el {formatDate(bonificacion.createdAt)}
+        </div>
+        <div className="flex gap-2">
+          {onDescargar && (
+            <Button variant="outline" size="sm" onClick={() => onDescargar(bonificacion)}>
+              <Download className="h-3.5 w-3.5 mr-1" />
+              Descargar
+            </Button>
+          )}
+          
+          {onAprobar && bonificacion.estado === "CALCULADA" && (
+            <Button variant="default" size="sm" onClick={() => onAprobar(bonificacion)}>
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Aprobar
+            </Button>
+          )}
+          
+          {onRechazar && bonificacion.estado === "CALCULADA" && (
+            <Button variant="destructive" size="sm" onClick={() => onRechazar(bonificacion)}>
+              <X className="h-3.5 w-3.5 mr-1" />
+              Rechazar
+            </Button>
+          )}
+          
+          {onPagar && bonificacion.estado === "APROBADA" && (
+            <Button variant="default" size="sm" onClick={() => onPagar(bonificacion)}>
+              <DollarSign className="h-3.5 w-3.5 mr-1" />
+              Marcar pagado
+            </Button>
+          )}
+        </div>
+      </CardFooter>
     </Card>
   );
 }

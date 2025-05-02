@@ -1,56 +1,112 @@
 /**
- * Estados posibles de un KPI
+ * Enumeración para los estados de un KPI
  */
 export enum EstadoKpi {
-  PENDIENTE = "PENDIENTE",
-  EN_PROGRESO = "EN_PROGRESO",
-  CUMPLIDO = "CUMPLIDO",
-  NO_CUMPLIDO = "NO_CUMPLIDO",
-  VALIDADO = "VALIDADO",
-  RECHAZADO = "RECHAZADO"
+  PENDIENTE = "PENDIENTE",       // Cuando se crea y aún no se evalúa
+  EN_PROGRESO = "EN_PROGRESO",   // Cuando se está trabajando pero aún no se evalúa
+  CUMPLIDO = "CUMPLIDO",         // Meta alcanzada o superada
+  INCUMPLIDO = "INCUMPLIDO",     // No se alcanzó la meta
+  PARCIAL = "PARCIAL",           // Cumplimiento parcial
+  VALIDADO = "VALIDADO",         // Evaluado y validado por supervisor
+  COMPLETADO = "COMPLETADO"      // Finalizado y cerrado
 }
 
 /**
- * Entidad KPI (Indicador)
- * Representa un indicador de desempeño
+ * Enumeración para las periodicidades disponibles de un KPI
+ */
+export enum PeriodicidadKpi {
+  DIARIO = "DIARIO",
+  SEMANAL = "SEMANAL",
+  QUINCENAL = "QUINCENAL",
+  MENSUAL = "MENSUAL",
+  TRIMESTRAL = "TRIMESTRAL",
+  SEMESTRAL = "SEMESTRAL",
+  ANUAL = "ANUAL"
+}
+
+/**
+ * Enumeración para los tipos de KPI
+ */
+export enum TipoKpi {
+  CUANTITATIVO = "CUANTITATIVO", // KPI con valor numérico
+  CUALITATIVO = "CUALITATIVO",   // KPI con valor cualitativo o discrecional
+  BOOLEANO = "BOOLEANO"          // KPI de tipo si/no
+}
+
+/**
+ * Entidad Indicador (KPI)
+ * Representa un indicador clave de rendimiento de un empleado
  */
 export interface Indicador {
-  id?: number;
+  id: number;
   userId: number;
+  nombre: string;
   descripcion: string;
-  formula: string;
-  valorEsperado: number;
-  valorObtenido?: number;
-  porcentajeCumplimiento?: number;
-  porcentajePeso: number;
-  mes: string; // YYYY-MM
+  tipo: TipoKpi;
+  unidadMedida: string;
+  periodicidad: PeriodicidadKpi;
+  fechaInicio: Date;
+  fechaFin: Date;
+  
+  // Valores de referencia
+  valorBase: number;    // Valor mínimo o punto de partida
+  valorMeta: number;    // Valor objetivo a alcanzar
+  valorActual?: number; // Valor actual alcanzado (si ya se ha evaluado)
+  
+  // Cálculo y evaluación
+  formula?: string;    // Fórmula para cálculo automático (opcional)
+  porcentajePeso: number; // Peso del KPI en el cálculo global (0-100)
+  porcentajeCumplimiento?: number; // Porcentaje de cumplimiento calculado
+
+  // Estado y aprobación
   estado: EstadoKpi;
-  validadoPor?: number;
+  validadoPor?: number; // ID del usuario supervisor que validó
   fechaValidacion?: Date;
   comentariosValidacion?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  
+  // Metadatos
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
- * Calcula el porcentaje de cumplimiento de un KPI
- * @param valorEsperado Meta a alcanzar
- * @param valorObtenido Valor real obtenido
+ * Calcula el porcentaje de cumplimiento para un indicador cuantitativo
+ * @param valorActual Valor actual logrado
+ * @param valorBase Valor base o mínimo
+ * @param valorMeta Valor meta u objetivo
  * @returns Porcentaje de cumplimiento (0-100+)
  */
 export function calcularPorcentajeCumplimiento(
-  valorEsperado: number,
-  valorObtenido: number
+  valorActual: number,
+  valorBase: number,
+  valorMeta: number
 ): number {
-  if (valorEsperado === 0) return 0;
-  return Math.round((valorObtenido / valorEsperado) * 100);
+  // Si la meta y la base son iguales, evitamos división por cero
+  if (valorMeta === valorBase) {
+    return valorActual >= valorMeta ? 100 : 0;
+  }
+  
+  // Calculamos qué porcentaje del camino entre la base y la meta hemos recorrido
+  const diferenciaMeta = valorMeta - valorBase;
+  const diferenciaActual = valorActual - valorBase;
+  let porcentaje = (diferenciaActual / diferenciaMeta) * 100;
+  
+  // Aseguramos que el porcentaje esté entre 0 y sin límite superior
+  // (puede superar el 100% si se supera la meta)
+  return Math.max(0, Math.round(porcentaje));
 }
 
 /**
- * Determina el estado de un KPI basado en su porcentaje de cumplimiento
+ * Determina el estado apropiado de un KPI basado en su cumplimiento
  * @param porcentajeCumplimiento Porcentaje de cumplimiento calculado
- * @returns Estado del KPI (CUMPLIDO o NO_CUMPLIDO)
+ * @returns Estado del KPI según su cumplimiento
  */
 export function determinarEstadoKpi(porcentajeCumplimiento: number): EstadoKpi {
-  return porcentajeCumplimiento >= 100 ? EstadoKpi.CUMPLIDO : EstadoKpi.NO_CUMPLIDO;
+  if (porcentajeCumplimiento >= 100) {
+    return EstadoKpi.CUMPLIDO;
+  } else if (porcentajeCumplimiento >= 70) {
+    return EstadoKpi.PARCIAL;
+  } else {
+    return EstadoKpi.INCUMPLIDO;
+  }
 }

@@ -2,18 +2,36 @@ import { Indicador } from "../entities/Indicador";
 import { Bonificacion } from "../entities/Bonificacion";
 
 /**
- * Interfaz repositorio de KPIs
- * Define las operaciones disponibles para gestionar Indicadores y Bonificaciones
+ * Interfaz que define las operaciones de repositorio para KPIs y Bonificaciones
+ * Este es el puerto en la arquitectura hexagonal que permite conectar 
+ * con diferentes implementaciones (adaptadores)
  */
 export interface KpiRepository {
   // Operaciones con KPIs
-  getKpisByUserAndMonth(userId: number, mes: string): Promise<Indicador[]>;
-  getKpiById(id: number): Promise<Indicador | null>;
-  createKpi(kpi: Omit<Indicador, "id" | "createdAt" | "updatedAt">): Promise<Indicador>;
-  evaluarKpi(id: number, valorObtenido: number): Promise<Indicador>;
+  getUserKpis(userId: number): Promise<Indicador[]>;
+  getKpi(id: number): Promise<Indicador | null>;
+  createKpi(kpi: Indicador): Promise<Indicador>;
+  updateKpi(id: number, kpi: Partial<Indicador>): Promise<Indicador>;
+  deleteKpi(id: number): Promise<boolean>;
   
-  // Operaciones con bonificaciones
+  // Operaciones específicas para KPIs
+  evaluarKpi(id: number, valorActual: number): Promise<Indicador>;
+  validarKpi(id: number, validadoPor: number, comentarios?: string): Promise<Indicador>;
+  
+  // Operaciones con Bonificaciones
+  getUserBonificaciones(userId: number): Promise<Bonificacion[]>;
+  getBonificacion(id: number): Promise<Bonificacion | null>;
   getBonificacionByUserAndMonth(userId: number, mes: string): Promise<Bonificacion | null>;
-  calcularBonificacion(userId: number, mes: string, salarioBase: number, salarioVariable: number): Promise<Bonificacion>;
-  getBonificacionesHistory(): Promise<Bonificacion[]>;
+  getBonificacionesHistory(userId: number, limit?: number): Promise<Bonificacion[]>;
+  
+  // Operaciones específicas para Bonificaciones
+  calcularBonificacion(
+    userId: number, 
+    mes: string, 
+    salarioBase: number, 
+    salarioVariable: number
+  ): Promise<Bonificacion>;
+  aprobarBonificacion(id: number, aprobadoPor: number, comentarios?: string): Promise<Bonificacion>;
+  rechazarBonificacion(id: number, rechazadoPor: number, comentarios: string): Promise<Bonificacion>;
+  marcarBonificacionPagada(id: number): Promise<Bonificacion>;
 }
