@@ -142,19 +142,39 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
     let targetUserId = userId;
     
     if (empleadoId) {
-      // Verificar que el usuario existe en la tabla users
-      const [userExists] = await db
+      // Primero verificar que el empleado existe
+      const [empleado] = await db
         .select()
-        .from(users)
-        .where(eq(users.id, empleadoId));
+        .from(employees)
+        .where(eq(employees.id, empleadoId));
         
-      if (userExists) {
-        targetUserId = empleadoId;
-      } else {
+      if (!empleado) {
+        return res.status(400).json({ 
+          error: `No se encontró el empleado con ID ${empleadoId}` 
+        });
+      }
+      
+      // Luego verificar que el empleado tiene un usuario asociado
+      if (!empleado.userId) {
         return res.status(400).json({ 
           error: `El empleado con ID ${empleadoId} no tiene un usuario asociado válido` 
         });
       }
+      
+      // Verificar que el usuario asociado existe
+      const [usuarioExiste] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, empleado.userId));
+        
+      if (!usuarioExiste) {
+        return res.status(400).json({ 
+          error: `El empleado con ID ${empleadoId} tiene un userId (${empleado.userId}) que no existe en la tabla de usuarios` 
+        });
+      }
+      
+      // Asignar el userId del empleado, no el empleadoId
+      targetUserId = empleado.userId;
     }
     
     // Validar datos
