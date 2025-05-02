@@ -178,7 +178,7 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
       userId: targetUserId as number,
       descripcion,
       formula,
-      valorEsperado: valorEsperadoNum,
+      valorEsperado: String(valorEsperadoNum), // Convertir a string para coincidir con el tipo en la base de datos
       porcentajePeso: parseFloat(porcentajePeso),
       mes,
       estado: EstadoKpi.PENDIENTE,
@@ -186,9 +186,10 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
       updatedAt: new Date()
     };
     
+    // Convertimos a array para resolver el problema de tipo en Drizzle
     const [kpi] = await db
       .insert(userKpis)
-      .values(kpiData)
+      .values([kpiData])
       .returning();
     
     res.status(201).json(kpi);
@@ -649,7 +650,7 @@ kpiRouter.patch("/bonificacion/:id/aprobar", isAuthenticated, async (req: Reques
       .set({
         estado,
         aprobadoPor: aprobadorId as number,
-        comentariosAprobacion: comentarios,
+        comentarios: comentarios, // Campo comentarios en lugar de comentariosAprobacion
         fechaAprobacion: new Date(),
         updatedAt: new Date()
       })

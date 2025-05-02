@@ -172,7 +172,6 @@ export const PanelKpis: React.FC = () => {
       periodicidad: PeriodicidadKpi.MENSUAL, // Por defecto
       fechaInicio: new Date(), // Fecha actual
       fechaFin: new Date(), // Fecha actual (se actualizará en el backend)
-      mes: data.mes,
       estado: EstadoKpi.PENDIENTE,
       empleadoId: data.empleadoId // Incluye el ID del empleado si se seleccionó uno
     });
