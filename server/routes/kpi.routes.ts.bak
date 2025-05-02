@@ -17,10 +17,13 @@ import {
   calcularMontoBonificacion,
   calcularPorcentajeCumplimientoGlobal 
 } from "../../client/src/modules/kpis/domain/entities/Bonificacion";
-import { verifyToken } from "./auth.routes";
 
 // Crear router para KPIs
 const kpiRouter = Router();
+export default kpiRouter;
+
+// Middleware para verificar autenticación con JWT
+import { verifyToken } from "./auth.routes";
 
 // Implementamos nuestro propio middleware para asegurar la autenticación
 function isAuthenticated(req: Request, res: Response, next: Function) {
@@ -46,6 +49,9 @@ function isAuthenticated(req: Request, res: Response, next: Function) {
  */
 kpiRouter.get("/empleados", isAuthenticated, async (req: Request, res: Response) => {
   try {
+    // Obtener el usuario actual
+    const userId = req.user?.id;
+    
     // Obtener todos los empleados de la tabla employees
     const empleados = await db
       .select({
@@ -81,12 +87,10 @@ kpiRouter.get("/mis-kpis", isAuthenticated, async (req: Request, res: Response) 
     const kpis = await db
       .select()
       .from(userKpis)
-      .where(
-        and(
-          eq(userKpis.userId, userId as number),
-          eq(userKpis.mes, mes)
-        )
-      );
+      .where(and(
+        eq(userKpis.userId, userId),
+        eq(userKpis.mes, mes)
+      ));
     
     res.json(kpis);
   } catch (error: any) {
@@ -111,12 +115,10 @@ kpiRouter.get("/:id", isAuthenticated, async (req: Request, res: Response) => {
     const [kpi] = await db
       .select()
       .from(userKpis)
-      .where(
-        and(
-          eq(userKpis.id, id),
-          eq(userKpis.userId, userId as number)
-        )
-      );
+      .where(and(
+        eq(userKpis.id, id),
+        eq(userKpis.userId, userId)
+      ));
     
     if (!kpi) {
       return res.status(404).json({ error: "KPI no encontrado" });
@@ -136,10 +138,7 @@ kpiRouter.get("/:id", isAuthenticated, async (req: Request, res: Response) => {
 kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { descripcion, formula, valorEsperado, porcentajePeso, mes, empleadoId } = req.body;
-    
-    // Si se proporciona empleadoId, usamos ese ID, de lo contrario usamos el ID del usuario actual
-    const targetUserId = empleadoId || userId;
+    const { descripcion, formula, valorEsperado, porcentajePeso, mes } = req.body;
     
     // Validar datos
     if (!descripcion || !formula || !mes) {
@@ -164,7 +163,7 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
     const [kpi] = await db
       .insert(userKpis)
       .values({
-        userId: targetUserId as number,
+        userId,
         descripcion,
         formula,
         valorEsperado: valorEsperadoNum,
@@ -201,12 +200,10 @@ kpiRouter.patch("/:id", isAuthenticated, async (req: Request, res: Response) => 
     const [existingKpi] = await db
       .select()
       .from(userKpis)
-      .where(
-        and(
-          eq(userKpis.id, id),
-          eq(userKpis.userId, userId as number)
-        )
-      );
+      .where(and(
+        eq(userKpis.id, id),
+        eq(userKpis.userId, userId)
+      ));
     
     if (!existingKpi) {
       return res.status(404).json({ error: "KPI no encontrado" });
@@ -239,12 +236,10 @@ kpiRouter.patch("/:id", isAuthenticated, async (req: Request, res: Response) => 
         ...(mes && { mes }),
         updatedAt: new Date()
       })
-      .where(
-        and(
-          eq(userKpis.id, id),
-          eq(userKpis.userId, userId as number)
-        )
-      )
+      .where(and(
+        eq(userKpis.id, id),
+        eq(userKpis.userId, userId)
+      ))
       .returning();
     
     res.json(updatedKpi);
@@ -278,12 +273,10 @@ kpiRouter.patch("/:id/resultado", isAuthenticated, async (req: Request, res: Res
     const [existingKpi] = await db
       .select()
       .from(userKpis)
-      .where(
-        and(
-          eq(userKpis.id, id),
-          eq(userKpis.userId, userId as number)
-        )
-      );
+      .where(and(
+        eq(userKpis.id, id),
+        eq(userKpis.userId, userId)
+      ));
     
     if (!existingKpi) {
       return res.status(404).json({ error: "KPI no encontrado" });
@@ -305,17 +298,15 @@ kpiRouter.patch("/:id/resultado", isAuthenticated, async (req: Request, res: Res
     const [updatedKpi] = await db
       .update(userKpis)
       .set({
-        valorObtenido: String(valorObtenidoNum),
-        porcentajeCumplimiento: String(porcentajeCumplimiento),
+        valorObtenido: valorObtenidoNum,
+        porcentajeCumplimiento,
         estado,
         updatedAt: new Date()
       })
-      .where(
-        and(
-          eq(userKpis.id, id),
-          eq(userKpis.userId, userId as number)
-        )
-      )
+      .where(and(
+        eq(userKpis.id, id),
+        eq(userKpis.userId, userId)
+      ))
       .returning();
     
     res.json(updatedKpi);
@@ -361,7 +352,7 @@ kpiRouter.patch("/:id/validar", isAuthenticated, async (req: Request, res: Respo
     const [updatedKpi] = await db
       .update(userKpis)
       .set({
-        validadoPor: validadorId as number,
+        validadoPor: validadorId,
         fechaValidacion: new Date(),
         comentariosValidacion: comentarios,
         updatedAt: new Date()
@@ -393,12 +384,10 @@ kpiRouter.delete("/:id", isAuthenticated, async (req: Request, res: Response) =>
     const [existingKpi] = await db
       .select()
       .from(userKpis)
-      .where(
-        and(
-          eq(userKpis.id, id),
-          eq(userKpis.userId, userId as number)
-        )
-      );
+      .where(and(
+        eq(userKpis.id, id),
+        eq(userKpis.userId, userId)
+      ));
     
     if (!existingKpi) {
       return res.status(404).json({ error: "KPI no encontrado" });
@@ -412,12 +401,10 @@ kpiRouter.delete("/:id", isAuthenticated, async (req: Request, res: Response) =>
     // Eliminar KPI
     await db
       .delete(userKpis)
-      .where(
-        and(
-          eq(userKpis.id, id),
-          eq(userKpis.userId, userId as number)
-        )
-      );
+      .where(and(
+        eq(userKpis.id, id),
+        eq(userKpis.userId, userId)
+      ));
     
     res.json({ success: true });
   } catch (error: any) {
@@ -442,12 +429,10 @@ kpiRouter.get("/bonificacion", isAuthenticated, async (req: Request, res: Respon
     const [bonificacion] = await db
       .select()
       .from(bonificacionesMensuales)
-      .where(
-        and(
-          eq(bonificacionesMensuales.userId, userId as number),
-          eq(bonificacionesMensuales.mes, mes)
-        )
-      );
+      .where(and(
+        eq(bonificacionesMensuales.userId, userId),
+        eq(bonificacionesMensuales.mes, mes)
+      ));
     
     if (!bonificacion) {
       return res.status(404).json({ error: "Bonificación no encontrada" });
@@ -471,7 +456,7 @@ kpiRouter.get("/bonificaciones/historial", isAuthenticated, async (req: Request,
     const bonificaciones = await db
       .select()
       .from(bonificacionesMensuales)
-      .where(eq(bonificacionesMensuales.userId, userId as number))
+      .where(eq(bonificacionesMensuales.userId, userId))
       .orderBy(bonificacionesMensuales.mes);
     
     res.json(bonificaciones);
@@ -503,12 +488,10 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
     const kpis = await db
       .select()
       .from(userKpis)
-      .where(
-        and(
-          eq(userKpis.userId, userId as number),
-          eq(userKpis.mes, mes)
-        )
-      );
+      .where(and(
+        eq(userKpis.userId, userId),
+        eq(userKpis.mes, mes)
+      ));
     
     if (kpis.length === 0) {
       return res.status(400).json({ error: "No hay KPIs definidos para calcular la bonificación" });
@@ -541,12 +524,10 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
     const [bonificacionExistente] = await db
       .select()
       .from(bonificacionesMensuales)
-      .where(
-        and(
-          eq(bonificacionesMensuales.userId, userId as number),
-          eq(bonificacionesMensuales.mes, mes)
-        )
-      );
+      .where(and(
+        eq(bonificacionesMensuales.userId, userId),
+        eq(bonificacionesMensuales.mes, mes)
+      ));
     
     let resultado;
     
@@ -555,11 +536,11 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
       const [updatedBonificacion] = await db
         .update(bonificacionesMensuales)
         .set({
-          salarioBase: String(salarioBase),
-          salarioVariable: String(salarioVariable),
-          bonificacionTotal: String(bonificacionTotal),
-          porcentajeCumplimientoGlobal: String(porcentajeCumplimientoGlobal),
-          estado: EstadoBonificacion.CALCULADA,
+          salarioBase: Number(salarioBase),
+          salarioVariable: Number(salarioVariable),
+          bonificacionTotal,
+          porcentajeCumplimientoGlobal,
+          estado: "CALCULADA", // Si se recalcula, vuelve a estado inicial
           updatedAt: new Date()
         })
         .where(eq(bonificacionesMensuales.id, bonificacionExistente.id))
@@ -571,13 +552,13 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
       const [newBonificacion] = await db
         .insert(bonificacionesMensuales)
         .values({
-          userId: userId as number,
+          userId,
           mes,
-          salarioBase: String(salarioBase),
-          salarioVariable: String(salarioVariable),
-          bonificacionTotal: String(bonificacionTotal),
-          porcentajeCumplimientoGlobal: String(porcentajeCumplimientoGlobal),
-          estado: EstadoBonificacion.CALCULADA,
+          salarioBase: Number(salarioBase),
+          salarioVariable: Number(salarioVariable),
+          bonificacionTotal,
+          porcentajeCumplimientoGlobal,
+          estado: "CALCULADA",
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -607,35 +588,35 @@ kpiRouter.patch("/bonificacion/:id/aprobar", isAuthenticated, async (req: Reques
       return res.status(400).json({ error: "ID de bonificación inválido" });
     }
     
+    // TODO: Verificar si el usuario tiene rol de supervisor o jefe
+    // Esta validación depende de cómo estén implementados los roles en la aplicación
+    
     // Verificar existencia de la bonificación
-    const [bonificacion] = await db
+    const [existingBonificacion] = await db
       .select()
       .from(bonificacionesMensuales)
       .where(eq(bonificacionesMensuales.id, id));
     
-    if (!bonificacion) {
+    if (!existingBonificacion) {
       return res.status(404).json({ error: "Bonificación no encontrada" });
     }
     
-    // Verificar si el estado actual permite aprobación
-    if (bonificacion.estado === EstadoBonificacion.APROBADA || bonificacion.estado === EstadoBonificacion.RECHAZADA) {
-      return res.status(400).json({ 
-        error: `La bonificación ya ha sido ${bonificacion.estado.toLowerCase()}` 
-      });
+    // Validar que el aprobador sea diferente del usuario de la bonificación
+    if (existingBonificacion.userId === aprobadorId) {
+      return res.status(400).json({ error: "No puedes aprobar tu propia bonificación" });
     }
     
-    // TODO: Verificar si el usuario tiene rol de supervisor o jefe
+    // Estado según aprobación o rechazo
+    const estado = aprobada ? "APROBADA" : "RECHAZADA";
     
-    // Actualizar estado de la bonificación
-    const estado = aprobada ? EstadoBonificacion.APROBADA : EstadoBonificacion.RECHAZADA;
-    
+    // Actualizar bonificación
     const [updatedBonificacion] = await db
       .update(bonificacionesMensuales)
       .set({
         estado,
-        aprobadaPor: aprobadorId as number,
-        comentariosAprobacion: comentarios,
+        aprobadoPor: aprobadorId,
         fechaAprobacion: new Date(),
+        comentarios,
         updatedAt: new Date()
       })
       .where(eq(bonificacionesMensuales.id, id))
@@ -643,7 +624,7 @@ kpiRouter.patch("/bonificacion/:id/aprobar", isAuthenticated, async (req: Reques
     
     res.json(updatedBonificacion);
   } catch (error: any) {
-    console.error("Error al aprobar/rechazar bonificación:", error);
+    console.error("Error al aprobar bonificación:", error);
     res.status(500).json({ error: error.message });
   }
 });
