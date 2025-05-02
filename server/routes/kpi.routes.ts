@@ -181,9 +181,26 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
       targetUserId = empleado.userId;
     }
     
+    // Agregar logs para depuración
+    console.log("Datos recibidos en la API:", {
+      descripcion,
+      formula,
+      porcentajePeso,
+      mes,
+      empleadoId
+    });
+
     // Validar datos
     if (!descripcion || !formula || !mes) {
-      return res.status(400).json({ error: "Faltan campos requeridos" });
+      const camposFaltantes = [];
+      if (!descripcion) camposFaltantes.push("descripcion");
+      if (!formula) camposFaltantes.push("formula");
+      if (!mes) camposFaltantes.push("mes");
+      
+      return res.status(400).json({ 
+        error: "Faltan campos requeridos", 
+        camposFaltantes 
+      });
     }
     
     if (!/^\d{4}-\d{2}$/.test(mes)) {

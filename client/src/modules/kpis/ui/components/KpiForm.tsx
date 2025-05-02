@@ -46,7 +46,10 @@ export function KpiForm({
   defaultValues = {}
 }: KpiFormProps) {
   // Inicializar el formulario con valores por defecto
-  const form = useForm<KpiFormValues>({
+  // Explícitamente añadimos un tipo para evitar errores de TypeScript
+  type FormTypes = z.infer<typeof kpiFormSchema>;
+  
+  const form = useForm<FormTypes>({
     resolver: zodResolver(kpiFormSchema),
     defaultValues: {
       descripcion: "",
@@ -84,8 +87,9 @@ export function KpiForm({
   });
 
   // Manejador de envío
-  function handleSubmit(values: KpiFormValues) {
-    onSubmit(values);
+  function handleSubmit(values: FormTypes) {
+    console.log("Formulario enviado con valores:", values);
+    onSubmit(values as KpiFormValues);
   }
 
   return (

@@ -26,7 +26,14 @@ export class KpiApi implements KpiRepository {
   }
   
   async createKpi(kpi: Indicador): Promise<Indicador> {
-    const response = await apiRequest("POST", "/api/kpis", kpi);
+    // Asegurarnos de que siempre enviamos valorEsperado
+    const kpiData = {
+      ...kpi,
+      valorEsperado: "1" // El valor por defecto requerido
+    };
+    
+    console.log("Datos enviados a createKpi:", kpiData);
+    const response = await apiRequest("POST", "/api/kpis", kpiData);
     return await response.json();
   }
   
