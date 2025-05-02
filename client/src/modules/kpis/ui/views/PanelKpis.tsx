@@ -74,7 +74,7 @@ export const PanelKpis: React.FC = () => {
     queryFn: async () => {
       // Instanciamos el repositorio KPI
       const kpiRepository = new KpiApi();
-      return kpiRepository.getUserKpis(0);
+      return kpiRepository.getUserKpis(0, selectedMonth);
     }
   });
   
@@ -160,22 +160,13 @@ export const PanelKpis: React.FC = () => {
   // Handlers
   const handleCreateKpi = (data: any) => {
     console.log("Datos recibidos del formulario:", data);
+    // Simplificamos los datos enviados para que coincidan con lo que el servidor espera
     createKpiMutation.mutate({
-      userId: 0, // El ID real se asigna en el servidor
-      nombre: `KPI ${data.mes}`,
       descripcion: data.descripcion,
       formula: data.formula,
-      valorMeta: 100, // Valor fijo, ya que ahora trabajamos directamente con porcentajes
-      valorBase: 0, // Por defecto
       porcentajePeso: data.porcentajePeso,
-      tipo: TipoKpi.CUANTITATIVO, // Por defecto
-      unidadMedida: "porcentaje", // Cambiado a porcentaje
-      periodicidad: PeriodicidadKpi.MENSUAL, // Por defecto
-      fechaInicio: new Date(), // Fecha actual
-      fechaFin: new Date(), // Fecha actual (se actualizará en el backend)
-      estado: EstadoKpi.PENDIENTE,
-      mes: data.mes, // Aseguramos que se envía el mes correctamente
-      empleadoId: data.empleadoId || 0 // Incluye el ID del empleado si se seleccionó uno, 0 por defecto
+      mes: data.mes,
+      empleadoId: data.empleadoId || undefined // Solo enviamos empleadoId si existe
     });
   };
 

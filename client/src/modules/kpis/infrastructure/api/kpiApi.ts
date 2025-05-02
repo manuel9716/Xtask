@@ -9,10 +9,10 @@ import { apiRequest } from "@/lib/queryClient";
  */
 export class KpiApi implements KpiRepository {
   
-  async getUserKpis(userId: number): Promise<Indicador[]> {
-    // Obtenemos el mes actual en formato YYYY-MM
-    const mesActual = new Date().toISOString().substring(0, 7);
-    const response = await apiRequest("GET", `/api/kpis/mis-kpis?mes=${mesActual}`);
+  async getUserKpis(userId: number, mes?: string): Promise<Indicador[]> {
+    // Si no se proporciona mes, usamos el mes actual
+    const mesAFiltrar = mes || new Date().toISOString().substring(0, 7);
+    const response = await apiRequest("GET", `/api/kpis/mis-kpis?mes=${mesAFiltrar}`);
     return await response.json();
   }
   
