@@ -443,31 +443,32 @@ export const PanelKpis: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Registrar Resultado</DialogTitle>
             <DialogDescription>
-              Ingresa el valor obtenido para el indicador: {selectedKpi?.descripcion}
+              Ingresa el porcentaje de cumplimiento para: {selectedKpi?.descripcion}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="valor-esperado">Meta establecida</Label>
-              <Input
-                id="valor-esperado"
-                value={selectedKpi?.valorMeta}
-                readOnly
-                disabled
-              />
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
+              <p className="font-medium">Cambio importante:</p>
+              <p>Ingresa directamente el porcentaje de cumplimiento (0-100+).</p>
+              <p>Ejemplo: Si cumpliste 80% de tu meta, ingresa "80".</p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="valor-obtenido">Resultado obtenido</Label>
+              <Label htmlFor="valor-obtenido">Porcentaje de cumplimiento (%)</Label>
               <Input
                 id="valor-obtenido"
                 value={resultValue}
                 onChange={(e) => setResultValue(e.target.value)}
                 type="number"
-                step="0.01"
-                placeholder="Ingresa el valor obtenido"
+                min="0"
+                max="200"
+                step="1"
+                placeholder="Ingresa un valor entre 0-100+"
               />
+              <p className="text-xs text-muted-foreground">
+                Valores por encima de 100 indican que superaste tu meta.
+              </p>
             </div>
           </div>
           
@@ -515,12 +516,15 @@ export const PanelKpis: React.FC = () => {
                 placeholder="Ej: 15000"
               />
               <p className="text-xs text-muted-foreground">
-                Componente fijo de tu salario (no afectado por KPIs)
+                Tu salario fijo mensual. Ahora se usa para calcular tu bonificación directamente.
+              </p>
+              <p className="text-xs font-medium text-primary mt-1">
+                Bonificación = Porcentaje cumplimiento KPI × Salario base
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="salario-variable">Salario variable mensual</Label>
+              <Label htmlFor="salario-variable">Salario variable (opcional)</Label>
               <Input
                 id="salario-variable"
                 value={salarioVariable}
@@ -531,7 +535,7 @@ export const PanelKpis: React.FC = () => {
                 placeholder="Ej: 5000"
               />
               <p className="text-xs text-muted-foreground">
-                Componente variable de tu salario (afectado por KPIs)
+                Campo opcional solo para fines informativos.
               </p>
             </div>
           </div>
