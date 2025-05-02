@@ -17,7 +17,7 @@ import {
   calcularMontoBonificacion,
   calcularPorcentajeCumplimientoGlobal 
 } from "../../client/src/modules/kpis/domain/entities/Bonificacion";
-import { verifyToken } from "./auth.routes";
+import jwt from 'jsonwebtoken';
 
 // Crear router para KPIs
 const kpiRouter = Router();
@@ -33,10 +33,14 @@ function isAuthenticated(req: Request, res: Response, next: Function) {
   }
 
   try {
-    // Importamos verifyToken de auth.routes.ts, pero lo usamos como middleware
-    return verifyToken(req, res, next);
+    // Decodificamos el token directamente aquí para evitar inconsistencias en la respuesta
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'xtask-secret-key') as { userId: number, username?: string, role?: string };
+    // Solo asignamos el ID del usuario, que es lo que necesitan las rutas
+    req.user = { id: decoded.userId };
+    next();
   } catch (error) {
-    return res.status(401).json({ error: "No autorizado: Token inválido" });
+    console.error("Error de autenticación:", error);
+    return res.status(401).json({ error: "Token inválido o expirado" });
   }
 }
 

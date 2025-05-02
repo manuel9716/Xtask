@@ -20,9 +20,7 @@ const kpiFormSchema = z.object({
   formula: z.string().min(3, {
     message: "La fórmula debe tener al menos 3 caracteres.",
   }),
-  valorEsperado: z.coerce.number().positive({
-    message: "El valor esperado debe ser un número positivo.",
-  }),
+  // Eliminamos la validación valorEsperado para usar el valor por defecto
   porcentajePeso: z.coerce.number().min(1).max(100, {
     message: "El porcentaje de peso debe estar entre 1 y 100.",
   }),
@@ -53,7 +51,6 @@ export function KpiForm({
     defaultValues: {
       descripcion: "",
       formula: "",
-      valorEsperado: 1, // Valor por defecto para pasar la validación del servidor
       porcentajePeso: 10,
       mes: format(new Date(), "yyyy-MM"),
       ...defaultValues
@@ -127,8 +124,7 @@ export function KpiForm({
         />
 
         <div className="grid grid-cols-1 gap-6">
-          {/* Campo oculto para valorEsperado - siempre enviará valor 1 */}
-          <input type="hidden" {...form.register("valorEsperado")} />
+          {/* Eliminamos el campo oculto para valorEsperado, ya que es manejado por el servidor */}
           
           <FormField
             control={form.control}
