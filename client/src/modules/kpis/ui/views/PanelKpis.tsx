@@ -220,12 +220,11 @@ export const PanelKpis: React.FC = () => {
 
   const handleCalculateBonus = () => {
     const base = parseFloat(salarioBase);
-    const variable = parseFloat(salarioVariable);
     
-    if (isNaN(base) || isNaN(variable)) {
+    if (isNaN(base) || base <= 0) {
       toast({
-        title: "Valores inválidos",
-        description: "Por favor ingrese números válidos para los salarios",
+        title: "Salario base inválido",
+        description: "Por favor verifique que el salario base sea un número válido mayor a cero",
         variant: "destructive",
       });
       return;
@@ -235,7 +234,7 @@ export const PanelKpis: React.FC = () => {
     calculateBonusMutation.mutate({
       mes: selectedMonth,
       salarioBase: base,
-      salarioVariable: variable
+      salarioVariable: 0 // Este valor ya no se utiliza, pero lo mantenemos por compatibilidad
     });
   };
 
@@ -541,21 +540,11 @@ export const PanelKpis: React.FC = () => {
               </p>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="salario-variable">Bonificación (resultado)</Label>
-              <Input
-                id="salario-variable"
-                value={salarioVariable}
-                onChange={(e) => setSalarioVariable(e.target.value)}
-                type="number"
-                min="0"
-                step="1000"
-                placeholder="0"
-                disabled
-              />
-              <p className="text-xs text-muted-foreground">
-                Este campo mostrará el resultado del cálculo de bonificación.
-              </p>
+            {/* Eliminamos el campo de salario variable ya que no es necesario en la nueva fórmula */}
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-800 text-sm mt-3">
+              <p className="font-medium">Método de cálculo:</p>
+              <p>Se sumarán los pesos de todos los KPIs que tengan un cumplimiento de 100% o más.</p>
+              <p>Cada KPI completado aportará su peso (%) del salario base a la bonificación total.</p>
             </div>
             
             {isLoadingEmpleado && (
