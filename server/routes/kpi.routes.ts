@@ -35,8 +35,12 @@ function isAuthenticated(req: Request, res: Response, next: Function) {
   try {
     // Decodificamos el token directamente aquí para evitar inconsistencias en la respuesta
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'xtask-secret-key') as { userId: number, username?: string, role?: string };
-    // Solo asignamos el ID del usuario, que es lo que necesitan las rutas
-    req.user = { id: decoded.userId };
+    
+    // Agregamos el ID a req.user con un tipo parcial para evitar errores TypeScript
+    req.user = { 
+      id: decoded.userId 
+    } as Express.User; // Usamos 'as' para satisfacer el tipado
+    
     next();
   } catch (error) {
     console.error("Error de autenticación:", error);
@@ -57,7 +61,8 @@ kpiRouter.get("/empleados", isAuthenticated, async (req: Request, res: Response)
         userId: employees.userId, 
         nombreCompleto: sql`concat(${employees.firstName}, ' ', ${employees.lastName})`,
         position: employees.position,
-        department: employees.department
+        department: employees.department,
+        salary: employees.salary
       })
       .from(employees)
       .where(sql`${employees.contractStatus} = 'active'`);
@@ -65,6 +70,44 @@ kpiRouter.get("/empleados", isAuthenticated, async (req: Request, res: Response)
     res.json(empleados);
   } catch (error: any) {
     console.error("Error al obtener empleados:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Obtiene los datos de un empleado por su userId
+ * GET /api/kpis/empleado-por-userid/:userId
+ */
+kpiRouter.get("/empleado-por-userid/:userId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "ID de usuario inválido" });
+    }
+    
+    // Buscar el empleado por userId
+    const [empleado] = await db
+      .select({
+        id: employees.id,
+        userId: employees.userId,
+        firstName: employees.firstName,
+        lastName: employees.lastName,
+        position: employees.position,
+        department: employees.department,
+        salary: employees.salary,
+        nombreCompleto: sql`concat(${employees.firstName}, ' ', ${employees.lastName})`
+      })
+      .from(employees)
+      .where(eq(employees.userId, userId));
+    
+    if (!empleado) {
+      return res.status(404).json({ error: "Empleado no encontrado" });
+    }
+    
+    res.json(empleado);
+  } catch (error: any) {
+    console.error("Error al obtener empleado por userId:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -536,15 +579,36 @@ kpiRouter.get("/bonificaciones/historial", isAuthenticated, async (req: Request,
 kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { mes, salarioBase, salarioVariable } = req.body;
+    const { mes } = req.body;
     
     // Validar datos
     if (!mes || !/^\d{4}-\d{2}$/.test(mes)) {
       return res.status(400).json({ error: "Formato de mes inválido. Use YYYY-MM" });
     }
     
-    if (isNaN(salarioBase) || isNaN(salarioVariable) || salarioBase < 0 || salarioVariable < 0) {
-      return res.status(400).json({ error: "Los valores salariales deben ser números positivos" });
+    // Obtener los datos del empleado por usuario
+    const [empleado] = await db
+      .select({
+        id: employees.id,
+        userId: employees.userId,
+        firstName: employees.firstName,
+        lastName: employees.lastName,
+        position: employees.position,
+        department: employees.department,
+        salary: employees.salary,
+        nombreCompleto: sql`concat(${employees.firstName}, ' ', ${employees.lastName})`
+      })
+      .from(employees)
+      .where(eq(employees.userId, userId as number));
+    
+    if (!empleado) {
+      return res.status(404).json({ error: "No se encontró información de empleado para este usuario" });
+    }
+    
+    // Validar que el empleado tenga un salario base definido
+    const salarioBase = empleado.salary ? parseFloat(empleado.salary) : 0;
+    if (salarioBase <= 0) {
+      return res.status(400).json({ error: "El empleado no tiene un salario base válido definido" });
     }
     
     // Obtener los KPIs del usuario para el mes
@@ -570,19 +634,36 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
       });
     }
     
-    // Preparar los datos para el cálculo global
-    const kpisConResultados = kpis.map(kpi => ({
-      porcentajeCumplimiento: Number(kpi.porcentajeCumplimiento || 0),
-      porcentajePeso: Number(kpi.porcentajePeso)
-    }));
+    // Preparar los datos para el cálculo global y calcular el monto para cada KPI
+    const kpisConResultados = kpis.map(kpi => {
+      const porcentajeCumplimiento = Number(kpi.porcentajeCumplimiento || 0);
+      const porcentajePeso = Number(kpi.porcentajePeso);
+      
+      // Calcular el monto de bonificación para este KPI específico
+      // La fórmula es: (salarioBase * porcentajePeso / 100) * (porcentajeCumplimiento / 100)
+      const montoBonificacionKpi = (salarioBase * (porcentajePeso / 100)) * (porcentajeCumplimiento / 100);
+      
+      return {
+        id: kpi.id,
+        descripcion: kpi.descripcion,
+        porcentajeCumplimiento,
+        porcentajePeso,
+        montoBonificacion: Math.round(montoBonificacionKpi)
+      };
+    });
     
     // Calcular el porcentaje global de cumplimiento
-    const porcentajeCumplimientoGlobal = calcularPorcentajeCumplimientoGlobal(kpisConResultados);
+    const porcentajeCumplimientoGlobal = calcularPorcentajeCumplimientoGlobal(
+      kpisConResultados.map(k => ({
+        porcentajeCumplimiento: k.porcentajeCumplimiento,
+        porcentajePeso: k.porcentajePeso
+      }))
+    );
     
-    // Calcular la bonificación utilizando el salario base y el porcentaje de cumplimiento
-    const bonificacionTotal = calcularMontoBonificacion(
-      Number(salarioBase), 
-      porcentajeCumplimientoGlobal
+    // Calcular la bonificación total sumando las bonificaciones individuales de cada KPI
+    const bonificacionTotal = kpisConResultados.reduce(
+      (total, kpi) => total + kpi.montoBonificacion, 
+      0
     );
     
     // Verificar si ya existe una bonificación para el mes
@@ -604,7 +685,7 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
         .update(bonificacionesMensuales)
         .set({
           salarioBase: String(salarioBase),
-          salarioVariable: String(salarioVariable),
+          salarioVariable: "0", // Ya no se usa, mantenemos para compatibilidad
           bonificacionTotal: String(bonificacionTotal),
           porcentajeCumplimientoGlobal: String(porcentajeCumplimientoGlobal),
           estado: "CALCULADA", // Usar string directo en lugar de enum
@@ -613,7 +694,10 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
         .where(eq(bonificacionesMensuales.id, bonificacionExistente.id))
         .returning();
       
-      resultado = updatedBonificacion;
+      resultado = {
+        ...updatedBonificacion,
+        detalleKpis: kpisConResultados
+      };
     } else {
       // Crear nueva bonificación
       const [newBonificacion] = await db
@@ -622,7 +706,7 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
           userId: userId as number,
           mes,
           salarioBase: String(salarioBase),
-          salarioVariable: String(salarioVariable),
+          salarioVariable: "0", // Ya no se usa, mantenemos para compatibilidad
           bonificacionTotal: String(bonificacionTotal),
           porcentajeCumplimientoGlobal: String(porcentajeCumplimientoGlobal),
           estado: "CALCULADA", // Usar string directo en lugar de enum
@@ -631,7 +715,10 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
         })
         .returning();
       
-      resultado = newBonificacion;
+      resultado = {
+        ...newBonificacion,
+        detalleKpis: kpisConResultados
+      };
     }
     
     res.json(resultado);
