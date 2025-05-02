@@ -667,8 +667,7 @@ export const userKpis = pgTable("user_kpis", {
   userId: integer("user_id").references(() => users.id).notNull(),
   descripcion: text("descripcion").notNull(),
   formula: text("formula").notNull(),
-  valorEsperado: decimal("valor_esperado", { precision: 10, scale: 2 }).notNull(),
-  valorObtenido: decimal("valor_obtenido", { precision: 10, scale: 2 }),
+  // Eliminados campos valorEsperado y valorObtenido por simplificación
   porcentajePeso: decimal("porcentaje_peso", { precision: 5, scale: 2 }).notNull(),
   porcentajeCumplimiento: decimal("porcentaje_cumplimiento", { precision: 5, scale: 2 }),
   mes: text("mes").notNull(), // formato: "YYYY-MM"

@@ -216,7 +216,6 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
       userId: targetUserId as number,
       descripcion,
       formula,
-      valorEsperado: "1", // Asignamos un valor por defecto ya que este campo es obligatorio en la BD
       porcentajePeso: String(parseFloat(porcentajePeso)), // Convertir a string para coincidir con el tipo en la base de datos
       mes,
       estado: "PENDIENTE", // Usar string directo en lugar de enum
@@ -245,7 +244,7 @@ kpiRouter.patch("/:id", isAuthenticated, async (req: Request, res: Response) => 
   try {
     const id = parseInt(req.params.id);
     const userId = req.user?.id;
-    const { descripcion, formula, valorEsperado, porcentajePeso, mes } = req.body;
+    const { descripcion, formula, porcentajePeso, mes } = req.body;
     
     if (isNaN(id)) {
       return res.status(400).json({ error: "ID de KPI inválido" });
@@ -288,7 +287,6 @@ kpiRouter.patch("/:id", isAuthenticated, async (req: Request, res: Response) => 
       .set({
         ...(descripcion && { descripcion }),
         ...(formula && { formula }),
-        ...(valorEsperado && { valorEsperado: 1 }), // Siempre usar valor 1
         ...(porcentajePeso && { porcentajePeso: porcentajePesoNum }),
         ...(mes && { mes }),
         updatedAt: new Date()
@@ -359,7 +357,7 @@ kpiRouter.patch("/:id/resultado", isAuthenticated, async (req: Request, res: Res
     const [updatedKpi] = await db
       .update(userKpis)
       .set({
-        valorObtenido: String(valorObtenidoNum),
+        // Ya no guardamos valorObtenido, solo el porcentaje de cumplimiento
         porcentajeCumplimiento: String(porcentajeCumplimiento),
         estado,
         updatedAt: new Date()
@@ -568,8 +566,8 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
       return res.status(400).json({ error: "No hay KPIs definidos para calcular la bonificación" });
     }
     
-    // Verificar que todos los KPIs tengan valores obtenidos
-    const kpisSinResultados = kpis.filter(kpi => kpi.valorObtenido === null);
+    // Verificar que todos los KPIs tengan valores de porcentaje de cumplimiento
+    const kpisSinResultados = kpis.filter(kpi => kpi.porcentajeCumplimiento === null);
     if (kpisSinResultados.length > 0) {
       return res.status(400).json({ 
         error: `Hay ${kpisSinResultados.length} KPI(s) sin resultados registrados` 
