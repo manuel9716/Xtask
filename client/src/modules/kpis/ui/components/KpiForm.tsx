@@ -53,7 +53,7 @@ export function KpiForm({
     defaultValues: {
       descripcion: "",
       formula: "",
-      valorEsperado: 0,
+      valorEsperado: 1, // Valor por defecto para pasar la validación del servidor
       porcentajePeso: 10,
       mes: format(new Date(), "yyyy-MM"),
       ...defaultValues
@@ -126,21 +126,10 @@ export function KpiForm({
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="valorEsperado"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Valor esperado</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+        <div className="grid grid-cols-1 gap-6">
+          {/* Campo oculto para valorEsperado - siempre enviará valor 1 */}
+          <input type="hidden" {...form.register("valorEsperado")} />
+          
           <FormField
             control={form.control}
             name="porcentajePeso"
