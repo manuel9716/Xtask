@@ -78,20 +78,16 @@ export function calcularPorcentajeCumplimientoGlobal(
 }
 
 /**
- * Calcula el monto de bonificación basado en el salario variable y el porcentaje de cumplimiento
- * @param salarioVariable Monto máximo de bonificación posible
- * @param porcentajeCumplimiento Porcentaje de cumplimiento (0-100+)
+ * Calcula el monto de bonificación basado en el salario base y el porcentaje del KPI
+ * @param salarioBase Salario base del empleado
+ * @param porcentajeCumplimiento Porcentaje de cumplimiento de los KPIs (0-100+)
  * @returns Monto de bonificación a pagar
  */
 export function calcularMontoBonificacion(
-  salarioVariable: number,
+  salarioBase: number,
   porcentajeCumplimiento: number
 ): number {
-  // Si el porcentaje de cumplimiento es mayor a 100%, pagar el 100% del variable
-  if (porcentajeCumplimiento >= 100) {
-    return salarioVariable;
-  }
-  
-  // Calcular monto proporcional al cumplimiento
-  return Math.round(salarioVariable * (porcentajeCumplimiento / 100));
+  // Calcular bonificación como un porcentaje directo del salario base
+  // Dividimos entre 100 para convertir el porcentaje en decimal
+  return Math.round(salarioBase * (porcentajeCumplimiento / 100));
 }

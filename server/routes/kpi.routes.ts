@@ -531,9 +531,9 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
     // Calcular el porcentaje global de cumplimiento
     const porcentajeCumplimientoGlobal = calcularPorcentajeCumplimientoGlobal(kpisConResultados);
     
-    // Calcular la bonificación
+    // Calcular la bonificación utilizando el salario base y el porcentaje de cumplimiento
     const bonificacionTotal = calcularMontoBonificacion(
-      Number(salarioVariable), 
+      Number(salarioBase), 
       porcentajeCumplimientoGlobal
     );
     
