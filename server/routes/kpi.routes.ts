@@ -136,7 +136,7 @@ kpiRouter.get("/:id", isAuthenticated, async (req: Request, res: Response) => {
 kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { descripcion, formula, valorEsperado, porcentajePeso, mes, empleadoId } = req.body;
+    const { descripcion, formula, porcentajePeso, mes, empleadoId } = req.body;
     
     // Si se proporciona empleadoId, necesitamos verificar que exista el usuario asociado
     let targetUserId = userId;
@@ -190,15 +190,12 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
       return res.status(400).json({ error: "El porcentaje de peso debe estar entre 0 y 100" });
     }
     
-    // Asignamos un valor predeterminado a valorEsperado (ya no se valida)
-    const valorEsperadoNum = valorEsperado ? parseFloat(valorEsperado) : 1;
-    
     // Crear KPI
     const kpiData = {
       userId: targetUserId as number,
       descripcion,
       formula,
-      valorEsperado: String(valorEsperadoNum), // Convertir a string para coincidir con el tipo en la base de datos
+      valorEsperado: "1", // Asignamos un valor por defecto ya que este campo es obligatorio en la BD
       porcentajePeso: String(parseFloat(porcentajePeso)), // Convertir a string para coincidir con el tipo en la base de datos
       mes,
       estado: "PENDIENTE", // Usar string directo en lugar de enum
