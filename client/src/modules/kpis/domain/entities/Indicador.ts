@@ -105,12 +105,12 @@ export function calcularPorcentajeCumplimiento(
  * @param porcentajeCumplimiento Porcentaje de cumplimiento calculado
  * @returns Estado del KPI según su cumplimiento
  */
-export function determinarEstadoKpi(porcentajeCumplimiento: number): EstadoKpi {
+export function determinarEstadoKpi(porcentajeCumplimiento: number): string {
   if (porcentajeCumplimiento >= 100) {
-    return EstadoKpi.CUMPLIDO;
+    return "CUMPLIDO";
   } else if (porcentajeCumplimiento >= 70) {
-    return EstadoKpi.PARCIAL;
+    return "PARCIAL";
   } else {
-    return EstadoKpi.INCUMPLIDO;
+    return "INCUMPLIDO";
   }
 }

@@ -179,9 +179,9 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
       descripcion,
       formula,
       valorEsperado: String(valorEsperadoNum), // Convertir a string para coincidir con el tipo en la base de datos
-      porcentajePeso: parseFloat(porcentajePeso),
+      porcentajePeso: String(parseFloat(porcentajePeso)), // Convertir a string para coincidir con el tipo en la base de datos
       mes,
-      estado: EstadoKpi.PENDIENTE,
+      estado: "PENDIENTE", // Usar string directo en lugar de enum
       createdAt: new Date(),
       updatedAt: new Date()
     };
