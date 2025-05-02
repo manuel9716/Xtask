@@ -46,7 +46,7 @@ import {
   Layers
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import MainLayout from "@/layouts/main-layout";
+import { MainLayout } from "@/layouts/main-layout";
 
 interface ApiEndpoint {
   path: string;

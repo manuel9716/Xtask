@@ -11,7 +11,8 @@ import {
   CheckSquare, 
   UserCog, 
   Settings, 
-  Receipt
+  Receipt,
+  FileJson
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -61,6 +62,7 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
 
   const SystemItems = [
     { href: "/user-management", label: t("navigation.userManagement"), icon: <UserCog className="h-5 w-5" /> },
+    { href: "/api-docs", label: "Documentación API", icon: <FileJson className="h-5 w-5" /> },
     { href: "/settings", label: t("navigation.settings"), icon: <Settings className="h-5 w-5" /> },
   ];
 

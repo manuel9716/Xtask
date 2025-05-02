@@ -13,6 +13,7 @@ import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import NominaDashboard from "@/pages/nomina-dashboard";
 import HomePage from "@/pages/home";
+import ApiDocumentation from "@/pages/api-documentation";
 import { MainLayout } from "@/layouts/main-layout";
 import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
@@ -89,6 +90,11 @@ function Router() {
             <Settings />
           </MainLayout>
         </ProtectedRoute>
+      </Route>
+
+      {/* Documentación de API - Accesible para todos */}
+      <Route path="/api-docs">
+        <ApiDocumentation />
       </Route>
       
       {/* Ruta directa a Nómina - Protegida */}
