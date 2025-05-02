@@ -553,7 +553,8 @@ kpiRouter.get("/bonificacion", isAuthenticated, async (req: Request, res: Respon
       );
     
     if (!bonificacion) {
-      return res.status(404).json({ error: "Bonificación no encontrada" });
+      // Si no hay bonificación, solo retornar null en lugar de error
+      return res.status(200).json(null);
     }
     
     // Obtener los KPIs del mes para calcular los detalles
@@ -572,16 +573,18 @@ kpiRouter.get("/bonificacion", isAuthenticated, async (req: Request, res: Respon
       const porcentajeCumplimiento = Number(kpi.porcentajeCumplimiento || 0);
       const porcentajePeso = Number(kpi.porcentajePeso);
       const salarioBase = Number(bonificacion.salarioBase);
+      const completado = porcentajeCumplimiento >= 100;
       
       // Calcular el monto de bonificación para este KPI específico
-      // La fórmula es: (salarioBase * porcentajePeso / 100) * (porcentajeCumplimiento / 100)
-      const montoBonificacionKpi = (salarioBase * (porcentajePeso / 100)) * (porcentajeCumplimiento / 100);
+      // Solo si está completado, su contribución es (salario base * peso)
+      const montoBonificacionKpi = completado ? (salarioBase * (porcentajePeso / 100)) : 0;
       
       return {
         id: kpi.id,
         descripcion: kpi.descripcion,
         porcentajeCumplimiento,
         porcentajePeso,
+        completado,
         montoBonificacion: Math.round(montoBonificacionKpi)
       };
     });
