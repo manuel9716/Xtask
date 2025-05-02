@@ -138,8 +138,24 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
     const userId = req.user?.id;
     const { descripcion, formula, valorEsperado, porcentajePeso, mes, empleadoId } = req.body;
     
-    // Si se proporciona empleadoId, usamos ese ID, de lo contrario usamos el ID del usuario actual
-    const targetUserId = empleadoId || userId;
+    // Si se proporciona empleadoId, necesitamos verificar que exista el usuario asociado
+    let targetUserId = userId;
+    
+    if (empleadoId) {
+      // Verificar que el usuario existe en la tabla users
+      const [userExists] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, empleadoId));
+        
+      if (userExists) {
+        targetUserId = empleadoId;
+      } else {
+        return res.status(400).json({ 
+          error: `El empleado con ID ${empleadoId} no tiene un usuario asociado válido` 
+        });
+      }
+    }
     
     // Validar datos
     if (!descripcion || !formula || !mes) {
@@ -158,19 +174,21 @@ kpiRouter.post("/", isAuthenticated, async (req: Request, res: Response) => {
     const valorEsperadoNum = valorEsperado ? parseFloat(valorEsperado) : 1;
     
     // Crear KPI
+    const kpiData = {
+      userId: targetUserId as number,
+      descripcion,
+      formula,
+      valorEsperado: valorEsperadoNum,
+      porcentajePeso: parseFloat(porcentajePeso),
+      mes,
+      estado: EstadoKpi.PENDIENTE,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
     const [kpi] = await db
       .insert(userKpis)
-      .values({
-        userId: targetUserId as number,
-        descripcion,
-        formula,
-        valorEsperado: valorEsperadoNum,
-        porcentajePeso: parseFloat(porcentajePeso),
-        mes,
-        estado: EstadoKpi.PENDIENTE,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
+      .values(kpiData)
       .returning();
     
     res.status(201).json(kpi);
@@ -556,7 +574,7 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
           salarioVariable: String(salarioVariable),
           bonificacionTotal: String(bonificacionTotal),
           porcentajeCumplimientoGlobal: String(porcentajeCumplimientoGlobal),
-          estado: EstadoBonificacion.CALCULADA,
+          estado: "CALCULADA", // Usar string directo en lugar de enum
           updatedAt: new Date()
         })
         .where(eq(bonificacionesMensuales.id, bonificacionExistente.id))
@@ -574,7 +592,7 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
           salarioVariable: String(salarioVariable),
           bonificacionTotal: String(bonificacionTotal),
           porcentajeCumplimientoGlobal: String(porcentajeCumplimientoGlobal),
-          estado: EstadoBonificacion.CALCULADA,
+          estado: "CALCULADA", // Usar string directo en lugar de enum
           createdAt: new Date(),
           updatedAt: new Date()
         })
@@ -615,7 +633,7 @@ kpiRouter.patch("/bonificacion/:id/aprobar", isAuthenticated, async (req: Reques
     }
     
     // Verificar si el estado actual permite aprobación
-    if (bonificacion.estado === EstadoBonificacion.APROBADA || bonificacion.estado === EstadoBonificacion.RECHAZADA) {
+    if (bonificacion.estado === "APROBADA" || bonificacion.estado === "RECHAZADA") {
       return res.status(400).json({ 
         error: `La bonificación ya ha sido ${bonificacion.estado.toLowerCase()}` 
       });
@@ -624,13 +642,13 @@ kpiRouter.patch("/bonificacion/:id/aprobar", isAuthenticated, async (req: Reques
     // TODO: Verificar si el usuario tiene rol de supervisor o jefe
     
     // Actualizar estado de la bonificación
-    const estado = aprobada ? EstadoBonificacion.APROBADA : EstadoBonificacion.RECHAZADA;
+    const estado = aprobada ? "APROBADA" : "RECHAZADA";
     
     const [updatedBonificacion] = await db
       .update(bonificacionesMensuales)
       .set({
         estado,
-        aprobadaPor: aprobadorId as number,
+        aprobadoPor: aprobadorId as number,
         comentariosAprobacion: comentarios,
         fechaAprobacion: new Date(),
         updatedAt: new Date()
