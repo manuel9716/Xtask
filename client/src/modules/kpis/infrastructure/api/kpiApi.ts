@@ -104,7 +104,7 @@ export class KpiApi implements KpiRepository {
   async getBonificacion(id: number): Promise<Bonificacion | null> {
     try {
       // Accedemos directamente a la bonificación por ID
-      const response = await apiRequest("GET", `/api/kpis/bonificacion/${id}`);
+      const response = await apiRequest("GET", `/api/kpis/bonificacion?id=${id}`);
       return await response.json();
     } catch (error) {
       return null;

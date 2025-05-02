@@ -537,7 +537,56 @@ kpiRouter.get("/bonificacion", isAuthenticated, async (req: Request, res: Respon
   try {
     const userId = req.user?.id;
     const mes = req.query.mes as string;
+    const id = req.query.id ? parseInt(req.query.id as string) : null;
     
+    // Si se proporciona un ID específico de bonificación
+    if (id !== null) {
+      const [bonificacion] = await db
+        .select()
+        .from(bonificacionesMensuales)
+        .where(eq(bonificacionesMensuales.id, id));
+        
+      if (!bonificacion) {
+        return res.status(200).json(null);
+      }
+      
+      // Obtener los KPIs del usuario para incluir en la respuesta
+      const kpis = await db
+        .select()
+        .from(userKpis)
+        .where(
+          and(
+            eq(userKpis.userId, bonificacion.userId),
+            eq(userKpis.mes, bonificacion.mes)
+          )
+        );
+        
+      // Crear el detalle de cada KPI con el campo completado
+      const detalleKpis = kpis.map(kpi => {
+        const porcentajeCumplimiento = Number(kpi.porcentajeCumplimiento || 0);
+        const porcentajePeso = Number(kpi.porcentajePeso);
+        const salarioBase = Number(bonificacion.salarioBase);
+        const completado = porcentajeCumplimiento >= 100;
+        
+        const montoBonificacionKpi = completado ? (salarioBase * (porcentajePeso / 100)) : 0;
+        
+        return {
+          id: kpi.id,
+          descripcion: kpi.descripcion,
+          porcentajeCumplimiento,
+          porcentajePeso,
+          completado,
+          montoBonificacion: Math.round(montoBonificacionKpi)
+        };
+      });
+      
+      return res.json({
+        ...bonificacion,
+        detalleKpis
+      });
+    }
+    
+    // De lo contrario, usar el mes para buscar la bonificación
     if (!mes || !/^\d{4}-\d{2}$/.test(mes)) {
       return res.status(400).json({ error: "Formato de mes inválido. Use YYYY-MM" });
     }

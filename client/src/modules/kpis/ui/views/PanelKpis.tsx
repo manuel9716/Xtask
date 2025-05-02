@@ -82,13 +82,16 @@ export const PanelKpis: React.FC = () => {
   
   const {
     data: bonificacion,
-    isLoading: isLoadingBonificacion
+    isLoading: isLoadingBonificacion,
+    refetch: refetchBonificacion
   } = useQuery<Bonificacion | null>({
     queryKey: ['/api/kpis/bonificacion', selectedMonth],
     queryFn: async () => {
       const kpiRepository = new KpiApi();
       return kpiRepository.getBonificacionByUserAndMonth(0, selectedMonth);
     },
+    // No hacer la consulta automáticamente al cargar, esperaremos a que se calcule
+    enabled: !!selectedMonth,
   });
   
   // Consulta para obtener información del empleado
@@ -110,6 +113,13 @@ export const PanelKpis: React.FC = () => {
       setEmpleadoInfo(empleado);
     }
   }, [empleado]);
+  
+  // Efecto para refrescar la bonificación cuando cambia el mes
+  useEffect(() => {
+    if (selectedMonth) {
+      refetchBonificacion();
+    }
+  }, [selectedMonth, refetchBonificacion]);
 
   // Mutaciones
   const createKpiMutation = useMutation({
@@ -163,7 +173,9 @@ export const PanelKpis: React.FC = () => {
       return kpiRepository.calcularBonificacion(0, data.mes, data.salarioBase, data.salarioVariable);
     },
     onSuccess: () => {
+      // Además de invalidar la consulta, hacemos un refetch explícito
       queryClient.invalidateQueries({ queryKey: ['/api/kpis/bonificacion', selectedMonth] });
+      refetchBonificacion();
       setIsBonusDialogOpen(false);
       toast({
         title: "Bonificación calculada",
