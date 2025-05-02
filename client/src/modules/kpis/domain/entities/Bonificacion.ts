@@ -9,6 +9,17 @@ export enum EstadoBonificacion {
 }
 
 /**
+ * Representa el detalle de bonificación para un KPI específico
+ */
+export interface DetalleKpiBonificacion {
+  id: number;
+  descripcion: string;
+  porcentajePeso: number;
+  porcentajeCumplimiento: number;
+  montoBonificacion: number;
+}
+
+/**
  * Entidad Bonificacion
  * Representa el cálculo de bonificación mensual basado en KPIs
  */
@@ -36,6 +47,9 @@ export interface Bonificacion {
   // Metadatos
   createdAt: Date;
   updatedAt: Date;
+  
+  // Detalle de los KPIs que componen la bonificación
+  detalleKpis?: DetalleKpiBonificacion[];
 }
 
 /**

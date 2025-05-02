@@ -553,7 +553,41 @@ kpiRouter.get("/bonificacion", isAuthenticated, async (req: Request, res: Respon
       return res.status(404).json({ error: "Bonificación no encontrada" });
     }
     
-    res.json(bonificacion);
+    // Obtener los KPIs del mes para calcular los detalles
+    const kpis = await db
+      .select()
+      .from(userKpis)
+      .where(
+        and(
+          eq(userKpis.userId, userId as number),
+          eq(userKpis.mes, mes)
+        )
+      );
+    
+    // Crear el detalle de cada KPI
+    const detalleKpis = kpis.map(kpi => {
+      const porcentajeCumplimiento = Number(kpi.porcentajeCumplimiento || 0);
+      const porcentajePeso = Number(kpi.porcentajePeso);
+      const salarioBase = Number(bonificacion.salarioBase);
+      
+      // Calcular el monto de bonificación para este KPI específico
+      // La fórmula es: (salarioBase * porcentajePeso / 100) * (porcentajeCumplimiento / 100)
+      const montoBonificacionKpi = (salarioBase * (porcentajePeso / 100)) * (porcentajeCumplimiento / 100);
+      
+      return {
+        id: kpi.id,
+        descripcion: kpi.descripcion,
+        porcentajeCumplimiento,
+        porcentajePeso,
+        montoBonificacion: Math.round(montoBonificacionKpi)
+      };
+    });
+    
+    // Retornar la bonificación con el detalle de KPIs
+    res.json({
+      ...bonificacion,
+      detalleKpis
+    });
   } catch (error: any) {
     console.error("Error al obtener bonificación:", error);
     res.status(500).json({ error: error.message });
