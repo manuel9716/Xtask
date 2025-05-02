@@ -200,7 +200,7 @@ export function KpiForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Mi KPI personal</SelectItem>
+                  <SelectItem value="0">Mi KPI personal</SelectItem>
                   {empleados.map(empleado => (
                     <SelectItem key={empleado.id} value={empleado.id.toString()}>
                       {empleado.nombreCompleto} - {empleado.position}
