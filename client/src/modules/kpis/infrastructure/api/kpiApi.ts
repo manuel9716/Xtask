@@ -26,14 +26,9 @@ export class KpiApi implements KpiRepository {
   }
   
   async createKpi(kpi: Indicador): Promise<Indicador> {
-    // Asegurarnos de que siempre enviamos valorEsperado
-    const kpiData = {
-      ...kpi,
-      valorEsperado: "1" // El valor por defecto requerido
-    };
-    
-    console.log("Datos enviados a createKpi:", kpiData);
-    const response = await apiRequest("POST", "/api/kpis", kpiData);
+    // Ya no necesitamos añadir valorEsperado, ya que se ha eliminado del esquema
+    console.log("Datos enviados a createKpi:", kpi);
+    const response = await apiRequest("POST", "/api/kpis", kpi);
     return await response.json();
   }
   
@@ -52,7 +47,10 @@ export class KpiApi implements KpiRepository {
   }
   
   async evaluarKpi(id: number, valorActual: number): Promise<Indicador> {
-    const response = await apiRequest("PATCH", `/api/kpis/${id}/resultado`, { valorObtenido: valorActual });
+    // Ahora valorActual representa directamente el porcentaje de cumplimiento
+    const response = await apiRequest("PATCH", `/api/kpis/${id}/resultado`, { 
+      porcentajeCumplimiento: valorActual 
+    });
     return await response.json();
   }
   

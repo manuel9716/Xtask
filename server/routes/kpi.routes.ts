@@ -314,16 +314,16 @@ kpiRouter.patch("/:id/resultado", isAuthenticated, async (req: Request, res: Res
   try {
     const id = parseInt(req.params.id);
     const userId = req.user?.id;
-    const { valorObtenido } = req.body;
+    const { porcentajeCumplimiento } = req.body;
     
     if (isNaN(id)) {
       return res.status(400).json({ error: "ID de KPI inválido" });
     }
     
-    // Validar valor obtenido
-    const valorObtenidoNum = parseFloat(valorObtenido);
-    if (isNaN(valorObtenidoNum) || valorObtenidoNum < 0) {
-      return res.status(400).json({ error: "El valor obtenido debe ser un número positivo" });
+    // Validar porcentaje de cumplimiento
+    const porcentajeCumplimientoNum = parseFloat(porcentajeCumplimiento);
+    if (isNaN(porcentajeCumplimientoNum) || porcentajeCumplimientoNum < 0 || porcentajeCumplimientoNum > 100) {
+      return res.status(400).json({ error: "El porcentaje de cumplimiento debe estar entre 0 y 100" });
     }
     
     // Verificar existencia y propiedad del KPI
@@ -346,19 +346,15 @@ kpiRouter.patch("/:id/resultado", isAuthenticated, async (req: Request, res: Res
       return res.status(400).json({ error: "No se puede modificar un KPI que ya ha sido validado" });
     }
     
-    // Usar el valor obtenido directamente como porcentaje de cumplimiento
-    // Con la nueva fórmula, el valor obtenido representa directamente el porcentaje
-    const porcentajeCumplimiento = valorObtenidoNum;
-    
     // Determinar el estado del KPI según el porcentaje obtenido
-    const estado = determinarEstadoKpi(porcentajeCumplimiento);
+    const estado = determinarEstadoKpi(porcentajeCumplimientoNum);
     
     // Actualizar KPI con el resultado y cálculos
     const [updatedKpi] = await db
       .update(userKpis)
       .set({
         // Ya no guardamos valorObtenido, solo el porcentaje de cumplimiento
-        porcentajeCumplimiento: String(porcentajeCumplimiento),
+        porcentajeCumplimiento: String(porcentajeCumplimientoNum),
         estado,
         updatedAt: new Date()
       })
