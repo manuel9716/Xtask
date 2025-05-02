@@ -91,7 +91,10 @@ kpiRouter.get("/empleado-por-userid/:userId", isAuthenticated, async (req: Reque
   try {
     const userId = parseInt(req.params.userId);
     
-    if (isNaN(userId)) {
+    // Si el ID es 0, usamos el ID del usuario actual autenticado
+    const targetUserId = userId === 0 ? req.user?.id : userId;
+    
+    if (isNaN(targetUserId as number)) {
       return res.status(400).json({ error: "ID de usuario inválido" });
     }
     
@@ -108,7 +111,7 @@ kpiRouter.get("/empleado-por-userid/:userId", isAuthenticated, async (req: Reque
         nombreCompleto: sql`concat(${employees.firstName}, ' ', ${employees.lastName})`
       })
       .from(employees)
-      .where(eq(employees.userId, userId));
+      .where(eq(employees.userId, targetUserId as number));
     
     if (!empleado) {
       return res.status(404).json({ error: "Empleado no encontrado" });

@@ -157,12 +157,13 @@ export function BonificacionResumen({
         <h4 className="font-medium text-sm">Detalle de contribución por KPI</h4>
         
         {bonificacion.detalleKpis.map((kpi) => (
-          <div key={kpi.id} className="rounded-md border p-3 text-sm">
+          <div key={kpi.id} className={`rounded-md border p-3 text-sm ${kpi.completado ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
             <div className="flex justify-between mb-1">
-              <span className="font-medium truncate" title={kpi.descripcion}>
+              <span className="font-medium truncate flex items-center gap-1" title={kpi.descripcion}>
+                {kpi.completado && <Check className="h-3.5 w-3.5 text-green-600" />}
                 {kpi.descripcion}
               </span>
-              <span className="font-bold text-primary">
+              <span className={`font-bold ${kpi.completado ? 'text-green-600' : 'text-gray-400'}`}>
                 {formatCurrency(kpi.montoBonificacion)}
               </span>
             </div>
@@ -172,12 +173,22 @@ export function BonificacionResumen({
               <span>Cumplimiento: {kpi.porcentajeCumplimiento}%</span>
             </div>
             
-            <Progress value={kpi.porcentajeCumplimiento} className="h-1.5" />
+            <Progress 
+              value={Math.min(kpi.porcentajeCumplimiento, 100)} 
+              className={`h-1.5 ${kpi.completado ? 'bg-green-100' : 'bg-gray-100'}`} 
+              indicatorClassName={kpi.completado ? 'bg-green-600' : undefined}
+            />
             
             <div className="mt-2 text-xs text-muted-foreground">
-              <span className="inline-block">
-                Fórmula: ({formatCurrency(bonificacion.salarioBase)} × {kpi.porcentajePeso}%) × {kpi.porcentajeCumplimiento}%
-              </span>
+              {kpi.completado ? (
+                <span className="inline-block">
+                  Contribución: {formatCurrency(bonificacion.salarioBase)} × {kpi.porcentajePeso}% = {formatCurrency(kpi.montoBonificacion)}
+                </span>
+              ) : (
+                <span className="inline-block text-gray-400">
+                  KPI no completado - No contribuye a la bonificación
+                </span>
+              )}
             </div>
           </div>
         ))}
