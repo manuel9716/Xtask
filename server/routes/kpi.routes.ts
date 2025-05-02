@@ -19,6 +19,15 @@ import {
 } from "../../client/src/modules/kpis/domain/entities/Bonificacion";
 import jwt from 'jsonwebtoken';
 
+// Definir el tipo User para usar en Express Request
+declare global {
+  namespace Express {
+    interface User {
+      id: number;
+    }
+  }
+}
+
 // Crear router para KPIs
 const kpiRouter = Router();
 
@@ -36,10 +45,10 @@ function isAuthenticated(req: Request, res: Response, next: Function) {
     // Decodificamos el token directamente aquí para evitar inconsistencias en la respuesta
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'xtask-secret-key') as { userId: number, username?: string, role?: string };
     
-    // Agregamos el ID a req.user con un tipo parcial para evitar errores TypeScript
+    // Agregamos el ID a req.user
     req.user = { 
       id: decoded.userId 
-    } as Express.User; // Usamos 'as' para satisfacer el tipado
+    }; // Ahora TypeScript no debería dar error ya que definimos la interfaz
     
     next();
   } catch (error) {
