@@ -1,6 +1,15 @@
 import { Indicador } from "../entities/Indicador";
 import { Bonificacion } from "../entities/Bonificacion";
 
+// Definimos una interfaz para los empleados
+export interface Empleado {
+  id: number;
+  userId: number;
+  nombreCompleto: string;
+  position: string;
+  department: string;
+}
+
 /**
  * Interfaz que define las operaciones de repositorio para KPIs y Bonificaciones
  * Este es el puerto en la arquitectura hexagonal que permite conectar 
@@ -17,6 +26,9 @@ export interface KpiRepository {
   // Operaciones específicas para KPIs
   evaluarKpi(id: number, valorActual: number): Promise<Indicador>;
   validarKpi(id: number, validadoPor: number, comentarios?: string): Promise<Indicador>;
+  
+  // Operaciones para empleados 
+  getEmpleados(): Promise<Empleado[]>;
   
   // Operaciones con Bonificaciones
   getUserBonificaciones(userId: number): Promise<Bonificacion[]>;

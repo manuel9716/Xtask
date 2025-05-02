@@ -5,10 +5,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Textarea } from "@/components/ui/textarea";
+import { Empleado } from "@/modules/kpis/domain/repositories/KpiRepository";
+import { useQuery } from "@tanstack/react-query";
 
 // Esquema de validación para el formulario
 const kpiFormSchema = z.object({
@@ -27,6 +29,7 @@ const kpiFormSchema = z.object({
   mes: z.string().regex(/^\d{4}-\d{2}$/, {
     message: "El mes debe tener el formato YYYY-MM.",
   }),
+  empleadoId: z.coerce.number().optional(),
 });
 
 export type KpiFormValues = z.infer<typeof kpiFormSchema>;
@@ -72,6 +75,15 @@ export function KpiForm({
     }
     
     return options;
+  });
+
+  // Consulta para obtener la lista de empleados
+  const { 
+    data: empleados = [], 
+    isLoading: loadingEmpleados 
+  } = useQuery<Empleado[]>({
+    queryKey: ['/api/kpis/empleados'],
+    staleTime: 60 * 1000 // 1 minuto
   });
 
   // Manejador de envío

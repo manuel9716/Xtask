@@ -1,4 +1,4 @@
-import { KpiRepository } from "../../domain/repositories/KpiRepository";
+import { KpiRepository, Empleado } from "../../domain/repositories/KpiRepository";
 import { Indicador } from "../../domain/entities/Indicador";
 import { Bonificacion } from "../../domain/entities/Bonificacion";
 import { apiRequest } from "@/lib/queryClient";
@@ -55,6 +55,16 @@ export class KpiApi implements KpiRepository {
       comentarios 
     });
     return await response.json();
+  }
+
+  async getEmpleados(): Promise<Empleado[]> {
+    try {
+      const response = await apiRequest("GET", "/api/kpis/empleados");
+      return await response.json();
+    } catch (error) {
+      console.error("Error al obtener empleados:", error);
+      return [];
+    }
   }
   
   async getUserBonificaciones(userId: number): Promise<Bonificacion[]> {
