@@ -2,9 +2,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check, X, Clock, AlertCircle, DollarSign, Download, Calculator } from "lucide-react";
-import { Bonificacion, EstadoBonificacion } from "../../domain/entities/Bonificacion";
+import { Bonificacion, EstadoBonificacion, DetalleKpiBonificacion } from "../../domain/entities/Bonificacion";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { useState } from "react";
 
 interface BonificacionResumenProps {
   bonificacion?: Bonificacion;
@@ -29,6 +32,9 @@ export function BonificacionResumen({
   onPagar,
   onDescargar
 }: BonificacionResumenProps) {
+  // Estado para controlar visualización de detalles de KPIs
+  const [showDetalleKpis, setShowDetalleKpis] = useState(false);
+
   // Formatear fechas
   const formatDate = (date: Date | string | null | undefined) => {
     if (!date) return 'N/A';
@@ -136,6 +142,49 @@ export function BonificacionResumen({
     );
   }
 
+  // Función para renderizar el detalle de los KPIs
+  const renderDetalleKpis = () => {
+    if (!bonificacion.detalleKpis || bonificacion.detalleKpis.length === 0) {
+      return (
+        <div className="text-sm text-muted-foreground py-2 text-center">
+          No hay detalle disponible de los KPIs
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4 mt-4">
+        <h4 className="font-medium text-sm">Detalle de contribución por KPI</h4>
+        
+        {bonificacion.detalleKpis.map((kpi) => (
+          <div key={kpi.id} className="rounded-md border p-3 text-sm">
+            <div className="flex justify-between mb-1">
+              <span className="font-medium truncate" title={kpi.descripcion}>
+                {kpi.descripcion}
+              </span>
+              <span className="font-bold text-primary">
+                {formatCurrency(kpi.montoBonificacion)}
+              </span>
+            </div>
+            
+            <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+              <span>Peso: {kpi.porcentajePeso}%</span>
+              <span>Cumplimiento: {kpi.porcentajeCumplimiento}%</span>
+            </div>
+            
+            <Progress value={kpi.porcentajeCumplimiento} className="h-1.5" />
+            
+            <div className="mt-2 text-xs text-muted-foreground">
+              <span className="inline-block">
+                Fórmula: ({formatCurrency(bonificacion.salarioBase)} × {kpi.porcentajePeso}%) × {kpi.porcentajeCumplimiento}%
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // Si hay bonificación, mostrar detalle
   return (
     <Card className="w-full">
@@ -170,11 +219,6 @@ export function BonificacionResumen({
               {formatCurrency(bonificacion.salarioBase)}
             </span>
             
-            <span className="text-muted-foreground">Salario variable:</span>
-            <span className="font-medium text-right">
-              {formatCurrency(bonificacion.salarioVariable)}
-            </span>
-            
             <span className="text-muted-foreground">Bonificación total:</span>
             <span className="font-medium text-right text-primary">
               {formatCurrency(bonificacion.bonificacionTotal)}
@@ -201,6 +245,16 @@ export function BonificacionResumen({
               </>
             )}
           </div>
+          
+          <Button 
+            variant="ghost" 
+            className="w-full text-xs py-1 h-auto mt-2"
+            onClick={() => setShowDetalleKpis(!showDetalleKpis)}
+          >
+            {showDetalleKpis ? "Ocultar detalle" : "Ver detalle de KPIs"}
+          </Button>
+          
+          {showDetalleKpis && renderDetalleKpis()}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between pt-2">
