@@ -15,9 +15,10 @@ interface KpiCardProps {
   onEdit?: (kpi: Indicador) => void;
   onResult?: (kpi: Indicador) => void;
   onValidate?: (kpi: Indicador) => void;
+  onRegisterResult?: (kpi: Indicador) => void; // Agregar soporte para onRegisterResult
 }
 
-export function KpiCard({ kpi, onEdit, onResult, onValidate }: KpiCardProps) {
+export function KpiCard({ kpi, onEdit, onResult, onValidate, onRegisterResult }: KpiCardProps) {
   // Consulta para obtener empleados
   const { 
     data: empleados = [], 
@@ -164,6 +165,12 @@ export function KpiCard({ kpi, onEdit, onResult, onValidate }: KpiCardProps) {
             <Button variant="default" size="sm" onClick={() => onValidate(kpi)}>
               <Check className="h-3.5 w-3.5 mr-1" />
               Validar
+            </Button>
+          )}
+          {onRegisterResult && !kpi.validadoPor && (
+            <Button variant="secondary" size="sm" onClick={() => onRegisterResult(kpi)}>
+              <Check className="h-3.5 w-3.5 mr-1" />
+              Resultado
             </Button>
           )}
         </div>

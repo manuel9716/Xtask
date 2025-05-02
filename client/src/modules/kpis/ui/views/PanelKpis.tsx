@@ -38,7 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Indicador, EstadoKpi } from "../../domain/entities/Indicador";
+import { Indicador, EstadoKpi, TipoKpi, PeriodicidadKpi } from "../../domain/entities/Indicador";
 import { Bonificacion } from "../../domain/entities/Bonificacion";
 import { KpiForm } from "../components/KpiForm";
 import { KpiCard } from "../components/KpiCard";
@@ -161,10 +161,17 @@ export const PanelKpis: React.FC = () => {
   const handleCreateKpi = (data: any) => {
     createKpiMutation.mutate({
       userId: 0, // El ID real se asigna en el servidor
+      nombre: `KPI ${data.mes}`,
       descripcion: data.descripcion,
       formula: data.formula,
-      valorEsperado: data.valorEsperado,
+      valorMeta: data.valorEsperado, // Mapeo a valorMeta desde valorEsperado del formulario
+      valorBase: 0, // Por defecto
       porcentajePeso: data.porcentajePeso,
+      tipo: TipoKpi.CUANTITATIVO, // Por defecto
+      unidadMedida: "unidades", // Por defecto
+      periodicidad: PeriodicidadKpi.MENSUAL, // Por defecto
+      fechaInicio: new Date(), // Fecha actual
+      fechaFin: new Date(), // Fecha actual (se actualizará en el backend)
       mes: data.mes,
       estado: EstadoKpi.PENDIENTE,
       empleadoId: data.empleadoId // Incluye el ID del empleado si se seleccionó uno
@@ -445,7 +452,7 @@ export const PanelKpis: React.FC = () => {
               <Label htmlFor="valor-esperado">Meta establecida</Label>
               <Input
                 id="valor-esperado"
-                value={selectedKpi?.valorEsperado}
+                value={selectedKpi?.valorMeta}
                 readOnly
                 disabled
               />
