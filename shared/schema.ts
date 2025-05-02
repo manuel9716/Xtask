@@ -645,6 +645,80 @@ export type InsertNomina = z.infer<typeof insertNominaSchema>;
 export type NominaDetalle = typeof nominaDetalles.$inferSelect;
 export type InsertNominaDetalle = z.infer<typeof insertNominaDetalleSchema>;
 
+// Enumeración para estado de KPIs
+export enum EstadoKpi {
+  PENDIENTE = "PENDIENTE",
+  CUMPLIDO = "CUMPLIDO",
+  PARCIAL = "PARCIAL",
+  NO_CUMPLIDO = "NO_CUMPLIDO"
+}
+
+// Enumeración para estado de bonificaciones
+export enum EstadoBonificacion {
+  CALCULADO = "CALCULADO",
+  APROBADO = "APROBADO",
+  PAGADO = "PAGADO",
+  RECHAZADO = "RECHAZADO"
+}
+
+// Tabla de KPIs de usuario
+export const userKpis = pgTable("user_kpis", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  descripcion: text("descripcion").notNull(),
+  formula: text("formula").notNull(),
+  valorEsperado: decimal("valor_esperado", { precision: 10, scale: 2 }).notNull(),
+  valorObtenido: decimal("valor_obtenido", { precision: 10, scale: 2 }),
+  porcentajePeso: decimal("porcentaje_peso", { precision: 5, scale: 2 }).notNull(),
+  porcentajeCumplimiento: decimal("porcentaje_cumplimiento", { precision: 5, scale: 2 }),
+  mes: text("mes").notNull(), // formato: "YYYY-MM"
+  estado: text("estado").notNull().default(EstadoKpi.PENDIENTE),
+  validadoPor: integer("validado_por").references(() => users.id),
+  fechaValidacion: timestamp("fecha_validacion"),
+  comentariosValidacion: text("comentarios_validacion"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Tabla de bonificaciones mensuales
+export const bonificacionesMensuales = pgTable("bonificaciones_mensuales", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  mes: text("mes").notNull(), // formato: "YYYY-MM"
+  salarioBase: decimal("salario_base", { precision: 10, scale: 2 }).notNull(),
+  salarioVariable: decimal("salario_variable", { precision: 10, scale: 2 }).notNull(),
+  bonificacionTotal: decimal("bonificacion_total", { precision: 10, scale: 2 }).notNull(),
+  porcentajeCumplimientoGlobal: decimal("porcentaje_cumplimiento_global", { precision: 5, scale: 2 }).notNull(),
+  estado: text("estado").notNull().default(EstadoBonificacion.CALCULADO),
+  aprobadoPor: integer("aprobado_por").references(() => users.id),
+  fechaAprobacion: timestamp("fecha_aprobacion"),
+  comentarios: text("comentarios"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Esquemas de inserción para Zod
+export const insertUserKpiSchema = createInsertSchema(userKpis).omit({
+  id: true,
+  fechaValidacion: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertBonificacionMensualSchema = createInsertSchema(bonificacionesMensuales).omit({
+  id: true,
+  fechaAprobacion: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+// Tipos para el módulo de KPIs
+export type UserKpi = typeof userKpis.$inferSelect;
+export type InsertUserKpi = z.infer<typeof insertUserKpiSchema>;
+
+export type BonificacionMensual = typeof bonificacionesMensuales.$inferSelect;
+export type InsertBonificacionMensual = z.infer<typeof insertBonificacionMensualSchema>;
+
 // Tipos para el módulo de Recursos Humanos - Evaluaciones y Capacitaciones
 export type Evaluacion = typeof evaluaciones.$inferSelect;
 export type InsertEvaluacion = z.infer<typeof insertEvaluacionSchema>;
