@@ -68,6 +68,9 @@ export interface Indicador {
   // Asignación
   empleadoId?: number;  // ID del empleado al que se asigna el KPI (opcional)
   
+  // Período específico (formato YYYY-MM)
+  mes?: string;
+  
   // Metadatos
   createdAt: Date;
   updatedAt: Date;

@@ -97,34 +97,35 @@ export function KpiCard({ kpi, onEdit, onResult, onValidate, onRegisterResult }:
           </Badge>
         </div>
         <CardDescription>{kpi.descripcion}</CardDescription>
-        {empleadoAsignado && (
-          <div className="mt-2 flex items-center text-xs text-muted-foreground">
-            <User className="h-3.5 w-3.5 mr-1" />
-            <span>Asignado a: <span className="font-medium">{empleadoAsignado.nombreCompleto}</span> ({empleadoAsignado.position})</span>
-          </div>
-        )}
       </CardHeader>
       <CardContent className="pb-1">
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
-            <span className="text-muted-foreground">Meta:</span>
-            <span className="font-medium text-right">{kpi.valorMeta} {kpi.unidadMedida}</span>
-            
-            <span className="text-muted-foreground">Base:</span>
-            <span className="font-medium text-right">{kpi.valorBase} {kpi.unidadMedida}</span>
-
-            {hasMeasurement && (
+            {empleadoAsignado ? (
               <>
-                <span className="text-muted-foreground">Actual:</span>
-                <span className="font-medium text-right">{kpi.valorActual} {kpi.unidadMedida}</span>
+                <span className="text-muted-foreground">Empleado asignado:</span>
+                <span className="font-medium text-right">{empleadoAsignado.nombreCompleto}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-muted-foreground">Empleado asignado:</span>
+                <span className="font-medium text-right">Personal</span>
               </>
             )}
-
-            <span className="text-muted-foreground">Período:</span>
-            <span className="font-medium text-right">{kpi.periodicidad}</span>
             
             <span className="text-muted-foreground">Peso:</span>
             <span className="font-medium text-right">{kpi.porcentajePeso}%</span>
+            
+            <span className="text-muted-foreground">Periodo:</span>
+            <span className="font-medium text-right">
+              {kpi.mes ? kpi.mes : `${kpi.periodicidad} (${formatDate(kpi.fechaInicio)})`}
+            </span>
+            
+            <span className="text-muted-foreground">Descripción:</span>
+            <span className="font-medium text-right">{kpi.descripcion}</span>
+            
+            <span className="text-muted-foreground">Fórmula:</span>
+            <span className="font-medium text-right">{kpi.formula || "No definida"}</span>
           </div>
 
           {hasMeasurement && kpi.porcentajeCumplimiento !== undefined && (
@@ -144,10 +145,7 @@ export function KpiCard({ kpi, onEdit, onResult, onValidate, onRegisterResult }:
           )}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between pt-2">
-        <div className="text-xs text-muted-foreground">
-          {formatDate(kpi.fechaInicio)} - {formatDate(kpi.fechaFin)}
-        </div>
+      <CardFooter className="flex justify-end pt-2">
         <div className="flex gap-2">
           {onEdit && (
             <Button variant="outline" size="sm" onClick={() => onEdit(kpi)}>

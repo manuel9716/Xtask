@@ -165,11 +165,11 @@ export const PanelKpis: React.FC = () => {
       nombre: `KPI ${data.mes}`,
       descripcion: data.descripcion,
       formula: data.formula,
-      // Ya no necesitamos valorEsperado ni valorMeta
+      valorMeta: 100, // Valor fijo, ya que ahora trabajamos directamente con porcentajes
       valorBase: 0, // Por defecto
       porcentajePeso: data.porcentajePeso,
       tipo: TipoKpi.CUANTITATIVO, // Por defecto
-      unidadMedida: "unidades", // Por defecto
+      unidadMedida: "porcentaje", // Cambiado a porcentaje
       periodicidad: PeriodicidadKpi.MENSUAL, // Por defecto
       fechaInicio: new Date(), // Fecha actual
       fechaFin: new Date(), // Fecha actual (se actualizará en el backend)
