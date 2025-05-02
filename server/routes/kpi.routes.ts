@@ -677,37 +677,44 @@ kpiRouter.post("/calcular-bonificacion", isAuthenticated, async (req: Request, r
       });
     }
     
-    // Preparar los datos para el cálculo global y calcular el monto para cada KPI
+    // Filtrar los KPIs completados (con porcentaje de cumplimiento >= 100)
+    const kpisCompletados = kpis.filter(kpi => {
+      const porcentajeCumplimiento = Number(kpi.porcentajeCumplimiento || 0);
+      return porcentajeCumplimiento >= 100;
+    });
+    
+    // Sumar los pesos de los KPIs completados
+    const sumaPesosKpisCompletados = kpisCompletados.reduce(
+      (total, kpi) => total + Number(kpi.porcentajePeso), 
+      0
+    ) / 100; // Convertir de porcentaje a decimal
+    
+    // Calcular la bonificación total multiplicando el salario base por la suma de pesos
+    const bonificacionTotal = Math.round(salarioBase * sumaPesosKpisCompletados);
+    
+    // Preparar los datos para mostrar detalles de cada KPI
     const kpisConResultados = kpis.map(kpi => {
       const porcentajeCumplimiento = Number(kpi.porcentajeCumplimiento || 0);
       const porcentajePeso = Number(kpi.porcentajePeso);
+      const completado = porcentajeCumplimiento >= 100;
       
       // Calcular el monto de bonificación para este KPI específico
-      // La fórmula es: (salarioBase * porcentajePeso / 100) * (porcentajeCumplimiento / 100)
-      const montoBonificacionKpi = (salarioBase * (porcentajePeso / 100)) * (porcentajeCumplimiento / 100);
+      // Solo si está completado, su contribución es (salario base * peso)
+      const montoBonificacionKpi = completado ? (salarioBase * (porcentajePeso / 100)) : 0;
       
       return {
         id: kpi.id,
         descripcion: kpi.descripcion,
         porcentajeCumplimiento,
         porcentajePeso,
+        completado,
         montoBonificacion: Math.round(montoBonificacionKpi)
       };
     });
     
-    // Calcular el porcentaje global de cumplimiento
-    const porcentajeCumplimientoGlobal = calcularPorcentajeCumplimientoGlobal(
-      kpisConResultados.map(k => ({
-        porcentajeCumplimiento: k.porcentajeCumplimiento,
-        porcentajePeso: k.porcentajePeso
-      }))
-    );
-    
-    // Calcular la bonificación total sumando las bonificaciones individuales de cada KPI
-    const bonificacionTotal = kpisConResultados.reduce(
-      (total, kpi) => total + kpi.montoBonificacion, 
-      0
-    );
+    // El porcentaje de cumplimiento global ya no se usa con esta fórmula,
+    // pero mantenemos para compatibilidad, usando la suma de pesos como porcentaje
+    const porcentajeCumplimientoGlobal = sumaPesosKpisCompletados * 100;
     
     // Verificar si ya existe una bonificación para el mes
     const [bonificacionExistente] = await db

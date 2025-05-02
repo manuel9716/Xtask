@@ -100,14 +100,16 @@ export const PanelKpis: React.FC = () => {
     queryFn: async () => {
       const kpiRepository = new KpiApi();
       return kpiRepository.getEmpleadoByUserId(0); // 0 representa el usuario actual
-    },
-    onSuccess: (data) => {
-      if (data && data.salary) {
-        setSalarioBase(data.salary.toString());
-        setEmpleadoInfo(data);
-      }
     }
   });
+  
+  // Efecto para establecer el salario cuando se carga el empleado
+  useEffect(() => {
+    if (empleado && empleado.salary) {
+      setSalarioBase(empleado.salary.toString());
+      setEmpleadoInfo(empleado);
+    }
+  }, [empleado]);
 
   // Mutaciones
   const createKpiMutation = useMutation({
@@ -229,6 +231,7 @@ export const PanelKpis: React.FC = () => {
       return;
     }
     
+    // Solo enviamos los valores al servidor para el cálculo
     calculateBonusMutation.mutate({
       mes: selectedMonth,
       salarioBase: base,
@@ -528,17 +531,18 @@ export const PanelKpis: React.FC = () => {
                 min="0"
                 step="1000"
                 placeholder="Ej: 15000"
+                disabled={isLoadingEmpleado}
               />
               <p className="text-xs text-muted-foreground">
-                Tu salario fijo mensual. Ahora se usa para calcular tu bonificación directamente.
+                Tu salario fijo mensual. Este valor se carga automáticamente.
               </p>
               <p className="text-xs font-medium text-primary mt-1">
-                Bonificación = Porcentaje cumplimiento KPI × Salario base
+                Bonificación = Salario base × Suma de pesos de KPIs completados
               </p>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="salario-variable">Salario variable (opcional)</Label>
+              <Label htmlFor="salario-variable">Bonificación (resultado)</Label>
               <Input
                 id="salario-variable"
                 value={salarioVariable}
@@ -546,12 +550,20 @@ export const PanelKpis: React.FC = () => {
                 type="number"
                 min="0"
                 step="1000"
-                placeholder="Ej: 5000"
+                placeholder="0"
+                disabled
               />
               <p className="text-xs text-muted-foreground">
-                Campo opcional solo para fines informativos.
+                Este campo mostrará el resultado del cálculo de bonificación.
               </p>
             </div>
+            
+            {isLoadingEmpleado && (
+              <div className="flex items-center justify-center py-2">
+                <div className="animate-spin h-4 w-4 border-t-2 border-b-2 border-primary rounded-full mr-2"></div>
+                <span className="text-sm">Cargando información del empleado...</span>
+              </div>
+            )}
           </div>
           
           <div className="flex justify-end space-x-2">
