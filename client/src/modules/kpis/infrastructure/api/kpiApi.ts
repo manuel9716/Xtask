@@ -4,6 +4,20 @@ import { Bonificacion } from "../../domain/entities/Bonificacion";
 import { apiRequest } from "@/lib/queryClient";
 
 /**
+ * Interfaz para la información del empleado con salario
+ */
+export interface EmpleadoInfo {
+  id: number;
+  userId: number;
+  firstName: string;
+  lastName: string;
+  position: string;
+  department: string;
+  salary: number;
+  nombreCompleto: string;
+}
+
+/**
  * Implementación de KpiRepository utilizando la API REST del backend
  * Esta clase actúa como un adaptador para la API de KPIs
  */
@@ -68,6 +82,16 @@ export class KpiApi implements KpiRepository {
     } catch (error) {
       console.error("Error al obtener empleados:", error);
       return [];
+    }
+  }
+  
+  async getEmpleadoByUserId(userId: number): Promise<EmpleadoInfo | null> {
+    try {
+      const response = await apiRequest("GET", `/api/kpis/empleado-por-userid/${userId}`);
+      return await response.json();
+    } catch (error) {
+      console.error("Error al obtener información del empleado:", error);
+      return null;
     }
   }
   

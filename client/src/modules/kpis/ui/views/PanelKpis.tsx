@@ -65,6 +65,7 @@ export const PanelKpis: React.FC = () => {
   const [resultValue, setResultValue] = useState("");
   const [salarioBase, setSalarioBase] = useState("0");
   const [salarioVariable, setSalarioVariable] = useState("0");
+  const [empleadoInfo, setEmpleadoInfo] = useState<{ salary: number } | null>(null);
 
   // Consultas
   const {
@@ -88,6 +89,24 @@ export const PanelKpis: React.FC = () => {
       const kpiRepository = new KpiApi();
       return kpiRepository.getBonificacionByUserAndMonth(0, selectedMonth);
     },
+  });
+  
+  // Consulta para obtener información del empleado
+  const {
+    data: empleado,
+    isLoading: isLoadingEmpleado
+  } = useQuery({
+    queryKey: ['/api/kpis/empleado-info'],
+    queryFn: async () => {
+      const kpiRepository = new KpiApi();
+      return kpiRepository.getEmpleadoByUserId(0); // 0 representa el usuario actual
+    },
+    onSuccess: (data) => {
+      if (data && data.salary) {
+        setSalarioBase(data.salary.toString());
+        setEmpleadoInfo(data);
+      }
+    }
   });
 
   // Mutaciones
