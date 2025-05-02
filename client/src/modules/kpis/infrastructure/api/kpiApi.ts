@@ -1,4 +1,4 @@
-import { KpiRepository, Empleado } from "../../domain/repositories/KpiRepository";
+import { KpiRepository, Empleado, CreateKpiDTO } from "../../domain/repositories/KpiRepository";
 import { Indicador } from "../../domain/entities/Indicador";
 import { Bonificacion } from "../../domain/entities/Bonificacion";
 import { apiRequest } from "@/lib/queryClient";
@@ -25,8 +25,7 @@ export class KpiApi implements KpiRepository {
     }
   }
   
-  async createKpi(kpi: Indicador): Promise<Indicador> {
-    // Ya no necesitamos añadir valorEsperado, ya que se ha eliminado del esquema
+  async createKpi(kpi: CreateKpiDTO): Promise<Indicador> {
     console.log("Datos enviados a createKpi:", kpi);
     const response = await apiRequest("POST", "/api/kpis", kpi);
     return await response.json();

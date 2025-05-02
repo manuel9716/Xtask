@@ -40,6 +40,7 @@ import { es } from "date-fns/locale";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Indicador, EstadoKpi, TipoKpi, PeriodicidadKpi } from "../../domain/entities/Indicador";
 import { Bonificacion } from "../../domain/entities/Bonificacion";
+import { CreateKpiDTO } from "../../domain/repositories/KpiRepository";
 import { KpiForm } from "../components/KpiForm";
 import { KpiCard } from "../components/KpiCard";
 import { BonificacionResumen } from "../components/BonificacionResumen";
@@ -91,9 +92,9 @@ export const PanelKpis: React.FC = () => {
 
   // Mutaciones
   const createKpiMutation = useMutation({
-    mutationFn: async (kpi: Omit<Indicador, "id" | "createdAt" | "updatedAt">) => {
+    mutationFn: async (kpi: CreateKpiDTO) => {
       const kpiRepository = new KpiApi();
-      return kpiRepository.createKpi(kpi as Indicador);
+      return kpiRepository.createKpi(kpi);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/kpis/mis-kpis', selectedMonth] });

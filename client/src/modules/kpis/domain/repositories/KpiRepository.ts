@@ -10,6 +10,15 @@ export interface Empleado {
   department: string;
 }
 
+// Definimos una interfaz simplificada para la creación de KPIs
+export interface CreateKpiDTO {
+  descripcion: string;
+  formula: string;
+  porcentajePeso: number;
+  mes: string;
+  empleadoId?: number;
+}
+
 /**
  * Interfaz que define las operaciones de repositorio para KPIs y Bonificaciones
  * Este es el puerto en la arquitectura hexagonal que permite conectar 
@@ -17,9 +26,9 @@ export interface Empleado {
  */
 export interface KpiRepository {
   // Operaciones con KPIs
-  getUserKpis(userId: number): Promise<Indicador[]>;
+  getUserKpis(userId: number, mes?: string): Promise<Indicador[]>;
   getKpi(id: number): Promise<Indicador | null>;
-  createKpi(kpi: Indicador): Promise<Indicador>;
+  createKpi(kpi: CreateKpiDTO): Promise<Indicador>;
   updateKpi(id: number, kpi: Partial<Indicador>): Promise<Indicador>;
   deleteKpi(id: number): Promise<boolean>;
   
