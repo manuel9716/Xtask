@@ -12,6 +12,7 @@ import Tasks from "@/pages/tasks";
 import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import NominaDashboard from "@/pages/nomina-dashboard";
+import KpisDashboard from "@/pages/kpis-dashboard";
 import HomePage from "@/pages/home";
 import ApiDocumentation from "@/pages/api-documentation";
 import { MainLayout } from "@/layouts/main-layout";
@@ -19,6 +20,7 @@ import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
 import { EmpleadosRoutes } from "@/modules/nomina/empleados/ui/routes";
 import { ProyectosRoutes } from "@/modules/proyectos/ui/routes";
+import { KpisRoutes } from "@/modules/kpis/ui/routes";
 import { ThemeProvider } from "@/hooks/use-theme";
 
 // Importaciones para el módulo de autenticación
@@ -112,6 +114,7 @@ function Router() {
         <NominaRoutes />
         <EmpleadosRoutes />
         <ProyectosRoutes />
+        <KpisRoutes />
       </ProtectedRoute>
       
       <Route component={NotFound} />
