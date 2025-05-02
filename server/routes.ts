@@ -12,10 +12,14 @@ import evaluacionesRouter from "./routes/evaluaciones.routes";
 import capacitacionesRouter from "./routes/capacitaciones.routes";
 import microLearningRouter from "./routes/microlearning.routes";
 import authRouter from "./routes/auth.routes";
+import kpiRouter from "./routes/kpi.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Rutas de autenticación
   app.use('/api/auth', authRouter);
+  
+  // Rutas para módulo de KPIs
+  app.use('/api/kpis', kpiRouter);
   // Projects routes
   app.get("/api/projects", async (req, res) => {
     try {
