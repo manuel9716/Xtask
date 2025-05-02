@@ -17,6 +17,7 @@ export interface DetalleKpiBonificacion {
   porcentajePeso: number;
   porcentajeCumplimiento: number;
   montoBonificacion: number;
+  completado: boolean; // Indica si el KPI está completado (cumplimiento >= 100%)
 }
 
 /**

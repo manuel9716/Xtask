@@ -175,8 +175,7 @@ export function BonificacionResumen({
             
             <Progress 
               value={Math.min(kpi.porcentajeCumplimiento, 100)} 
-              className={`h-1.5 ${kpi.completado ? 'bg-green-100' : 'bg-gray-100'}`} 
-              indicatorClassName={kpi.completado ? 'bg-green-600' : undefined}
+              className={`h-1.5 ${kpi.completado ? 'bg-green-100 [&>div]:bg-green-600' : 'bg-gray-100'}`}
             />
             
             <div className="mt-2 text-xs text-muted-foreground">
