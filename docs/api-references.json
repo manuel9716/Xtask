@@ -1,0 +1,963 @@
+{
+  "title": "XTask API Reference",
+  "version": "1.0.0",
+  "description": "Documentación completa de APIs disponibles en la plataforma XTask",
+  "baseUrl": "/api",
+  "modules": [
+    {
+      "name": "Autenticación",
+      "slug": "auth",
+      "description": "APIs para gestión de autenticación y usuarios",
+      "endpoints": [
+        {
+          "path": "/auth/register",
+          "method": "POST",
+          "description": "Registra un nuevo usuario",
+          "parameters": {
+            "body": {
+              "username": "string (requerido)",
+              "password": "string (requerido)",
+              "email": "string (requerido)",
+              "fullName": "string (requerido)",
+              "role": "string (requerido)"
+            }
+          },
+          "response": "Usuario creado con token JWT",
+          "auth_required": false
+        },
+        {
+          "path": "/auth/login",
+          "method": "POST",
+          "description": "Inicia sesión",
+          "parameters": {
+            "body": {
+              "username": "string (requerido)",
+              "password": "string (requerido)"
+            }
+          },
+          "response": "Token JWT de autenticación",
+          "auth_required": false
+        },
+        {
+          "path": "/auth/logout",
+          "method": "POST",
+          "description": "Cierra sesión",
+          "parameters": {},
+          "response": "Confirmación de cierre",
+          "auth_required": true
+        },
+        {
+          "path": "/auth/me",
+          "method": "GET",
+          "description": "Obtiene información del usuario actual",
+          "parameters": {},
+          "response": "Datos del usuario",
+          "auth_required": true
+        },
+        {
+          "path": "/auth/validate-token",
+          "method": "POST",
+          "description": "Valida un token JWT",
+          "parameters": {
+            "body": {
+              "token": "string (requerido)"
+            }
+          },
+          "response": "Estado de validez",
+          "auth_required": false
+        },
+        {
+          "path": "/user",
+          "method": "GET",
+          "description": "Obtiene información del usuario autenticado",
+          "parameters": {},
+          "response": "Datos del usuario",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Proyectos",
+      "slug": "projects",
+      "description": "APIs para gestión de proyectos",
+      "endpoints": [
+        {
+          "path": "/projects",
+          "method": "GET",
+          "description": "Lista todos los proyectos",
+          "parameters": {},
+          "response": "Array de proyectos",
+          "auth_required": true
+        },
+        {
+          "path": "/projects",
+          "method": "POST",
+          "description": "Crea un nuevo proyecto",
+          "parameters": {
+            "body": {
+              "name": "string (requerido)",
+              "description": "string",
+              "startDate": "date",
+              "endDate": "date",
+              "status": "string"
+            }
+          },
+          "response": "Proyecto creado",
+          "auth_required": true
+        },
+        {
+          "path": "/projects/:id",
+          "method": "GET",
+          "description": "Obtiene un proyecto específico",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Detalles del proyecto",
+          "auth_required": true
+        },
+        {
+          "path": "/proyectos",
+          "method": "GET",
+          "description": "Lista todos los proyectos (versión en español)",
+          "parameters": {},
+          "response": "Array de proyectos",
+          "auth_required": true
+        },
+        {
+          "path": "/proyectos/:id",
+          "method": "GET",
+          "description": "Obtiene un proyecto específico (versión en español)",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Detalles del proyecto",
+          "auth_required": true
+        },
+        {
+          "path": "/proyectos/:id",
+          "method": "PATCH",
+          "description": "Actualiza un proyecto",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": "Datos a actualizar"
+          },
+          "response": "Proyecto actualizado",
+          "auth_required": true
+        },
+        {
+          "path": "/proyectos/:id/estado",
+          "method": "PATCH",
+          "description": "Actualiza el estado de un proyecto",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": {
+              "estado": "string (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/proyectos/:id",
+          "method": "DELETE",
+          "description": "Elimina un proyecto",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/proyectos/indicadores",
+          "method": "GET",
+          "description": "Obtiene indicadores de proyectos",
+          "parameters": {},
+          "response": "Datos de indicadores",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Tareas",
+      "slug": "tasks",
+      "description": "APIs para gestión de tareas",
+      "endpoints": [
+        {
+          "path": "/tasks",
+          "method": "GET",
+          "description": "Lista todas las tareas",
+          "parameters": {
+            "query": {
+              "projectId": "number (opcional)"
+            }
+          },
+          "response": "Array de tareas",
+          "auth_required": true
+        },
+        {
+          "path": "/tasks",
+          "method": "POST",
+          "description": "Crea una nueva tarea",
+          "parameters": {
+            "body": {
+              "title": "string (requerido)",
+              "description": "string",
+              "status": "string",
+              "dueDate": "date",
+              "assigneeId": "number",
+              "projectId": "number (requerido)"
+            }
+          },
+          "response": "Tarea creada",
+          "auth_required": true
+        },
+        {
+          "path": "/tasks/:id",
+          "method": "PATCH",
+          "description": "Actualiza una tarea",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": "Datos a actualizar"
+          },
+          "response": "Tarea actualizada",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Empleados",
+      "slug": "employees",
+      "description": "APIs para gestión de empleados",
+      "endpoints": [
+        {
+          "path": "/employees",
+          "method": "GET",
+          "description": "Lista todos los empleados",
+          "parameters": {},
+          "response": "Array de empleados",
+          "auth_required": true
+        },
+        {
+          "path": "/employees",
+          "method": "POST",
+          "description": "Registra un nuevo empleado",
+          "parameters": {
+            "body": "Datos del empleado"
+          },
+          "response": "Empleado creado",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Proveedores",
+      "slug": "suppliers",
+      "description": "APIs para gestión de proveedores",
+      "endpoints": [
+        {
+          "path": "/suppliers",
+          "method": "GET",
+          "description": "Lista todos los proveedores",
+          "parameters": {},
+          "response": "Array de proveedores",
+          "auth_required": true
+        },
+        {
+          "path": "/suppliers",
+          "method": "POST",
+          "description": "Registra un nuevo proveedor",
+          "parameters": {
+            "body": "Datos del proveedor"
+          },
+          "response": "Proveedor creado",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Transacciones",
+      "slug": "transactions",
+      "description": "APIs para gestión de transacciones financieras",
+      "endpoints": [
+        {
+          "path": "/transactions",
+          "method": "GET",
+          "description": "Lista todas las transacciones",
+          "parameters": {
+            "query": {
+              "projectId": "number (opcional)"
+            }
+          },
+          "response": "Array de transacciones",
+          "auth_required": true
+        },
+        {
+          "path": "/transactions",
+          "method": "POST",
+          "description": "Registra una nueva transacción",
+          "parameters": {
+            "body": "Datos de la transacción"
+          },
+          "response": "Transacción creada",
+          "auth_required": true
+        },
+        {
+          "path": "/transactions/:id/approve",
+          "method": "PATCH",
+          "description": "Aprueba una transacción",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Transacción actualizada",
+          "auth_required": true
+        },
+        {
+          "path": "/transactions/:id/reject",
+          "method": "PATCH",
+          "description": "Rechaza una transacción",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Transacción actualizada",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Presupuestos",
+      "slug": "budgets",
+      "description": "APIs para gestión de presupuestos",
+      "endpoints": [
+        {
+          "path": "/presupuestos",
+          "method": "GET",
+          "description": "Lista todos los presupuestos",
+          "parameters": {
+            "query": {
+              "organizationId": "number (opcional)"
+            }
+          },
+          "response": "Array de presupuestos",
+          "auth_required": true
+        },
+        {
+          "path": "/presupuestos",
+          "method": "POST",
+          "description": "Crea un nuevo presupuesto",
+          "parameters": {
+            "body": "Datos del presupuesto"
+          },
+          "response": "Presupuesto creado",
+          "auth_required": true
+        },
+        {
+          "path": "/presupuestos/:id",
+          "method": "GET",
+          "description": "Obtiene un presupuesto específico",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Detalles del presupuesto",
+          "auth_required": true
+        },
+        {
+          "path": "/presupuestos/:id",
+          "method": "PATCH",
+          "description": "Actualiza un presupuesto",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": "Datos a actualizar"
+          },
+          "response": "Presupuesto actualizado",
+          "auth_required": true
+        },
+        {
+          "path": "/presupuestos/:id/gastos",
+          "method": "POST",
+          "description": "Registra un gasto en un presupuesto",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": {
+              "monto": "number (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Nómina",
+      "slug": "payroll",
+      "description": "APIs para gestión de nómina",
+      "endpoints": [
+        {
+          "path": "/nomina/empleados/listar",
+          "method": "GET",
+          "description": "Lista empleados para nómina",
+          "parameters": {},
+          "response": "Listado de empleados",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/:id",
+          "method": "GET",
+          "description": "Obtiene detalles de una nómina",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Detalles de nómina",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/generar",
+          "method": "POST",
+          "description": "Genera una nueva nómina",
+          "parameters": {
+            "body": "Datos de la nómina"
+          },
+          "response": "Nómina generada",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/:id/marcar-pagada",
+          "method": "PATCH",
+          "description": "Marca nómina como pagada",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/:id/cancelar",
+          "method": "PATCH",
+          "description": "Cancela una nómina",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/empleado/:id",
+          "method": "GET",
+          "description": "Obtiene historial de nómina por empleado",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Historial",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/desprendible/generar",
+          "method": "POST",
+          "description": "Genera recibo de nómina",
+          "parameters": {
+            "body": "Datos necesarios"
+          },
+          "response": "URL del recibo",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/:id/desprendible-url",
+          "method": "GET",
+          "description": "Obtiene URL de recibo existente",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "URL del recibo",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/v1/dashboard",
+          "method": "GET",
+          "description": "Obtiene datos para dashboard de nómina",
+          "parameters": {},
+          "response": "Indicadores de nómina",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/v1/listar",
+          "method": "GET",
+          "description": "Lista todas las nóminas (nueva versión)",
+          "parameters": {},
+          "response": "Listado de nóminas",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/v1/detalle/:id",
+          "method": "GET",
+          "description": "Obtiene detalles de nómina (nueva versión)",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Detalles completos",
+          "auth_required": true
+        },
+        {
+          "path": "/nomina/v1/procesarNomina",
+          "method": "POST",
+          "description": "Procesa una nueva nómina (nueva versión)",
+          "parameters": {
+            "body": "Datos de la nómina"
+          },
+          "response": "Nómina procesada",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Capacitaciones",
+      "slug": "training",
+      "description": "APIs para gestión de capacitaciones",
+      "endpoints": [
+        {
+          "path": "/capacitaciones",
+          "method": "GET",
+          "description": "Lista todas las capacitaciones",
+          "parameters": {},
+          "response": "Array de capacitaciones",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones",
+          "method": "POST",
+          "description": "Crea una nueva capacitación",
+          "parameters": {
+            "body": "Datos de la capacitación"
+          },
+          "response": "Capacitación creada",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/:id",
+          "method": "GET",
+          "description": "Obtiene detalles de una capacitación",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Detalles completos",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/:id",
+          "method": "PATCH",
+          "description": "Actualiza una capacitación",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": "Datos a actualizar"
+          },
+          "response": "Capacitación actualizada",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/:id",
+          "method": "DELETE",
+          "description": "Elimina una capacitación",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/:id/estado",
+          "method": "PATCH",
+          "description": "Actualiza el estado de una capacitación",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": {
+              "estado": "string (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/estado/programadas",
+          "method": "GET",
+          "description": "Lista capacitaciones programadas",
+          "parameters": {},
+          "response": "Listado filtrado",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/estado/en-curso",
+          "method": "GET",
+          "description": "Lista capacitaciones en curso",
+          "parameters": {},
+          "response": "Listado filtrado",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/:id/inscripciones",
+          "method": "GET",
+          "description": "Lista inscripciones a una capacitación",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Listado de inscritos",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/:id/inscripciones",
+          "method": "POST",
+          "description": "Inscribe empleados a una capacitación",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": "Datos de inscripción"
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/empleado/:empleadoId",
+          "method": "GET",
+          "description": "Obtiene capacitaciones de un empleado",
+          "parameters": {
+            "path": {
+              "empleadoId": "number (requerido)"
+            }
+          },
+          "response": "Listado de capacitaciones",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/:id/inscripciones/:empleadoId/asistencia",
+          "method": "PATCH",
+          "description": "Registra asistencia",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)",
+              "empleadoId": "number (requerido)"
+            },
+            "body": {
+              "asistio": "boolean (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/:id/inscripciones/:empleadoId/completar",
+          "method": "PATCH",
+          "description": "Marca capacitación como completada",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)",
+              "empleadoId": "number (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/capacitaciones/estadisticas/resumen",
+          "method": "GET",
+          "description": "Obtiene estadísticas de capacitaciones",
+          "parameters": {},
+          "response": "Datos estadísticos",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Microlearning",
+      "slug": "microlearning",
+      "description": "APIs para gestión de contenido de microlearning",
+      "endpoints": [
+        {
+          "path": "/microlearning/contenidos",
+          "method": "GET",
+          "description": "Lista contenidos de microlearning",
+          "parameters": {},
+          "response": "Array de contenidos",
+          "auth_required": true
+        },
+        {
+          "path": "/microlearning/contenidos/:id",
+          "method": "GET",
+          "description": "Obtiene un contenido específico",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Detalles del contenido",
+          "auth_required": true
+        },
+        {
+          "path": "/microlearning/categorias",
+          "method": "GET",
+          "description": "Lista categorías de contenidos",
+          "parameters": {},
+          "response": "Lista de categorías",
+          "auth_required": true
+        },
+        {
+          "path": "/microlearning/recomendaciones",
+          "method": "POST",
+          "description": "Obtiene recomendaciones de contenido",
+          "parameters": {
+            "body": "Criterios de recomendación"
+          },
+          "response": "Contenidos recomendados",
+          "auth_required": true
+        },
+        {
+          "path": "/microlearning/recomendaciones/contextuales",
+          "method": "POST",
+          "description": "Recomendaciones basadas en contexto",
+          "parameters": {
+            "body": "Datos de contexto"
+          },
+          "response": "Contenidos recomendados",
+          "auth_required": true
+        },
+        {
+          "path": "/microlearning/progreso",
+          "method": "POST",
+          "description": "Registra progreso en un contenido",
+          "parameters": {
+            "body": "Datos de progreso"
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/microlearning/valoracion",
+          "method": "POST",
+          "description": "Registra valoración de contenido",
+          "parameters": {
+            "body": "Datos de valoración"
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "slug": "dashboard",
+      "description": "APIs para gestión de dashboard personalizado",
+      "endpoints": [
+        {
+          "path": "/dashboard/layouts",
+          "method": "GET",
+          "description": "Lista layouts de dashboard",
+          "parameters": {},
+          "response": "Array de layouts",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts",
+          "method": "POST",
+          "description": "Crea un nuevo layout",
+          "parameters": {
+            "body": "Datos del layout"
+          },
+          "response": "Layout creado",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts/:id",
+          "method": "GET",
+          "description": "Obtiene un layout específico",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Detalles del layout",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts/:id",
+          "method": "PATCH",
+          "description": "Actualiza un layout",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": "Datos a actualizar"
+          },
+          "response": "Layout actualizado",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts/:id",
+          "method": "DELETE",
+          "description": "Elimina un layout",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts/default",
+          "method": "GET",
+          "description": "Obtiene el layout por defecto",
+          "parameters": {},
+          "response": "Layout por defecto",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts/:id/default",
+          "method": "POST",
+          "description": "Establece un layout como predeterminado",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts/:id/positions",
+          "method": "PATCH",
+          "description": "Actualiza posiciones de widgets",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": "Datos de posiciones"
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts/:id/widgets",
+          "method": "POST",
+          "description": "Añade un widget a un layout",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)"
+            },
+            "body": "Datos del widget"
+          },
+          "response": "Widget añadido",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts/:id/widgets/:widgetId",
+          "method": "PATCH",
+          "description": "Actualiza un widget",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)",
+              "widgetId": "number (requerido)"
+            },
+            "body": "Datos a actualizar"
+          },
+          "response": "Widget actualizado",
+          "auth_required": true
+        },
+        {
+          "path": "/dashboard/layouts/:id/widgets/:widgetId",
+          "method": "DELETE",
+          "description": "Elimina un widget",
+          "parameters": {
+            "path": {
+              "id": "number (requerido)",
+              "widgetId": "number (requerido)"
+            }
+          },
+          "response": "Confirmación",
+          "auth_required": true
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "slug": "users",
+      "description": "APIs para gestión de usuarios",
+      "endpoints": [
+        {
+          "path": "/users",
+          "method": "GET",
+          "description": "Lista todos los usuarios",
+          "parameters": {},
+          "response": "Array de usuarios",
+          "auth_required": true
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "JWT",
+    "header": "Authorization",
+    "format": "Bearer {token}",
+    "expiration": "24h"
+  },
+  "status_codes": {
+    "200": "Petición exitosa con respuesta",
+    "201": "Recurso creado exitosamente",
+    "204": "Petición exitosa sin contenido de respuesta",
+    "400": "Error en la petición del cliente",
+    "401": "Autenticación requerida o fallida",
+    "403": "Cliente autenticado pero sin permisos",
+    "404": "Recurso no encontrado",
+    "500": "Error del servidor"
+  },
+  "pagination": {
+    "query_params": {
+      "page": "Número de página (comenzando desde 1)",
+      "pageSize": "Cantidad de elementos por página"
+    }
+  },
+  "timestamps": {
+    "format": "ISO 8601",
+    "example": "2025-05-01T12:00:00.000Z"
+  }
+}
