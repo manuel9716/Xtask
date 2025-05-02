@@ -52,6 +52,7 @@ export interface Indicador {
   valorBase: number;    // Valor mínimo o punto de partida
   valorMeta: number;    // Valor objetivo a alcanzar
   valorActual?: number; // Valor actual alcanzado (si ya se ha evaluado)
+  valorObtenido?: number; // Alias de valorActual para compatibilidad con API
   
   // Cálculo y evaluación
   formula?: string;    // Fórmula para cálculo automático (opcional)
@@ -63,6 +64,9 @@ export interface Indicador {
   validadoPor?: number; // ID del usuario supervisor que validó
   fechaValidacion?: Date;
   comentariosValidacion?: string;
+  
+  // Asignación
+  empleadoId?: number;  // ID del empleado al que se asigna el KPI (opcional)
   
   // Metadatos
   createdAt: Date;

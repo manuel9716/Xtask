@@ -184,6 +184,35 @@ export function KpiForm({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="empleadoId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Asignar a empleado (opcional)</FormLabel>
+              <Select
+                onValueChange={(value) => field.onChange(parseInt(value))}
+                defaultValue={field.value?.toString()}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar empleado" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">Mi KPI personal</SelectItem>
+                  {empleados.map(empleado => (
+                    <SelectItem key={empleado.id} value={empleado.id.toString()}>
+                      {empleado.nombreCompleto} - {empleado.position}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="flex justify-end space-x-2 pt-4">
           {onCancel && (
             <Button 

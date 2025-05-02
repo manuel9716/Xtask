@@ -166,7 +166,8 @@ export const PanelKpis: React.FC = () => {
       valorEsperado: data.valorEsperado,
       porcentajePeso: data.porcentajePeso,
       mes: data.mes,
-      estado: EstadoKpi.PENDIENTE
+      estado: EstadoKpi.PENDIENTE,
+      empleadoId: data.empleadoId // Incluye el ID del empleado si se seleccionó uno
     });
   };
 

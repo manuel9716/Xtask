@@ -2,10 +2,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Pencil, Check, X, Clock, AlertCircle, ChevronRight } from "lucide-react";
+import { Pencil, Check, X, Clock, AlertCircle, ChevronRight, User } from "lucide-react";
 import { EstadoKpi, Indicador } from "../../domain/entities/Indicador";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useQuery } from "@tanstack/react-query";
+import { Empleado } from "../../domain/repositories/KpiRepository";
+import { KpiApi } from "../../infrastructure/api/kpiApi";
 
 interface KpiCardProps {
   kpi: Indicador;
@@ -15,6 +18,21 @@ interface KpiCardProps {
 }
 
 export function KpiCard({ kpi, onEdit, onResult, onValidate }: KpiCardProps) {
+  // Consulta para obtener empleados
+  const { 
+    data: empleados = [], 
+    isLoading: loadingEmpleados 
+  } = useQuery<Empleado[]>({
+    queryKey: ['/api/kpis/empleados'],
+    staleTime: 60 * 1000, // 1 minuto
+    enabled: !!kpi.empleadoId // Solo cargar si hay un empleado asignado
+  });
+
+  // Encontrar el empleado asignado si existe
+  const empleadoAsignado = kpi.empleadoId 
+    ? empleados.find(emp => emp.id === kpi.empleadoId) 
+    : null;
+
   // Función para determinar color según estado
   const getStatusColor = () => {
     switch (kpi.estado) {
@@ -78,6 +96,12 @@ export function KpiCard({ kpi, onEdit, onResult, onValidate }: KpiCardProps) {
           </Badge>
         </div>
         <CardDescription>{kpi.descripcion}</CardDescription>
+        {empleadoAsignado && (
+          <div className="mt-2 flex items-center text-xs text-muted-foreground">
+            <User className="h-3.5 w-3.5 mr-1" />
+            <span>Asignado a: <span className="font-medium">{empleadoAsignado.nombreCompleto}</span> ({empleadoAsignado.position})</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="pb-1">
         <div className="space-y-3">
