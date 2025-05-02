@@ -159,12 +159,13 @@ export const PanelKpis: React.FC = () => {
 
   // Handlers
   const handleCreateKpi = (data: any) => {
+    console.log("Datos recibidos del formulario:", data);
     createKpiMutation.mutate({
       userId: 0, // El ID real se asigna en el servidor
       nombre: `KPI ${data.mes}`,
       descripcion: data.descripcion,
       formula: data.formula,
-      valorMeta: data.valorEsperado, // Mapeo a valorMeta desde valorEsperado del formulario
+      // Ya no necesitamos valorEsperado ni valorMeta
       valorBase: 0, // Por defecto
       porcentajePeso: data.porcentajePeso,
       tipo: TipoKpi.CUANTITATIVO, // Por defecto
@@ -173,13 +174,15 @@ export const PanelKpis: React.FC = () => {
       fechaInicio: new Date(), // Fecha actual
       fechaFin: new Date(), // Fecha actual (se actualizará en el backend)
       estado: EstadoKpi.PENDIENTE,
-      empleadoId: data.empleadoId // Incluye el ID del empleado si se seleccionó uno
+      mes: data.mes, // Aseguramos que se envía el mes correctamente
+      empleadoId: data.empleadoId || 0 // Incluye el ID del empleado si se seleccionó uno, 0 por defecto
     });
   };
 
   const handleOpenRegisterResult = (kpi: Indicador) => {
     setSelectedKpi(kpi);
-    setResultValue(kpi.valorObtenido?.toString() || "");
+    // Ahora usamos porcentajeCumplimiento en lugar de valorObtenido
+    setResultValue(kpi.porcentajeCumplimiento?.toString() || "");
     setIsRegisterResultOpen(true);
   };
 
@@ -242,7 +245,8 @@ export const PanelKpis: React.FC = () => {
   // Verificar si podemos calcular la bonificación (todos los KPIs tienen resultados)
   const canCalculateBonus = () => {
     if (!kpis || kpis.length === 0) return false;
-    return !kpis.some(kpi => kpi.valorObtenido === undefined);
+    // Ahora usamos porcentajeCumplimiento en lugar de valorObtenido
+    return !kpis.some(kpi => kpi.porcentajeCumplimiento === undefined || kpi.porcentajeCumplimiento === null);
   };
 
   return (
