@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import { Link } from 'wouter';
+import { useToast } from "@/hooks/use-toast";
 
 const EstadoProyecto = Schema.EstadoProyecto;
 import { 
@@ -18,7 +19,8 @@ import {
   ExternalLinkIcon, 
   MoreHorizontal, 
   PauseCircle,
-  UserIcon 
+  UserIcon,
+  Edit
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -43,6 +45,7 @@ interface ProyectoCardProps {
 
 export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: ProyectoCardProps) {
   const [cambioEstadoAbierto, setCambioEstadoAbierto] = useState(false);
+  const { toast } = useToast();
   
   // Formatear fechas para presentación
   const fechaInicio = format(new Date(proyecto.fechaInicio), 'dd MMM yyyy', { locale: es });
@@ -74,17 +77,18 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <Link href={`/admin/proyectos/${proyecto.id}`}>
-              <DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/admin/proyectos/${proyecto.id}`}>
                 <ExternalLinkIcon className="mr-2 h-4 w-4" />
                 Ver detalles
-              </DropdownMenuItem>
-            </Link>
-            <Link href={`/admin/proyectos/${proyecto.id}/editar`}>
-              <DropdownMenuItem>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={`/admin/proyectos/${proyecto.id}/editar`}>
+                <Edit className="mr-2 h-4 w-4" />
                 Editar
-              </DropdownMenuItem>
-            </Link>
+              </Link>
+            </DropdownMenuItem>
             
             <DropdownMenuSeparator />
             
@@ -107,9 +111,18 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
                 onClick={async () => {
                   try {
                     await proyectosApi.cambiarEstado(proyecto.id, "ACTIVO");
+                    toast({
+                      title: "Estado actualizado",
+                      description: "El proyecto ha sido activado."
+                    });
                     if (onEstadoCambiado) onEstadoCambiado();
                   } catch (error) {
                     console.error("Error al activar proyecto:", error);
+                    toast({
+                      title: "Error",
+                      description: "No se pudo cambiar el estado del proyecto",
+                      variant: "destructive"
+                    });
                   }
                 }}
                 className="text-primary-600 focus:text-primary-600"
