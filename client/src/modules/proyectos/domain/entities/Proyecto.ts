@@ -1,12 +1,10 @@
+import * as Schema from '@shared/schema';
+
 /**
- * Enum que define los posibles estados de un proyecto
+ * Define los posibles estados de un proyecto
  */
-export enum EstadoProyecto {
-  ACTIVO = 'ACTIVO',
-  PAUSADO = 'PAUSADO',
-  RETRASADO = 'RETRASADO',
-  FINALIZADO = 'FINALIZADO'
-}
+// Usamos el enum desde Schema
+export const EstadoProyecto = Schema.EstadoProyecto;
 
 /**
  * Interfaz que define la estructura de un proyecto en el sistema
@@ -15,7 +13,7 @@ export interface Proyecto {
   id: number;
   nombre: string;
   descripcion: string;
-  estado: EstadoProyecto;
+  estado: typeof EstadoProyecto[keyof typeof EstadoProyecto];
   presupuesto: number;
   costoActual: number;
   fechaInicio: Date | string;
@@ -37,7 +35,7 @@ export interface CrearProyectoDTO {
   fechaFin?: Date | string | null;
   departamentoId?: number | null;
   responsableId?: number | null;
-  estado?: EstadoProyecto;
+  estado?: typeof EstadoProyecto[keyof typeof EstadoProyecto];
 }
 
 /**
@@ -58,7 +56,7 @@ export interface ActualizarProyectoDTO {
  * DTO para cambiar el estado de un proyecto
  */
 export interface CambiarEstadoProyectoDTO {
-  estado: EstadoProyecto;
+  estado: typeof EstadoProyecto[keyof typeof EstadoProyecto];
 }
 
 /**

@@ -62,7 +62,7 @@ export interface ProyectoRepository {
   /**
    * Cambia el estado de un proyecto
    */
-  cambiarEstado(id: number, cambioEstado: EstadoProyecto): Promise<Proyecto>;
+  cambiarEstado(id: number, cambioEstado: string): Promise<Proyecto>;
   
   /**
    * Obtiene indicadores y métricas de proyectos
