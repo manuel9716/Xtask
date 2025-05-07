@@ -115,6 +115,37 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
               </DropdownMenuItem>
             )}
             
+            {/* Opción para archivar proyectos ya finalizados o cancelados */}
+            {(proyecto.estado === EstadoProyecto.FINALIZADO || proyecto.estado === EstadoProyecto.CANCELADO) && (
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await proyectosApi.cambiarEstado(proyecto.id, "ARCHIVADO");
+                    if (onEstadoCambiado) onEstadoCambiado();
+                  } catch (error) {
+                    console.error("Error al archivar proyecto:", error);
+                  }
+                }}
+                className="text-blue-600 focus:text-blue-600"
+              >
+                <svg 
+                  className="mr-2 h-4 w-4" 
+                  width="15" 
+                  height="15" 
+                  viewBox="0 0 15 15" 
+                  fill="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path 
+                    d="M2 5h11v7.5c0 .83-.67 1.5-1.5 1.5h-8A1.5 1.5 0 012 12.5V5z" 
+                    stroke="currentColor"
+                  />
+                  <path d="M6 8h3M1 5h13V3.5C14 2.67 13.33 2 12.5 2h-10C1.67 2 1 2.67 1 3.5V5z" stroke="currentColor" />
+                </svg>
+                Archivar proyecto
+              </DropdownMenuItem>
+            )}
+            
             {proyecto.estado !== EstadoProyecto.PAUSADO && proyecto.estado !== EstadoProyecto.FINALIZADO && (
               <DropdownMenuItem 
                 onClick={async () => {

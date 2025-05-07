@@ -222,6 +222,47 @@ export function DetalleProyecto() {
                 </DropdownMenuItem>
               </CambiarEstadoProyectoDialog>
               
+              {/* Opción para archivar proyectos finalizados o cancelados */}
+              {(proyecto.estado === 'FINALIZADO' || proyecto.estado === 'CANCELADO') && 
+                proyecto.estado !== 'ARCHIVADO' && (
+                <DropdownMenuItem 
+                  onClick={async () => {
+                    try {
+                      await proyectosApi.cambiarEstado(proyecto.id, "ARCHIVADO");
+                      toast({
+                        title: "Proyecto archivado",
+                        description: "El proyecto ha sido archivado correctamente."
+                      });
+                      refetch();
+                    } catch (error) {
+                      console.error("Error al archivar proyecto:", error);
+                      toast({
+                        title: "Error",
+                        description: "No se pudo archivar el proyecto",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  className="text-blue-600 focus:text-blue-600"
+                >
+                  <svg 
+                    className="mr-2 h-4 w-4" 
+                    width="15" 
+                    height="15" 
+                    viewBox="0 0 15 15" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path 
+                      d="M2 5h11v7.5c0 .83-.67 1.5-1.5 1.5h-8A1.5 1.5 0 012 12.5V5z" 
+                      stroke="currentColor"
+                    />
+                    <path d="M6 8h3M1 5h13V3.5C14 2.67 13.33 2 12.5 2h-10C1.67 2 1 2.67 1 3.5V5z" stroke="currentColor" />
+                  </svg>
+                  Archivar proyecto
+                </DropdownMenuItem>
+              )}
+              
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem 
