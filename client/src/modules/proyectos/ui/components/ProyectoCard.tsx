@@ -1,38 +1,16 @@
 import { Proyecto } from '../../domain/entities/Proyecto';
 import * as Schema from '@shared/schema';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import { Link } from 'wouter';
-import { useToast } from "@/hooks/use-toast";
-
-const EstadoProyecto = Schema.EstadoProyecto;
-import { 
-  CalendarIcon, 
-  CheckCircle2,
-  ClockIcon,
-  DollarSignIcon, 
-  ExternalLinkIcon, 
-  MoreHorizontal, 
-  PauseCircle,
-  UserIcon,
-  Edit
-} from 'lucide-react';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import { CalendarIcon, DollarSignIcon, UserIcon } from 'lucide-react';
 import { EstadoProyectoBadge } from './EstadoProyectoBadge';
 import { useState } from 'react';
 import { CambiarEstadoProyectoDialog } from './CambiarEstadoProyectoDialog';
-import { proyectosApi } from '../../infrastructure/api/proyectosApi';
 
 interface ProyectoCardProps {
   proyecto: Proyecto & { 
@@ -45,7 +23,6 @@ interface ProyectoCardProps {
 
 export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: ProyectoCardProps) {
   const [cambioEstadoAbierto, setCambioEstadoAbierto] = useState(false);
-  const { toast } = useToast();
   
   // Formatear fechas para presentación
   const fechaInicio = format(new Date(proyecto.fechaInicio), 'dd MMM yyyy', { locale: es });
@@ -70,219 +47,15 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
           <EstadoProyectoBadge estado={proyecto.estado} className="mt-1" />
         </div>
         
-        {/* Dropdown menu para acciones de proyecto */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="z-10">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href={`/admin/proyectos/${proyecto.id}`}>
-                <ExternalLinkIcon className="mr-2 h-4 w-4" />
-                Ver detalles
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href={`/admin/proyectos/${proyecto.id}/editar`}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </Link>
-            </DropdownMenuItem>
-            
-            <DropdownMenuSeparator />
-            
-            {/* Acciones de estado */}
-            <DropdownMenuItem 
-              onClick={() => setCambioEstadoAbierto(true)}
-              className="text-primary focus:text-primary"
-            >
-              <ClockIcon className="mr-2 h-4 w-4" />
-              Cambiar estado
-            </DropdownMenuItem>
-            
-            {/* Acciones rápidas de cambio estado */}
-            <DropdownMenuSeparator />
-            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Cambiar estado a:</div>
-
-            {/* Marcar como ACTIVO */}
-            {proyecto.estado !== EstadoProyecto.ACTIVO && (
-              <DropdownMenuItem 
-                onClick={async () => {
-                  try {
-                    await proyectosApi.cambiarEstado(proyecto.id, "ACTIVO");
-                    toast({
-                      title: "Estado actualizado",
-                      description: "El proyecto ha sido activado."
-                    });
-                    if (onEstadoCambiado) onEstadoCambiado();
-                  } catch (error) {
-                    console.error("Error al activar proyecto:", error);
-                    toast({
-                      title: "Error",
-                      description: "No se pudo cambiar el estado del proyecto",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-                className="text-primary-600 focus:text-primary-600"
-              >
-                <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                </svg>
-                Activar proyecto
-              </DropdownMenuItem>
-            )}
-            
-            {/* Marcar como FINALIZADO */}
-            {proyecto.estado !== EstadoProyecto.FINALIZADO && (
-              <DropdownMenuItem 
-                onClick={async () => {
-                  try {
-                    await proyectosApi.cambiarEstado(proyecto.id, "FINALIZADO");
-                    toast({
-                      title: "Estado actualizado",
-                      description: "El proyecto ha sido finalizado."
-                    });
-                    if (onEstadoCambiado) onEstadoCambiado();
-                  } catch (error) {
-                    console.error("Error al finalizar proyecto:", error);
-                    toast({
-                      title: "Error",
-                      description: "No se pudo cambiar el estado del proyecto",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-                className="text-green-600 focus:text-green-600"
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Finalizar proyecto
-              </DropdownMenuItem>
-            )}
-            
-            {/* Marcar como RETRASADO */}
-            {proyecto.estado !== EstadoProyecto.RETRASADO && (
-              <DropdownMenuItem 
-                onClick={async () => {
-                  try {
-                    await proyectosApi.cambiarEstado(proyecto.id, "RETRASADO");
-                    toast({
-                      title: "Estado actualizado",
-                      description: "El proyecto ha sido marcado como retrasado."
-                    });
-                    if (onEstadoCambiado) onEstadoCambiado();
-                  } catch (error) {
-                    console.error("Error al marcar como retrasado:", error);
-                    toast({
-                      title: "Error",
-                      description: "No se pudo cambiar el estado del proyecto",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-                className="text-red-600 focus:text-red-600"
-              >
-                <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M12 8v4l2 2"/>
-                </svg>
-                Marcar como retrasado
-              </DropdownMenuItem>
-            )}
-            
-            {/* Marcar como PAUSADO */}
-            {proyecto.estado !== EstadoProyecto.PAUSADO && (
-              <DropdownMenuItem 
-                onClick={async () => {
-                  try {
-                    await proyectosApi.cambiarEstado(proyecto.id, "PAUSADO");
-                    toast({
-                      title: "Estado actualizado",
-                      description: "El proyecto ha sido pausado."
-                    });
-                    if (onEstadoCambiado) onEstadoCambiado();
-                  } catch (error) {
-                    console.error("Error al pausar proyecto:", error);
-                    toast({
-                      title: "Error",
-                      description: "No se pudo cambiar el estado del proyecto",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-                className="text-amber-600 focus:text-amber-600"
-              >
-                <PauseCircle className="mr-2 h-4 w-4" />
-                Pausar proyecto
-              </DropdownMenuItem>
-            )}
-            
-            {/* Opción para archivar proyectos ya finalizados o cancelados */}
-            {(proyecto.estado === EstadoProyecto.FINALIZADO || proyecto.estado === EstadoProyecto.CANCELADO) && (
-              <DropdownMenuItem 
-                onClick={async () => {
-                  try {
-                    await proyectosApi.cambiarEstado(proyecto.id, "ARCHIVADO");
-                    toast({
-                      title: "Estado actualizado",
-                      description: "El proyecto ha sido archivado."
-                    });
-                    if (onEstadoCambiado) onEstadoCambiado();
-                  } catch (error) {
-                    console.error("Error al archivar proyecto:", error);
-                    toast({
-                      title: "Error",
-                      description: "No se pudo archivar el proyecto",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-                className="text-blue-600 focus:text-blue-600"
-              >
-                <svg 
-                  className="mr-2 h-4 w-4" 
-                  width="15" 
-                  height="15" 
-                  viewBox="0 0 15 15" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path 
-                    d="M2 5h11v7.5c0 .83-.67 1.5-1.5 1.5h-8A1.5 1.5 0 012 12.5V5z" 
-                    stroke="currentColor"
-                  />
-                  <path d="M6 8h3M1 5h13V3.5C14 2.67 13.33 2 12.5 2h-10C1.67 2 1 2.67 1 3.5V5z" stroke="currentColor" />
-                </svg>
-                Archivar proyecto
-              </DropdownMenuItem>
-            )}
-            
-            <DropdownMenuSeparator />
-            
-            {onEliminar && (
-              <DropdownMenuItem 
-                onClick={() => onEliminar(proyecto.id)}
-                className="text-destructive focus:text-destructive"
-              >
-                Eliminar
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-          
-          {/* Diálogo para cambiar estado */}
-          <CambiarEstadoProyectoDialog
-            proyectoId={proyecto.id}
-            estadoActual={proyecto.estado}
-            onEstadoCambiado={onEstadoCambiado}
-            open={cambioEstadoAbierto}
-            onOpenChange={setCambioEstadoAbierto}
-          >
-            {/* Este children no se usa, pero es requerido por la interfaz del componente */}
-            <span></span>
-          </CambiarEstadoProyectoDialog>
-        </DropdownMenu>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => setCambioEstadoAbierto(true)}
+        >
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
+            <path d="M3.625 7.5C3.625 8.12132 3.12132 8.625 2.5 8.625C1.87868 8.625 1.375 8.12132 1.375 7.5C1.375 6.87868 1.87868 6.375 2.5 6.375C3.12132 6.375 3.625 6.87868 3.625 7.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM13.625 7.5C13.625 8.12132 13.1213 8.625 12.5 8.625C11.8787 8.625 11.375 8.12132 11.375 7.5C11.375 6.87868 11.8787 6.375 12.5 6.375C13.1213 6.375 13.625 6.87868 13.625 7.5Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+          </svg>
+        </Button>
       </CardHeader>
       
       <CardContent className="p-4">
@@ -340,6 +113,17 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
           Actualizado: {format(new Date(proyecto.updatedAt), 'dd/MM/yyyy', { locale: es })}
         </div>
       </CardFooter>
+      
+      {/* Diálogo para cambiar estado */}
+      <CambiarEstadoProyectoDialog
+        proyectoId={proyecto.id}
+        estadoActual={proyecto.estado}
+        onEstadoCambiado={onEstadoCambiado}
+        open={cambioEstadoAbierto}
+        onOpenChange={setCambioEstadoAbierto}
+      >
+        <span></span>
+      </CambiarEstadoProyectoDialog>
     </Card>
   );
 }
