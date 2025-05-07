@@ -97,7 +97,31 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
               Cambiar estado
             </DropdownMenuItem>
             
-            {/* Acciones rápidas de estado */}
+            {/* Acciones rápidas de cambio estado */}
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Cambiar estado a:</div>
+
+            {/* Marcar como ACTIVO */}
+            {proyecto.estado !== EstadoProyecto.ACTIVO && (
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await proyectosApi.cambiarEstado(proyecto.id, "ACTIVO");
+                    if (onEstadoCambiado) onEstadoCambiado();
+                  } catch (error) {
+                    console.error("Error al activar proyecto:", error);
+                  }
+                }}
+                className="text-primary-600 focus:text-primary-600"
+              >
+                <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                Activar proyecto
+              </DropdownMenuItem>
+            )}
+            
+            {/* Marcar como FINALIZADO */}
             {proyecto.estado !== EstadoProyecto.FINALIZADO && (
               <DropdownMenuItem 
                 onClick={async () => {
@@ -112,6 +136,45 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
                 Finalizar proyecto
+              </DropdownMenuItem>
+            )}
+            
+            {/* Marcar como RETRASADO */}
+            {proyecto.estado !== EstadoProyecto.RETRASADO && (
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await proyectosApi.cambiarEstado(proyecto.id, "RETRASADO");
+                    if (onEstadoCambiado) onEstadoCambiado();
+                  } catch (error) {
+                    console.error("Error al marcar como retrasado:", error);
+                  }
+                }}
+                className="text-red-600 focus:text-red-600"
+              >
+                <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 8v4l2 2"/>
+                </svg>
+                Marcar como retrasado
+              </DropdownMenuItem>
+            )}
+            
+            {/* Marcar como PAUSADO */}
+            {proyecto.estado !== EstadoProyecto.PAUSADO && (
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await proyectosApi.cambiarEstado(proyecto.id, "PAUSADO");
+                    if (onEstadoCambiado) onEstadoCambiado();
+                  } catch (error) {
+                    console.error("Error al pausar proyecto:", error);
+                  }
+                }}
+                className="text-amber-600 focus:text-amber-600"
+              >
+                <PauseCircle className="mr-2 h-4 w-4" />
+                Pausar proyecto
               </DropdownMenuItem>
             )}
             
@@ -143,23 +206,6 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
                   <path d="M6 8h3M1 5h13V3.5C14 2.67 13.33 2 12.5 2h-10C1.67 2 1 2.67 1 3.5V5z" stroke="currentColor" />
                 </svg>
                 Archivar proyecto
-              </DropdownMenuItem>
-            )}
-            
-            {proyecto.estado !== EstadoProyecto.PAUSADO && proyecto.estado !== EstadoProyecto.FINALIZADO && (
-              <DropdownMenuItem 
-                onClick={async () => {
-                  try {
-                    await proyectosApi.cambiarEstado(proyecto.id, "PAUSADO");
-                    if (onEstadoCambiado) onEstadoCambiado();
-                  } catch (error) {
-                    console.error("Error al pausar proyecto:", error);
-                  }
-                }}
-                className="text-amber-600 focus:text-amber-600"
-              >
-                <PauseCircle className="mr-2 h-4 w-4" />
-                Pausar proyecto
               </DropdownMenuItem>
             )}
             

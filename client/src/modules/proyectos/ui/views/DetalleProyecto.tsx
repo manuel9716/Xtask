@@ -218,9 +218,102 @@ export function DetalleProyecto() {
                 onEstadoCambiado={refetch}
               >
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  Cambiar estado
+                  Cambiar estado (avanzado)
                 </DropdownMenuItem>
               </CambiarEstadoProyectoDialog>
+              
+              {/* Menú para cambiar estados rápidamente */}
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Cambiar estado a:</div>
+              
+              {/* Marcar como ACTIVO */}
+              {proyecto.estado !== "ACTIVO" && (
+                <DropdownMenuItem 
+                  onClick={async () => {
+                    try {
+                      await proyectosApi.cambiarEstado(proyecto.id, "ACTIVO");
+                      toast({
+                        title: "Estado actualizado",
+                        description: "El proyecto ha sido marcado como activo."
+                      });
+                      refetch();
+                    } catch (error) {
+                      console.error("Error al cambiar estado:", error);
+                      toast({
+                        title: "Error",
+                        description: "No se pudo cambiar el estado del proyecto",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  className="text-primary-600 focus:text-primary-600"
+                >
+                  <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                  </svg>
+                  Activar proyecto
+                </DropdownMenuItem>
+              )}
+              
+              {/* Marcar como RETRASADO */}
+              {proyecto.estado !== "RETRASADO" && (
+                <DropdownMenuItem 
+                  onClick={async () => {
+                    try {
+                      await proyectosApi.cambiarEstado(proyecto.id, "RETRASADO");
+                      toast({
+                        title: "Estado actualizado",
+                        description: "El proyecto ha sido marcado como retrasado."
+                      });
+                      refetch();
+                    } catch (error) {
+                      console.error("Error al cambiar estado:", error);
+                      toast({
+                        title: "Error",
+                        description: "No se pudo cambiar el estado del proyecto",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4l2 2"/>
+                  </svg>
+                  Marcar como retrasado
+                </DropdownMenuItem>
+              )}
+              
+              {/* Marcar como FINALIZADO */}
+              {proyecto.estado !== "FINALIZADO" && (
+                <DropdownMenuItem 
+                  onClick={async () => {
+                    try {
+                      await proyectosApi.cambiarEstado(proyecto.id, "FINALIZADO");
+                      toast({
+                        title: "Estado actualizado",
+                        description: "El proyecto ha sido marcado como finalizado."
+                      });
+                      refetch();
+                    } catch (error) {
+                      console.error("Error al cambiar estado:", error);
+                      toast({
+                        title: "Error",
+                        description: "No se pudo cambiar el estado del proyecto",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  className="text-green-600 focus:text-green-600"
+                >
+                  <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  Finalizar proyecto
+                </DropdownMenuItem>
+              )}
               
               {/* Opción para archivar proyectos finalizados o cancelados */}
               {(proyecto.estado === 'FINALIZADO' || proyecto.estado === 'CANCELADO') && 
