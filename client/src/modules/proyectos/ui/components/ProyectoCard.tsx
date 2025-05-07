@@ -1,4 +1,5 @@
-import { Proyecto, EstadoProyecto } from '../../domain/entities/Proyecto';
+import { Proyecto } from '../../domain/entities/Proyecto';
+import * as Schema from '@shared/schema';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import { Link } from 'wouter';
+
+const EstadoProyecto = Schema.EstadoProyecto;
 import { 
   CalendarIcon, 
   CheckCircle2,
@@ -99,7 +102,7 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
               <DropdownMenuItem 
                 onClick={async () => {
                   try {
-                    await proyectosApi.cambiarEstado(proyecto.id, EstadoProyecto.FINALIZADO);
+                    await proyectosApi.cambiarEstado(proyecto.id, "FINALIZADO");
                     if (onEstadoCambiado) onEstadoCambiado();
                   } catch (error) {
                     console.error("Error al finalizar proyecto:", error);
@@ -116,7 +119,7 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
               <DropdownMenuItem 
                 onClick={async () => {
                   try {
-                    await proyectosApi.cambiarEstado(proyecto.id, EstadoProyecto.PAUSADO);
+                    await proyectosApi.cambiarEstado(proyecto.id, "PAUSADO");
                     if (onEstadoCambiado) onEstadoCambiado();
                   } catch (error) {
                     console.error("Error al pausar proyecto:", error);

@@ -60,7 +60,7 @@ export const proyectosApi = {
   /**
    * Cambia el estado de un proyecto
    */
-  async cambiarEstado(id: number, estado: EstadoProyecto): Promise<Proyecto> {
+  async cambiarEstado(id: number, estado: string): Promise<Proyecto> {
     const response = await apiRequest('PATCH', `/api/proyectos/${id}/estado`, { estado });
     return response.json();
   },

@@ -1,10 +1,12 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { EstadoProyecto } from "@shared/schema";
+import * as Schema from "@shared/schema";
 import { Clock, CheckCircle, PauseCircle, XCircle, Archive, AlertCircle } from "lucide-react";
 
+const EstadoProyecto = Schema.EstadoProyecto;
+
 interface EstadoProyectoBadgeProps {
-  estado: EstadoProyecto;
+  estado: typeof EstadoProyecto[keyof typeof EstadoProyecto];
   className?: string;
 }
 

@@ -20,14 +20,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useCambiarEstadoProyecto } from '../../application/useCases/cambiarEstadoProyecto';
-import { EstadoProyecto } from '../../domain/entities/Proyecto';
+import * as Schema from '@shared/schema';
 import { EstadoProyectoBadge } from './EstadoProyectoBadge';
 import { useToast } from '@/hooks/use-toast';
+
+const EstadoProyecto = Schema.EstadoProyecto;
 
 interface CambiarEstadoProyectoDialogProps {
   children: ReactNode;
   proyectoId: number;
-  estadoActual: EstadoProyecto;
+  estadoActual: typeof EstadoProyecto[keyof typeof EstadoProyecto];
   onEstadoCambiado?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -43,7 +45,7 @@ export function CambiarEstadoProyectoDialog({
 }: CambiarEstadoProyectoDialogProps) {
   // Usar estado local solo si no hay props de control externo
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-  const [estado, setEstado] = useState<EstadoProyecto | ''>('');
+  const [estado, setEstado] = useState<typeof EstadoProyecto[keyof typeof EstadoProyecto] | ''>('');
   const [comentario, setComentario] = useState('');
   
   // Determinar si el componente está controlado externamente
@@ -114,7 +116,7 @@ export function CambiarEstadoProyectoDialog({
             <Label htmlFor="estado">Nuevo estado</Label>
             <Select
               value={estado}
-              onValueChange={(value) => setEstado(value as EstadoProyecto)}
+              onValueChange={(value) => setEstado(value as typeof EstadoProyecto[keyof typeof EstadoProyecto])}
             >
               <SelectTrigger id="estado">
                 <SelectValue placeholder="Seleccionar estado" />
