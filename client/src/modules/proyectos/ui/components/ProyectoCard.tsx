@@ -1,5 +1,4 @@
-import { Proyecto } from '../../domain/entities/Proyecto';
-import { EstadoProyecto } from '@shared/schema';
+import { Proyecto, EstadoProyecto } from '../../domain/entities/Proyecto';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,6 +27,7 @@ import {
 import { EstadoProyectoBadge } from './EstadoProyectoBadge';
 import { useState } from 'react';
 import { CambiarEstadoProyectoDialog } from './CambiarEstadoProyectoDialog';
+import { proyectosApi } from '../../infrastructure/api/proyectosApi';
 
 interface ProyectoCardProps {
   proyecto: Proyecto & { 
@@ -43,8 +43,8 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
   
   // Formatear fechas para presentación
   const fechaInicio = format(new Date(proyecto.fechaInicio), 'dd MMM yyyy', { locale: es });
-  const fechaFinPrevista = proyecto.fechaFinPrevista 
-    ? format(new Date(proyecto.fechaFinPrevista), 'dd MMM yyyy', { locale: es })
+  const fechaFin = proyecto.fechaFin 
+    ? format(new Date(proyecto.fechaFin), 'dd MMM yyyy', { locale: es })
     : 'No definida';
   
   // Clase para resaltar si está retrasado
@@ -175,7 +175,7 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
               <span>Fin previsto:</span>
             </div>
             <span className={`font-medium ${proyecto.retrasado ? 'text-destructive' : ''}`}>
-              {fechaFinPrevista}
+              {fechaFin}
             </span>
           </div>
           
@@ -209,21 +209,6 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
         <div className="text-xs text-muted-foreground">
           Actualizado: {format(new Date(proyecto.updatedAt), 'dd/MM/yyyy', { locale: es })}
         </div>
-        
-        {proyecto.tags && proyecto.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 justify-end">
-            {proyecto.tags.slice(0, 2).map((tag, i) => (
-              <Badge key={i} variant="outline" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-            {proyecto.tags.length > 2 && (
-              <Badge variant="outline" className="text-xs">
-                +{proyecto.tags.length - 2}
-              </Badge>
-            )}
-          </div>
-        )}
       </CardFooter>
     </Card>
   );

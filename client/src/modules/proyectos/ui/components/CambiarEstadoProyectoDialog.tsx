@@ -29,17 +29,29 @@ interface CambiarEstadoProyectoDialogProps {
   proyectoId: number;
   estadoActual: EstadoProyecto;
   onEstadoCambiado?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function CambiarEstadoProyectoDialog({ 
   children, 
   proyectoId, 
   estadoActual,
-  onEstadoCambiado
+  onEstadoCambiado,
+  open: controlledOpen,
+  onOpenChange: controlledOpenChange
 }: CambiarEstadoProyectoDialogProps) {
-  const [open, setOpen] = useState(false);
+  // Usar estado local solo si no hay props de control externo
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [estado, setEstado] = useState<EstadoProyecto | ''>('');
   const [comentario, setComentario] = useState('');
+  
+  // Determinar si el componente está controlado externamente
+  const isControlled = controlledOpen !== undefined && controlledOpenChange !== undefined;
+  
+  // Usar los valores controlados o no controlados según corresponda
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const setOpen = isControlled ? controlledOpenChange : setUncontrolledOpen;
   
   const mutation = useCambiarEstadoProyecto(proyectoId);
   const { toast } = useToast();
