@@ -2,11 +2,13 @@ import {
   Proyecto, 
   CrearProyectoDTO, 
   ActualizarProyectoDTO, 
-  EstadoProyecto,
   FiltrosProyecto,
   ProyectoMetricas,
   calcularMetricasProyecto
 } from '../entities/Proyecto';
+import * as Schema from '@shared/schema';
+
+const EstadoProyecto = Schema.EstadoProyecto;
 import { ProyectoRepository, ProyectosIndicadores } from '../repositories/ProyectoRepository';
 
 /**
@@ -79,7 +81,7 @@ export class ProyectoService {
   /**
    * Cambia el estado de un proyecto
    */
-  async cambiarEstadoProyecto(id: number, estado: EstadoProyecto): Promise<Proyecto> {
+  async cambiarEstadoProyecto(id: number, estado: string): Promise<Proyecto> {
     // Verificar existencia
     const proyectoExistente = await this.repository.obtenerPorId(id);
     if (!proyectoExistente) {

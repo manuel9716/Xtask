@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Proyecto, EstadoProyecto, CambiarEstadoProyectoDTO } from '../../domain/entities/Proyecto';
+import { Proyecto, CambiarEstadoProyectoDTO } from '../../domain/entities/Proyecto';
 import { proyectoService } from '../../infrastructure/di/container';
+import * as Schema from '@shared/schema';
+
+const EstadoProyecto = Schema.EstadoProyecto;
 
 /**
  * Hook para cambiar el estado de un proyecto
@@ -8,7 +11,7 @@ import { proyectoService } from '../../infrastructure/di/container';
 export function useCambiarEstadoProyecto(id: number) {
   const queryClient = useQueryClient();
   
-  return useMutation<Proyecto, Error, { estado: EstadoProyecto, comentario?: string }>({
+  return useMutation<Proyecto, Error, { estado: typeof EstadoProyecto[keyof typeof EstadoProyecto], comentario?: string }>({
     mutationFn: async ({ estado }) => {
       try {
         return await proyectoService.cambiarEstadoProyecto(id, estado);
@@ -27,14 +30,14 @@ export function useCambiarEstadoProyecto(id: number) {
 /**
  * Use case para cambiar el estado de un proyecto
  */
-export async function cambiarEstadoProyecto(id: number, estado: EstadoProyecto): Promise<Proyecto> {
+export async function cambiarEstadoProyecto(id: number, estado: typeof EstadoProyecto[keyof typeof EstadoProyecto]): Promise<Proyecto> {
   return proyectoService.cambiarEstadoProyecto(id, estado);
 }
 
 /**
  * Obtiene el siguiente estado de un proyecto en la secuencia típica
  */
-export function obtenerSiguienteEstado(estadoActual: EstadoProyecto): EstadoProyecto {
+export function obtenerSiguienteEstado(estadoActual: typeof EstadoProyecto[keyof typeof EstadoProyecto]): typeof EstadoProyecto[keyof typeof EstadoProyecto] {
   switch (estadoActual) {
     case EstadoProyecto.ACTIVO:
       return EstadoProyecto.PAUSADO;

@@ -2,7 +2,6 @@ import {
   Proyecto, 
   CrearProyectoDTO, 
   ActualizarProyectoDTO, 
-  EstadoProyecto,
   FiltrosProyecto 
 } from '../entities/Proyecto';
 
