@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Link } from 'wouter';
 import { CalendarIcon, DollarSignIcon, UserIcon } from 'lucide-react';
 import { EstadoProyectoBadge } from './EstadoProyectoBadge';
-import { MenuAccionesProyecto } from './MenuAccionesProyecto';
+import { AccionesProyectoSimple } from './AccionesProyectoSimple';
 
 interface ProyectoCardProps {
   proyecto: Proyecto & { 
@@ -31,7 +31,7 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
     : '';
   
   return (
-    <Card className={`hover:shadow-md transition-shadow ${borderClass}`}>
+    <Card className={`hover:shadow-md transition-shadow ${borderClass} relative`}>
       <CardHeader className="p-4 pb-0 flex flex-row justify-between items-start space-y-0">
         <div>
           <Link href={`/admin/proyectos/${proyecto.id}`}>
@@ -42,8 +42,8 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
           <EstadoProyectoBadge estado={proyecto.estado} className="mt-1" />
         </div>
         
-        {/* Menú de acciones */}
-        <MenuAccionesProyecto 
+        {/* Menú de acciones simple */}
+        <AccionesProyectoSimple 
           proyectoId={proyecto.id}
           estadoActual={proyecto.estado}
           onEliminar={onEliminar}

@@ -30,7 +30,7 @@ interface CambiarEstadoProyectoDialogProps {
   children: ReactNode;
   proyectoId: number;
   estadoActual: typeof EstadoProyecto[keyof typeof EstadoProyecto];
-  onEstadoCambiado?: () => void;
+  onEstadoCambiado?: (nuevoEstado?: typeof EstadoProyecto[keyof typeof EstadoProyecto]) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
@@ -86,7 +86,7 @@ export function CambiarEstadoProyectoDialog({
       
       setOpen(false);
       if (onEstadoCambiado) {
-        onEstadoCambiado();
+        onEstadoCambiado(estado);
       }
     } catch (error) {
       // El manejo de errores ya se hace en el hook
