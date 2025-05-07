@@ -70,9 +70,10 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
           <EstadoProyectoBadge estado={proyecto.estado} className="mt-1" />
         </div>
         
+        {/* Dropdown menu para acciones de proyecto */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="z-10">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
