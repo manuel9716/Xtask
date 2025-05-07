@@ -140,9 +140,18 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
                 onClick={async () => {
                   try {
                     await proyectosApi.cambiarEstado(proyecto.id, "FINALIZADO");
+                    toast({
+                      title: "Estado actualizado",
+                      description: "El proyecto ha sido finalizado."
+                    });
                     if (onEstadoCambiado) onEstadoCambiado();
                   } catch (error) {
                     console.error("Error al finalizar proyecto:", error);
+                    toast({
+                      title: "Error",
+                      description: "No se pudo cambiar el estado del proyecto",
+                      variant: "destructive"
+                    });
                   }
                 }}
                 className="text-green-600 focus:text-green-600"
@@ -158,9 +167,18 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
                 onClick={async () => {
                   try {
                     await proyectosApi.cambiarEstado(proyecto.id, "RETRASADO");
+                    toast({
+                      title: "Estado actualizado",
+                      description: "El proyecto ha sido marcado como retrasado."
+                    });
                     if (onEstadoCambiado) onEstadoCambiado();
                   } catch (error) {
                     console.error("Error al marcar como retrasado:", error);
+                    toast({
+                      title: "Error",
+                      description: "No se pudo cambiar el estado del proyecto",
+                      variant: "destructive"
+                    });
                   }
                 }}
                 className="text-red-600 focus:text-red-600"
@@ -179,9 +197,18 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
                 onClick={async () => {
                   try {
                     await proyectosApi.cambiarEstado(proyecto.id, "PAUSADO");
+                    toast({
+                      title: "Estado actualizado",
+                      description: "El proyecto ha sido pausado."
+                    });
                     if (onEstadoCambiado) onEstadoCambiado();
                   } catch (error) {
                     console.error("Error al pausar proyecto:", error);
+                    toast({
+                      title: "Error",
+                      description: "No se pudo cambiar el estado del proyecto",
+                      variant: "destructive"
+                    });
                   }
                 }}
                 className="text-amber-600 focus:text-amber-600"
@@ -197,9 +224,18 @@ export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: Proyect
                 onClick={async () => {
                   try {
                     await proyectosApi.cambiarEstado(proyecto.id, "ARCHIVADO");
+                    toast({
+                      title: "Estado actualizado",
+                      description: "El proyecto ha sido archivado."
+                    });
                     if (onEstadoCambiado) onEstadoCambiado();
                   } catch (error) {
                     console.error("Error al archivar proyecto:", error);
+                    toast({
+                      title: "Error",
+                      description: "No se pudo archivar el proyecto",
+                      variant: "destructive"
+                    });
                   }
                 }}
                 className="text-blue-600 focus:text-blue-600"
