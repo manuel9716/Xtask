@@ -63,7 +63,7 @@ export interface CambiarEstadoProyectoDTO {
  * Filtros para buscar proyectos
  */
 export interface FiltrosProyecto {
-  estado?: EstadoProyecto;
+  estado?: typeof EstadoProyecto[keyof typeof EstadoProyecto];
   busqueda?: string;
   departamentoId?: number;
   responsableId?: number;
