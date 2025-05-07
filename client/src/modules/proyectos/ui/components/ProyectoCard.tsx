@@ -10,18 +10,24 @@ import { formatCurrency } from '@/lib/utils';
 import { Link } from 'wouter';
 import { 
   CalendarIcon, 
+  CheckCircle2,
+  ClockIcon,
   DollarSignIcon, 
   ExternalLinkIcon, 
   MoreHorizontal, 
+  PauseCircle,
   UserIcon 
 } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
-  DropdownMenuItem, 
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { EstadoProyectoBadge } from './EstadoProyectoBadge';
+import { useState } from 'react';
+import { CambiarEstadoProyectoDialog } from './CambiarEstadoProyectoDialog';
 
 interface ProyectoCardProps {
   proyecto: Proyecto & { 
@@ -29,9 +35,12 @@ interface ProyectoCardProps {
     retrasado: boolean;
   };
   onEliminar?: (id: number) => void;
+  onEstadoCambiado?: () => void;
 }
 
-export function ProyectoCard({ proyecto, onEliminar }: ProyectoCardProps) {
+export function ProyectoCard({ proyecto, onEliminar, onEstadoCambiado }: ProyectoCardProps) {
+  const [cambioEstadoAbierto, setCambioEstadoAbierto] = useState(false);
+  
   // Formatear fechas para presentación
   const fechaInicio = format(new Date(proyecto.fechaInicio), 'dd MMM yyyy', { locale: es });
   const fechaFinPrevista = proyecto.fechaFinPrevista 
@@ -73,6 +82,55 @@ export function ProyectoCard({ proyecto, onEliminar }: ProyectoCardProps) {
                 Editar
               </DropdownMenuItem>
             </Link>
+            
+            <DropdownMenuSeparator />
+            
+            {/* Acciones de estado */}
+            <DropdownMenuItem 
+              onClick={() => setCambioEstadoAbierto(true)}
+              className="text-primary focus:text-primary"
+            >
+              <ClockIcon className="mr-2 h-4 w-4" />
+              Cambiar estado
+            </DropdownMenuItem>
+            
+            {/* Acciones rápidas de estado */}
+            {proyecto.estado !== EstadoProyecto.FINALIZADO && (
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await proyectosApi.cambiarEstado(proyecto.id, EstadoProyecto.FINALIZADO);
+                    if (onEstadoCambiado) onEstadoCambiado();
+                  } catch (error) {
+                    console.error("Error al finalizar proyecto:", error);
+                  }
+                }}
+                className="text-green-600 focus:text-green-600"
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Finalizar proyecto
+              </DropdownMenuItem>
+            )}
+            
+            {proyecto.estado !== EstadoProyecto.PAUSADO && proyecto.estado !== EstadoProyecto.FINALIZADO && (
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await proyectosApi.cambiarEstado(proyecto.id, EstadoProyecto.PAUSADO);
+                    if (onEstadoCambiado) onEstadoCambiado();
+                  } catch (error) {
+                    console.error("Error al pausar proyecto:", error);
+                  }
+                }}
+                className="text-amber-600 focus:text-amber-600"
+              >
+                <PauseCircle className="mr-2 h-4 w-4" />
+                Pausar proyecto
+              </DropdownMenuItem>
+            )}
+            
+            <DropdownMenuSeparator />
+            
             {onEliminar && (
               <DropdownMenuItem 
                 onClick={() => onEliminar(proyecto.id)}
@@ -82,6 +140,18 @@ export function ProyectoCard({ proyecto, onEliminar }: ProyectoCardProps) {
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
+          
+          {/* Diálogo para cambiar estado */}
+          <CambiarEstadoProyectoDialog
+            proyectoId={proyecto.id}
+            estadoActual={proyecto.estado}
+            onEstadoCambiado={onEstadoCambiado}
+            open={cambioEstadoAbierto}
+            onOpenChange={setCambioEstadoAbierto}
+          >
+            {/* Este children no se usa, pero es requerido por la interfaz del componente */}
+            <span></span>
+          </CambiarEstadoProyectoDialog>
         </DropdownMenu>
       </CardHeader>
       
