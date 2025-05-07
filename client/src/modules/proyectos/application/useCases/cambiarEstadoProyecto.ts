@@ -8,7 +8,7 @@ import { proyectoService } from '../../infrastructure/di/container';
 export function useCambiarEstadoProyecto(id: number) {
   const queryClient = useQueryClient();
   
-  return useMutation<Proyecto, Error, { estado: EstadoProyecto }>({
+  return useMutation<Proyecto, Error, { estado: EstadoProyecto, comentario?: string }>({
     mutationFn: async ({ estado }) => {
       try {
         return await proyectoService.cambiarEstadoProyecto(id, estado);
