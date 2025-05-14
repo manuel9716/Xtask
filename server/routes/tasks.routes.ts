@@ -49,7 +49,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Crear una nueva tarea
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { title, description, status, priority, projectId, assignedTo } = req.body;
+    const { title, description, status, priority, projectId, assigneeId } = req.body;
     
     if (!title || !projectId) {
       return res.status(400).json({ error: 'Título y projectId son requeridos' });
@@ -61,8 +61,8 @@ router.post('/', async (req: Request, res: Response) => {
       status: status || 'pending',
       priority: priority || 'medium',
       projectId,
-      assignedTo,
-      createdBy: req.user?.userId
+      assigneeId,
+      createdBy: req.user?.id
     });
     
     res.status(201).json(task);
@@ -79,7 +79,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id);
-    const { title, description, status, priority, assignedTo } = req.body;
+    const { title, description, status, priority, assigneeId } = req.body;
     
     // Verificar si la tarea existe
     const existingTask = await storage.getTask(id);
@@ -93,8 +93,8 @@ router.patch('/:id', async (req: Request, res: Response) => {
       description,
       status,
       priority,
-      assignedTo,
-      updatedBy: req.user?.userId
+      assigneeId,
+      updatedBy: req.user?.id
     });
     
     res.json(updatedTask);
