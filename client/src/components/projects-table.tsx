@@ -1,4 +1,4 @@
-import { Building2, Smartphone, Database, PresentationIcon, MoreHorizontal, Plus } from "lucide-react";
+import { Building2, Smartphone, Database, PresentationIcon, MoreHorizontal, Plus, CheckCircle2, Clock, RefreshCw, PauseCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -13,6 +13,18 @@ import { Project, EstadoProyecto } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ProyectoEstadoBadge } from "@/modules/proyectos/ui/components/ProyectoEstadoBadge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { proyectosApi } from "@/modules/proyectos/infrastructure/api/proyectosApi";
 
 const iconMap: Record<string, any> = {
   "Tech": Building2,
@@ -35,12 +47,40 @@ interface ProjectsTableProps {
 }
 
 export function ProjectsTable({ limit, className }: ProjectsTableProps) {
-  const { data: projects, isLoading } = useQuery<Project[]>({
+  const [actualizando, setActualizando] = useState<number | null>(null);
+  const { toast } = useToast();
+  
+  const { data: projects, isLoading, refetch } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 
   const displayProjects = limit ? projects?.slice(0, limit) : projects;
   const projectCount = projects?.length || 0;
+  
+  // Cambiar estado de un proyecto
+  const cambiarEstado = async (proyectoId: number, estado: string, mensaje: string) => {
+    if (actualizando) return;
+    
+    setActualizando(proyectoId);
+    
+    try {
+      await proyectosApi.cambiarEstado(proyectoId, estado);
+      toast({
+        title: "Estado actualizado",
+        description: mensaje,
+      });
+      refetch();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo cambiar el estado del proyecto",
+        variant: "destructive",
+      });
+    } finally {
+      setActualizando(null);
+    }
+  };
 
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
@@ -182,9 +222,98 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
                       })()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-gray-400 hover:text-gray-600"
+                            disabled={actualizando === project.id}
+                          >
+                            {actualizando === project.id ? (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <MoreHorizontal className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Acciones de Proyecto</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem 
+                              onClick={() => window.open(`/admin/proyectos/${project.id}`, '_blank')}
+                            >
+                              Ver detalles
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => window.open(`/admin/proyectos/${project.id}/editar`, '_blank')}
+                            >
+                              Editar proyecto
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                          
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel>Cambiar estado a:</DropdownMenuLabel>
+                          
+                          {project.status !== 'active' && (
+                            <DropdownMenuItem 
+                              onClick={() => cambiarEstado(
+                                project.id, 
+                                "ACTIVO", 
+                                "El proyecto ha sido activado"
+                              )}
+                              className="text-primary"
+                            >
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              Activar
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {project.status !== 'completed' && (
+                            <DropdownMenuItem 
+                              onClick={() => cambiarEstado(
+                                project.id, 
+                                "FINALIZADO", 
+                                "El proyecto ha sido finalizado"
+                              )}
+                              className="text-green-600"
+                            >
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Finalizar
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {project.status !== 'delayed' && (
+                            <DropdownMenuItem 
+                              onClick={() => cambiarEstado(
+                                project.id, 
+                                "RETRASADO", 
+                                "El proyecto ha sido marcado como retrasado"
+                              )}
+                              className="text-amber-600"
+                            >
+                              <Clock className="mr-2 h-4 w-4" />
+                              Marcar como retrasado
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {project.status !== 'paused' && (
+                            <DropdownMenuItem 
+                              onClick={() => cambiarEstado(
+                                project.id, 
+                                "PAUSADO", 
+                                "El proyecto ha sido pausado"
+                              )}
+                              className="text-blue-600"
+                            >
+                              <PauseCircle className="mr-2 h-4 w-4" />
+                              Pausar
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
@@ -200,7 +329,7 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
         </Table>
       </div>
 
-      {limit && projects?.length > limit && (
+      {limit && projects && projects.length > limit && (
         <div className="px-6 py-3 border-t border-gray-100 bg-white">
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-600">Mostrando {limit} de {projectCount} proyectos</p>
