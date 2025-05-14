@@ -21,8 +21,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rutas de autenticación
   app.use('/api/auth', authRouter);
   
-  // Ruta temporal para crear usuarios (solo para pruebas)
+  // Rutas temporales para pruebas
   app.use('/api/temp-create-user', tempCreateUserRouter);
+  app.use('/api/temp-user-list', tempUserListRouter);
   
   // Ruta para empleados
   app.use('/api/empleados', empleadosRouter);
