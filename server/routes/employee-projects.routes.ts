@@ -68,7 +68,7 @@ router.post('/', async (req: Request, res: Response) => {
       projectId,
       employeeId,
       isPrimary: false, // Por defecto no es el responsable principal
-      assignedBy: req.user?.userId,
+      assignedBy: req.user?.id, // Usar id en lugar de userId
     });
     
     res.status(201).json(employeeProject);

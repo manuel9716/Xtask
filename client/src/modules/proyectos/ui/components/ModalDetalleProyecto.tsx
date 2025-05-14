@@ -214,12 +214,12 @@ export function ModalDetalleProyecto({
         
         {/* Pestaña de tareas */}
         <TabsContent value="tareas">
-          <TareasProyecto proyectoId={proyectoId} />
+          <TareasProyecto proyecto={proyectoId} />
         </TabsContent>
         
         {/* Pestaña de equipo */}
         <TabsContent value="equipo">
-          <ResponsablesProyecto proyectoId={proyectoId} />
+          <ResponsablesProyecto proyecto={proyectoId} />
         </TabsContent>
       </Tabs>
     );

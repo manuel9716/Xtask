@@ -31,7 +31,7 @@ import {
   Users
 } from "lucide-react";
 
-export default function ResponsablesProyecto({ proyectoId }) {
+export default function ResponsablesProyecto({ proyecto: proyectoId }) {
   const [selectedEmpleadoId, setSelectedEmpleadoId] = useState("");
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [employeeToRemove, setEmployeeToRemove] = useState(null);
@@ -72,8 +72,20 @@ export default function ResponsablesProyecto({ proyectoId }) {
         projectId: proyectoId,
         employeeId: Number(empleadoId),
       };
-      const res = await apiRequest("POST", "/api/employee-projects", payload);
-      return res.json();
+      try {
+        const res = await apiRequest("POST", "/api/employee-projects", payload);
+        const text = await res.text();
+        try {
+          // Intentar analizar como JSON
+          return JSON.parse(text);
+        } catch (jsonError) {
+          // Si no es JSON válido, lanzar el error con el texto de respuesta
+          throw new Error(`Error de respuesta: ${text}`);
+        }
+      } catch (error) {
+        console.error("Error al asignar empleado:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({

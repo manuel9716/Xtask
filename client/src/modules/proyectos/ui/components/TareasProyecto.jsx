@@ -39,7 +39,7 @@ const taskSchema = z.object({
   assigneeId: z.number().nullable().optional(),
 });
 
-export default function TareasProyecto({ proyectoId }) {
+export default function TareasProyecto({ proyecto: proyectoId }) {
   const [activeTab, setActiveTab] = useState("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
