@@ -71,7 +71,7 @@ export default function UserManagement() {
   
   // Usando ruta temporal para superar problemas de autenticación (solo para desarrollo)
   const { data: users, isLoading } = useQuery<User[]>({
-    queryKey: ["/api/temp-user-list"],
+    queryKey: ["/api/temp-users"],
   });
   
   // Configuración del formulario
@@ -102,7 +102,7 @@ export default function UserManagement() {
       setOpenAddUserDialog(false);
       
       // Invalidar la caché para recargar la lista de usuarios
-      queryClient.invalidateQueries({ queryKey: ["/api/temp-user-list"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/temp-users"] });
       
       // Mostrar notificación de éxito
       toast({

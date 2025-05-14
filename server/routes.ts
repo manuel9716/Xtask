@@ -23,7 +23,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas temporales para pruebas
   app.use('/api/temp-create-user', tempCreateUserRouter);
-  app.use('/api/temp-user-list', tempUserListRouter);
+  
+  // Endpoint directo para listado de usuarios sin autenticación
+  app.get('/api/temp-users', async (_req, res) => {
+    try {
+      console.log('Listando usuarios sin verificación de autenticación (directo)');
+      
+      // Importar dependencias
+      const { db } = await import('./db');
+      const { users } = await import('@shared/schema');
+      
+      // Obtener todos los usuarios
+      const allUsers = await db.query.users.findMany({
+        orderBy: (users, { desc }) => [desc(users.id)]
+      });
+      
+      // Eliminar contraseñas
+      const usersWithoutPasswords = allUsers.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.json(usersWithoutPasswords);
+    } catch (error) {
+      console.error('Error al listar usuarios temporalmente:', error);
+      res.status(500).json({ error: 'Error al listar usuarios' });
+    }
+  });
   
   // Ruta para empleados
   app.use('/api/empleados', empleadosRouter);
