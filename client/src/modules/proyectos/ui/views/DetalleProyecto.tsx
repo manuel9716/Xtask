@@ -1,523 +1,305 @@
-import { useParams, useLocation } from "wouter";
-import { useProyecto } from "../../application/useCases/obtenerProyecto";
-import { EstadoProyectoBadge } from "../components/EstadoProyectoBadge";
-import { CambiarEstadoProyectoDialog } from "../components/CambiarEstadoProyectoDialog";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { formatCurrency } from "@/lib/utils";
+import { useState } from "react";
+import { useLocation, useRoute, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { 
-  ArrowLeft, 
-  Calendar, 
-  Clock, 
-  DollarSign, 
-  Edit, 
-  Loader2, 
-  MoreVertical, 
-  Tag, 
-  Trash2, 
-  User, 
-  Users
-} from "lucide-react";
+  Tabs, TabsContent, TabsList, TabsTrigger 
+} from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+  Card, CardContent, CardHeader, CardTitle, CardDescription 
 } from "@/components/ui/card";
 import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
-} from "@/components/ui/alert-dialog";
-import { proyectosApi } from "../../infrastructure/api/proyectosApi";
+  ArrowLeft, Edit, Calendar, DollarSign, BarChart2, 
+  Clock, Loader2, ClipboardList, Users
+} from "lucide-react";
+import { Proyecto } from "../../domain/entities/Proyecto";
+import TareasProyecto from "../components/TareasProyecto";
+import ResponsablesProyecto from "../components/ResponsablesProyecto";
 
-export function DetalleProyecto() {
-  const { id } = useParams<{ id: string }>();
-  const [, navigate] = useLocation();
+// Función para obtener el color por estado
+const getEstadoColor = (estado: string): string => {
+  switch (estado) {
+    case 'ACTIVO': return 'bg-green-100 text-green-800 hover:bg-green-100';
+    case 'PAUSADO': return 'bg-amber-100 text-amber-800 hover:bg-amber-100';
+    case 'RETRASADO': return 'bg-red-100 text-red-800 hover:bg-red-100';
+    case 'FINALIZADO': return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
+    case 'CANCELADO': return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
+    case 'ARCHIVADO': return 'bg-purple-100 text-purple-800 hover:bg-purple-100';
+    default: return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
+  }
+};
+
+// Función para formatear fechas
+const formatearFecha = (fecha: string | Date | null): string => {
+  if (!fecha) return 'No definida';
+  return new Date(fecha).toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+
+// Función para formatear moneda
+const formatearMoneda = (valor: number): string => {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2
+  }).format(valor);
+};
+
+export default function DetalleProyecto() {
+  const [, params] = useRoute<{ id: string }>("/proyectos/:id");
+  const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState("general");
   const { toast } = useToast();
-  const proyectoId = id ? parseInt(id) : undefined;
   
-  const [eliminando, setEliminando] = useState(false);
+  const id = params?.id ? parseInt(params.id) : 0;
   
-  // Consultar datos del proyecto
+  // Consulta del proyecto
   const { 
-    data: proyecto,
+    data: proyecto, 
     isLoading, 
-    isError, 
-    error, 
-    refetch 
-  } = useProyecto(proyectoId);
+    isError 
+  } = useQuery({
+    queryKey: ['/api/proyectos', id],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/proyectos/${id}`);
+      return res.json();
+    },
+    enabled: id > 0
+  });
   
-  // Método para eliminar el proyecto
-  const handleEliminar = async () => {
-    if (!proyectoId) return;
-    
-    try {
-      setEliminando(true);
-      await proyectosApi.eliminarProyecto(proyectoId);
-      
-      toast({
-        title: "Proyecto eliminado",
-        description: "El proyecto ha sido archivado correctamente.",
-      });
-      
-      navigate("/admin/proyectos");
-    } catch (error) {
-      console.error("Error al eliminar:", error);
-      
-      toast({
-        title: "Error al eliminar",
-        description: error instanceof Error ? error.message : "No se pudo eliminar el proyecto",
-        variant: "destructive",
-      });
-    } finally {
-      setEliminando(false);
-    }
-  };
-
-  // Estado de carga
+  // Si el id no es válido o no viene en la URL
+  if (id <= 0) {
+    setLocation("/proyectos");
+    return null;
+  }
+  
+  // Si está cargando
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-[70vh]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
   
-  // Estado de error
+  // Si hay error
   if (isError || !proyecto) {
-    return (
-      <div className="py-8">
-        <div className="flex items-center mb-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate("/admin/proyectos")}
-            className="mr-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-2xl font-bold">Error</h1>
-        </div>
-        
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-destructive">No se pudo cargar el proyecto</p>
-            <p className="text-sm text-muted-foreground mt-2">{error?.toString()}</p>
-            <Button 
-              onClick={() => navigate("/admin/proyectos")}
-              className="mt-4"
-            >
-              Volver a proyectos
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    toast({
+      title: "Error al cargar el proyecto",
+      description: "No se pudo cargar la información del proyecto. Inténtalo de nuevo.",
+      variant: "destructive",
+    });
+    
+    setLocation("/proyectos");
+    return null;
   }
   
-  // Formatear fechas para presentación
-  const fechaInicio = format(new Date(proyecto.fechaInicio), "dd MMMM yyyy", { locale: es });
-  const fechaFinPrevista = proyecto.fechaFinPrevista 
-    ? format(new Date(proyecto.fechaFinPrevista), "dd MMMM yyyy", { locale: es })
-    : "No definida";
-  const fechaFinReal = proyecto.fechaFinReal 
-    ? format(new Date(proyecto.fechaFinReal), "dd MMMM yyyy", { locale: es })
-    : "No finalizado";
-  
-  // Calcular días restantes si hay fecha de fin prevista
-  const diasRestantes = proyecto.fechaFinPrevista 
-    ? Math.ceil((new Date(proyecto.fechaFinPrevista).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+  // Cálculos y datos adicionales
+  const avancePresupuesto = Math.min(100, (proyecto.costoActual / proyecto.presupuesto) * 100);
+  const diasRestantes = proyecto.fechaFin 
+    ? Math.ceil((new Date(proyecto.fechaFin).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     : null;
   
-  // Determinar mensaje según días restantes
-  let mensajePlazo = "";
-  let colorPlazo = "";
-  
-  if (diasRestantes !== null) {
-    if (diasRestantes < 0) {
-      mensajePlazo = `Vencido hace ${Math.abs(diasRestantes)} días`;
-      colorPlazo = "text-destructive";
-    } else if (diasRestantes === 0) {
-      mensajePlazo = "Vence hoy";
-      colorPlazo = "text-yellow-500";
-    } else if (diasRestantes <= 7) {
-      mensajePlazo = `${diasRestantes} días restantes`;
-      colorPlazo = "text-yellow-500";
-    } else {
-      mensajePlazo = `${diasRestantes} días restantes`;
-      colorPlazo = "text-green-500";
-    }
-  }
-
   return (
-    <div>
-      {/* Header con acciones */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-        <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate("/admin/proyectos")}
-            className="mr-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{proyecto.nombre}</h1>
-            <p className="text-muted-foreground">ID: {proyecto.id}</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <EstadoProyectoBadge estado={proyecto.estado} />
-          
-          <Button 
-            variant="outline"
-            onClick={() => navigate(`/admin/proyectos/${proyecto.id}/editar`)}
-            className="gap-2"
-          >
-            <Edit className="h-4 w-4" />
-            Editar
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              
-              <CambiarEstadoProyectoDialog 
-                proyectoId={proyecto.id}
-                estadoActual={proyecto.estado}
-                onEstadoCambiado={refetch}
-              >
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  Cambiar estado (avanzado)
-                </DropdownMenuItem>
-              </CambiarEstadoProyectoDialog>
-              
-              {/* Menú para cambiar estados rápidamente */}
-              <DropdownMenuSeparator />
-              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Cambiar estado a:</div>
-              
-              {/* Marcar como ACTIVO */}
-              {proyecto.estado !== "ACTIVO" && (
-                <DropdownMenuItem 
-                  onClick={async () => {
-                    try {
-                      await proyectosApi.cambiarEstado(proyecto.id, "ACTIVO");
-                      toast({
-                        title: "Estado actualizado",
-                        description: "El proyecto ha sido marcado como activo."
-                      });
-                      refetch();
-                    } catch (error) {
-                      console.error("Error al cambiar estado:", error);
-                      toast({
-                        title: "Error",
-                        description: "No se pudo cambiar el estado del proyecto",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
-                  className="text-primary-600 focus:text-primary-600"
-                >
-                  <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                  </svg>
-                  Activar proyecto
-                </DropdownMenuItem>
-              )}
-              
-              {/* Marcar como RETRASADO */}
-              {proyecto.estado !== "RETRASADO" && (
-                <DropdownMenuItem 
-                  onClick={async () => {
-                    try {
-                      await proyectosApi.cambiarEstado(proyecto.id, "RETRASADO");
-                      toast({
-                        title: "Estado actualizado",
-                        description: "El proyecto ha sido marcado como retrasado."
-                      });
-                      refetch();
-                    } catch (error) {
-                      console.error("Error al cambiar estado:", error);
-                      toast({
-                        title: "Error",
-                        description: "No se pudo cambiar el estado del proyecto",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 8v4l2 2"/>
-                  </svg>
-                  Marcar como retrasado
-                </DropdownMenuItem>
-              )}
-              
-              {/* Marcar como FINALIZADO */}
-              {proyecto.estado !== "FINALIZADO" && (
-                <DropdownMenuItem 
-                  onClick={async () => {
-                    try {
-                      await proyectosApi.cambiarEstado(proyecto.id, "FINALIZADO");
-                      toast({
-                        title: "Estado actualizado",
-                        description: "El proyecto ha sido marcado como finalizado."
-                      });
-                      refetch();
-                    } catch (error) {
-                      console.error("Error al cambiar estado:", error);
-                      toast({
-                        title: "Error",
-                        description: "No se pudo cambiar el estado del proyecto",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
-                  className="text-green-600 focus:text-green-600"
-                >
-                  <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                  </svg>
-                  Finalizar proyecto
-                </DropdownMenuItem>
-              )}
-              
-              {/* Opción para archivar proyectos finalizados o cancelados */}
-              {(proyecto.estado === 'FINALIZADO' || proyecto.estado === 'CANCELADO') && 
-                proyecto.estado !== 'ARCHIVADO' && (
-                <DropdownMenuItem 
-                  onClick={async () => {
-                    try {
-                      await proyectosApi.cambiarEstado(proyecto.id, "ARCHIVADO");
-                      toast({
-                        title: "Proyecto archivado",
-                        description: "El proyecto ha sido archivado correctamente."
-                      });
-                      refetch();
-                    } catch (error) {
-                      console.error("Error al archivar proyecto:", error);
-                      toast({
-                        title: "Error",
-                        description: "No se pudo archivar el proyecto",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
-                  className="text-blue-600 focus:text-blue-600"
-                >
-                  <svg 
-                    className="mr-2 h-4 w-4" 
-                    width="15" 
-                    height="15" 
-                    viewBox="0 0 15 15" 
-                    fill="none" 
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path 
-                      d="M2 5h11v7.5c0 .83-.67 1.5-1.5 1.5h-8A1.5 1.5 0 012 12.5V5z" 
-                      stroke="currentColor"
-                    />
-                    <path d="M6 8h3M1 5h13V3.5C14 2.67 13.33 2 12.5 2h-10C1.67 2 1 2.67 1 3.5V5z" stroke="currentColor" />
-                  </svg>
-                  Archivar proyecto
-                </DropdownMenuItem>
-              )}
-              
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem 
-                    onSelect={(e) => e.preventDefault()}
-                    className="text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar proyecto
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Eliminar este proyecto?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta acción archivará el proyecto y ya no aparecerá en la lista principal.
-                      Podrás recuperarlo posteriormente si es necesario.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={eliminando}>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleEliminar}
-                      disabled={eliminando}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      {eliminando && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Eliminar
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-      
-      {/* Contenido principal */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Información general */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Información General</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Descripción</h3>
-              <p>{proyecto.descripcion}</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Fechas</h3>
-                <ul className="space-y-2">
-                  <li className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>Inicio: {fechaInicio}</span>
-                  </li>
-                  <li className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>Fin previsto: {fechaFinPrevista}</span>
-                    {mensajePlazo && (
-                      <span className={`ml-2 text-sm font-medium ${colorPlazo}`}>
-                        ({mensajePlazo})
-                      </span>
-                    )}
-                  </li>
-                  <li className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>Fin real: {fechaFinReal}</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Responsables</h3>
-                <ul className="space-y-2">
-                  <li className="flex items-center">
-                    <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span>ID Responsable: {proyecto.responsableId}</span>
-                  </li>
-                  
-                  {proyecto.clienteId && (
-                    <li className="flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>ID Cliente: {proyecto.clienteId}</span>
-                    </li>
-                  )}
-                </ul>
-              </div>
-            </div>
-            
-            {proyecto.tags && proyecto.tags.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Etiquetas</h3>
-                <div className="flex flex-wrap gap-2">
-                  {proyecto.tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Información financiera y temporal */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Resumen</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Presupuesto</h3>
-              <div className="flex items-center text-2xl font-bold">
-                <DollarSign className="h-5 w-5 mr-1 text-muted-foreground" />
-                {formatCurrency(proyecto.presupuesto)}
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Estado</h3>
-              <div className="flex items-center">
-                <EstadoProyectoBadge estado={proyecto.estado} className="text-sm" />
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Temporalidad</h3>
-              <div className="space-y-2">
-                {proyecto.fechaFinPrevista && (
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className={colorPlazo}>{mensajePlazo}</span>
-                  </div>
-                )}
-                
-                <div className="text-sm">
-                  Creado el {format(new Date(proyecto.createdAt), "dd MMM yyyy", { locale: es })}
-                </div>
-                <div className="text-sm">
-                  Actualizado el {format(new Date(proyecto.updatedAt), "dd MMM yyyy", { locale: es })}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter>
+    <div className="container mx-auto py-6">
+      {/* Cabecera y navegación */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
-              className="w-full"
-              onClick={() => navigate(`/admin/proyectos/${proyecto.id}/editar`)}
+              size="sm"
+              onClick={() => setLocation("/proyectos")}
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar proyecto
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Volver
             </Button>
-          </CardFooter>
-        </Card>
+            <h1 className="text-2xl font-bold">{proyecto.nombre}</h1>
+            <Badge className={getEstadoColor(proyecto.estado)}>
+              {proyecto.estado}
+            </Badge>
+          </div>
+          <Button 
+            variant="outline"
+            onClick={() => setLocation(`/proyectos/${id}/editar`)}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Editar proyecto
+          </Button>
+        </div>
+        
+        <Separator className="my-4" />
       </div>
+      
+      {/* Tabs de navegación */}
+      <Tabs 
+        defaultValue="general" 
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <TabsList className="mb-6 grid w-full grid-cols-4">
+          <TabsTrigger value="general">
+            <BarChart2 className="h-4 w-4 mr-2" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="tareas">
+            <ClipboardList className="h-4 w-4 mr-2" />
+            Tareas
+          </TabsTrigger>
+          <TabsTrigger value="equipo">
+            <Users className="h-4 w-4 mr-2" />
+            Equipo
+          </TabsTrigger>
+          <TabsTrigger value="presupuesto">
+            <DollarSign className="h-4 w-4 mr-2" />
+            Presupuesto
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* Contenido de la tab General */}
+        <TabsContent value="general">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>Detalles del proyecto</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Descripción</h3>
+                  <p className="text-base">
+                    {proyecto.descripcion || "Sin descripción"}
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Fecha inicio</h3>
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{formatearFecha(proyecto.fechaInicio)}</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Fecha fin prevista</h3>
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{formatearFecha(proyecto.fechaFin)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {proyecto.departamentoId && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Departamento</h3>
+                    <Badge variant="outline">
+                      {proyecto.departamentoId ? "Departamento #" + proyecto.departamentoId : "Sin departamento asignado"}
+                    </Badge>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Presupuesto</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-muted-foreground">Total</span>
+                      <span className="font-medium">{formatearMoneda(proyecto.presupuesto)}</span>
+                    </div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-muted-foreground">Utilizado</span>
+                      <span className="font-medium">{formatearMoneda(proyecto.costoActual)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Restante</span>
+                      <span className="font-medium">{formatearMoneda(proyecto.presupuesto - proyecto.costoActual)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full ${avancePresupuesto > 90 ? 'bg-destructive' : 'bg-primary'}`}
+                      style={{ width: `${avancePresupuesto}%` }}
+                    ></div>
+                  </div>
+                  
+                  <div className="text-right text-sm">
+                    {avancePresupuesto > 100 ? (
+                      <span className="text-destructive">Presupuesto excedido</span>
+                    ) : (
+                      <span>{Math.round(avancePresupuesto)}% utilizado</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {proyecto.estado !== 'FINALIZADO' && proyecto.estado !== 'CANCELADO' && diasRestantes !== null && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tiempo restante</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-center p-4">
+                      <Clock className="h-5 w-5 mr-2 text-muted-foreground" />
+                      <span className="text-xl font-bold">
+                        {diasRestantes <= 0 ? (
+                          <span className="text-destructive">Vencido hace {Math.abs(diasRestantes)} días</span>
+                        ) : (
+                          <span>{diasRestantes} días restantes</span>
+                        )}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+        
+        {/* Contenido de la tab Tareas */}
+        <TabsContent value="tareas">
+          <TareasProyecto proyecto={proyecto} />
+        </TabsContent>
+        
+        {/* Contenido de la tab Equipo */}
+        <TabsContent value="equipo">
+          <ResponsablesProyecto proyecto={proyecto} />
+        </TabsContent>
+        
+        {/* Contenido de la tab Presupuesto */}
+        <TabsContent value="presupuesto">
+          <div className="grid grid-cols-1 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribución del presupuesto</CardTitle>
+                <CardDescription>
+                  Visión general del presupuesto del proyecto y su distribución por categorías
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80 flex items-center justify-center border rounded-md bg-muted/20">
+                  <p className="text-muted-foreground">
+                    Próximamente: Gráfico de distribución de presupuesto
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

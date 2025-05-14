@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { projects, employees, users } from '../../shared/schema';
-import { eq, sql } from 'drizzle-orm';
+import { projects, employees, users, employeeProjects } from '../../shared/schema';
+import { eq, sql, and, desc } from 'drizzle-orm';
 import { EstadoProyecto } from '@shared/schema';
+import { z } from 'zod';
+import { authRequired } from '../middlewares/auth';
 
 // Definimos el enrutador para proyectos
 const proyectosRouter = Router();

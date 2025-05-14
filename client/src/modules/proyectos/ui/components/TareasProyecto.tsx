@@ -255,7 +255,7 @@ export default function TareasProyecto({ proyecto }: TareasProyectoProps) {
   };
   
   // Manejar envío de formulario
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     try {
@@ -281,7 +281,7 @@ export default function TareasProyecto({ proyecto }: TareasProyectoProps) {
   // Encontrar nombre de empleado por id
   const getNombreEmpleado = (id: number | null): string => {
     if (!id) return 'Sin asignar';
-    const empleado = empleados?.find(e => e.id === id);
+    const empleado = empleados?.find((e: Empleado) => e.id === id);
     return empleado ? `${empleado.firstName} ${empleado.lastName}` : 'Sin asignar';
   };
   

@@ -1,6 +1,6 @@
 import { Route } from 'wouter';
 import { ListaProyectos } from './views/ListaProyectos';
-import { DetalleProyecto } from './views/DetalleProyecto';
+import DetalleProyecto from './views/DetalleProyecto';
 import { NuevoProyecto } from './views/NuevoProyecto';
 import { EditarProyecto } from './views/EditarProyecto';
 import { GestionEstadosProyectos } from './views/GestionEstadosProyectos';
