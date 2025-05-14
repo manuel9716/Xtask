@@ -8,7 +8,8 @@ import {
   products, Product, InsertProduct,
   purchaseOrders, PurchaseOrder, InsertPurchaseOrder,
   budgets, Budget, InsertBudget,
-  employeeProjects
+  employeeProjects,
+  activityLogs, ActivityLog, InsertActivityLog
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -25,6 +26,10 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // Activity Logs
+  getUserActivityLogs(userId: number, limit?: number): Promise<ActivityLog[]>;
+  createActivityLog(activityLog: InsertActivityLog): Promise<ActivityLog>;
   
   // Projects
   getAllProjects(): Promise<Project[]>;
@@ -96,6 +101,7 @@ export class MemStorage implements IStorage {
   private productsMap: Map<number, Product>;
   private purchaseOrdersMap: Map<number, PurchaseOrder>;
   private budgetsMap: Map<number, Budget>;
+  private activityLogsMap: Map<number, ActivityLog>;
   
   private userIdCounter: number;
   private projectIdCounter: number;
@@ -106,6 +112,7 @@ export class MemStorage implements IStorage {
   private productIdCounter: number;
   private purchaseOrderIdCounter: number;
   private budgetIdCounter: number;
+  private activityLogIdCounter: number;
   
   sessionStore: session.SessionStore;
 
@@ -119,6 +126,7 @@ export class MemStorage implements IStorage {
     this.productsMap = new Map();
     this.purchaseOrdersMap = new Map();
     this.budgetsMap = new Map();
+    this.activityLogsMap = new Map();
     
     this.userIdCounter = 1;
     this.projectIdCounter = 1;
@@ -129,6 +137,7 @@ export class MemStorage implements IStorage {
     this.productIdCounter = 1;
     this.purchaseOrderIdCounter = 1;
     this.budgetIdCounter = 1;
+    this.activityLogIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // 24h
