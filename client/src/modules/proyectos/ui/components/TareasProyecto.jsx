@@ -33,7 +33,7 @@ const taskSchema = z.object({
   priority: z.enum(["low", "medium", "high", "urgent"], {
     required_error: "Selecciona la prioridad",
   }),
-  status: z.enum(["pending", "in_progress", "completed"], {
+  status: z.enum(["todo", "in_progress", "completed"], {
     required_error: "Selecciona el estado",
   }),
   assigneeId: z.number().nullable().optional(),
@@ -129,7 +129,7 @@ export default function TareasProyecto({ proyectoId }) {
       title: "",
       description: "",
       priority: "medium",
-      status: "pending",
+      status: "todo",
       assigneeId: null,
     },
   });
@@ -157,7 +157,7 @@ export default function TareasProyecto({ proyectoId }) {
       title: "",
       description: "",
       priority: "medium",
-      status: "pending",
+      status: "todo",
       assigneeId: null,
     });
     setDialogOpen(true);
@@ -178,7 +178,7 @@ export default function TareasProyecto({ proyectoId }) {
     
     switch (activeTab) {
       case "pendientes":
-        return tareas.filter(tarea => tarea.status === "pending");
+        return tareas.filter(tarea => tarea.status === "todo");
       case "en_progreso":
         return tareas.filter(tarea => tarea.status === "in_progress");
       case "completadas":
@@ -191,7 +191,7 @@ export default function TareasProyecto({ proyectoId }) {
   // Renderizar el estado de la tarea
   const renderEstadoTarea = (status) => {
     switch (status) {
-      case "pending":
+      case "todo":
         return (
           <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">
             <Clock className="h-3 w-3 mr-1" />
@@ -408,7 +408,7 @@ export default function TareasProyecto({ proyectoId }) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="pending">Pendiente</SelectItem>
+                      <SelectItem value="todo">Pendiente</SelectItem>
                       <SelectItem value="in_progress">En progreso</SelectItem>
                       <SelectItem value="completed">Completada</SelectItem>
                     </SelectContent>

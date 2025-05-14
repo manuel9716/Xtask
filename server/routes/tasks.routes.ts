@@ -58,7 +58,7 @@ router.post('/', async (req: Request, res: Response) => {
     const task = await storage.createTask({
       title,
       description,
-      status: status || 'pending',
+      status: status || 'todo',
       priority: priority || 'medium',
       projectId,
       assigneeId,
