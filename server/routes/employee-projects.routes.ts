@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express';
 import { storage } from '../storage';
-import { verifyToken } from '../middlewares/auth';
+import { authRequired } from '../middlewares/auth';
 
 const router = express.Router();
 
 // Aplicar middleware de autenticación
-router.use(verifyToken);
+router.use(authRequired);
 
 // Obtener asignaciones de empleados a un proyecto
 router.get('/', async (req: Request, res: Response) => {

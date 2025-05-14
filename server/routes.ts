@@ -799,6 +799,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint para crear un nuevo usuario (como administrador)
+  app.post('/api/users', async (req, res) => {
+    try {
+      // Verificar que el usuario es administrador
+      if (req.user?.role !== 'admin') {
+        return res.status(403).json({ 
+          error: 'No tienes permisos para crear usuarios. Solo los administradores pueden realizar esta acción.' 
+        });
+      }
+      
+      // Importar dependencias
+      const { db } = await import('./db');
+      const { users, insertUserSchema } = await import('@shared/schema');
+      const { scrypt } = await import('crypto');
+      const { promisify } = await import('util');
+      const scryptAsync = promisify(scrypt);
+      
+      // Validar los datos del usuario
+      const validation = insertUserSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: 'Datos de usuario inválidos', 
+          details: validation.error.format() 
+        });
+      }
+      
+      // Importar sql
+      const { sql } = await import('drizzle-orm');
+      
+      // Verificar que el nombre de usuario o correo no existan ya
+      const existingUser = await db.select()
+        .from(users)
+        .where(sql`${users.username} = ${req.body.username} OR ${users.email} = ${req.body.email}`)
+        .limit(1);
+      
+      if (existingUser.length > 0) {
+        return res.status(409).json({ 
+          error: 'El nombre de usuario o correo electrónico ya están en uso' 
+        });
+      }
+      
+      // Generar hash de la contraseña
+      const crypto = await import('crypto');
+      const salt = crypto.randomBytes(16).toString('hex');
+      const passwordBuff = (await scryptAsync(req.body.password, salt, 64)) as Buffer;
+      const hashedPassword = `${passwordBuff.toString('hex')}.${salt}`;
+      
+      // Crear el usuario en la base de datos
+      const [newUser] = await db.insert(users)
+        .values({
+          ...req.body,
+          password: hashedPassword
+        })
+        .returning({
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          fullName: users.fullName,
+          role: users.role,
+          isActive: users.isActive,
+          createdAt: users.createdAt
+        });
+      
+      res.status(201).json(newUser);
+    } catch (error: any) {
+      console.error('Error al crear usuario:', error);
+      res.status(500).json({ error: 'Error al crear el usuario' });
+    }
+  });
+  
   // Datos de ejemplo para proyectos
   const proyectosEjemplo = [
     {

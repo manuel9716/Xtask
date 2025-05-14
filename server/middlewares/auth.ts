@@ -20,7 +20,7 @@ declare global {
 }
 
 // Middleware para verificar el token JWT
-export function verifyToken(req: Request, res: Response, next: NextFunction) {
+export function authRequired(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   
   if (!authHeader) {

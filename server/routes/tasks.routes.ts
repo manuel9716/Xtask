@@ -2,12 +2,12 @@ import express, { Request, Response } from 'express';
 import { storage } from '../storage';
 import { eq, and } from 'drizzle-orm';
 import { tasks } from '@shared/schema';
-import { verifyToken } from '../middlewares/auth';
+import { authRequired } from '../middlewares/auth';
 
 const router = express.Router();
 
 // Aplicar middleware de autenticación
-router.use(verifyToken);
+router.use(authRequired);
 
 // Obtener todas las tareas o filtrar por proyecto
 router.get('/', async (req: Request, res: Response) => {

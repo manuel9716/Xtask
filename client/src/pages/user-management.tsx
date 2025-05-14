@@ -3,8 +3,8 @@ import { Users, UserPlus, ShieldCheck, UserCog, Search, Filter, Eye, Lock, Mail,
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
-import { User } from "@shared/schema";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { User, insertUserSchema } from "@shared/schema";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -20,14 +20,104 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+// Esquema de validación para el formulario de usuario
+const userFormSchema = insertUserSchema.extend({
+  password: z.string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres")
+    .regex(/[A-Z]/, "La contraseña debe tener al menos una letra mayúscula")
+    .regex(/[a-z]/, "La contraseña debe tener al menos una letra minúscula")
+    .regex(/[0-9]/, "La contraseña debe tener al menos un número"),
+  passwordConfirm: z.string(),
+  role: z.enum(["admin", "user"]).default("user"),
+  isActive: z.boolean().default(true)
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "Las contraseñas no coinciden",
+  path: ["passwordConfirm"],
+});
+
+// Tipo para los datos del formulario
+type UserFormData = z.infer<typeof userFormSchema>;
 
 export default function UserManagement() {
   const [activeTab, setActiveTab] = useState("users");
   const [roleFilter, setRoleFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
+  const { toast } = useToast();
   
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
+  });
+  
+  // Configuración del formulario
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(userFormSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      passwordConfirm: "",
+      fullName: "",
+      role: "user",
+      isActive: true
+    }
+  });
+  
+  // Mutación para crear un nuevo usuario
+  const createUserMutation = useMutation({
+    mutationFn: async (data: UserFormData) => {
+      // Eliminar passwordConfirm antes de enviar al API
+      const { passwordConfirm, ...userData } = data;
+      const response = await apiRequest("POST", "/api/users", userData);
+      return response.json();
+    },
+    onSuccess: () => {
+      // Resetear formulario y cerrar modal
+      form.reset();
+      setOpenAddUserDialog(false);
+      
+      // Invalidar la caché para recargar la lista de usuarios
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      
+      // Mostrar notificación de éxito
+      toast({
+        title: "Usuario creado con éxito",
+        description: "El usuario ha sido agregado al sistema correctamente.",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      // Mostrar notificación de error
+      toast({
+        title: "Error al crear usuario",
+        description: error.message || "Hubo un error al crear el usuario. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Filtrar usuarios por rol y búsqueda
