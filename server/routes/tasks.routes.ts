@@ -47,13 +47,19 @@ tasksRouter.post('/', async (req: Request, res: Response) => {
   try {
     const validatedData = taskSchema.parse(req.body);
     
-    // Asignar usuario actual como creador
-    const data = {
-      ...validatedData,
+    // Preparar datos con fecha de creación
+    const newTaskData = {
+      title: validatedData.title,
+      description: validatedData.description,
+      status: validatedData.status,
+      priority: validatedData.priority,
+      projectId: validatedData.projectId,
+      assigneeId: validatedData.assigneeId,
+      dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
       createdAt: new Date()
     };
     
-    const [newTask] = await db.insert(tasks).values(data).returning();
+    const [newTask] = await db.insert(tasks).values(newTaskData).returning();
     
     res.status(201).json(newTask);
   } catch (error: any) {
@@ -105,10 +111,23 @@ tasksRouter.patch('/:id', async (req: Request, res: Response) => {
     const updateSchema = taskSchema.partial();
     const validatedData = updateSchema.parse(req.body);
     
+    // Preparar datos para actualizar
+    const updateData: any = {};
+    
+    if (validatedData.title !== undefined) updateData.title = validatedData.title;
+    if (validatedData.description !== undefined) updateData.description = validatedData.description;
+    if (validatedData.status !== undefined) updateData.status = validatedData.status;
+    if (validatedData.priority !== undefined) updateData.priority = validatedData.priority;
+    if (validatedData.projectId !== undefined) updateData.projectId = validatedData.projectId;
+    if (validatedData.assigneeId !== undefined) updateData.assigneeId = validatedData.assigneeId;
+    if (validatedData.dueDate !== undefined) {
+      updateData.dueDate = validatedData.dueDate ? new Date(validatedData.dueDate) : null;
+    }
+    
     // Actualizar la tarea
     const [updatedTask] = await db
       .update(tasks)
-      .set(validatedData)
+      .set(updateData)
       .where(eq(tasks.id, id))
       .returning();
     
