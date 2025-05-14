@@ -7,13 +7,14 @@ import {
   suppliers, Supplier, InsertSupplier,
   products, Product, InsertProduct,
   purchaseOrders, PurchaseOrder, InsertPurchaseOrder,
-  budgets, Budget, InsertBudget
+  budgets, Budget, InsertBudget,
+  employeeProjects
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, asc, desc, and, gte, lte, isNull } from "drizzle-orm";
+import { eq, asc, desc, and, gte, lte, isNull, sql } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -555,6 +556,85 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tasks.id, id))
       .returning();
     return updatedTask;
+  }
+  
+  async deleteTask(id: number): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
+  }
+  
+  // Funciones para Employee Projects
+  async getEmployeeProjects(projectId?: number, employeeId?: number): Promise<any[]> {
+    let query = db.select().from(employeeProjects);
+    
+    if (projectId !== undefined) {
+      query = query.where(eq(employeeProjects.projectId, projectId));
+    }
+    
+    if (employeeId !== undefined) {
+      query = query.where(eq(employeeProjects.employeeId, employeeId));
+    }
+    
+    return await query;
+  }
+  
+  async getEmployeeProject(id: number): Promise<any | undefined> {
+    const [result] = await db
+      .select()
+      .from(employeeProjects)
+      .where(eq(employeeProjects.id, id));
+    return result;
+  }
+  
+  async checkEmployeeProjectExists(projectId: number, employeeId: number): Promise<boolean> {
+    const [result] = await db
+      .select({ count: sql`COUNT(*)` })
+      .from(employeeProjects)
+      .where(
+        and(
+          eq(employeeProjects.projectId, projectId),
+          eq(employeeProjects.employeeId, employeeId),
+          eq(employeeProjects.isActive, true)
+        )
+      );
+    
+    return parseInt(result.count as any) > 0;
+  }
+  
+  async createEmployeeProject(employeeProject: any): Promise<any> {
+    const [result] = await db
+      .insert(employeeProjects)
+      .values(employeeProject)
+      .returning();
+    return result;
+  }
+  
+  async setEmployeeProjectAsPrimary(id: number, projectId: number): Promise<any> {
+    // Primero, restablecer todos los responsables del proyecto a no-primarios
+    await db
+      .update(employeeProjects)
+      .set({ isPrimary: false })
+      .where(
+        and(
+          eq(employeeProjects.projectId, projectId),
+          eq(employeeProjects.isActive, true)
+        )
+      );
+    
+    // Luego, establecer este como primario
+    const [result] = await db
+      .update(employeeProjects)
+      .set({ isPrimary: true })
+      .where(eq(employeeProjects.id, id))
+      .returning();
+    
+    return result;
+  }
+  
+  async deleteEmployeeProject(id: number): Promise<void> {
+    await db
+      .update(employeeProjects)
+      .set({ isActive: false })
+      .where(eq(employeeProjects.id, id));
   }
   
   // Transactions implementation

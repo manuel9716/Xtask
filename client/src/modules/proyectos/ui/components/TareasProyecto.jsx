@@ -36,7 +36,7 @@ const taskSchema = z.object({
   status: z.enum(["pending", "in_progress", "completed"], {
     required_error: "Selecciona el estado",
   }),
-  assignedTo: z.number().optional(),
+  assigneeId: z.number().nullable().optional(),
 });
 
 export default function TareasProyecto({ proyectoId }) {
@@ -144,7 +144,7 @@ export default function TareasProyecto({ proyectoId }) {
       description: task.description || "",
       priority: task.priority,
       status: task.status,
-      assignedTo: task.assignedTo,
+      assigneeId: task.assigneeId,
     });
     
     setDialogOpen(true);
@@ -421,13 +421,13 @@ export default function TareasProyecto({ proyectoId }) {
           
           <FormField
             control={form.control}
-            name="assignedTo"
+            name="assigneeId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Responsable</FormLabel>
                 <Select 
-                  onValueChange={(value) => field.onChange(value ? Number(value) : undefined)} 
-                  defaultValue={field.value?.toString()}
+                  onValueChange={(value) => field.onChange(value === "unassigned" ? null : Number(value))} 
+                  defaultValue={field.value ? field.value.toString() : "unassigned"}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -435,7 +435,7 @@ export default function TareasProyecto({ proyectoId }) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Sin asignar</SelectItem>
+                    <SelectItem value="unassigned">Sin asignar</SelectItem>
                     {empleados?.map((empleado) => (
                       <SelectItem key={empleado.id} value={empleado.id.toString()}>
                         {`${empleado.firstName || ''} ${empleado.lastName || ''}`.trim() || empleado.username}
