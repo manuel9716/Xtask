@@ -19,6 +19,15 @@ export function GestionEstadosProyectos() {
   // Obtener listado de proyectos
   const { data: proyectos = [], isLoading, refetch } = useProyectos({});
   
+  // Calcular estadísticas
+  const estadisticas = {
+    total: proyectos.length,
+    activos: proyectos.filter(p => p.estado === EstadoProyecto.ACTIVO).length,
+    retrasados: proyectos.filter(p => p.estado === EstadoProyecto.RETRASADO).length,
+    finalizados: proyectos.filter(p => p.estado === EstadoProyecto.FINALIZADO).length,
+    pausados: proyectos.filter(p => p.estado === EstadoProyecto.PAUSADO).length,
+  };
+  
   // Cambiar estado de un proyecto
   const cambiarEstado = async (proyectoId: number, estado: string, mensaje: string) => {
     if (actualizando) return;
@@ -58,10 +67,41 @@ export function GestionEstadosProyectos() {
           Actualizar
         </Button>
       </div>
+      
+      {/* Estadísticas de estados */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 flex flex-col items-center">
+            <div className="text-3xl font-bold text-primary">{estadisticas.activos}</div>
+            <div className="text-sm text-muted-foreground">Proyectos Activos</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex flex-col items-center">
+            <div className="text-3xl font-bold text-amber-500">{estadisticas.retrasados}</div>
+            <div className="text-sm text-muted-foreground">Proyectos Retrasados</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex flex-col items-center">
+            <div className="text-3xl font-bold text-green-600">{estadisticas.finalizados}</div>
+            <div className="text-sm text-muted-foreground">Proyectos Finalizados</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex flex-col items-center">
+            <div className="text-3xl font-bold text-blue-600">{estadisticas.pausados}</div>
+            <div className="text-sm text-muted-foreground">Proyectos Pausados</div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle>Proyectos Activos</CardTitle>
+          <CardTitle>Listado de Proyectos</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (

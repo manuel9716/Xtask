@@ -5,10 +5,11 @@ import { ProyectoCard } from "../components/ProyectoCard";
 import { FiltrosProyecto } from "../components/FiltrosProyecto";
 import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Clock } from "lucide-react";
 import { ModalCrearProyecto } from "../components/ModalCrearProyecto";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 export function ListaProyectos() {
   // Estado para la paginación y filtros
@@ -63,11 +64,24 @@ export function ListaProyectos() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Proyectos</h1>
-        <Button className="gap-2" onClick={() => setModalAbierto(true)}>
-          <Plus className="h-4 w-4" />
-          Nuevo Proyecto
-        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">Proyectos</h1>
+          <p className="text-muted-foreground">
+            Administra tus proyectos y su progreso
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/proyectos/estados">
+              <Clock className="mr-2 h-4 w-4" />
+              Gestionar Estados
+            </Link>
+          </Button>
+          <Button onClick={() => setModalAbierto(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo Proyecto
+          </Button>
+        </div>
       </div>
       
       {/* Modal para crear proyecto */}
