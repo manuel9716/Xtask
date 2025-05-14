@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -62,13 +62,34 @@ export default function TareasProyecto({ proyectoId }) {
   });
   
   // Consulta para obtener los empleados (para asignar responsables)
-  const { data: empleados } = useQuery({
+  // Obtener empleados filtrados para evitar UserId duplicados
+  const { data: empleadosRaw } = useQuery({
     queryKey: ["/api/employees"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/employees");
       return res.json();
     },
   });
+  
+  // Filtrar empleados para evitar duplicados de userId
+  const empleados = useMemo(() => {
+    if (!empleadosRaw) return [];
+    
+    // Creamos un Map para mantener solo un empleado por userId
+    const userMap = new Map();
+    
+    empleadosRaw.forEach(emp => {
+      // Si el userId ya existe, solo lo reemplazamos si este empleado parece más completo
+      if (!userMap.has(emp.userId) || 
+          (!userMap.get(emp.userId).firstName && emp.firstName) || 
+          (!userMap.get(emp.userId).lastName && emp.lastName)) {
+        userMap.set(emp.userId, emp);
+      }
+    });
+    
+    // Convertimos el Map de vuelta a un array
+    return Array.from(userMap.values());
+  }, [empleadosRaw]);
   
   // Mutation para crear una tarea
   const crearTareaMutation = useMutation({
@@ -436,8 +457,8 @@ export default function TareasProyecto({ proyectoId }) {
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="unassigned">Sin asignar</SelectItem>
-                    {empleados?.map((empleado) => (
-                      <SelectItem key={empleado.id} value={empleado.userId.toString()}>
+                    {empleados?.map((empleado, index) => (
+                      <SelectItem key={`emp-${empleado.id}-${index}`} value={empleado.userId.toString()}>
                         {`${empleado.firstName || ''} ${empleado.lastName || ''}`.trim() || "Empleado " + empleado.id}
                       </SelectItem>
                     ))}
