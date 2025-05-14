@@ -13,8 +13,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'xtask-secret-key';
 const JWT_EXPIRES_IN = '24h';
 
 // Función para generar un token JWT
-const generateToken = (userId: number): string => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+const generateToken = (user: any): string => {
+  return jwt.sign({
+    userId: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role
+  }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
 // Middleware para verificar el token JWT
@@ -68,7 +73,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     }
 
     // Generar token JWT
-    const token = generateToken(user.id);
+    const token = generateToken(user);
 
     // Enviar respuesta
     return res.status(200).json({
@@ -211,7 +216,7 @@ authRouter.post('/register', async (req: Request, res: Response) => {
     }
 
     // Generar token JWT
-    const token = generateToken(newUser.id);
+    const token = generateToken(newUser);
 
     // Enviar respuesta
     return res.status(201).json({
