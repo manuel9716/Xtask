@@ -1,4 +1,4 @@
-import { Building2, Smartphone, Database, PresentationIcon, MoreHorizontal, Plus, CheckCircle2, Clock, RefreshCw, PauseCircle } from "lucide-react";
+import { Building2, Smartphone, Database, PresentationIcon, MoreHorizontal, Plus, CheckCircle2, Clock, RefreshCw, PauseCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -25,6 +25,30 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { proyectosApi } from "@/modules/proyectos/infrastructure/api/proyectosApi";
+import { ModalDetalleProyecto } from "@/modules/proyectos/ui/components/ModalDetalleProyecto";
+
+// Componente para el item de menú Ver Detalles
+function VerDetalleProyectoItem({ proyectoId }: { proyectoId: number }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  
+  return (
+    <>
+      <DropdownMenuItem onSelect={(e) => {
+        e.preventDefault();
+        setModalOpen(true);
+      }}>
+        Ver detalles
+      </DropdownMenuItem>
+      
+      <ModalDetalleProyecto 
+        proyectoId={proyectoId}
+        trigger={<span></span>}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
+    </>
+  );
+}
 
 const iconMap: Record<string, any> = {
   "Tech": Building2,
@@ -242,11 +266,7 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
                           <DropdownMenuSeparator />
                           
                           <DropdownMenuGroup>
-                            <DropdownMenuItem 
-                              onClick={() => window.open(`/admin/proyectos/${project.id}`, '_blank')}
-                            >
-                              Ver detalles
-                            </DropdownMenuItem>
+                            <VerDetalleProyectoItem proyectoId={project.id} />
                             <DropdownMenuItem 
                               onClick={() => window.open(`/admin/proyectos/${project.id}/editar`, '_blank')}
                             >
