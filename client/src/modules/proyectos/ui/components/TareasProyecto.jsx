@@ -130,7 +130,7 @@ export default function TareasProyecto({ proyectoId }) {
       description: "",
       priority: "medium",
       status: "pending",
-      assignedTo: undefined,
+      assigneeId: null,
     },
   });
   
@@ -158,7 +158,7 @@ export default function TareasProyecto({ proyectoId }) {
       description: "",
       priority: "medium",
       status: "pending",
-      assignedTo: undefined,
+      assigneeId: null,
     });
     setDialogOpen(true);
   };
@@ -313,10 +313,10 @@ export default function TareasProyecto({ proyectoId }) {
                 <p className="text-sm text-muted-foreground mb-3">{tarea.description}</p>
               )}
               
-              {tarea.assignedTo && (
+              {tarea.assigneeId && (
                 <div className="flex items-center text-sm text-muted-foreground">
                   <User className="h-3.5 w-3.5 mr-1" />
-                  <span>Asignado a: {getNombreEmpleado(tarea.assignedTo)}</span>
+                  <span>Asignado a: {getNombreEmpleado(tarea.assigneeId)}</span>
                 </div>
               )}
             </CardContent>
