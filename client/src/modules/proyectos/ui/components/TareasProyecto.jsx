@@ -237,14 +237,14 @@ export default function TareasProyecto({ proyectoId }) {
     }
   };
   
-  // Obtener nombre de empleado por ID
-  const getNombreEmpleado = (empleadoId) => {
+  // Obtener nombre de empleado por ID de usuario
+  const getNombreEmpleado = (usuarioId) => {
     if (!empleados) return "Sin asignar";
     
-    const empleado = empleados.find(emp => emp.id === empleadoId);
+    const empleado = empleados.find(emp => emp.userId === usuarioId);
     if (!empleado) return "Sin asignar";
     
-    return `${empleado.firstName || ''} ${empleado.lastName || ''}`.trim() || empleado.username || "Sin asignar";
+    return `${empleado.firstName || ''} ${empleado.lastName || ''}`.trim() || "Empleado " + empleado.id || "Sin asignar";
   };
   
   // Renderizar lista de tareas
@@ -437,8 +437,8 @@ export default function TareasProyecto({ proyectoId }) {
                   <SelectContent>
                     <SelectItem value="unassigned">Sin asignar</SelectItem>
                     {empleados?.map((empleado) => (
-                      <SelectItem key={empleado.id} value={empleado.id.toString()}>
-                        {`${empleado.firstName || ''} ${empleado.lastName || ''}`.trim() || empleado.username}
+                      <SelectItem key={empleado.id} value={empleado.userId.toString()}>
+                        {`${empleado.firstName || ''} ${empleado.lastName || ''}`.trim() || "Empleado " + empleado.id}
                       </SelectItem>
                     ))}
                   </SelectContent>
