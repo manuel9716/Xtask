@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Loader2, Plus } from "lucide-react";
 import { ModalCrearProyecto } from "../components/ModalCrearProyecto";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export function ListaProyectos() {
   // Estado para la paginación y filtros
@@ -14,13 +16,16 @@ export function ListaProyectos() {
   const [porPagina] = useState(9); // Fijo a 9 proyectos por página
   const [filtros, setFiltros] = useState<IFiltrosProyecto>({});
   const [modalAbierto, setModalAbierto] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // Consultar proyectos con filtros y paginación
   const { 
     data: proyectos = [], 
     isLoading, 
     isError, 
-    error 
+    error,
+    refetch
   } = useProyectos({
     ...filtros,
     page: pagina,
@@ -41,6 +46,18 @@ export function ListaProyectos() {
   const handlePageChange = (nuevaPagina: number) => {
     setPagina(nuevaPagina);
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll al inicio
+  };
+  
+  // Manejar cambio de estado de proyecto
+  const handleEstadoCambiado = () => {
+    // Refrescar la lista de proyectos
+    refetch();
+    
+    // Mostrar mensaje de éxito
+    toast({
+      title: "Estado actualizado",
+      description: "El estado del proyecto ha sido actualizado correctamente."
+    });
   };
 
   return (
@@ -97,7 +114,11 @@ export function ListaProyectos() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {proyectos.map((proyecto) => (
-              <ProyectoCard key={proyecto.id} proyecto={proyecto} />
+              <ProyectoCard 
+                key={proyecto.id} 
+                proyecto={proyecto} 
+                onEstadoCambiado={handleEstadoCambiado}
+              />
             ))}
           </div>
           
