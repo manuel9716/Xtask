@@ -22,7 +22,7 @@ const generateToken = (user: any): string => {
   }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-// Middleware para verificar el token JWT
+// Middleware para verificar el token JWT (en desuso - usar authRequired de los middlewares)
 export const verifyToken = (req: Request, res: Response, next: Function) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
@@ -32,8 +32,22 @@ export const verifyToken = (req: Request, res: Response, next: Function) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-    req.user = { id: decoded.userId };
+    // Decodificar el token con todos los campos
+    const decoded = jwt.verify(token, JWT_SECRET) as { 
+      userId: number,
+      username: string,
+      email: string,
+      role: string
+    };
+    
+    // Asignar los datos del token directamente
+    req.user = {
+      id: decoded.userId,
+      username: decoded.username,
+      email: decoded.email,
+      role: decoded.role
+    };
+    
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Token inválido o expirado' });
