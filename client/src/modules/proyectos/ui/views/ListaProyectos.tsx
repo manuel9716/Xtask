@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useProyectos } from "../../application/useCases/listarProyectos";
-import { FiltrosProyecto as IFiltrosProyecto } from "../../domain/entities/Proyecto";
+import { FiltrosProyecto as IFiltrosProyecto, calcularMetricasProyecto } from "../../domain/entities/Proyecto";
 import { ProyectoCard } from "../components/ProyectoCard";
 import { FiltrosProyecto } from "../components/FiltrosProyecto";
 import { Button } from "@/components/ui/button";
@@ -113,13 +113,24 @@ export function ListaProyectos() {
       {!isLoading && !isError && proyectos.length > 0 && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {proyectos.map((proyecto) => (
-              <ProyectoCard 
-                key={proyecto.id} 
-                proyecto={proyecto} 
-                onEstadoCambiado={handleEstadoCambiado}
-              />
-            ))}
+            {proyectos.map((proyecto) => {
+              // Calcular métricas del proyecto
+              const metricas = calcularMetricasProyecto(proyecto);
+              // Preparar proyecto con propiedades adicionales para la tarjeta
+              const proyectoConMetricas = {
+                ...proyecto,
+                progreso: metricas.porcentajeAvance,
+                retrasado: metricas.estaRetrasado
+              };
+              
+              return (
+                <ProyectoCard 
+                  key={proyecto.id} 
+                  proyecto={proyectoConMetricas} 
+                  onEstadoCambiado={handleEstadoCambiado}
+                />
+              );
+            })}
           </div>
           
           {/* Paginación */}
