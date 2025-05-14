@@ -44,7 +44,8 @@ export async function authRequired(req: Request, res: Response, next: NextFuncti
   
   try {
     // Decodificar el token con todos los campos
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_default') as DecodedToken;
+    console.log('Verificando token con secreto:', process.env.JWT_SECRET || 'xtask-secret-key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'xtask-secret-key') as DecodedToken;
     
     // Asignar directamente los datos del token al request
     req.user = decoded;
