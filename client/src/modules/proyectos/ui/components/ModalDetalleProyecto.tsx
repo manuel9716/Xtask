@@ -16,6 +16,8 @@ import { EstadoProyectoBadge } from './EstadoProyectoBadge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { apiRequest } from '@/lib/queryClient';
+import TareasProyecto from './TareasProyecto';
+import ResponsablesProyecto from './ResponsablesProyecto';
 
 // Funciones de formateo
 const formatCurrency = (amount: number | string | null | undefined): string => {
@@ -36,19 +38,6 @@ const formatDate = (date: string | Date | null | undefined): string => {
     year: 'numeric'
   }).format(dateObj);
 };
-
-// Importaciones temporales - reemplazar cuando los componentes estén listos para importar
-const ResponsablesProyecto = ({ proyectoId }: { proyectoId: number }) => (
-  <div className="p-4 text-center">
-    <p className="text-muted-foreground">Módulo de responsables en construcción (ID: {proyectoId})</p>
-  </div>
-);
-
-const TareasProyecto = ({ proyectoId }: { proyectoId: number }) => (
-  <div className="p-4 text-center">
-    <p className="text-muted-foreground">Módulo de tareas en construcción (ID: {proyectoId})</p>
-  </div>
-);
 
 interface ModalDetalleProyectoProps {
   proyectoId: number;

@@ -1,169 +1,134 @@
-import { Router, Request, Response } from 'express';
-import { db } from '../db';
-import { tasks } from '@shared/schema';
+import express, { Request, Response } from 'express';
+import { storage } from '../storage';
 import { eq, and } from 'drizzle-orm';
-import { authRequired } from '../middlewares/auth';
-import { z } from 'zod';
+import { tasks } from '@shared/schema';
+import { verifyToken } from '../middlewares/auth';
 
-const tasksRouter = Router();
+const router = express.Router();
 
-// Aplicar middleware de autenticación a todas las rutas
-tasksRouter.use(authRequired);
+// Aplicar middleware de autenticación
+router.use(verifyToken);
 
-// Esquema de validación para crear/actualizar tareas
-const taskSchema = z.object({
-  title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
-  description: z.string().optional().nullable(),
-  status: z.enum(['todo', 'in_progress', 'completed']),
-  priority: z.enum(['low', 'medium', 'high']),
-  dueDate: z.string().optional().nullable(),
-  projectId: z.number(),
-  assigneeId: z.number().optional().nullable()
-});
-
-// GET - Obtener tareas (con filtro opcional por proyecto)
-tasksRouter.get('/', async (req: Request, res: Response) => {
+// Obtener todas las tareas o filtrar por proyecto
+router.get('/', async (req: Request, res: Response) => {
   try {
-    let query = db.select().from(tasks);
+    const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
     
-    // Filtrar por proyecto si se proporciona projectId
-    if (req.query.projectId) {
-      const projectId = Number(req.query.projectId);
-      if (!isNaN(projectId)) {
-        query = query.where(eq(tasks.projectId, projectId));
-      }
-    }
+    const tareas = await storage.getAllTasks(projectId);
     
-    const result = await query;
-    res.json(result);
+    res.json(tareas);
   } catch (error: any) {
     console.error('Error al obtener tareas:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      error: 'Error al obtener las tareas',
+      details: error.message 
+    });
   }
 });
 
-// POST - Crear una nueva tarea
-tasksRouter.post('/', async (req: Request, res: Response) => {
+// Obtener una tarea específica por ID
+router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const validatedData = taskSchema.parse(req.body);
+    const id = parseInt(req.params.id);
+    const tarea = await storage.getTask(id);
     
-    // Preparar datos con fecha de creación
-    const newTaskData = {
-      title: validatedData.title,
-      description: validatedData.description,
-      status: validatedData.status,
-      priority: validatedData.priority,
-      projectId: validatedData.projectId,
-      assigneeId: validatedData.assigneeId,
-      dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
-      createdAt: new Date()
-    };
-    
-    const [newTask] = await db.insert(tasks).values(newTaskData).returning();
-    
-    res.status(201).json(newTask);
-  } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
-    }
-    console.error('Error al crear tarea:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET - Obtener una tarea específica
-tasksRouter.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'ID de tarea inválido' });
-    }
-    
-    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
-    
-    if (!task) {
+    if (!tarea) {
       return res.status(404).json({ error: 'Tarea no encontrada' });
     }
     
-    res.json(task);
+    res.json(tarea);
   } catch (error: any) {
-    console.error('Error al obtener tarea:', error);
-    res.status(500).json({ error: error.message });
+    console.error(`Error al obtener tarea ${req.params.id}:`, error);
+    res.status(500).json({ 
+      error: 'Error al obtener la tarea',
+      details: error.message 
+    });
   }
 });
 
-// PATCH - Actualizar una tarea
-tasksRouter.patch('/:id', async (req: Request, res: Response) => {
+// Crear una nueva tarea
+router.post('/', async (req: Request, res: Response) => {
   try {
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'ID de tarea inválido' });
+    const { title, description, status, priority, projectId, assignedTo } = req.body;
+    
+    if (!title || !projectId) {
+      return res.status(400).json({ error: 'Título y projectId son requeridos' });
     }
     
-    // Verificar que la tarea existe
-    const [existingTask] = await db.select().from(tasks).where(eq(tasks.id, id));
+    const task = await storage.createTask({
+      title,
+      description,
+      status: status || 'pending',
+      priority: priority || 'medium',
+      projectId,
+      assignedTo,
+      createdBy: req.user?.userId
+    });
     
+    res.status(201).json(task);
+  } catch (error: any) {
+    console.error('Error al crear tarea:', error);
+    res.status(500).json({ 
+      error: 'Error al crear la tarea',
+      details: error.message 
+    });
+  }
+});
+
+// Actualizar una tarea existente
+router.patch('/:id', async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { title, description, status, priority, assignedTo } = req.body;
+    
+    // Verificar si la tarea existe
+    const existingTask = await storage.getTask(id);
     if (!existingTask) {
       return res.status(404).json({ error: 'Tarea no encontrada' });
     }
     
-    // Validar solo los campos proporcionados
-    const updateSchema = taskSchema.partial();
-    const validatedData = updateSchema.parse(req.body);
-    
-    // Preparar datos para actualizar
-    const updateData: any = {};
-    
-    if (validatedData.title !== undefined) updateData.title = validatedData.title;
-    if (validatedData.description !== undefined) updateData.description = validatedData.description;
-    if (validatedData.status !== undefined) updateData.status = validatedData.status;
-    if (validatedData.priority !== undefined) updateData.priority = validatedData.priority;
-    if (validatedData.projectId !== undefined) updateData.projectId = validatedData.projectId;
-    if (validatedData.assigneeId !== undefined) updateData.assigneeId = validatedData.assigneeId;
-    if (validatedData.dueDate !== undefined) {
-      updateData.dueDate = validatedData.dueDate ? new Date(validatedData.dueDate) : null;
-    }
-    
     // Actualizar la tarea
-    const [updatedTask] = await db
-      .update(tasks)
-      .set(updateData)
-      .where(eq(tasks.id, id))
-      .returning();
+    const updatedTask = await storage.updateTask(id, {
+      title,
+      description,
+      status,
+      priority,
+      assignedTo,
+      updatedBy: req.user?.userId
+    });
     
     res.json(updatedTask);
   } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors });
-    }
-    console.error('Error al actualizar tarea:', error);
-    res.status(500).json({ error: error.message });
+    console.error(`Error al actualizar tarea ${req.params.id}:`, error);
+    res.status(500).json({ 
+      error: 'Error al actualizar la tarea',
+      details: error.message 
+    });
   }
 });
 
-// DELETE - Eliminar una tarea
-tasksRouter.delete('/:id', async (req: Request, res: Response) => {
+// Eliminar una tarea
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ error: 'ID de tarea inválido' });
-    }
+    const id = parseInt(req.params.id);
     
-    // Verificar que la tarea existe
-    const [existingTask] = await db.select().from(tasks).where(eq(tasks.id, id));
-    
+    // Verificar si la tarea existe
+    const existingTask = await storage.getTask(id);
     if (!existingTask) {
       return res.status(404).json({ error: 'Tarea no encontrada' });
     }
     
     // Eliminar la tarea
-    await db.delete(tasks).where(eq(tasks.id, id));
+    await storage.deleteTask(id);
     
-    res.status(200).json({ message: 'Tarea eliminada correctamente' });
+    res.status(204).send();
   } catch (error: any) {
-    console.error('Error al eliminar tarea:', error);
-    res.status(500).json({ error: error.message });
+    console.error(`Error al eliminar tarea ${req.params.id}:`, error);
+    res.status(500).json({ 
+      error: 'Error al eliminar la tarea',
+      details: error.message 
+    });
   }
 });
 
-export default tasksRouter;
+export default router;
