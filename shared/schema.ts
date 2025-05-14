@@ -66,6 +66,19 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Tabla de registro de actividades de usuarios
+export const activityLogs = pgTable("activity_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  action: text("action").notNull(), // LOGIN, PASSWORD_CHANGE, PROFILE_UPDATE, USER_CREATED, etc.
+  description: text("description").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  targetId: integer("target_id"), // ID del recurso afectado (si aplica)
+  targetType: text("target_type"), // Tipo de recurso: USER, PROJECT, TASK, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Projects table
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
@@ -478,6 +491,7 @@ export const settings = pgTable("settings", {
 
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({ id: true, createdAt: true });
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true });
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true });
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true });
@@ -579,6 +593,9 @@ export const insertEmpleadoCapacitacionSchema = createInsertSchema(empleadoCapac
 // Types for usage in application
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;
