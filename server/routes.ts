@@ -15,6 +15,7 @@ import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
 import tasksRouter from "./routes/tasks.routes";
 import { tempCreateUserRouter } from "./routes/temp-create-user.routes";
+import { tempUserListRouter } from "./routes/temp-user-list.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Rutas de autenticación
