@@ -13,6 +13,7 @@ import capacitacionesRouter from "./routes/capacitaciones.routes";
 import microLearningRouter from "./routes/microlearning.routes";
 import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
+import tasksRouter from "./routes/tasks.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Rutas de autenticación
@@ -20,25 +21,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas para módulo de KPIs
   app.use('/api/kpis', kpiRouter);
-  // Projects routes
+  
+  // Rutas para proyectos y tareas
+  app.use('/api/proyectos', proyectosRouter);
+  app.use('/api/tasks', tasksRouter);
+  app.use('/api/employee-projects', employeeProjectsRouter);
+  
+  // Project routes backward compatibility
   app.get("/api/projects", async (req, res) => {
     try {
       const projects = await storage.getAllProjects();
       res.json(projects);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
-  
-  app.post("/api/projects", async (req, res) => {
-    try {
-      const parseResult = insertProjectSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        return res.status(400).json({ message: "Invalid project data", errors: parseResult.error.errors });
-      }
-      
-      const project = await storage.createProject(parseResult.data);
-      res.status(201).json(project);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -51,43 +44,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Project not found" });
       }
       res.json(project);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
-
-  // Tasks routes
-  app.get("/api/tasks", async (req, res) => {
-    try {
-      const projectId = req.query.projectId ? parseInt(req.query.projectId as string) : undefined;
-      const tasks = await storage.getAllTasks(projectId);
-      res.json(tasks);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
-  
-  app.post("/api/tasks", async (req, res) => {
-    try {
-      const parseResult = insertTaskSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        return res.status(400).json({ message: "Invalid task data", errors: parseResult.error.errors });
-      }
-      
-      const task = await storage.createTask(parseResult.data);
-      res.status(201).json(task);
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
-  });
-  
-  app.patch("/api/tasks/:id", async (req, res) => {
-    try {
-      const task = await storage.updateTask(parseInt(req.params.id), req.body);
-      if (!task) {
-        return res.status(404).json({ message: "Task not found" });
-      }
-      res.json(task);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
