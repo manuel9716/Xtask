@@ -81,7 +81,10 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     }
 
     // Verificar contraseña
+    console.log('Verificando contraseña para:', user.username);
+    console.log('Hash almacenado:', user.password);
     const passwordMatch = await bcrypt.compare(password, user.password);
+    console.log('Resultado de comparación:', passwordMatch);
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
