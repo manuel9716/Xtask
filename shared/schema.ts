@@ -374,8 +374,9 @@ export const employeeProjects = pgTable("employee_projects", {
   employeeId: integer("employee_id").references(() => employees.id).notNull(),
   projectId: integer("project_id").references(() => projects.id).notNull(),
   role: text("role").default("member"), // member, lead, manager
+  isPrimary: boolean("is_primary").default(false).notNull(), // Indica si es el responsable principal
   assignedAt: timestamp("assigned_at").defaultNow().notNull(),
-  assignedBy: integer("assigned_by").references(() => users.id).notNull(),
+  assignedBy: integer("assigned_by").references(() => users.id),
   isActive: boolean("is_active").default(true).notNull(),
 });
 

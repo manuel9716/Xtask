@@ -36,6 +36,15 @@ export interface IStorage {
   getTask(id: number): Promise<Task | undefined>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<Task>): Promise<Task | undefined>;
+  deleteTask(id: number): Promise<void>;
+
+  // Employee Projects
+  getEmployeeProjects(projectId?: number, employeeId?: number): Promise<any[]>;
+  getEmployeeProject(id: number): Promise<any | undefined>;
+  checkEmployeeProjectExists(projectId: number, employeeId: number): Promise<boolean>;
+  createEmployeeProject(employeeProject: any): Promise<any>;
+  setEmployeeProjectAsPrimary(id: number, projectId: number): Promise<any>;
+  deleteEmployeeProject(id: number): Promise<void>;
   
   // Transactions
   getAllTransactions(projectId?: number): Promise<Transaction[]>;
