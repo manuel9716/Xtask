@@ -6,6 +6,7 @@ export interface DecodedToken {
   userId: number;
   username: string;
   email: string;
+  role: string;
   iat?: number;
   exp?: number;
 }
@@ -20,7 +21,7 @@ declare global {
 }
 
 // Middleware para verificar el token JWT
-export function authRequired(req: Request, res: Response, next: NextFunction) {
+export async function authRequired(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   
   if (!authHeader) {
@@ -42,8 +43,33 @@ export function authRequired(req: Request, res: Response, next: NextFunction) {
   const token = parts[1];
   
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_default') as DecodedToken;
-    req.user = decoded;
+    // Decodificar el token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_default') as { userId: number };
+    
+    // Obtener información completa del usuario desde la base de datos
+    const { db } = await import('../db');
+    const { users } = await import('@shared/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const userData = await db.query.users.findFirst({
+      where: eq(users.id, decoded.userId)
+    });
+    
+    if (!userData) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no encontrado o desactivado'
+      });
+    }
+    
+    // Asignar datos completos del usuario al request
+    req.user = {
+      userId: userData.id,
+      username: userData.username,
+      email: userData.email,
+      role: userData.role,
+    };
+    
     next();
   } catch (error) {
     return res.status(401).json({ 

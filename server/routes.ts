@@ -799,8 +799,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Importar el middleware de autenticación
+  const { authRequired } = await import('./middlewares/auth');
+  
   // Endpoint para crear un nuevo usuario (como administrador)
-  app.post('/api/users', async (req, res) => {
+  app.post('/api/users', authRequired, async (req, res) => {
     try {
       // Verificar que el usuario es administrador
       if (req.user?.role !== 'admin') {
