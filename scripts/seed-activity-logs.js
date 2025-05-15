@@ -3,7 +3,7 @@
  * Ejecutar con: node scripts/seed-activity-logs.js
  */
 
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 const API_URL = 'http://localhost:5000';
 
