@@ -69,9 +69,11 @@ export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize
       }
       
       const data = await response.json();
+      console.log('Datos recibidos del backend:', data);
       
       // Si el backend devuelve un array plano, lo convertimos al formato esperado
       if (Array.isArray(data)) {
+        console.log('Formato: Array plano');
         return {
           data: data,
           total: data.length,
@@ -82,6 +84,7 @@ export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize
       
       // Si el backend devuelve el formato con empleados y pagination
       if (data.empleados && data.pagination) {
+        console.log('Formato: { empleados, pagination }');
         return {
           data: data.empleados,
           total: data.pagination.totalItems,
@@ -91,6 +94,7 @@ export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize
       }
       
       // Si ya tiene el formato esperado, lo devolvemos tal cual
+      console.log('Formato: asumiendo formato esperado');
       return data;
     }
   });
