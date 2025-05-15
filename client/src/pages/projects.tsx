@@ -13,7 +13,7 @@ export default function Projects() {
   const [modalAbierto, setModalAbierto] = useState(false);
   
   const { data: projects } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
+    queryKey: ["/api/proyectos"],
   });
   
   // Calculate project metrics

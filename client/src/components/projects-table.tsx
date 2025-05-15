@@ -75,7 +75,7 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
   const { toast } = useToast();
   
   const { data: projects, isLoading, refetch } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
+    queryKey: ["/api/proyectos"],
   });
 
   const displayProjects = limit ? projects?.slice(0, limit) : projects;
