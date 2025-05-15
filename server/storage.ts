@@ -86,10 +86,6 @@ export interface IStorage {
   createBudget(budget: InsertBudget): Promise<Budget>;
   updateBudget(id: number, budget: Partial<Budget>): Promise<Budget>;
   
-  // Operaciones de registros de actividad
-  getUserActivityLogs(userId: number, limit?: number): Promise<ActivityLog[]>;
-  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
-  
   // Session store for authentication
   sessionStore: session.SessionStore;
 }
@@ -187,29 +183,6 @@ export class MemStorage implements IStorage {
     const user: User = { ...userData, id, createdAt: now };
     this.usersMap.set(id, user);
     return user;
-  }
-  
-  // Activity Logs implementation
-  async getUserActivityLogs(userId: number, limit: number = 10): Promise<ActivityLog[]> {
-    const logs: ActivityLog[] = [];
-    for (const log of this.activityLogsMap.values()) {
-      if (log.userId === userId) {
-        logs.push(log);
-      }
-    }
-    // Ordenar por fecha descendente (más reciente primero)
-    return logs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limit);
-  }
-
-  async createActivityLog(insertLog: InsertActivityLog): Promise<ActivityLog> {
-    const id = this.activityLogIdCounter++;
-    const activityLog: ActivityLog = {
-      id,
-      ...insertLog,
-      createdAt: new Date()
-    };
-    this.activityLogsMap.set(id, activityLog);
-    return activityLog;
   }
   
   // Projects implementation
@@ -537,20 +510,6 @@ export class DatabaseStorage implements IStorage {
   async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(userData).returning();
     return user;
-  }
-  
-  // Activity Logs implementation
-  async getUserActivityLogs(userId: number, limit: number = 10): Promise<ActivityLog[]> {
-    return await db.select()
-      .from(activityLogs)
-      .where(eq(activityLogs.userId, userId))
-      .orderBy(desc(activityLogs.createdAt))
-      .limit(limit);
-  }
-
-  async createActivityLog(insertLog: InsertActivityLog): Promise<ActivityLog> {
-    const [activityLog] = await db.insert(activityLogs).values(insertLog).returning();
-    return activityLog;
   }
   
   // Projects implementation

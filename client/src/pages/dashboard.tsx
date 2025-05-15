@@ -1,4 +1,4 @@
-import { Briefcase, DollarSign, Clock, Users, Activity } from "lucide-react";
+import { Briefcase, DollarSign, Clock, Users } from "lucide-react";
 import { StatCard } from "@/components/stat-card";
 import { ProjectsTable } from "@/components/projects-table";
 import { KanbanBoard } from "@/components/kanban-board";
@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProcessReport } from "@/modules/dashboard/ui/components/ProcessReport";
 import { ProcessStats } from "@/modules/dashboard/ui/components/ProcessStats";
 import { ProcessChart } from "@/modules/dashboard/ui/components/ProcessChart";
-import ActivityFeed from "@/modules/dashboard/ui/components/ActivityFeed";
 
 export default function Dashboard() {
   return (
@@ -25,10 +24,6 @@ export default function Dashboard() {
         <TabsList className="bg-muted/50 p-1">
           <TabsTrigger value="overview">Vista General</TabsTrigger>
           <TabsTrigger value="reports">Reportes de Procesos</TabsTrigger>
-          <TabsTrigger value="activity">
-            <Activity className="mr-2 h-4 w-4" />
-            Mi Actividad
-          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6">
@@ -107,13 +102,6 @@ export default function Dashboard() {
           
           {/* Vista de proyectos relacionada */}
           <ProjectsTable limit={4} />
-        </TabsContent>
-        
-        {/* Contenido de Actividad */}
-        <TabsContent value="activity" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            <ActivityFeed />
-          </div>
         </TabsContent>
       </Tabs>
     </div>
