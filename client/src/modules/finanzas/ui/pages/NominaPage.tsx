@@ -124,20 +124,20 @@ export function NominaPage() {
         
         <TabsContent value="empleados" className="space-y-4 mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Gestión de Empleados</CardTitle>
-              <CardDescription>
-                Administre los datos de los empleados para la nómina
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center py-8">
-              <div className="text-center">
-                <UserPlus className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium">Sección en desarrollo</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Esta funcionalidad estará disponible próximamente.
-                </p>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div>
+                <CardTitle>Gestión de Empleados</CardTitle>
+                <CardDescription>
+                  Administre los datos de los empleados para la nómina
+                </CardDescription>
               </div>
+              <Button onClick={() => window.location.href = '/nomina/empleados'}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Nuevo Empleado
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <EmpleadosNominaTable />
             </CardContent>
           </Card>
         </TabsContent>
