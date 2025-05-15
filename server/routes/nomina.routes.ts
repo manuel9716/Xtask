@@ -784,11 +784,11 @@ nominaRouter.get('/v1/dashboard', async (req: Request, res: Response) => {
     
     const nominasPagadas = await db.select({ count: sql<number>`count(*)` })
       .from(nominas)
-      .where(eq(nominas.estado, EstadoNomina.PAGADA));
+      .where(eq(nominas.estado, EstadoNomina.PAGADO));
     
     const nominasCanceladas = await db.select({ count: sql<number>`count(*)` })
       .from(nominas)
-      .where(eq(nominas.estado, EstadoNomina.CANCELADA));
+      .where(eq(nominas.estado, EstadoNomina.CANCELADO));
     
     // Obtener las nóminas más recientes (últimas 5)
     const nominasRecientes = await db.select()
@@ -807,7 +807,7 @@ nominaRouter.get('/v1/dashboard', async (req: Request, res: Response) => {
       sum: sql<string>`COALESCE(SUM(CAST(${nominas.montoTotal} AS NUMERIC)), 0)` 
     })
     .from(nominas)
-    .where(eq(nominas.estado, EstadoNomina.PAGADA));
+    .where(eq(nominas.estado, EstadoNomina.PAGADO));
     
     // Contar empleados activos
     const empleadosActivos = await db.select({ count: sql<number>`count(*)` })
