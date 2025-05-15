@@ -25,8 +25,6 @@ import { ThemeProvider } from "@/hooks/use-theme";
 
 // Importaciones para el módulo de autenticación
 import { LoginPage } from "@/modules/auth/ui/views/LoginPage";
-import { ForgotPasswordPage } from "@/modules/auth/ui/views/ForgotPasswordPage";
-import { ResetPasswordPage } from "@/modules/auth/ui/views/ResetPasswordPage";
 import { AuthProvider } from "@/modules/auth/ui/context/AuthContext";
 import { ProtectedRoute } from "@/modules/auth/ui/components/ProtectedRoute";
 
@@ -42,12 +40,6 @@ function Router() {
       </Route>
       <Route path="/auth/register">
         <LoginPage />
-      </Route>
-      <Route path="/auth/forgot-password">
-        <ForgotPasswordPage />
-      </Route>
-      <Route path="/auth/reset-password">
-        <ResetPasswordPage />
       </Route>
       
       {/* Dashboard (ahora como ruta secundaria) - Protegida */}

@@ -96,21 +96,7 @@ export function LoginForm({ onRegisterClick }: LoginFormProps) {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex justify-between items-center">
-                    <FormLabel>Contraseña</FormLabel>
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-xs text-[#623BA6] hover:text-[#372865]"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate('/auth/forgot-password');
-                      }}
-                      type="button"
-                      disabled={isLoading}
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </Button>
-                  </div>
+                  <FormLabel>Contraseña</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
