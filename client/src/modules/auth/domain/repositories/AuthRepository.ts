@@ -1,4 +1,4 @@
-import { LoginData, RegisterData, Usuario, LoginResponse } from '../entities/Usuario';
+import { LoginData, RegisterData, Usuario, LoginResponse, ForgotPasswordData, ResetPasswordData, ValidateResetTokenResponse } from '../entities/Usuario';
 
 // Interfaz para el repositorio de autenticación
 export interface AuthRepository {
@@ -40,4 +40,25 @@ export interface AuthRepository {
    * @returns true si hay un usuario autenticado, false en caso contrario
    */
   isAuthenticated(): boolean;
+  
+  /**
+   * Solicita un correo para restablecer la contraseña
+   * @param data Datos para solicitud (email)
+   * @returns Mensaje de confirmación
+   */
+  forgotPassword(data: ForgotPasswordData): Promise<{message: string}>;
+  
+  /**
+   * Valida un token de restablecimiento de contraseña
+   * @param token Token de restablecimiento
+   * @returns Respuesta indicando si el token es válido
+   */
+  validateResetToken(token: string): Promise<ValidateResetTokenResponse>;
+  
+  /**
+   * Restablece la contraseña con un token válido
+   * @param data Datos para restablecimiento (token y nueva contraseña)
+   * @returns Mensaje de confirmación
+   */
+  resetPassword(data: ResetPasswordData): Promise<{message: string}>;
 }

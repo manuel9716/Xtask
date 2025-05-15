@@ -34,3 +34,21 @@ export interface RegisterData {
   fullName: string;
   role?: RolUsuario | string;
 }
+
+// Datos para solicitar recuperación de contraseña
+export interface ForgotPasswordData {
+  email: string;
+}
+
+// Datos para restablecer contraseña
+export interface ResetPasswordData {
+  token: string;
+  newPassword: string;
+}
+
+// Respuesta de validación de token
+export interface ValidateResetTokenResponse {
+  valid: boolean;
+  message: string;
+  userId?: number;
+}

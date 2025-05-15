@@ -1,5 +1,13 @@
 import { AuthRepository } from '../../domain/repositories/AuthRepository';
-import { LoginData, RegisterData, Usuario, LoginResponse } from '../../domain/entities/Usuario';
+import { 
+  LoginData, 
+  RegisterData, 
+  Usuario, 
+  LoginResponse, 
+  ForgotPasswordData, 
+  ResetPasswordData, 
+  ValidateResetTokenResponse 
+} from '../../domain/entities/Usuario';
 import axios from 'axios';
 
 // Constantes para tokens de autenticación
