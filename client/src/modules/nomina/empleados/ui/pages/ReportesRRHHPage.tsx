@@ -66,14 +66,37 @@ export default function ReportesRRHHPage() {
     queryFn: () => obtenerEmpleados({ pageSize: 100 }), // Obtener con límite grande
   });
   
-  // Consulta para obtener proyectos (simplificada, habría que implementarla)
-  const { data: proyectosResponse } = useQuery<{data: any[]}>({
+  // Definición de tipo extendida para aceptar propiedades en español e inglés
+  type ProyectoExtendido = {
+    id: number;
+    name?: string;
+    nombre?: string;
+    description?: string;
+    descripcion?: string;
+    startDate?: Date;
+    fechaInicio?: Date;
+    endDate?: Date;
+    fechaFinPrevista?: Date;
+    budget?: string | number;
+    presupuesto?: string | number;
+    remainingBudget?: string | number;
+    presupuestoRestante?: string | number;
+    managerId?: number;
+    responsableId?: number;
+    status?: string;
+    estado?: string;
+    category?: string;
+    categoria?: string;
+  };
+
+  // Consulta para obtener proyectos
+  const { data: proyectosResponse } = useQuery<{data: ProyectoExtendido[]}>({
     queryKey: ['/api/proyectos'],
     queryFn: () => fetch('/api/proyectos').then(res => res.json()),
   });
   
   // Extraer proyectos de la respuesta paginada
-  const proyectos = proyectosResponse?.data || [];
+  const proyectos = proyectosResponse?.data || [] as ProyectoExtendido[];
   
   // Calcular métricas si tenemos datos
   const metricas: MetricsRRHH | null = datosEmpleados?.empleados

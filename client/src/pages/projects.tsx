@@ -5,6 +5,19 @@ import { Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { Project } from "@shared/schema";
+
+// Definición de tipo extendida para aceptar propiedades en español e inglés
+type ProyectoExtendido = Project & {
+  nombre?: string;
+  descripcion?: string;
+  fechaInicio?: Date;
+  fechaFinPrevista?: Date;
+  presupuesto?: string | number;
+  presupuestoRestante?: string | number;
+  responsableId?: number;
+  estado?: string;
+  categoria?: string;
+};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModalCrearProyecto } from "@/modules/proyectos/ui/components/ModalCrearProyecto";
 
@@ -12,12 +25,12 @@ export default function Projects() {
   const [activeTab, setActiveTab] = useState("all");
   const [modalAbierto, setModalAbierto] = useState(false);
   
-  const { data: proyectosResponse } = useQuery<{data: Project[]}>({
+  const { data: proyectosResponse } = useQuery<{data: ProyectoExtendido[]}>({
     queryKey: ["/api/proyectos"],
   });
   
   // Extraer los proyectos de la respuesta paginada
-  const projects = proyectosResponse?.data || [];
+  const projects = proyectosResponse?.data || [] as ProyectoExtendido[];
   
   // Calculate project metrics
   const totalProjects = projects.length || 0;
