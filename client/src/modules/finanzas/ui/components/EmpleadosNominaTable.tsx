@@ -34,7 +34,7 @@ export default function EmpleadosNominaTable() {
     contractStatus: ''
   });
   
-  const { data, isLoading, isError } = useEmpleadosNomina(filtros);
+  const { data, empleados, isLoading, isError } = useEmpleadosNomina(filtros);
   
   // Función para actualizar los filtros
   const actualizarFiltros = (key: string, value: string | number) => {

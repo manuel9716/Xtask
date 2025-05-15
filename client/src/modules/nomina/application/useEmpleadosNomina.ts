@@ -26,15 +26,24 @@ interface EmpleadosParams {
   contractStatus?: string;
 }
 
+interface UseEmpleadosNominaResult {
+  data: EmpleadosResponse | undefined;
+  empleados: Employee[]; // Para compatibilidad con componentes existentes
+  empleadosParaSelect: { label: string; value: string }[]; // Para compatibilidad con componentes existentes
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+}
+
 /**
  * Hook para obtener empleados para nómina
  * 
  * Por defecto, trae solo empleados activos
  */
-export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize: 100, contractStatus: 'active' }) {
+export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize: 100, contractStatus: 'active' }): UseEmpleadosNominaResult {
   console.log('Enviando filtros:', params);
   
-  return useQuery<EmpleadosResponse>({
+  const { data, isLoading, isError, error } = useQuery<EmpleadosResponse>({
     queryKey: [
       '/api/nomina/empleados/listar',
       params.page,
@@ -85,4 +94,22 @@ export function useEmpleadosNomina(params: EmpleadosParams = { page: 1, pageSize
       return data;
     }
   });
+
+  // Extraer los empleados para compatibilidad con componentes existentes
+  const empleados: Employee[] = data?.data || [];
+  
+  // Convertir empleados en opciones para componentes de selección
+  const empleadosParaSelect = empleados.map(emp => ({
+    label: `${emp.firstName} ${emp.lastName}`,
+    value: emp.id.toString()
+  }));
+
+  return {
+    data,
+    empleados,
+    empleadosParaSelect,
+    isLoading,
+    isError,
+    error
+  };
 }
