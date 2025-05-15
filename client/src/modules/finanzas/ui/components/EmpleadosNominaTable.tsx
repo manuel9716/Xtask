@@ -214,7 +214,7 @@ export default function EmpleadosNominaTable() {
     );
   };
 
-  if (!data || data.data.length === 0) {
+  if (!data || !empleados || empleados.length === 0) {
     return (
       <div>
         <FiltrosComponent />
@@ -248,7 +248,7 @@ export default function EmpleadosNominaTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.data.map((empleado) => (
+            {empleados.map((empleado) => (
               <TableRow key={empleado.id}>
                 <TableCell className="font-medium">
                   {empleado.firstName} {empleado.lastName}
