@@ -148,4 +148,55 @@ export class AuthApiRepository implements AuthRepository {
   getToken(): string | null {
     return localStorage.getItem(AUTH_TOKEN_KEY);
   }
+
+  /**
+   * Solicita un correo para restablecer la contraseña
+   * @param data Datos para solicitud (email)
+   * @returns Mensaje de confirmación
+   */
+  async forgotPassword(data: ForgotPasswordData): Promise<{ message: string }> {
+    try {
+      const response = await axios.post<{ message: string }>(`${API_BASE_URL}/forgot-password`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Error al solicitar restablecimiento de contraseña');
+    }
+  }
+  
+  /**
+   * Valida un token de restablecimiento de contraseña
+   * @param token Token de restablecimiento
+   * @returns Respuesta indicando si el token es válido
+   */
+  async validateResetToken(token: string): Promise<ValidateResetTokenResponse> {
+    try {
+      const response = await axios.get<ValidateResetTokenResponse>(`${API_BASE_URL}/reset-password/${token}`);
+      return response.data;
+    } catch (error: any) {
+      return {
+        valid: false,
+        message: error.response?.data?.message || 'Token inválido o expirado'
+      };
+    }
+  }
+  
+  /**
+   * Restablece la contraseña con un token válido
+   * @param data Datos para restablecimiento (token y nueva contraseña)
+   * @returns Mensaje de confirmación
+   */
+  async resetPassword(data: ResetPasswordData): Promise<{ message: string }> {
+    try {
+      const response = await axios.post<{ message: string }>(`${API_BASE_URL}/reset-password`, data);
+      return response.data;
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Error al restablecer contraseña');
+    }
+  }
 }

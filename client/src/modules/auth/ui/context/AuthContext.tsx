@@ -1,5 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Usuario, LoginData, RegisterData } from '../../domain/entities/Usuario';
+import { 
+  Usuario, 
+  LoginData, 
+  RegisterData, 
+  ForgotPasswordData, 
+  ResetPasswordData, 
+  ValidateResetTokenResponse 
+} from '../../domain/entities/Usuario';
 import { AuthApiRepository } from '../../infrastructure/api/authApi';
 import { LoginUsuarioUseCase } from '../../application/useCases/loginUsuario';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +19,9 @@ interface AuthContextType {
   login: (credentials: LoginData) => Promise<boolean>;
   register: (userData: RegisterData) => Promise<boolean>;
   logout: () => Promise<void>;
+  forgotPassword: (data: ForgotPasswordData) => Promise<string>;
+  validateResetToken: (token: string) => Promise<ValidateResetTokenResponse>;
+  resetPassword: (data: ResetPasswordData) => Promise<string>;
   isAuthenticated: boolean;
 }
 
@@ -164,6 +174,90 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Función para solicitar recuperación de contraseña
+  const forgotPassword = async (data: ForgotPasswordData): Promise<string> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authRepository.forgotPassword(data);
+      
+      toast({
+        title: "Solicitud enviada",
+        description: response.message,
+      });
+      
+      return response.message;
+    } catch (err: any) {
+      setError(err.message || 'Error al solicitar recuperación de contraseña');
+      
+      toast({
+        title: "Error",
+        description: err.message || 'No se pudo procesar la solicitud',
+        variant: "destructive",
+      });
+      
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Función para validar token de restablecimiento
+  const validateResetToken = async (token: string): Promise<ValidateResetTokenResponse> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authRepository.validateResetToken(token);
+      return response;
+    } catch (err: any) {
+      setError(err.message || 'Error al validar token');
+      
+      toast({
+        title: "Error",
+        description: err.message || 'Token inválido o expirado',
+        variant: "destructive",
+      });
+      
+      return {
+        valid: false,
+        message: err.message || 'Token inválido o expirado'
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Función para restablecer contraseña
+  const resetPassword = async (data: ResetPasswordData): Promise<string> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await authRepository.resetPassword(data);
+      
+      toast({
+        title: "Contraseña actualizada",
+        description: response.message,
+      });
+      
+      return response.message;
+    } catch (err: any) {
+      setError(err.message || 'Error al restablecer contraseña');
+      
+      toast({
+        title: "Error",
+        description: err.message || 'No se pudo restablecer la contraseña',
+        variant: "destructive",
+      });
+      
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Valor del contexto
   const contextValue: AuthContextType = {
     user,
@@ -172,6 +266,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     register,
     logout,
+    forgotPassword,
+    validateResetToken,
+    resetPassword,
     isAuthenticated
   };
 
