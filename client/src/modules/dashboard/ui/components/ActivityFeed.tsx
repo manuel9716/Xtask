@@ -9,9 +9,10 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Definir la estructura de un registro de actividad
 interface ActivityLog {
@@ -128,17 +129,33 @@ export default function ActivityFeed() {
                       </Badge>
                       <span className="ml-2">{log.description}</span>
                     </p>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(log.createdAt), {
-                        addSuffix: true,
-                        locale: es,
-                      })}
-                    </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs text-muted-foreground cursor-help">
+                            {formatDistanceToNow(new Date(log.createdAt), {
+                              addSuffix: true,
+                              locale: es,
+                            })}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{format(new Date(log.createdAt), 'dd/MM/yyyy HH:mm:ss', { locale: es })}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   {log.targetType && (
-                    <p className="text-xs text-muted-foreground">
-                      {log.targetType}: {log.targetId || ""}
-                    </p>
+                    <div className="flex items-center mt-1">
+                      <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                        {log.targetType.charAt(0).toUpperCase() + log.targetType.slice(1)} #{log.targetId}
+                      </span>
+                      {log.ipAddress && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          IP: {log.ipAddress}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

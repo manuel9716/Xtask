@@ -140,4 +140,6 @@ async function seedActivityLogs(count = 20) {
 }
 
 // Ejecutar el script
-seedActivityLogs(15);
+seedActivityLogs(15).catch(error => {
+  console.error('Error durante la ejecución:', error);
+});
