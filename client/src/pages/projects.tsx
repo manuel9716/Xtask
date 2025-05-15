@@ -21,13 +21,15 @@ export default function Projects() {
   
   // Calculate project metrics
   const totalProjects = projects.length || 0;
-  const activeProjects = projects.filter(p => p.status === "active").length || 0;
-  const delayedProjects = projects.filter(p => p.status === "delayed").length || 0;
-  const completedProjects = projects.filter(p => p.status === "completed").length || 0;
+  const activeProjects = projects.filter(p => p.status === "active" || p.estado === "ACTIVO").length || 0;
+  const delayedProjects = projects.filter(p => p.status === "delayed" || p.estado === "RETRASADO").length || 0;
+  const completedProjects = projects.filter(p => p.status === "completed" || p.estado === "FINALIZADO").length || 0;
   
   // Calculate total budget
   const totalBudget = projects.reduce((acc, project) => {
-    return acc + parseFloat(project.budget.toString());
+    // Usar presupuesto o budget, dependiendo de cuál esté disponible
+    const presupuesto = project.presupuesto || project.budget || 0;
+    return acc + parseFloat(presupuesto.toString());
   }, 0) || 0;
   
   return (
