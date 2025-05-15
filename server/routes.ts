@@ -14,6 +14,7 @@ import microLearningRouter from "./routes/microlearning.routes";
 import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
 import tasksRouter from "./routes/tasks.routes";
+import activityLogsRouter from "./routes/activity-logs.routes";
 import { tempCreateUserRouter } from "./routes/temp-create-user.routes";
 import { tempUserListRouter } from "./routes/temp-user-list.routes";
 
@@ -80,6 +81,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Ruta para tareas
   app.use('/api/tasks', tasksRouter);
+  
+  // Ruta para registros de actividad
+  app.use('/api/activity-logs', activityLogsRouter);
   
   // Importar el middleware de autenticación
   const { authRequired } = await import('./middlewares/auth');
