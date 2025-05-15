@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import { db } from '../db';
 import { users } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
+import crypto from 'crypto';
+import { emailService } from '../services/email.service';
 
 // Crear router para las rutas de autenticación
 const authRouter = Router();
@@ -248,6 +250,134 @@ authRouter.post('/register', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error al registrar usuario:', error);
+    return res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
+  }
+});
+
+// Ruta para solicitar restablecimiento de contraseña
+authRouter.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Debe proporcionar un correo electrónico' });
+    }
+    
+    // Buscar usuario por correo electrónico
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email)
+    });
+    
+    // No revelar si el email existe o no por seguridad
+    if (!user) {
+      return res.status(200).json({ 
+        message: 'Si su correo está registrado, recibirá instrucciones para restablecer su contraseña'
+      });
+    }
+    
+    // Generar token aleatorio
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hora de validez
+    
+    // Actualizar usuario con el token
+    await db.update(users)
+      .set({
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: resetTokenExpiry
+      })
+      .where(eq(users.id, user.id));
+    
+    // Enviar correo con enlace para restablecer contraseña
+    const emailSent = await emailService.sendPasswordResetEmail(
+      user.email, 
+      resetToken,
+      user.username
+    );
+    
+    if (!emailSent) {
+      return res.status(500).json({ message: 'Error al enviar el correo electrónico' });
+    }
+    
+    return res.status(200).json({ 
+      message: 'Se han enviado instrucciones de restablecimiento a su correo electrónico'
+    });
+  } catch (error) {
+    console.error('Error al solicitar restablecimiento de contraseña:', error);
+    return res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
+  }
+});
+
+// Ruta para validar token de restablecimiento
+authRouter.get('/reset-password/:token', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    
+    if (!token) {
+      return res.status(400).json({ message: 'Token no proporcionado' });
+    }
+    
+    // Buscar usuario con token válido
+    const user = await db.query.users.findFirst({
+      where: eq(users.resetPasswordToken, token)
+    });
+    
+    if (!user || !user.resetPasswordExpires) {
+      return res.status(400).json({ message: 'Token inválido o expirado' });
+    }
+    
+    // Verificar que el token no haya expirado
+    if (user.resetPasswordExpires < new Date()) {
+      return res.status(400).json({ message: 'El token ha expirado' });
+    }
+    
+    return res.status(200).json({ 
+      message: 'Token válido', 
+      userId: user.id
+    });
+  } catch (error) {
+    console.error('Error al validar token de restablecimiento:', error);
+    return res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
+  }
+});
+
+// Ruta para cambiar contraseña con token
+authRouter.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body;
+    
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Token y nueva contraseña son requeridos' });
+    }
+    
+    // Buscar usuario con token válido
+    const user = await db.query.users.findFirst({
+      where: eq(users.resetPasswordToken, token)
+    });
+    
+    if (!user || !user.resetPasswordExpires) {
+      return res.status(400).json({ message: 'Token inválido o expirado' });
+    }
+    
+    // Verificar que el token no haya expirado
+    if (user.resetPasswordExpires < new Date()) {
+      return res.status(400).json({ message: 'El token ha expirado' });
+    }
+    
+    // Hash de la nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Actualizar contraseña y limpiar tokens
+    await db.update(users)
+      .set({
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null
+      })
+      .where(eq(users.id, user.id));
+    
+    return res.status(200).json({ message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    console.error('Error al restablecer contraseña:', error);
     return res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
   }
 });
