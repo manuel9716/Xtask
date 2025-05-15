@@ -17,7 +17,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import ListadoNominaPage from '@/modules/nomina/ui/pages/ListadoNominaPage';
-import EmpleadosNominaTable from '../components/EmpleadosNominaTable';
+import EmpleadosNominaTableSimple from '../components/EmpleadosNominaTableSimple';
 
 export function NominaPage() {
   const [, navigate] = useLocation();
@@ -138,7 +138,7 @@ export function NominaPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <EmpleadosNominaTable />
+              <EmpleadosNominaTableSimple />
             </CardContent>
           </Card>
         </TabsContent>
