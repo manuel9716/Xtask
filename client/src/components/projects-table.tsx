@@ -74,9 +74,12 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
   const [actualizando, setActualizando] = useState<number | null>(null);
   const { toast } = useToast();
   
-  const { data: projects, isLoading, refetch } = useQuery<Project[]>({
+  const { data: proyectosResponse, isLoading, refetch } = useQuery<{data: Project[]}>({
     queryKey: ["/api/proyectos"],
   });
+  
+  // Extraer los proyectos de la respuesta paginada
+  const projects = proyectosResponse?.data || [];
 
   const displayProjects = limit ? projects?.slice(0, limit) : projects;
   const projectCount = projects?.length || 0;

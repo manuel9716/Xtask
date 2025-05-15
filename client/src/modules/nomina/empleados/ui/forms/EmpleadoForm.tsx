@@ -56,14 +56,17 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Cargar proyectos
-  const { data: proyectos = [], isLoading: cargandoProyectos } = useQuery<Proyecto[]>({
-    queryKey: ['/api/projects'],
+  const { data: proyectosResponse, isLoading: cargandoProyectos } = useQuery<{data: Proyecto[]}>({
+    queryKey: ['/api/proyectos'],
     queryFn: async () => {
-      const res = await fetch('/api/projects');
+      const res = await fetch('/api/proyectos');
       if (!res.ok) throw new Error('Error al cargar proyectos');
       return res.json();
     }
   });
+  
+  // Extraer proyectos de la respuesta paginada
+  const proyectos = proyectosResponse?.data || [];
   
   // Crear defaultValues basado en si estamos en modo edición o no
   const getDefaultValues = () => {

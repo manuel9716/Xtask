@@ -12,18 +12,21 @@ export default function Projects() {
   const [activeTab, setActiveTab] = useState("all");
   const [modalAbierto, setModalAbierto] = useState(false);
   
-  const { data: projects } = useQuery<Project[]>({
+  const { data: proyectosResponse } = useQuery<{data: Project[]}>({
     queryKey: ["/api/proyectos"],
   });
   
+  // Extraer los proyectos de la respuesta paginada
+  const projects = proyectosResponse?.data || [];
+  
   // Calculate project metrics
-  const totalProjects = projects?.length || 0;
-  const activeProjects = projects?.filter(p => p.status === "active").length || 0;
-  const delayedProjects = projects?.filter(p => p.status === "delayed").length || 0;
-  const completedProjects = projects?.filter(p => p.status === "completed").length || 0;
+  const totalProjects = projects.length || 0;
+  const activeProjects = projects.filter(p => p.status === "active").length || 0;
+  const delayedProjects = projects.filter(p => p.status === "delayed").length || 0;
+  const completedProjects = projects.filter(p => p.status === "completed").length || 0;
   
   // Calculate total budget
-  const totalBudget = projects?.reduce((acc, project) => {
+  const totalBudget = projects.reduce((acc, project) => {
     return acc + parseFloat(project.budget.toString());
   }, 0) || 0;
   

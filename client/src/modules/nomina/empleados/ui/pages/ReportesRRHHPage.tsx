@@ -67,10 +67,13 @@ export default function ReportesRRHHPage() {
   });
   
   // Consulta para obtener proyectos (simplificada, habría que implementarla)
-  const { data: proyectos = [] } = useQuery({
-    queryKey: ['/api/projects'],
-    queryFn: () => fetch('/api/projects').then(res => res.json()),
+  const { data: proyectosResponse } = useQuery<{data: any[]}>({
+    queryKey: ['/api/proyectos'],
+    queryFn: () => fetch('/api/proyectos').then(res => res.json()),
   });
+  
+  // Extraer proyectos de la respuesta paginada
+  const proyectos = proyectosResponse?.data || [];
   
   // Calcular métricas si tenemos datos
   const metricas: MetricsRRHH | null = datosEmpleados?.empleados
