@@ -10,6 +10,19 @@ import {
 } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { Project, EstadoProyecto } from "@shared/schema";
+
+// Definición de tipo extendida para aceptar propiedades en español e inglés
+type ProyectoExtendido = Project & {
+  nombre?: string;
+  descripcion?: string;
+  fechaInicio?: Date;
+  fechaFinPrevista?: Date;
+  presupuesto?: string | number;
+  presupuestoRestante?: string | number;
+  responsableId?: number;
+  estado?: string;
+  categoria?: string;
+};
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ProyectoEstadoBadge } from "@/modules/proyectos/ui/components/ProyectoEstadoBadge";
@@ -175,16 +188,20 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
                 
                 // Calculate remaining days
                 const today = new Date();
-                const endDate = project.endDate ? new Date(project.endDate) : null;
+                const fechaFin = project.fechaFinPrevista || project.endDate;
+                const endDate = fechaFin ? new Date(fechaFin) : null;
                 const daysLeft = endDate ? Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null;
                 
                 // Format dates
-                const startDateFormatted = new Date(project.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const endDateFormatted = endDate ? endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Ongoing';
+                const fechaInicio = project.fechaInicio || project.startDate;
+                const startDateFormatted = new Date(fechaInicio).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+                const endDateFormatted = endDate ? endDate.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }) : 'En curso';
                 
                 // Calculate budget percentage used
-                const budgetValue = parseFloat(project.budget.toString());
-                const remainingBudgetValue = parseFloat(project.remainingBudget.toString());
+                const presupuesto = project.presupuesto || project.budget || 0;
+                const presupuestoRestante = project.presupuestoRestante || project.remainingBudget || presupuesto;
+                const budgetValue = parseFloat(presupuesto.toString());
+                const remainingBudgetValue = parseFloat(presupuestoRestante.toString());
                 const percentUsed = budgetValue > 0 ? Math.round(((budgetValue - remainingBudgetValue) / budgetValue) * 100) : 0;
                 
                 return (
@@ -195,14 +212,14 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
                           <IconComponent className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800">{project.name}</p>
-                          <p className="text-xs text-gray-500">{project.category || 'Sin categoría'}</p>
+                          <p className="font-medium text-gray-800">{project.nombre || project.name}</p>
+                          <p className="text-xs text-gray-500">{project.categoria || project.category || 'Sin categoría'}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium text-gray-800">${parseFloat(project.budget.toString()).toLocaleString()}</p>
+                        <p className="font-medium text-gray-800">${budgetValue.toLocaleString()}</p>
                         <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1.5">
                           <div 
                             className="bg-primary-500 h-1.5 rounded-full" 
@@ -217,32 +234,37 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
                       <p className="text-xs text-gray-500">{daysLeft ? `${daysLeft} días restantes` : 'Sin fecha límite'}</p>
                     </TableCell>
                     <TableCell>
-                      {/* Mapear los estados en inglés a los estados en español del enum */}
+                      {/* Mapear los estados a los estados en español del enum */}
                       {(() => {
                         let estadoProyecto: EstadoProyecto;
                         
-                        switch (project.status) {
-                          case 'active':
-                            estadoProyecto = EstadoProyecto.ACTIVO;
-                            break;
-                          case 'paused':
-                            estadoProyecto = EstadoProyecto.PAUSADO;
-                            break;
-                          case 'delayed':
-                            estadoProyecto = EstadoProyecto.RETRASADO;
-                            break;
-                          case 'completed':
-                            estadoProyecto = EstadoProyecto.FINALIZADO;
-                            break;
-                          case 'cancelled':
-                          case 'canceled':
-                            estadoProyecto = EstadoProyecto.CANCELADO;
-                            break;
-                          case 'archived':
-                            estadoProyecto = EstadoProyecto.ARCHIVADO;
-                            break;
-                          default:
-                            estadoProyecto = EstadoProyecto.ACTIVO;
+                        // Usar el estado en español si existe, de lo contrario mapear desde inglés
+                        if (project.estado) {
+                          estadoProyecto = project.estado as EstadoProyecto;
+                        } else {
+                          switch (project.status) {
+                            case 'active':
+                              estadoProyecto = EstadoProyecto.ACTIVO;
+                              break;
+                            case 'paused':
+                              estadoProyecto = EstadoProyecto.PAUSADO;
+                              break;
+                            case 'delayed':
+                              estadoProyecto = EstadoProyecto.RETRASADO;
+                              break;
+                            case 'completed':
+                              estadoProyecto = EstadoProyecto.FINALIZADO;
+                              break;
+                            case 'cancelled':
+                            case 'canceled':
+                              estadoProyecto = EstadoProyecto.CANCELADO;
+                              break;
+                            case 'archived':
+                              estadoProyecto = EstadoProyecto.ARCHIVADO;
+                              break;
+                            default:
+                              estadoProyecto = EstadoProyecto.ACTIVO;
+                          }
                         }
                         
                         return <ProyectoEstadoBadge estado={estadoProyecto} />;
