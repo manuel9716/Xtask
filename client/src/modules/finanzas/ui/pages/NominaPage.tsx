@@ -17,8 +17,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import ListadoNominaPage from '@/modules/nomina/ui/pages/ListadoNominaPage';
-import EmpleadosDebug from '../components/EmpleadosDebug';
-import EmpleadosDirecto from '../components/EmpleadosDirecto';
+import EmpleadosNominaTable from '../components/EmpleadosNominaTable';
 
 export function NominaPage() {
   const [, navigate] = useLocation();
@@ -139,10 +138,7 @@ export function NominaPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <EmpleadosDebug />
-                <EmpleadosDirecto />
-              </div>
+              <EmpleadosNominaTable />
             </CardContent>
           </Card>
         </TabsContent>
