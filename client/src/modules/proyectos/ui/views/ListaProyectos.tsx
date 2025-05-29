@@ -1,15 +1,12 @@
 import { useState } from "react";
 import { useProyectos } from "../../application/useCases/listarProyectos";
-import { FiltrosProyecto as IFiltrosProyecto, calcularMetricasProyecto } from "../../domain/entities/Proyecto";
+import { FiltrosProyecto as IFiltrosProyecto } from "../../domain/entities/Proyecto";
 import { ProyectoCard } from "../components/ProyectoCard";
 import { FiltrosProyecto } from "../components/FiltrosProyecto";
 import { Button } from "@/components/ui/button";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Loader2, Plus, Clock } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { ModalCrearProyecto } from "../components/ModalCrearProyecto";
-import { useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
 
 export function ListaProyectos() {
   // Estado para la paginación y filtros
@@ -17,16 +14,13 @@ export function ListaProyectos() {
   const [porPagina] = useState(9); // Fijo a 9 proyectos por página
   const [filtros, setFiltros] = useState<IFiltrosProyecto>({});
   const [modalAbierto, setModalAbierto] = useState(false);
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   // Consultar proyectos con filtros y paginación
   const { 
     data: proyectos = [], 
     isLoading, 
     isError, 
-    error,
-    refetch
+    error 
   } = useProyectos({
     ...filtros,
     page: pagina,
@@ -48,40 +42,15 @@ export function ListaProyectos() {
     setPagina(nuevaPagina);
     window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll al inicio
   };
-  
-  // Manejar cambio de estado de proyecto
-  const handleEstadoCambiado = () => {
-    // Refrescar la lista de proyectos
-    refetch();
-    
-    // Mostrar mensaje de éxito
-    toast({
-      title: "Estado actualizado",
-      description: "El estado del proyecto ha sido actualizado correctamente."
-    });
-  };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Proyectos</h1>
-          <p className="text-muted-foreground">
-            Administra tus proyectos y su progreso
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/admin/proyectos/estados">
-              <Clock className="mr-2 h-4 w-4" />
-              Gestionar Estados
-            </Link>
-          </Button>
-          <Button onClick={() => setModalAbierto(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Proyecto
-          </Button>
-        </div>
+        <h1 className="text-2xl font-bold">Proyectos</h1>
+        <Button className="gap-2" onClick={() => setModalAbierto(true)}>
+          <Plus className="h-4 w-4" />
+          Nuevo Proyecto
+        </Button>
       </div>
       
       {/* Modal para crear proyecto */}
@@ -127,24 +96,9 @@ export function ListaProyectos() {
       {!isLoading && !isError && proyectos.length > 0 && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {proyectos.map((proyecto) => {
-              // Calcular métricas del proyecto
-              const metricas = calcularMetricasProyecto(proyecto);
-              // Preparar proyecto con propiedades adicionales para la tarjeta
-              const proyectoConMetricas = {
-                ...proyecto,
-                progreso: metricas.porcentajeAvance,
-                retrasado: metricas.estaRetrasado
-              };
-              
-              return (
-                <ProyectoCard 
-                  key={proyecto.id} 
-                  proyecto={proyectoConMetricas} 
-                  onEstadoCambiado={handleEstadoCambiado}
-                />
-              );
-            })}
+            {proyectos.map((proyecto) => (
+              <ProyectoCard key={proyecto.id} proyecto={proyecto} />
+            ))}
           </div>
           
           {/* Paginación */}

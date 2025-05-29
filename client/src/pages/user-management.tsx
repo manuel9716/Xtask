@@ -3,8 +3,8 @@ import { Users, UserPlus, ShieldCheck, UserCog, Search, Filter, Eye, Lock, Mail,
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, insertUserSchema } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -20,105 +20,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-
-// Esquema de validación para el formulario de usuario
-const userFormSchema = insertUserSchema.extend({
-  password: z.string()
-    .min(8, "La contraseña debe tener al menos 8 caracteres")
-    .regex(/[A-Z]/, "La contraseña debe tener al menos una letra mayúscula")
-    .regex(/[a-z]/, "La contraseña debe tener al menos una letra minúscula")
-    .regex(/[0-9]/, "La contraseña debe tener al menos un número"),
-  passwordConfirm: z.string(),
-  role: z.enum(["admin", "user"]).default("user"),
-  isActive: z.boolean().default(true)
-}).refine((data) => data.password === data.passwordConfirm, {
-  message: "Las contraseñas no coinciden",
-  path: ["passwordConfirm"],
-});
-
-// Tipo para los datos del formulario
-type UserFormData = z.infer<typeof userFormSchema>;
 
 export default function UserManagement() {
   const [activeTab, setActiveTab] = useState("users");
   const [roleFilter, setRoleFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
-  const { toast } = useToast();
   
-  // Usando ruta temporal para superar problemas de autenticación (solo para desarrollo)
   const { data: users, isLoading } = useQuery<User[]>({
-    queryKey: ["/api/temp-users"],
-  });
-  
-  // Configuración del formulario
-  const form = useForm<UserFormData>({
-    resolver: zodResolver(userFormSchema),
-    defaultValues: {
-      username: "",
-      email: "",
-      password: "",
-      passwordConfirm: "",
-      fullName: "",
-      role: "user",
-      isActive: true
-    }
-  });
-  
-  // Mutación para crear un nuevo usuario
-  const createUserMutation = useMutation({
-    mutationFn: async (data: UserFormData) => {
-      // Eliminar passwordConfirm antes de enviar al API
-      const { passwordConfirm, ...userData } = data;
-      const response = await apiRequest("POST", "/api/temp-create-user", userData);
-      return response.json();
-    },
-    onSuccess: () => {
-      // Resetear formulario y cerrar modal
-      form.reset();
-      setOpenAddUserDialog(false);
-      
-      // Invalidar la caché para recargar la lista de usuarios
-      queryClient.invalidateQueries({ queryKey: ["/api/temp-users"] });
-      
-      // Mostrar notificación de éxito
-      toast({
-        title: "Usuario creado con éxito",
-        description: "El usuario ha sido agregado al sistema correctamente.",
-        variant: "default",
-      });
-    },
-    onError: (error: any) => {
-      // Mostrar notificación de error
-      toast({
-        title: "Error al crear usuario",
-        description: error.message || "Hubo un error al crear el usuario. Inténtalo de nuevo.",
-        variant: "destructive",
-      });
-    }
+    queryKey: ["/api/users"],
   });
 
   // Filtrar usuarios por rol y búsqueda
@@ -150,161 +59,9 @@ export default function UserManagement() {
           <h1 className="text-2xl font-heading font-bold text-gray-900">Gestión de Usuarios</h1>
           <p className="text-gray-500">Administra usuarios, roles y permisos en tu organización</p>
         </div>
-        <Dialog open={openAddUserDialog} onOpenChange={setOpenAddUserDialog}>
-          <DialogTrigger asChild>
-            <Button className="md:self-start" size="sm" onClick={() => setOpenAddUserDialog(true)}>
-              <UserPlus className="mr-2 h-4 w-4" /> Agregar Usuario
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Usuario</DialogTitle>
-              <DialogDescription>
-                Completa el formulario para agregar un nuevo usuario al sistema.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(data => createUserMutation.mutate(data))} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre de Usuario</FormLabel>
-                      <FormControl>
-                        <Input placeholder="usuario123" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nombre Completo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Juan Pérez" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Correo Electrónico</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="correo@ejemplo.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contraseña</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          Mínimo 8 caracteres con mayúscula, minúscula y número.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="passwordConfirm"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirmar Contraseña</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rol</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar rol" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="user">Usuario</SelectItem>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Estado de la Cuenta</FormLabel>
-                        <FormDescription>
-                          Activar o desactivar acceso al sistema
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setOpenAddUserDialog(false)}
-                    disabled={createUserMutation.isPending}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    type="submit"
-                    disabled={createUserMutation.isPending}
-                  >
-                    {createUserMutation.isPending && (
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    )}
-                    Crear Usuario
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <Button className="md:self-start" size="sm">
+          <UserPlus className="mr-2 h-4 w-4" /> Agregar Usuario
+        </Button>
       </div>
       
       {/* Estadísticas de Gestión de Usuarios */}

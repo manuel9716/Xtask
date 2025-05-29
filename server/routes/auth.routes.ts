@@ -13,16 +13,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'xtask-secret-key';
 const JWT_EXPIRES_IN = '24h';
 
 // Función para generar un token JWT
-const generateToken = (user: any): string => {
-  return jwt.sign({
-    userId: user.id,
-    username: user.username,
-    email: user.email,
-    role: user.role
-  }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+const generateToken = (userId: number): string => {
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-// Middleware para verificar el token JWT (en desuso - usar authRequired de los middlewares)
+// Middleware para verificar el token JWT
 export const verifyToken = (req: Request, res: Response, next: Function) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
@@ -32,22 +27,8 @@ export const verifyToken = (req: Request, res: Response, next: Function) => {
   }
 
   try {
-    // Decodificar el token con todos los campos
-    const decoded = jwt.verify(token, JWT_SECRET) as { 
-      userId: number,
-      username: string,
-      email: string,
-      role: string
-    };
-    
-    // Asignar los datos del token directamente
-    req.user = {
-      id: decoded.userId,
-      username: decoded.username,
-      email: decoded.email,
-      role: decoded.role
-    };
-    
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+    req.user = { id: decoded.userId };
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Token inválido o expirado' });
@@ -81,16 +62,13 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     }
 
     // Verificar contraseña
-    console.log('Verificando contraseña para:', user.username);
-    console.log('Hash almacenado:', user.password);
     const passwordMatch = await bcrypt.compare(password, user.password);
-    console.log('Resultado de comparación:', passwordMatch);
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
     // Generar token JWT
-    const token = generateToken(user);
+    const token = generateToken(user.id);
 
     // Enviar respuesta
     return res.status(200).json({
@@ -233,7 +211,7 @@ authRouter.post('/register', async (req: Request, res: Response) => {
     }
 
     // Generar token JWT
-    const token = generateToken(newUser);
+    const token = generateToken(newUser.id);
 
     // Enviar respuesta
     return res.status(201).json({

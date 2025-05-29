@@ -69,9 +69,6 @@ export interface FiltrosProyecto {
   responsableId?: number;
   fechaInicio?: Date;
   fechaFin?: Date;
-  // Paginación
-  page?: number;
-  pageSize?: number;
 }
 
 /**

@@ -7,15 +7,13 @@ import {
   suppliers, Supplier, InsertSupplier,
   products, Product, InsertProduct,
   purchaseOrders, PurchaseOrder, InsertPurchaseOrder,
-  budgets, Budget, InsertBudget,
-  employeeProjects,
-  activityLogs, ActivityLog, InsertActivityLog
+  budgets, Budget, InsertBudget
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, asc, desc, and, gte, lte, isNull, sql } from "drizzle-orm";
+import { eq, asc, desc, and, gte, lte, isNull } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -26,10 +24,6 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
-  // Activity Logs
-  getUserActivityLogs(userId: number, limit?: number): Promise<ActivityLog[]>;
-  createActivityLog(activityLog: InsertActivityLog): Promise<ActivityLog>;
   
   // Projects
   getAllProjects(): Promise<Project[]>;
@@ -42,15 +36,6 @@ export interface IStorage {
   getTask(id: number): Promise<Task | undefined>;
   createTask(task: InsertTask): Promise<Task>;
   updateTask(id: number, task: Partial<Task>): Promise<Task | undefined>;
-  deleteTask(id: number): Promise<void>;
-
-  // Employee Projects
-  getEmployeeProjects(projectId?: number, employeeId?: number): Promise<any[]>;
-  getEmployeeProject(id: number): Promise<any | undefined>;
-  checkEmployeeProjectExists(projectId: number, employeeId: number): Promise<boolean>;
-  createEmployeeProject(employeeProject: any): Promise<any>;
-  setEmployeeProjectAsPrimary(id: number, projectId: number): Promise<any>;
-  deleteEmployeeProject(id: number): Promise<void>;
   
   // Transactions
   getAllTransactions(projectId?: number): Promise<Transaction[]>;
@@ -86,10 +71,6 @@ export interface IStorage {
   createBudget(budget: InsertBudget): Promise<Budget>;
   updateBudget(id: number, budget: Partial<Budget>): Promise<Budget>;
   
-  // Operaciones de registros de actividad
-  getUserActivityLogs(userId: number, limit?: number): Promise<ActivityLog[]>;
-  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
-  
   // Session store for authentication
   sessionStore: session.SessionStore;
 }
@@ -105,7 +86,6 @@ export class MemStorage implements IStorage {
   private productsMap: Map<number, Product>;
   private purchaseOrdersMap: Map<number, PurchaseOrder>;
   private budgetsMap: Map<number, Budget>;
-  private activityLogsMap: Map<number, ActivityLog>;
   
   private userIdCounter: number;
   private projectIdCounter: number;
@@ -116,7 +96,6 @@ export class MemStorage implements IStorage {
   private productIdCounter: number;
   private purchaseOrderIdCounter: number;
   private budgetIdCounter: number;
-  private activityLogIdCounter: number;
   
   sessionStore: session.SessionStore;
 
@@ -130,7 +109,6 @@ export class MemStorage implements IStorage {
     this.productsMap = new Map();
     this.purchaseOrdersMap = new Map();
     this.budgetsMap = new Map();
-    this.activityLogsMap = new Map();
     
     this.userIdCounter = 1;
     this.projectIdCounter = 1;
@@ -141,7 +119,6 @@ export class MemStorage implements IStorage {
     this.productIdCounter = 1;
     this.purchaseOrderIdCounter = 1;
     this.budgetIdCounter = 1;
-    this.activityLogIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // 24h
@@ -187,29 +164,6 @@ export class MemStorage implements IStorage {
     const user: User = { ...userData, id, createdAt: now };
     this.usersMap.set(id, user);
     return user;
-  }
-  
-  // Activity Logs implementation
-  async getUserActivityLogs(userId: number, limit: number = 10): Promise<ActivityLog[]> {
-    const logs: ActivityLog[] = [];
-    for (const log of this.activityLogsMap.values()) {
-      if (log.userId === userId) {
-        logs.push(log);
-      }
-    }
-    // Ordenar por fecha descendente (más reciente primero)
-    return logs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limit);
-  }
-
-  async createActivityLog(insertLog: InsertActivityLog): Promise<ActivityLog> {
-    const id = this.activityLogIdCounter++;
-    const activityLog: ActivityLog = {
-      id,
-      ...insertLog,
-      createdAt: new Date()
-    };
-    this.activityLogsMap.set(id, activityLog);
-    return activityLog;
   }
   
   // Projects implementation
@@ -539,20 +493,6 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
-  // Activity Logs implementation
-  async getUserActivityLogs(userId: number, limit: number = 10): Promise<ActivityLog[]> {
-    return await db.select()
-      .from(activityLogs)
-      .where(eq(activityLogs.userId, userId))
-      .orderBy(desc(activityLogs.createdAt))
-      .limit(limit);
-  }
-
-  async createActivityLog(insertLog: InsertActivityLog): Promise<ActivityLog> {
-    const [activityLog] = await db.insert(activityLogs).values(insertLog).returning();
-    return activityLog;
-  }
-  
   // Projects implementation
   async getAllProjects(): Promise<Project[]> {
     return await db.select().from(projects).orderBy(desc(projects.createdAt));
@@ -606,85 +546,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tasks.id, id))
       .returning();
     return updatedTask;
-  }
-  
-  async deleteTask(id: number): Promise<void> {
-    await db.delete(tasks).where(eq(tasks.id, id));
-  }
-  
-  // Funciones para Employee Projects
-  async getEmployeeProjects(projectId?: number, employeeId?: number): Promise<any[]> {
-    let query = db.select().from(employeeProjects);
-    
-    if (projectId !== undefined) {
-      query = query.where(eq(employeeProjects.projectId, projectId));
-    }
-    
-    if (employeeId !== undefined) {
-      query = query.where(eq(employeeProjects.employeeId, employeeId));
-    }
-    
-    return await query;
-  }
-  
-  async getEmployeeProject(id: number): Promise<any | undefined> {
-    const [result] = await db
-      .select()
-      .from(employeeProjects)
-      .where(eq(employeeProjects.id, id));
-    return result;
-  }
-  
-  async checkEmployeeProjectExists(projectId: number, employeeId: number): Promise<boolean> {
-    const [result] = await db
-      .select({ count: sql`COUNT(*)` })
-      .from(employeeProjects)
-      .where(
-        and(
-          eq(employeeProjects.projectId, projectId),
-          eq(employeeProjects.employeeId, employeeId),
-          eq(employeeProjects.isActive, true)
-        )
-      );
-    
-    return parseInt(result.count as any) > 0;
-  }
-  
-  async createEmployeeProject(employeeProject: any): Promise<any> {
-    const [result] = await db
-      .insert(employeeProjects)
-      .values(employeeProject)
-      .returning();
-    return result;
-  }
-  
-  async setEmployeeProjectAsPrimary(id: number, projectId: number): Promise<any> {
-    // Primero, restablecer todos los responsables del proyecto a no-primarios
-    await db
-      .update(employeeProjects)
-      .set({ isPrimary: false })
-      .where(
-        and(
-          eq(employeeProjects.projectId, projectId),
-          eq(employeeProjects.isActive, true)
-        )
-      );
-    
-    // Luego, establecer este como primario
-    const [result] = await db
-      .update(employeeProjects)
-      .set({ isPrimary: true })
-      .where(eq(employeeProjects.id, id))
-      .returning();
-    
-    return result;
-  }
-  
-  async deleteEmployeeProject(id: number): Promise<void> {
-    await db
-      .update(employeeProjects)
-      .set({ isActive: false })
-      .where(eq(employeeProjects.id, id));
   }
   
   // Transactions implementation
