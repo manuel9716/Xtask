@@ -55,31 +55,15 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
   const [subiendoContrato, setSubiendoContrato] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Definición de tipo extendida para aceptar propiedades en español e inglés
-  type ProyectoExtendido = Proyecto & {
-    name?: string;
-    description?: string;
-    startDate?: Date;
-    endDate?: Date;
-    budget?: string | number;
-    remainingBudget?: string | number;
-    managerId?: number;
-    status?: string;
-    category?: string;
-  };
-
   // Cargar proyectos
-  const { data: proyectosResponse, isLoading: cargandoProyectos } = useQuery<{data: ProyectoExtendido[]}>({
-    queryKey: ['/api/proyectos'],
+  const { data: proyectos = [], isLoading: cargandoProyectos } = useQuery<Proyecto[]>({
+    queryKey: ['/api/projects'],
     queryFn: async () => {
-      const res = await fetch('/api/proyectos');
+      const res = await fetch('/api/projects');
       if (!res.ok) throw new Error('Error al cargar proyectos');
       return res.json();
     }
   });
-  
-  // Extraer proyectos de la respuesta paginada
-  const proyectos = proyectosResponse?.data || [] as ProyectoExtendido[];
   
   // Crear defaultValues basado en si estamos en modo edición o no
   const getDefaultValues = () => {

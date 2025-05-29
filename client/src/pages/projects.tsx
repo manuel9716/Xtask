@@ -5,19 +5,6 @@ import { Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { Project } from "@shared/schema";
-
-// Definición de tipo extendida para aceptar propiedades en español e inglés
-type ProyectoExtendido = Project & {
-  nombre?: string;
-  descripcion?: string;
-  fechaInicio?: Date;
-  fechaFinPrevista?: Date;
-  presupuesto?: string | number;
-  presupuestoRestante?: string | number;
-  responsableId?: number;
-  estado?: string;
-  categoria?: string;
-};
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModalCrearProyecto } from "@/modules/proyectos/ui/components/ModalCrearProyecto";
 
@@ -25,24 +12,19 @@ export default function Projects() {
   const [activeTab, setActiveTab] = useState("all");
   const [modalAbierto, setModalAbierto] = useState(false);
   
-  const { data: proyectosResponse } = useQuery<{data: ProyectoExtendido[]}>({
-    queryKey: ["/api/proyectos"],
+  const { data: projects } = useQuery<Project[]>({
+    queryKey: ["/api/projects"],
   });
   
-  // Extraer los proyectos de la respuesta paginada
-  const projects = proyectosResponse?.data || [] as ProyectoExtendido[];
-  
   // Calculate project metrics
-  const totalProjects = projects.length || 0;
-  const activeProjects = projects.filter(p => p.status === "active" || p.estado === "ACTIVO").length || 0;
-  const delayedProjects = projects.filter(p => p.status === "delayed" || p.estado === "RETRASADO").length || 0;
-  const completedProjects = projects.filter(p => p.status === "completed" || p.estado === "FINALIZADO").length || 0;
+  const totalProjects = projects?.length || 0;
+  const activeProjects = projects?.filter(p => p.status === "active").length || 0;
+  const delayedProjects = projects?.filter(p => p.status === "delayed").length || 0;
+  const completedProjects = projects?.filter(p => p.status === "completed").length || 0;
   
   // Calculate total budget
-  const totalBudget = projects.reduce((acc, project) => {
-    // Usar presupuesto o budget, dependiendo de cuál esté disponible
-    const presupuesto = project.presupuesto || project.budget || 0;
-    return acc + parseFloat(presupuesto.toString());
+  const totalBudget = projects?.reduce((acc, project) => {
+    return acc + parseFloat(project.budget.toString());
   }, 0) || 0;
   
   return (
