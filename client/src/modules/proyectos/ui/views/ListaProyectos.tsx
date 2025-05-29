@@ -11,7 +11,7 @@ import { ModalCrearProyecto } from "../components/ModalCrearProyecto";
 export function ListaProyectos() {
   // Estado para la paginación y filtros
   const [pagina, setPagina] = useState(1);
-  const [porPagina] = useState(9); // Fijo a 9 proyectos por página
+  const [porPagina] = useState(10); // Fijo a 10 proyectos por página
   const [filtros, setFiltros] = useState<IFiltrosProyecto>({});
   const [modalAbierto, setModalAbierto] = useState(false);
   

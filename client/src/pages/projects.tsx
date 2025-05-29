@@ -106,19 +106,19 @@ export default function Projects() {
         </TabsList>
         
         <TabsContent value="all" className="mt-6">
-          <ProjectsTable />
+          <ProjectsTable showPagination={true} />
         </TabsContent>
         
         <TabsContent value="active" className="mt-6">
-          <ProjectsTable />
+          <ProjectsTable showPagination={true} />
         </TabsContent>
         
         <TabsContent value="delayed" className="mt-6">
-          <ProjectsTable />
+          <ProjectsTable showPagination={true} />
         </TabsContent>
         
         <TabsContent value="completed" className="mt-6">
-          <ProjectsTable />
+          <ProjectsTable showPagination={true} />
         </TabsContent>
       </Tabs>
     </div>

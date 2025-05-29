@@ -1,4 +1,4 @@
-import { Building2, Smartphone, Database, PresentationIcon, MoreHorizontal, Plus } from "lucide-react";
+import { Building2, Smartphone, Database, PresentationIcon, MoreHorizontal, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -13,6 +13,7 @@ import { Project, EstadoProyecto } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ProyectoEstadoBadge } from "@/modules/proyectos/ui/components/ProyectoEstadoBadge";
+import { useState } from "react";
 
 const iconMap: Record<string, any> = {
   "Tech": Building2,
@@ -32,15 +33,37 @@ const statusColorMap: Record<string, any> = {
 interface ProjectsTableProps {
   limit?: number;
   className?: string;
+  showPagination?: boolean;
 }
 
-export function ProjectsTable({ limit, className }: ProjectsTableProps) {
+export function ProjectsTable({ limit, className, showPagination = false }: ProjectsTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const projectsPerPage = 10;
+  
   const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 
-  const displayProjects = limit ? projects?.slice(0, limit) : projects;
   const projectCount = projects?.length || 0;
+  const totalPages = Math.ceil(projectCount / projectsPerPage);
+  
+  // Calcular proyectos para mostrar
+  let displayProjects: Project[] = [];
+  if (projects) {
+    if (showPagination) {
+      const startIndex = (currentPage - 1) * projectsPerPage;
+      const endIndex = startIndex + projectsPerPage;
+      displayProjects = projects.slice(startIndex, endIndex);
+    } else if (limit) {
+      displayProjects = projects.slice(0, limit);
+    } else {
+      displayProjects = projects;
+    }
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   return (
     <div className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${className}`}>
@@ -200,7 +223,54 @@ export function ProjectsTable({ limit, className }: ProjectsTableProps) {
         </Table>
       </div>
 
-      {limit && projects?.length > limit && (
+      {showPagination && totalPages > 1 && projects && (
+        <div className="px-6 py-3 border-t border-gray-100 bg-white">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-600">
+              Mostrando {((currentPage - 1) * projectsPerPage) + 1} - {Math.min(currentPage * projectsPerPage, projectCount)} de {projectCount} proyectos
+            </p>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="flex items-center gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Anterior
+              </Button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-1"
+              >
+                Siguiente
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {limit && !showPagination && projects && projects.length > limit && (
         <div className="px-6 py-3 border-t border-gray-100 bg-white">
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-600">Mostrando {limit} de {projectCount} proyectos</p>
