@@ -125,31 +125,64 @@ kpiRouter.get("/empleado-por-userid/:userId", isAuthenticated, async (req: Reque
 });
 
 /**
- * Obtiene los KPIs del usuario actual para un mes específico
- * GET /api/kpis/mis-kpis?mes=YYYY-MM
+ * Obtiene todos los KPIs del usuario actual
+ * GET /api/kpis/mis-kpis?mes=YYYY-MM (opcional)
  */
 kpiRouter.get("/mis-kpis", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const mes = req.query.mes as string;
     
-    if (!mes || !/^\d{4}-\d{2}$/.test(mes)) {
-      return res.status(400).json({ error: "Formato de mes inválido. Use YYYY-MM" });
+    let whereConditions = [eq(userKpis.userId, userId as number)];
+    
+    // Si se proporciona mes, filtrar por mes
+    if (mes) {
+      if (!/^\d{4}-\d{2}$/.test(mes)) {
+        return res.status(400).json({ error: "Formato de mes inválido. Use YYYY-MM" });
+      }
+      whereConditions.push(eq(userKpis.mes, mes));
     }
     
     const kpis = await db
       .select()
       .from(userKpis)
-      .where(
-        and(
-          eq(userKpis.userId, userId as number),
-          eq(userKpis.mes, mes)
-        )
-      );
+      .where(and(...whereConditions))
+      .orderBy(userKpis.createdAt);
     
     res.json(kpis);
   } catch (error: any) {
     console.error("Error al obtener KPIs:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Obtiene todos los KPIs del sistema (para administradores)
+ * GET /api/kpis
+ */
+kpiRouter.get("/", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const mes = req.query.mes as string;
+    
+    let whereConditions = [];
+    
+    // Si se proporciona mes, filtrar por mes
+    if (mes) {
+      if (!/^\d{4}-\d{2}$/.test(mes)) {
+        return res.status(400).json({ error: "Formato de mes inválido. Use YYYY-MM" });
+      }
+      whereConditions.push(eq(userKpis.mes, mes));
+    }
+    
+    const query = whereConditions.length > 0 
+      ? db.select().from(userKpis).where(and(...whereConditions))
+      : db.select().from(userKpis);
+    
+    const kpis = await query.orderBy(userKpis.createdAt);
+    
+    res.json(kpis);
+  } catch (error: any) {
+    console.error("Error al obtener todos los KPIs:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -539,8 +572,13 @@ kpiRouter.get("/bonificacion", isAuthenticated, async (req: Request, res: Respon
     const mes = req.query.mes as string;
     const id = req.query.id ? parseInt(req.query.id as string) : null;
     
+    // Si no hay mes ni ID, devolver error
+    if (!mes && (id === null || isNaN(id))) {
+      return res.status(400).json({ error: "Se requiere mes (YYYY-MM) o ID de bonificación" });
+    }
+    
     // Si se proporciona un ID específico de bonificación
-    if (id !== null) {
+    if (id !== null && !isNaN(id)) {
       const [bonificacion] = await db
         .select()
         .from(bonificacionesMensuales)
@@ -587,7 +625,11 @@ kpiRouter.get("/bonificacion", isAuthenticated, async (req: Request, res: Respon
     }
     
     // De lo contrario, usar el mes para buscar la bonificación
-    if (!mes || !/^\d{4}-\d{2}$/.test(mes)) {
+    if (!mes) {
+      return res.status(400).json({ error: "Se requiere parámetro mes" });
+    }
+    
+    if (!/^\d{4}-\d{2}$/.test(mes)) {
       return res.status(400).json({ error: "Formato de mes inválido. Use YYYY-MM" });
     }
     
