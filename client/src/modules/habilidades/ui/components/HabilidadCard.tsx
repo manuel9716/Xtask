@@ -42,7 +42,7 @@ export function HabilidadCard({ habilidad, onEdit }: HabilidadCardProps) {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => habilidadApi.deleteHabilidad(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/habilidades'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/habilidades', 'mis-habilidades'] });
       toast({
         title: "Habilidad eliminada",
         description: "La habilidad se ha eliminado correctamente.",

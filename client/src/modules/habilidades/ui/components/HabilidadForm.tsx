@@ -73,7 +73,7 @@ export function HabilidadForm({ open, onOpenChange, habilidad, userId }: Habilid
   const createMutation = useMutation({
     mutationFn: (data: CreateHabilidadRequest) => habilidadApi.createHabilidad(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/habilidades'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/habilidades', 'mis-habilidades'] });
       toast({
         title: "Habilidad creada",
         description: "La habilidad se ha agregado correctamente.",
@@ -94,7 +94,7 @@ export function HabilidadForm({ open, onOpenChange, habilidad, userId }: Habilid
     mutationFn: ({ id, data }: { id: number; data: UpdateHabilidadRequest }) => 
       habilidadApi.updateHabilidad(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/habilidades'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/habilidades', 'mis-habilidades'] });
       toast({
         title: "Habilidad actualizada",
         description: "La habilidad se ha actualizado correctamente.",
