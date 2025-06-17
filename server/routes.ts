@@ -15,6 +15,15 @@ import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint para Kubernetes
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      service: 'xtask-platform' 
+    });
+  });
+
   // Rutas de autenticación
   app.use('/api/auth', authRouter);
   

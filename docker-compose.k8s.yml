@@ -1,0 +1,50 @@
+# Docker Compose para desarrollo local simulando Kubernetes
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: xtask
+      POSTGRES_USER: xtask_user
+      POSTGRES_PASSWORD: xtask_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xtask_user -d xtask"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  xtask-app:
+    build: .
+    ports:
+      - "8080:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://xtask_user:xtask_password@postgres:5432/xtask
+      JWT_SECRET: xtask-secret-key
+      SESSION_SECRET: your-session-secret-here
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+volumes:
+  postgres_data:
