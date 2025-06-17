@@ -25,6 +25,36 @@ function isAuthenticated(req: Request, res: Response, next: Function) {
 }
 
 /**
+ * Obtiene todas las habilidades del usuario actual
+ * GET /api/habilidades/mis-habilidades
+ */
+habilidadesRouter.get("/mis-habilidades", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    const habilidades = await db
+      .select()
+      .from(userSkills)
+      .where(eq(userSkills.userId, userId as number));
+
+    // Agrupar habilidades por tipo
+    const habilidadesAgrupadas = habilidades.reduce((acc, habilidad) => {
+      const tipo = habilidad.tipo;
+      if (!acc[tipo]) {
+        acc[tipo] = [];
+      }
+      acc[tipo].push(habilidad);
+      return acc;
+    }, {} as Record<string, typeof habilidades>);
+
+    res.json(habilidadesAgrupadas);
+  } catch (error: any) {
+    console.error("Error al obtener mis habilidades:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * Obtiene todas las habilidades de un usuario específico
  * GET /api/habilidades/:userId
  */
@@ -255,36 +285,6 @@ habilidadesRouter.delete("/:id", isAuthenticated, async (req: Request, res: Resp
     res.json({ success: true, message: "Habilidad eliminada correctamente" });
   } catch (error: any) {
     console.error("Error al eliminar habilidad:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * Obtiene todas las habilidades del usuario actual
- * GET /api/habilidades/mis-habilidades
- */
-habilidadesRouter.get("/mis-habilidades", isAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user?.id;
-
-    const habilidades = await db
-      .select()
-      .from(userSkills)
-      .where(eq(userSkills.userId, userId as number));
-
-    // Agrupar habilidades por tipo
-    const habilidadesAgrupadas = habilidades.reduce((acc, habilidad) => {
-      const tipo = habilidad.tipo;
-      if (!acc[tipo]) {
-        acc[tipo] = [];
-      }
-      acc[tipo].push(habilidad);
-      return acc;
-    }, {} as Record<string, typeof habilidades>);
-
-    res.json(habilidadesAgrupadas);
-  } catch (error: any) {
-    console.error("Error al obtener mis habilidades:", error);
     res.status(500).json({ error: error.message });
   }
 });
