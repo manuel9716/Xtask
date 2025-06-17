@@ -44,6 +44,20 @@ export enum TipoEvaluacion {
   ASCENSO = "ASCENSO"
 }
 
+export enum TipoHabilidad {
+  HERRAMIENTA = "herramienta",
+  HABILIDAD_BLANDA = "habilidad_blanda",
+  CONOCIMIENTO = "conocimiento",
+  IDIOMA = "idioma"
+}
+
+export enum NivelHabilidad {
+  BASICO = "básico",
+  INTERMEDIO = "intermedio",
+  AVANZADO = "avanzado",
+  EXPERTO = "experto"
+}
+
 // Interfaces
 export interface FiltrosProyecto {
   busqueda?: string;
@@ -418,6 +432,18 @@ export const employees = pgTable("employees", {
   id_employed_proyects: integer("id_employed_proyects").references(() => projects.id), // ID del proyecto asignado al empleado
 });
 
+// User Skills
+export const userSkills = pgTable("user_skills", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  tipo: text("tipo").notNull(), // herramienta, habilidad_blanda, conocimiento, idioma
+  nombre: text("nombre").notNull(),
+  nivel: text("nivel").notNull(), // básico, intermedio, avanzado, experto
+  observaciones: text("observaciones"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Suppliers
 export const suppliers = pgTable("suppliers", {
   id: serial("id").primaryKey(),
@@ -498,6 +524,10 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true,
 export const insertInvoiceItemSchema = createInsertSchema(invoiceItems).omit({ id: true, createdAt: true });
 export const insertFinancialCategorySchema = createInsertSchema(financialCategories).omit({ id: true, createdAt: true });
 export const insertFinancialAuditSchema = createInsertSchema(financialAudits).omit({ id: true, performedAt: true });
+
+// User Skills validation schema
+export const insertUserSkillSchema = createInsertSchema(userSkills).omit({ id: true, createdAt: true, updatedAt: true });
+export const updateUserSkillSchema = insertUserSkillSchema.partial();
 
 // Esquemas Zod para el módulo de Nómina
 export const insertNominaSchema = createInsertSchema(nominas).omit({ 

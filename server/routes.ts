@@ -13,6 +13,7 @@ import capacitacionesRouter from "./routes/capacitaciones.routes";
 import microLearningRouter from "./routes/microlearning.routes";
 import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
+import habilidadesRouter from "./routes/habilidades.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint para Kubernetes

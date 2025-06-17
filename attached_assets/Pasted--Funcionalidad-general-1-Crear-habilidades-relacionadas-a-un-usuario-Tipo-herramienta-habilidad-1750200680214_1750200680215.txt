@@ -1,0 +1,69 @@
+📌 Funcionalidad general
+1. Crear habilidades relacionadas a un usuario
+Tipo: herramienta, habilidad_blanda, conocimiento, idioma
+
+Nombre de la habilidad
+
+Nivel: básico, intermedio, avanzado, experto
+
+Observaciones (opcional)
+
+2. Visualizar habilidades por usuario
+Listado por tipo
+
+Filtros por nivel
+
+Sección expandible por categoría
+
+3. Editar o eliminar habilidades existentes
+Modal con formulario editable
+
+Confirmación al eliminar
+
+📄 Modelo de datos sugerido
+Tabla: user_skills
+Campo	Tipo
+id	SERIAL
+user_id	INTEGER
+tipo	VARCHAR(50) (herramienta, habilidad_blanda, etc.)
+nombre	VARCHAR(100)
+nivel	VARCHAR(50) (básico, intermedio, etc.)
+observaciones	TEXT
+created_at	TIMESTAMP
+updated_at	TIMESTAMP
+
+🧠 Casos de uso
+Caso de uso	Descripción
+agregarHabilidadUsuario.ts	Permite registrar una nueva habilidad
+listarHabilidadesUsuario.ts	Devuelve todas las habilidades agrupadas por tipo
+actualizarHabilidadUsuario.ts	Edita nivel u observación de una habilidad
+eliminarHabilidadUsuario.ts	Elimina la relación entre usuario y habilidad
+
+🎨 Interfaz esperada
+Vista principal: PanelHabilidadesUsuario.tsx
+Características:
+
+Cards agrupadas por categoría (Herramientas, Habilidades blandas, etc.)
+
+Botón + Agregar habilidad
+
+Modal HabilidadForm.tsx con campos dinámicos
+
+Iconos y color según tipo de habilidad
+
+Etiqueta de nivel (Avanzado, Básico, etc.)
+
+📡 API esperada
+Método	Ruta	Descripción
+GET	/api/habilidades/:userId	Listar habilidades del usuario
+POST	/api/habilidades	Crear nueva habilidad
+PATCH	/api/habilidades/:id	Actualizar habilidad
+DELETE	/api/habilidades/:id	Eliminar habilidad
+
+🔐 Seguridad esperada
+Solo el propio usuario o un administrador puede modificar sus habilidades
+
+Lectura abierta para administradores y validadores (solo lectura)
+
+✅ Resultado esperado
+Una funcionalidad intuitiva, organizada y reutilizable, donde cada usuario puede registrar y visualizar sus habilidades clave, estructuradas por tipo y nivel, con trazabilidad total y preparada para alimentar dashboards, filtros o criterios de selección futuros.
