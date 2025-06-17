@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xtask-app
+  namespace: xtask-platform
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: xtask-app
+  template:
+    metadata:
+      labels:
+        app: xtask-app
+    spec:
+      containers:
+      - name: xtask-app
+        image: xtask312/xtask-platform:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: xtask-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: xtask-config
+              key: PORT
+        - name: JWT_SECRET
+          valueFrom:
+            configMapKeyRef:
+              name: xtask-config
+              key: JWT_SECRET
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: xtask-secrets
+              key: DATABASE_URL
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: xtask-secrets
+              key: SESSION_SECRET
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: xtask-secrets
+              key: STRIPE_SECRET_KEY
+              optional: true
+        - name: VITE_STRIPE_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: xtask-secrets
+              key: VITE_STRIPE_PUBLIC_KEY
+              optional: true
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xtask-service
+  namespace: xtask-platform
+spec:
+  selector:
+    app: xtask-app
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: ClusterIP
