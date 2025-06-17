@@ -270,8 +270,7 @@ habilidadesRouter.get("/mis-habilidades", isAuthenticated, async (req: Request, 
     const habilidades = await db
       .select()
       .from(userSkills)
-      .where(eq(userSkills.userId, userId as number))
-      .orderBy(userSkills.tipo, userSkills.nombre);
+      .where(eq(userSkills.userId, userId as number));
 
     // Agrupar habilidades por tipo
     const habilidadesAgrupadas = habilidades.reduce((acc, habilidad) => {

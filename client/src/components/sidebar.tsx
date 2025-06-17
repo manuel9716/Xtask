@@ -14,7 +14,8 @@ import {
   Receipt,
   FileJson,
   LineChart,
-  TrendingUp
+  TrendingUp,
+  Award
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -59,6 +60,7 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
     { href: "/finances", label: t("navigation.finances"), icon: <DollarSign className="h-5 w-5" /> },
     { href: "/nomina", label: "Nómina", icon: <Receipt className="h-5 w-5" /> },
     { href: "/kpis", label: "KPIs", icon: <TrendingUp className="h-5 w-5" /> },
+    { href: "/habilidades", label: "Habilidades", icon: <Award className="h-5 w-5" /> },
     { href: "/suppliers", label: t("navigation.suppliers"), icon: <Store className="h-5 w-5" /> },
     { href: "/tasks", label: t("navigation.tasks"), icon: <CheckSquare className="h-5 w-5" /> },
   ];

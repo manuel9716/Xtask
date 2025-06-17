@@ -13,6 +13,7 @@ import UserManagement from "@/pages/user-management";
 import Settings from "@/pages/settings";
 import NominaDashboard from "@/pages/nomina-dashboard";
 import KpisDashboard from "@/pages/kpis-dashboard";
+import HabilidadesPage from "@/pages/habilidades";
 import HomePage from "@/pages/home";
 import ApiDocumentation from "@/pages/api-documentation";
 import { MainLayout } from "@/layouts/main-layout";
@@ -90,6 +91,14 @@ function Router() {
         <ProtectedRoute>
           <MainLayout>
             <Settings />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/habilidades">
+        <ProtectedRoute>
+          <MainLayout>
+            <HabilidadesPage />
           </MainLayout>
         </ProtectedRoute>
       </Route>
