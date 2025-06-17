@@ -30,6 +30,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas para módulo de KPIs
   app.use('/api/kpis', kpiRouter);
+  
+  // Rutas para módulo de habilidades
+  app.use('/api/habilidades', habilidadesRouter);
   // Projects routes
   app.get("/api/projects", async (req, res) => {
     try {
