@@ -20,11 +20,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { UserFormDialog } from "@/components/user-form-dialog";
 
 export default function UserManagement() {
   const [activeTab, setActiveTab] = useState("users");
   const [roleFilter, setRoleFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -41,7 +43,8 @@ export default function UserManagement() {
   });
 
   // Obtener roles únicos para el filtro
-  const roles = users ? [...new Set(users.map(user => user.role))] : [];
+  const rolesSet = new Set(users?.map(user => user.role) || []);
+  const roles = Array.from(rolesSet);
 
   // Calcular métricas de usuarios
   const totalUsers = users?.length || 0;
@@ -59,7 +62,11 @@ export default function UserManagement() {
           <h1 className="text-2xl font-heading font-bold text-gray-900">Gestión de Usuarios</h1>
           <p className="text-gray-500">Administra usuarios, roles y permisos en tu organización</p>
         </div>
-        <Button className="md:self-start" size="sm">
+        <Button 
+          className="md:self-start" 
+          size="sm"
+          onClick={() => setShowCreateDialog(true)}
+        >
           <UserPlus className="mr-2 h-4 w-4" /> Agregar Usuario
         </Button>
       </div>
@@ -416,6 +423,11 @@ export default function UserManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      <UserFormDialog 
+        open={showCreateDialog} 
+        onOpenChange={setShowCreateDialog} 
+      />
     </div>
   );
 }
