@@ -128,6 +128,9 @@ export const budgets = pgTable("budgets", {
   createdBy: integer("created_by").references(() => users.id).notNull(),
   status: text("status").notNull().default("ACTIVO"), // ACTIVO, ALERTA, COMPLETADO
   metadata: text("metadata"), // JSON data serialized
+  porcentajeEjecucion: decimal("porcentaje_ejecucion", { precision: 5, scale: 2 }), // Porcentaje de ejecución
+  porcentajeGarantia: decimal("porcentaje_garantia", { precision: 5, scale: 2 }), // Porcentaje de garantía
+  reservasFinancieras: decimal("reservas_financieras", { precision: 10, scale: 2 }), // Reservas financieras
 });
 
 // Gastos de presupuestos

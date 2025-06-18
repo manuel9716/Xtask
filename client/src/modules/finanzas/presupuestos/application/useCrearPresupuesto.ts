@@ -15,6 +15,9 @@ export type CrearPresupuestoDTO = {
   organizationId?: number;
   departmentId?: number | null;
   projectId?: number | null;
+  porcentajeEjecucion?: number;
+  porcentajeGarantia?: number;
+  reservasFinancieras?: number;
 };
 
 /**

@@ -32,6 +32,21 @@ const formSchema = z.object({
         { message: "Fecha de fin inválida" }),
     description: z.string().optional(),
     area: z.string().optional(),
+    porcentajeEjecucion: z.string()
+      .optional()
+      .refine(val => val === "" || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100), {
+        message: "El porcentaje debe estar entre 0 y 100"
+      }),
+    porcentajeGarantia: z.string()
+      .optional()
+      .refine(val => val === "" || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100), {
+        message: "El porcentaje debe estar entre 0 y 100"
+      }),
+    reservasFinancieras: z.string()
+      .optional()
+      .refine(val => val === "" || (!isNaN(Number(val)) && Number(val) >= 0), {
+        message: "Las reservas deben ser un número positivo"
+      }),
 })
 .refine(
   data => data.endDate > data.startDate,
@@ -60,7 +75,10 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
       startDate: new Date(),
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)), // Un mes en el futuro
       area: 'General',
-      description: ''
+      description: '',
+      porcentajeEjecucion: '',
+      porcentajeGarantia: '',
+      reservasFinancieras: ''
     }
   });
 
@@ -79,7 +97,10 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
         area: data.area,
         description: data.description,
         createdBy: 1,  // Usuario por defecto
-        organizationId: 1 // Organización por defecto
+        organizationId: 1, // Organización por defecto
+        porcentajeEjecucion: data.porcentajeEjecucion ? Number(data.porcentajeEjecucion) : undefined,
+        porcentajeGarantia: data.porcentajeGarantia ? Number(data.porcentajeGarantia) : undefined,
+        reservasFinancieras: data.reservasFinancieras ? Number(data.reservasFinancieras) : undefined
       };
       
       await crearPresupuesto(presupuestoData);
@@ -221,6 +242,71 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
                   placeholder="Información adicional sobre el presupuesto" 
                   className="resize-none" 
                   rows={4} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Nuevos campos financieros */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="porcentajeEjecucion"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Porcentaje de Ejecución (%)</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="number" 
+                    placeholder="Ej: 75" 
+                    min="0" 
+                    max="100" 
+                    step="0.1" 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="porcentajeGarantia"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Porcentaje de Garantía (%)</FormLabel>
+                <FormControl>
+                  <Input 
+                    {...field} 
+                    type="number" 
+                    placeholder="Ej: 10" 
+                    min="0" 
+                    max="100" 
+                    step="0.1" 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="reservasFinancieras"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Reservas Financieras</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  type="number" 
+                  placeholder="Ej: 5000" 
+                  min="0" 
+                  step="0.01" 
                 />
               </FormControl>
               <FormMessage />
