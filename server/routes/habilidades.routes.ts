@@ -137,7 +137,7 @@ habilidadesRouter.post("/", isAuthenticated, async (req: Request, res: Response)
     const [usuario] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId));
+      .where(eq(users.id, targetUserId));
 
     if (!usuario) {
       return res.status(404).json({ error: "Usuario no encontrado" });
@@ -149,7 +149,7 @@ habilidadesRouter.post("/", isAuthenticated, async (req: Request, res: Response)
       .from(userSkills)
       .where(
         and(
-          eq(userSkills.userId, userId),
+          eq(userSkills.userId, targetUserId),
           eq(userSkills.tipo, tipo),
           eq(userSkills.nombre, nombre)
         )
@@ -165,7 +165,7 @@ habilidadesRouter.post("/", isAuthenticated, async (req: Request, res: Response)
     const [nuevaHabilidad] = await db
       .insert(userSkills)
       .values({
-        userId,
+        userId: targetUserId,
         tipo,
         nombre,
         nivel,
