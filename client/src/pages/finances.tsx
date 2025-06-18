@@ -49,10 +49,11 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('es-ES', {
+  return new Intl.NumberFormat('es-CO', {
     style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(amount);
 }
 

@@ -132,9 +132,9 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Monto total asignado al presupuesto</FormLabel>
+              <FormLabel>Monto total asignado al presupuesto (COP)</FormLabel>
               <FormControl>
-                <Input {...field} type="number" placeholder="Ej: 10000" min="1" step="0.01" />
+                <Input {...field} type="number" placeholder="Ej: 6000000" min="1" step="1" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -299,14 +299,14 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
           name="reservasFinancieras"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Reservas Financieras</FormLabel>
+              <FormLabel>Reservas Financieras (COP)</FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
                   type="number" 
-                  placeholder="Ej: 5000" 
+                  placeholder="Ej: 300000" 
                   min="0" 
-                  step="0.01" 
+                  step="1" 
                 />
               </FormControl>
               <FormMessage />
