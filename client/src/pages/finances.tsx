@@ -339,14 +339,12 @@ export default function FinancesPage() {
                     <th className="py-3 px-4 font-semibold text-gray-700">Monto Garantía</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Reservas</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Estado</th>
-                    <th className="py-3 px-4 font-semibold text-gray-700">Área</th>
-                    <th className="py-3 px-4 font-semibold text-gray-700">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {presupuestosFiltrados.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-4 text-center text-gray-500">
+                      <td colSpan={8} className="py-4 text-center text-gray-500">
                         No se encontraron presupuestos
                       </td>
                     </tr>
@@ -399,18 +397,6 @@ export default function FinancesPage() {
                           </td>
                           <td className="py-3 px-4">
                             <EstadoBadge estado={presupuesto.estado} />
-                          </td>
-                          <td className="py-3 px-4">
-                            <Badge variant="outline" className="font-normal">
-                              {presupuesto.area}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <Button variant="ghost" size="sm">
-                                <FileBarChart2 className="h-4 w-4" />
-                              </Button>
-                            </div>
                           </td>
                         </tr>
                       );
