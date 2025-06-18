@@ -73,7 +73,7 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
       name: '',
       amount: '',
       startDate: new Date(),
-      endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)), // Un mes en el futuro
+      endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)), 
       area: 'General',
       description: '',
       porcentajeEjecucion: '',
@@ -96,11 +96,12 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
         endDate: data.endDate,
         area: data.area,
         description: data.description,
-        createdBy: 1,  // Usuario por defecto
-        organizationId: 1, // Organización por defecto
-        porcentajeEjecucion: data.porcentajeEjecucion ? Number(data.porcentajeEjecucion) : undefined,
-        porcentajeGarantia: data.porcentajeGarantia ? Number(data.porcentajeGarantia) : undefined,
-        reservasFinancieras: data.reservasFinancieras ? Number(data.reservasFinancieras) : undefined
+        // Agregar metadata con los nuevos campos financieros
+        metadata: {
+          porcentajeEjecucion: data.porcentajeEjecucion ? Number(data.porcentajeEjecucion) : undefined,
+          porcentajeGarantia: data.porcentajeGarantia ? Number(data.porcentajeGarantia) : undefined,
+          reservasFinancieras: data.reservasFinancieras ? Number(data.reservasFinancieras) : undefined,
+        }
       };
       
       await crearPresupuesto(presupuestoData);
@@ -110,9 +111,20 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
     }
   };
 
+  // Función auxiliar para formatear números con separadores de miles
+  const formatNumber = (value: string): string => {
+    const numericValue = value.replace(/[^\d]/g, '');
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  // Función auxiliar para obtener valor numérico
+  const getNumericValue = (value: string): number => {
+    return Number(value.replace(/[^\d]/g, ''));
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -120,7 +132,7 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
             <FormItem>
               <FormLabel>Nombre del presupuesto</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Ej: Presupuesto Q2 Marketing 2025" />
+                <Input {...field} placeholder="Ej: Proyecto Marketing Q1 2024" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -139,15 +151,13 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
                     $
                   </span>
                   <Input 
-                    value={field.value ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                    value={field.value ? formatNumber(field.value) : ''}
                     type="text" 
                     placeholder="6,000,000" 
                     className="pl-8 pr-12"
                     onChange={(e) => {
-                      // Remover todo excepto números
                       const numericValue = e.target.value.replace(/[^\d]/g, '');
-                      // Actualizar el valor del formulario con número limpio
-                      field.onChange(numericValue ? parseInt(numericValue) : '');
+                      field.onChange(numericValue);
                     }}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
@@ -170,11 +180,18 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button 
-                        variant="outline" 
-                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
                       >
-                        {field.value ? format(field.value, "PP") : <span>Seleccionar fecha</span>}
+                        {field.value ? (
+                          format(field.value, "PPP")
+                        ) : (
+                          <span>Seleccionar fecha</span>
+                        )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -184,6 +201,9 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
+                      disabled={(date) =>
+                        date < new Date("1900-01-01")
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -202,11 +222,18 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button 
-                        variant="outline" 
-                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
                       >
-                        {field.value ? format(field.value, "PP") : <span>Seleccionar fecha</span>}
+                        {field.value ? (
+                          format(field.value, "PPP")
+                        ) : (
+                          <span>Seleccionar fecha</span>
+                        )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -216,6 +243,9 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
+                      disabled={(date) =>
+                        date < new Date("1900-01-01")
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -225,7 +255,7 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
             )}
           />
         </div>
-        
+
         <FormField
           control={form.control}
           name="area"
@@ -235,7 +265,7 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un área" />
+                    <SelectValue placeholder="Seleccionar área" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -274,8 +304,8 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
             control={form.control}
             name="porcentajeEjecucion"
             render={({ field }) => {
-              const montoTotal = form.watch('amount') || 0;
-              const porcentaje = parseFloat(field.value) || 0;
+              const montoTotal = getNumericValue(form.watch('amount') || '0');
+              const porcentaje = Number(field.value) || 0;
               const montoCalculado = (montoTotal * porcentaje) / 100;
               
               return (
@@ -309,8 +339,8 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
             control={form.control}
             name="porcentajeGarantia"
             render={({ field }) => {
-              const montoTotal = form.watch('amount') || 0;
-              const porcentaje = parseFloat(field.value) || 0;
+              const montoTotal = getNumericValue(form.watch('amount') || '0');
+              const porcentaje = Number(field.value) || 0;
               const montoCalculado = (montoTotal * porcentaje) / 100;
               
               return (
@@ -353,15 +383,13 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
                     $
                   </span>
                   <Input 
-                    value={field.value ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                    value={field.value ? formatNumber(field.value) : ''}
                     type="text" 
                     placeholder="300,000" 
                     className="pl-8 pr-12"
                     onChange={(e) => {
-                      // Remover todo excepto números
                       const numericValue = e.target.value.replace(/[^\d]/g, '');
-                      // Actualizar el valor del formulario con número limpio
-                      field.onChange(numericValue ? parseInt(numericValue) : '');
+                      field.onChange(numericValue);
                     }}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
