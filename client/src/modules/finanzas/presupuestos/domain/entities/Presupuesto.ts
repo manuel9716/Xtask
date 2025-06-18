@@ -25,6 +25,12 @@ export interface Presupuesto {
   createdAt: Date;
   updatedAt: Date;
   createdBy: number;
+  // Campos calculados de metadata
+  porcentajeEjecucionMeta?: number;
+  montoEjecucion?: number;
+  porcentajeGarantia?: number;
+  montoGarantia?: number;
+  reservas?: number;
 }
 
 /**

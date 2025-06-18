@@ -248,6 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           monto: amount,
           gastado: gastado,
           porcentajeEjecucion,
+          porcentajeEjecucionMeta: metadata.porcentajeEjecucion || null,
           porcentajeGarantia: metadata.porcentajeGarantia || null,
           montoEjecucion,
           montoGarantia,

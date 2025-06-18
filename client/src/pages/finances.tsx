@@ -333,9 +333,9 @@ export default function FinancesPage() {
                   <tr className="border-b">
                     <th className="py-3 px-4 font-semibold text-gray-700">Nombre</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Monto</th>
-                    <th className="py-3 px-4 font-semibold text-gray-700">Gastado</th>
-                    <th className="py-3 px-4 font-semibold text-gray-700">Ejecución</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">% Ejecución</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Monto Ejecución</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">% Garantía</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Monto Garantía</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Reservas</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Estado</th>
@@ -351,47 +351,70 @@ export default function FinancesPage() {
                       </td>
                     </tr>
                   ) : (
-                    presupuestosFiltrados.map((presupuesto) => (
-                      <tr key={presupuesto.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <div className="font-medium">{presupuesto.nombre}</div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(presupuesto.fechaInicio).toLocaleDateString()} - {new Date(presupuesto.fechaFin).toLocaleDateString()}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 font-medium">
-                          {formatCurrency(presupuesto.monto)}
-                        </td>
-                        <td className="py-3 px-4">
-                          {formatCurrency(presupuesto.gastado)}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Progress 
-                              value={presupuesto.porcentajeEjecucion} 
-                              className="h-2 w-24"
-                              aria-label={`${presupuesto.porcentajeEjecucion.toFixed(1)}% completado`}
-                            />
-                            <span className="text-xs font-medium">{presupuesto.porcentajeEjecucion.toFixed(1)}%</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <EstadoBadge estado={presupuesto.estado} />
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge variant="outline" className="font-normal">
-                            {presupuesto.area}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm">
-                              <FileBarChart2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                    presupuestosFiltrados.map((presupuesto) => {
+                      // Función auxiliar para formatear valores seguros
+                      const formatSafeNumber = (value: any) => {
+                        const num = typeof value === 'string' ? parseFloat(value) : value;
+                        return !isNaN(num) && num !== null && num !== undefined ? num : 0;
+                      };
+                      
+                      return (
+                        <tr key={presupuesto.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <div className="font-medium">{presupuesto.nombre}</div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(presupuesto.fechaInicio).toLocaleDateString()} - {new Date(presupuesto.fechaFin).toLocaleDateString()}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {formatCurrency(formatSafeNumber(presupuesto.monto))}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium">
+                              {(presupuesto as any).porcentajeEjecucionMeta !== undefined ? `${formatSafeNumber((presupuesto as any).porcentajeEjecucionMeta).toFixed(1)}%` : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {(presupuesto as any).montoEjecucion ? 
+                              formatCurrency(formatSafeNumber((presupuesto as any).montoEjecucion)) : 
+                              'N/A'
+                            }
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium">
+                              {(presupuesto as any).porcentajeGarantia !== undefined ? `${formatSafeNumber((presupuesto as any).porcentajeGarantia).toFixed(1)}%` : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {(presupuesto as any).montoGarantia ? 
+                              formatCurrency(formatSafeNumber((presupuesto as any).montoGarantia)) : 
+                              'N/A'
+                            }
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {(presupuesto as any).reservasFinancieras ? 
+                              formatCurrency(formatSafeNumber((presupuesto as any).reservasFinancieras)) : 
+                              'N/A'
+                            }
+                          </td>
+                          <td className="py-3 px-4">
+                            <EstadoBadge estado={presupuesto.estado} />
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant="outline" className="font-normal">
+                              {presupuesto.area}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <Button variant="ghost" size="sm">
+                                <FileBarChart2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
