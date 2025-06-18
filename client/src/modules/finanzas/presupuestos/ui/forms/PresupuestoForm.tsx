@@ -132,9 +132,28 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Monto total asignado al presupuesto (COP)</FormLabel>
+              <FormLabel>Monto total asignado al presupuesto</FormLabel>
               <FormControl>
-                <Input {...field} type="number" placeholder="Ej: 6000000" min="1" step="1" />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                    $
+                  </span>
+                  <Input 
+                    value={field.value ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                    type="text" 
+                    placeholder="6,000,000" 
+                    className="pl-8 pr-12"
+                    onChange={(e) => {
+                      // Remover todo excepto números
+                      const numericValue = e.target.value.replace(/[^\d]/g, '');
+                      // Actualizar el valor del formulario con número limpio
+                      field.onChange(numericValue ? parseInt(numericValue) : '');
+                    }}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                    COP
+                  </span>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -299,15 +318,28 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
           name="reservasFinancieras"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Reservas Financieras (COP)</FormLabel>
+              <FormLabel>Reservas Financieras</FormLabel>
               <FormControl>
-                <Input 
-                  {...field} 
-                  type="number" 
-                  placeholder="Ej: 300000" 
-                  min="0" 
-                  step="1" 
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                    $
+                  </span>
+                  <Input 
+                    value={field.value ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : ''}
+                    type="text" 
+                    placeholder="300,000" 
+                    className="pl-8 pr-12"
+                    onChange={(e) => {
+                      // Remover todo excepto números
+                      const numericValue = e.target.value.replace(/[^\d]/g, '');
+                      // Actualizar el valor del formulario con número limpio
+                      field.onChange(numericValue ? parseInt(numericValue) : '');
+                    }}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                    COP
+                  </span>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
