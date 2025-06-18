@@ -210,13 +210,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Transformar y añadir datos calculados (lógica simplificada)
       const result = presupuestos.map((presupuesto: any) => {
+        // Parsear metadata para obtener campos financieros adicionales
+        let metadata: any = {};
+        if (presupuesto.metadata) {
+          try {
+            metadata = JSON.parse(presupuesto.metadata);
+          } catch (e) {
+            metadata = {};
+          }
+        }
+
         // En esta versión simplificada, asumimos que gastado es 0 o se encuentra en metadata
         // En una implementación completa, se debería cargar desde la BD o calcular desde transacciones
         const gastado = presupuesto.gastado || 0;
         
-        // Cálculo porcentaje de ejecución: gastado / amount * 100
+        // Usar porcentaje de ejecución de metadata o calcular: gastado / amount * 100
         const amount = parseFloat(presupuesto.amount);
-        const porcentajeEjecucion = gastado > 0 ? (gastado / amount) * 100 : 0;
+        const porcentajeEjecucion = metadata.porcentajeEjecucion !== undefined 
+          ? metadata.porcentajeEjecucion 
+          : (gastado > 0 ? (gastado / amount) * 100 : 0);
         
         // Determinar estado basado en el porcentaje y el estado almacenado
         let estado = presupuesto.status === 'active' ? 'ACTIVO' : presupuesto.status.toUpperCase();
@@ -232,8 +244,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           monto: amount,
           gastado: gastado,
           porcentajeEjecucion,
+          porcentajeGarantia: metadata.porcentajeGarantia || null,
+          reservasFinancieras: metadata.reservasFinancieras || null,
           estado,
-          area: presupuesto.departmentId ? `Departamento ${presupuesto.departmentId}` : 'General',
+          area: metadata.area || (presupuesto.departmentId ? `Departamento ${presupuesto.departmentId}` : 'General'),
           fechaInicio: presupuesto.startDate,
           fechaFin: presupuesto.endDate,
           createdAt: presupuesto.createdAt,
@@ -298,6 +312,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Crear un nuevo presupuesto
   presupuestosRouter.post('/', async (req: Request, res: Response) => {
     try {
+      // Preparar metadata con los nuevos campos financieros
+      const financialMetadata: any = {};
+      if (req.body.porcentajeEjecucion !== undefined) {
+        financialMetadata.porcentajeEjecucion = Number(req.body.porcentajeEjecucion);
+      }
+      if (req.body.porcentajeGarantia !== undefined) {
+        financialMetadata.porcentajeGarantia = Number(req.body.porcentajeGarantia);
+      }
+      if (req.body.reservasFinancieras !== undefined) {
+        financialMetadata.reservasFinancieras = Number(req.body.reservasFinancieras);
+      }
+      if (req.body.area) {
+        financialMetadata.area = req.body.area;
+      }
+
       // Transformar los datos para que coincidan con el schema
       const budgetData = {
         name: req.body.name,
@@ -310,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         departmentId: req.body.departmentId || null,
         projectId: req.body.projectId || null,
         status: 'active',
-        metadata: req.body.metadata || null
+        metadata: Object.keys(financialMetadata).length > 0 ? JSON.stringify(financialMetadata) : null
       };
       
       const parseResult = insertBudgetSchema.safeParse(budgetData);
@@ -323,9 +352,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const presupuesto = await storage.createBudget(parseResult.data);
       
+      // Parsear metadata para incluir los campos financieros en la respuesta
+      let metadata: any = {};
+      if (presupuesto.metadata) {
+        try {
+          metadata = JSON.parse(presupuesto.metadata);
+        } catch (e) {
+          metadata = {};
+        }
+      }
+      
       res.status(201).json({
         ...presupuesto,
-        porcentajeEjecucion: 0,
+        ...metadata,
+        porcentajeEjecucion: metadata.porcentajeEjecucion || 0,
         estado: 'ACTIVO'
       });
     } catch (error: any) {
