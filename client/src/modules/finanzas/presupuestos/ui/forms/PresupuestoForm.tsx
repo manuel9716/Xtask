@@ -96,12 +96,10 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
         endDate: data.endDate,
         area: data.area,
         description: data.description,
-        // Agregar metadata con los nuevos campos financieros
-        metadata: {
-          porcentajeEjecucion: data.porcentajeEjecucion ? Number(data.porcentajeEjecucion) : undefined,
-          porcentajeGarantia: data.porcentajeGarantia ? Number(data.porcentajeGarantia) : undefined,
-          reservasFinancieras: data.reservasFinancieras ? Number(data.reservasFinancieras) : undefined,
-        }
+        // Agregar nuevos campos financieros
+        porcentajeEjecucion: data.porcentajeEjecucion ? Number(data.porcentajeEjecucion) : undefined,
+        porcentajeGarantia: data.porcentajeGarantia ? Number(data.porcentajeGarantia) : undefined,
+        reservasFinancieras: data.reservasFinancieras ? Number(data.reservasFinancieras) : undefined,
       };
       
       await crearPresupuesto(presupuestoData);
@@ -112,14 +110,16 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
   };
 
   // Función auxiliar para formatear números con separadores de miles
-  const formatNumber = (value: string): string => {
-    const numericValue = value.replace(/[^\d]/g, '');
+  const formatNumber = (value: string | undefined): string => {
+    if (!value) return '';
+    const numericValue = String(value).replace(/[^\d]/g, '');
     return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
   // Función auxiliar para obtener valor numérico
-  const getNumericValue = (value: string): number => {
-    return Number(value.replace(/[^\d]/g, ''));
+  const getNumericValue = (value: string | undefined): number => {
+    if (!value) return 0;
+    return Number(String(value).replace(/[^\d]/g, ''));
   };
 
   return (

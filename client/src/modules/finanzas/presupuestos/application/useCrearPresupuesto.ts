@@ -46,7 +46,11 @@ export function useCrearPresupuesto() {
           createdBy: data.createdBy || 1, // Usuario por defecto
           organizationId: data.organizationId || 1,
           departmentId: data.departmentId || null,
-          projectId: data.projectId || null
+          projectId: data.projectId || null,
+          // Incluir nuevos campos financieros
+          porcentajeEjecucion: data.porcentajeEjecucion,
+          porcentajeGarantia: data.porcentajeGarantia,
+          reservasFinancieras: data.reservasFinancieras
         };
         
         const response = await apiRequest('POST', '/api/presupuestos', requestData);
