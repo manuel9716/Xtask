@@ -273,43 +273,71 @@ export function PresupuestoForm({ onSuccess, onCancel }: PresupuestoFormProps) {
           <FormField
             control={form.control}
             name="porcentajeEjecucion"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Porcentaje de Ejecución (%)</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    type="number" 
-                    placeholder="Ej: 75" 
-                    min="0" 
-                    max="100" 
-                    step="0.1" 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const montoTotal = form.watch('amount') || 0;
+              const porcentaje = parseFloat(field.value) || 0;
+              const montoCalculado = (montoTotal * porcentaje) / 100;
+              
+              return (
+                <FormItem>
+                  <FormLabel>Porcentaje de Ejecución (%)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      type="number" 
+                      placeholder="Ej: 75" 
+                      min="0" 
+                      max="100" 
+                      step="0.1" 
+                    />
+                  </FormControl>
+                  {montoTotal > 0 && porcentaje > 0 && (
+                    <div className="text-sm text-gray-600 mt-1 p-2 bg-gray-50 rounded">
+                      <span className="font-medium">Monto de ejecución: </span>
+                      <span className="text-green-600 font-semibold">
+                        ${montoCalculado.toLocaleString('es-CO')} COP
+                      </span>
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
           
           <FormField
             control={form.control}
             name="porcentajeGarantia"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Porcentaje de Garantía (%)</FormLabel>
-                <FormControl>
-                  <Input 
-                    {...field} 
-                    type="number" 
-                    placeholder="Ej: 10" 
-                    min="0" 
-                    max="100" 
-                    step="0.1" 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const montoTotal = form.watch('amount') || 0;
+              const porcentaje = parseFloat(field.value) || 0;
+              const montoCalculado = (montoTotal * porcentaje) / 100;
+              
+              return (
+                <FormItem>
+                  <FormLabel>Porcentaje de Garantía (%)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      type="number" 
+                      placeholder="Ej: 10" 
+                      min="0" 
+                      max="100" 
+                      step="0.1" 
+                    />
+                  </FormControl>
+                  {montoTotal > 0 && porcentaje > 0 && (
+                    <div className="text-sm text-gray-600 mt-1 p-2 bg-gray-50 rounded">
+                      <span className="font-medium">Monto de garantía: </span>
+                      <span className="text-blue-600 font-semibold">
+                        ${montoCalculado.toLocaleString('es-CO')} COP
+                      </span>
+                    </div>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
         </div>
 
