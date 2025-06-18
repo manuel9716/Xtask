@@ -33,6 +33,7 @@ interface PanelHabilidadesUsuarioProps {
 
 export function PanelHabilidadesUsuario({ userId }: PanelHabilidadesUsuarioProps) {
   const [showForm, setShowForm] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [editingHabilidad, setEditingHabilidad] = useState<Habilidad | undefined>();
   const [filtroTipo, setFiltroTipo] = useState<string>("todos");
   const [filtroNivel, setFiltroNivel] = useState<string>("todos");
@@ -135,10 +136,16 @@ export function PanelHabilidadesUsuario({ userId }: PanelHabilidadesUsuarioProps
             Gestiona tus indicadores clave de desempeño y bonificaciones mensuales
           </p>
         </div>
-        <Button onClick={handleAddNew}>
-          <Plus className="mr-2 h-4 w-4" />
-          Agregar Habilidad
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleAddNew}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Habilidad
+          </Button>
+          <Button variant="outline" onClick={() => setShowAssignDialog(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Asignar a Usuario
+          </Button>
+        </div>
       </div>
 
       {/* Estadísticas */}
@@ -292,6 +299,12 @@ export function PanelHabilidadesUsuario({ userId }: PanelHabilidadesUsuarioProps
         onOpenChange={handleCloseForm}
         habilidad={editingHabilidad}
         userId={currentUserId}
+      />
+      
+      {/* Diálogo de asignación de habilidades */}
+      <AssignSkillDialog
+        open={showAssignDialog}
+        onOpenChange={setShowAssignDialog}
       />
     </div>
   );

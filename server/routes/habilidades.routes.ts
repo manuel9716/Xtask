@@ -103,10 +103,13 @@ habilidadesRouter.post("/", isAuthenticated, async (req: Request, res: Response)
     const { userId, tipo, nombre, nivel, observaciones } = req.body;
     const currentUserId = req.user?.id;
 
+    // Si no se especifica userId, usar el del usuario actual
+    const targetUserId = userId || currentUserId;
+
     // Validar datos requeridos
-    if (!userId || !tipo || !nombre || !nivel) {
+    if (!targetUserId || !tipo || !nombre || !nivel) {
       return res.status(400).json({ 
-        error: "Faltan campos requeridos: userId, tipo, nombre, nivel" 
+        error: "Faltan campos requeridos: tipo, nombre, nivel" 
       });
     }
 
