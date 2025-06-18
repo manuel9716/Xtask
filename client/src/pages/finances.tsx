@@ -334,6 +334,9 @@ export default function FinancesPage() {
                     <th className="py-3 px-4 font-semibold text-gray-700">Monto</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Gastado</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Ejecución</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Monto Ejecución</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Monto Garantía</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Reservas</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Estado</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Área</th>
                     <th className="py-3 px-4 font-semibold text-gray-700">Acciones</th>
@@ -342,7 +345,7 @@ export default function FinancesPage() {
                 <tbody>
                   {presupuestosFiltrados.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-4 text-center text-gray-500">
+                      <td colSpan={10} className="py-4 text-center text-gray-500">
                         No se encontraron presupuestos
                       </td>
                     </tr>

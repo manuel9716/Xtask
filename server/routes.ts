@@ -238,6 +238,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           estado = 'ALERTA';
         }
         
+        // Calcular valores monetarios basados en porcentajes
+        const montoEjecucion = metadata.porcentajeEjecucion ? (amount * metadata.porcentajeEjecucion / 100) : null;
+        const montoGarantia = metadata.porcentajeGarantia ? (amount * metadata.porcentajeGarantia / 100) : null;
+
         return {
           id: presupuesto.id,
           nombre: presupuesto.name,
@@ -245,6 +249,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           gastado: gastado,
           porcentajeEjecucion,
           porcentajeGarantia: metadata.porcentajeGarantia || null,
+          montoEjecucion,
+          montoGarantia,
           reservasFinancieras: metadata.reservasFinancieras || null,
           estado,
           area: metadata.area || (presupuesto.departmentId ? `Departamento ${presupuesto.departmentId}` : 'General'),
@@ -362,10 +368,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Calcular valores monetarios basados en porcentajes
+      const amount = parseFloat(presupuesto.amount);
+      const montoEjecucion = metadata.porcentajeEjecucion ? (amount * metadata.porcentajeEjecucion / 100) : null;
+      const montoGarantia = metadata.porcentajeGarantia ? (amount * metadata.porcentajeGarantia / 100) : null;
+
       res.status(201).json({
         ...presupuesto,
         ...metadata,
         porcentajeEjecucion: metadata.porcentajeEjecucion || 0,
+        montoEjecucion,
+        montoGarantia,
         estado: 'ACTIVO'
       });
     } catch (error: any) {
