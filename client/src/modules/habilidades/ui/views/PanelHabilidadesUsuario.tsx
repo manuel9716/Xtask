@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Filter, Search } from "lucide-react";
+import { Plus, Filter, Search, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { AssignSkillDialog } from "@/components/assign-skill-dialog";
 import {
   Select,
   SelectContent,

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { userSkills, users } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, asc } from "drizzle-orm";
 import jwt from 'jsonwebtoken';
 
 const habilidadesRouter = Router();
@@ -75,7 +75,7 @@ habilidadesRouter.get("/:userId", isAuthenticated, async (req: Request, res: Res
       .select()
       .from(userSkills)
       .where(eq(userSkills.userId, userId))
-      .orderBy(userSkills.tipo, userSkills.nombre);
+      .orderBy(asc(userSkills.tipo), asc(userSkills.nombre));
 
     // Agrupar habilidades por tipo
     const habilidadesAgrupadas = habilidades.reduce((acc, habilidad) => {
@@ -285,6 +285,172 @@ habilidadesRouter.delete("/:id", isAuthenticated, async (req: Request, res: Resp
     res.json({ success: true, message: "Habilidad eliminada correctamente" });
   } catch (error: any) {
     console.error("Error al eliminar habilidad:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Asigna una habilidad existente a un usuario específico
+ * POST /api/habilidades/asignar
+ */
+habilidadesRouter.post("/asignar", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const { userId, tipo, nombre, nivel, observaciones } = req.body;
+    const currentUserId = req.user?.id;
+
+    // Validar datos requeridos
+    if (!userId || !tipo || !nombre || !nivel) {
+      return res.status(400).json({ 
+        error: "Faltan campos requeridos: userId, tipo, nombre, nivel" 
+      });
+    }
+
+    // Verificar que el tipo sea válido
+    const tiposValidos = ["herramienta", "habilidad_blanda", "conocimiento", "idioma"];
+    if (!tiposValidos.includes(tipo)) {
+      return res.status(400).json({ 
+        error: "Tipo de habilidad inválido. Debe ser: " + tiposValidos.join(", ") 
+      });
+    }
+
+    // Verificar que el nivel sea válido
+    const nivelesValidos = ["básico", "intermedio", "avanzado", "experto"];
+    if (!nivelesValidos.includes(nivel)) {
+      return res.status(400).json({ 
+        error: "Nivel de habilidad inválido. Debe ser: " + nivelesValidos.join(", ") 
+      });
+    }
+
+    // Verificar que el usuario existe
+    const [usuario] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Verificar que no exista ya una habilidad con el mismo nombre y tipo para este usuario
+    const [habilidadExistente] = await db
+      .select()
+      .from(userSkills)
+      .where(
+        and(
+          eq(userSkills.userId, userId),
+          eq(userSkills.tipo, tipo),
+          eq(userSkills.nombre, nombre)
+        )
+      );
+
+    if (habilidadExistente) {
+      return res.status(400).json({ 
+        error: "Ya existe una habilidad con este nombre y tipo para el usuario" 
+      });
+    }
+
+    // Crear la nueva habilidad asignada
+    const [nuevaHabilidad] = await db
+      .insert(userSkills)
+      .values({
+        userId,
+        tipo,
+        nombre,
+        nivel,
+        observaciones: observaciones || null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+
+    res.status(201).json(nuevaHabilidad);
+  } catch (error: any) {
+    console.error("Error al asignar habilidad:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Obtiene todas las habilidades disponibles (catálogo)
+ * GET /api/habilidades/catalogo
+ */
+habilidadesRouter.get("/catalogo", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    // Obtener todas las habilidades únicas por tipo y nombre
+    const habilidades = await db
+      .selectDistinct({
+        tipo: userSkills.tipo,
+        nombre: userSkills.nombre
+      })
+      .from(userSkills)
+      .orderBy(asc(userSkills.tipo), asc(userSkills.nombre));
+
+    // Agrupar por tipo
+    const catalogo = habilidades.reduce((acc, habilidad) => {
+      const tipo = habilidad.tipo;
+      if (!acc[tipo]) {
+        acc[tipo] = [];
+      }
+      acc[tipo].push(habilidad.nombre);
+      return acc;
+    }, {} as Record<string, string[]>);
+
+    res.json(catalogo);
+  } catch (error: any) {
+    console.error("Error al obtener catálogo de habilidades:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Obtiene estadísticas de habilidades por usuario
+ * GET /api/habilidades/estadisticas/:userId
+ */
+habilidadesRouter.get("/estadisticas/:userId", isAuthenticated, async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: "ID de usuario inválido" });
+    }
+
+    // Verificar que el usuario existe
+    const [usuario] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    // Obtener todas las habilidades del usuario
+    const habilidades = await db
+      .select()
+      .from(userSkills)
+      .where(eq(userSkills.userId, userId));
+
+    // Calcular estadísticas
+    const estadisticas = {
+      total: habilidades.length,
+      porTipo: habilidades.reduce((acc, h) => {
+        acc[h.tipo] = (acc[h.tipo] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      porNivel: habilidades.reduce((acc, h) => {
+        acc[h.nivel] = (acc[h.nivel] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      usuario: {
+        id: usuario.id,
+        username: usuario.username,
+        fullName: usuario.fullName
+      }
+    };
+
+    res.json(estadisticas);
+  } catch (error: any) {
+    console.error("Error al obtener estadísticas:", error);
     res.status(500).json({ error: error.message });
   }
 });
