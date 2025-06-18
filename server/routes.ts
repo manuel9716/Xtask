@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import express from "express";
 import empleadosRouter from "./routes/empleados.updated.routes";
 import nominaRouter from "./routes/nomina.routes";
@@ -853,6 +854,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error al obtener usuarios:', error);
       res.status(500).json({ error: 'Error al obtener los usuarios' });
+    }
+  });
+
+  // Endpoint para crear un nuevo usuario
+  app.post('/api/users', async (req, res) => {
+    try {
+      const { db } = await import('./db');
+      const { users, insertUserSchema } = await import('@shared/schema');
+      const bcrypt = await import('bcrypt');
+      
+      // Validar los datos de entrada
+      const validation = insertUserSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: 'Datos inválidos', 
+          details: validation.error.errors 
+        });
+      }
+      
+      const userData = validation.data;
+      
+      // Verificar si el usuario ya existe
+      const existingUser = await db.select()
+        .from(users)
+        .where(eq(users.username, userData.username))
+        .limit(1);
+        
+      if (existingUser.length > 0) {
+        return res.status(400).json({ error: 'El nombre de usuario ya existe' });
+      }
+      
+      // Verificar si el email ya existe
+      const existingEmail = await db.select()
+        .from(users)
+        .where(eq(users.email, userData.email))
+        .limit(1);
+        
+      if (existingEmail.length > 0) {
+        return res.status(400).json({ error: 'El email ya está registrado' });
+      }
+      
+      // Encriptar la contraseña
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      // Crear el usuario
+      const [newUser] = await db.insert(users).values({
+        ...userData,
+        password: hashedPassword,
+        isActive: true,
+        createdAt: new Date()
+      }).returning();
+      
+      // Remover la contraseña de la respuesta
+      const { password, ...userResponse } = newUser;
+      
+      res.status(201).json(userResponse);
+    } catch (error: any) {
+      console.error('Error al crear usuario:', error);
+      res.status(500).json({ error: 'Error al crear el usuario' });
     }
   });
   
