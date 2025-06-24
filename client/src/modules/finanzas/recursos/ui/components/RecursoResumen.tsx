@@ -2,7 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Recurso, ResumenCostos, calculadoraCostos } from '../../domain/entities/Recurso';
+import { Recurso, ResumenCostos } from '../../domain/entities/Recurso';
+import { calculadoraCostos } from '../../application/useCases/calcularCostoMensual';
 import { 
   DollarSign, 
   TrendingUp, 

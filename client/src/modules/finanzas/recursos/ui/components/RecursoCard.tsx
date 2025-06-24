@@ -13,7 +13,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Recurso, calculadoraCostos } from '../../domain/entities/Recurso';
+import { Recurso } from '../../domain/entities/Recurso';
+import { calculadoraCostos } from '../../application/useCases/calcularCostoMensual';
 import { 
   Edit2, 
   Trash2, 

@@ -149,6 +149,10 @@ export const recursosFinancieros = pgTable("recursos_financieros", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Tipo para recursos financieros
+export type RecursoFinanciero = typeof recursosFinancieros.$inferSelect;
+export type InsertRecursoFinanciero = typeof recursosFinancieros.$inferInsert;
+
 // Gastos de presupuestos
 export const budgetExpenses = pgTable("budget_expenses", {
   id: serial("id").primaryKey(),
