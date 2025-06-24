@@ -38,6 +38,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas para submódulo de recursos financieros
   app.use('/api/finanzas/recursos', recursosRouter);
+
+  // Rutas de nómina financiera
+  app.use('/api/nomina', nominaFinancieraRouter);
   // Projects routes
   app.get("/api/projects", async (req, res) => {
     try {
@@ -881,7 +884,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   
   app.use('/api/nomina/empleados', empleadosRouter);
-  app.use('/api/nomina', nominaRouter);
+
   // Legacy router para compatibilidad
   app.use('/api/nomina/legacy', nominaLegacyRouter);
   app.use('/api/proyectos', proyectosRouter);

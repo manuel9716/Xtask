@@ -17,6 +17,7 @@ import HabilidadesPage from "@/pages/habilidades";
 import HomePage from "@/pages/home";
 import ApiDocumentation from "@/pages/api-documentation";
 import RecursosPage from "@/pages/recursos-page";
+import NominaPage from "@/pages/nomina-page";
 import { MainLayout } from "@/layouts/main-layout";
 import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
