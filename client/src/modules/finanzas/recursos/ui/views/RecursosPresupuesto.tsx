@@ -18,6 +18,7 @@ import { useCalcularCostoMensual } from '../../application/useCases/calcularCost
 import { RecursoForm } from '../components/RecursoForm';
 import { RecursoCard } from '../components/RecursoCard';
 import { RecursoResumen } from '../components/RecursoResumen';
+import { ModalLigarEmpleado } from '../components/ModalLigarEmpleado';
 import { CrearRecursoDTO, Recurso, calculadoraCostos } from '../../domain/entities/Recurso';
 import { 
   PlusCircle, 
