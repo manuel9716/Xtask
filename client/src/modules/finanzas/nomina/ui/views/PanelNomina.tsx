@@ -61,7 +61,7 @@ export function PanelNomina() {
   const handleFiltroChange = (key: keyof FiltrosNomina, value: string) => {
     setFiltros(prev => ({
       ...prev,
-      [key]: value || undefined
+      [key]: value === 'all' ? undefined : value
     }));
   };
 
@@ -246,7 +246,7 @@ export function PanelNomina() {
                     <SelectValue placeholder="Filtrar por mes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los meses</SelectItem>
+                    <SelectItem value="all">Todos los meses</SelectItem>
                     <SelectItem value="2025-06">Junio 2025</SelectItem>
                     <SelectItem value="2025-05">Mayo 2025</SelectItem>
                     <SelectItem value="2025-04">Abril 2025</SelectItem>
@@ -258,7 +258,7 @@ export function PanelNomina() {
                     <SelectValue placeholder="Filtrar por estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los estados</SelectItem>
+                    <SelectItem value="all">Todos los estados</SelectItem>
                     <SelectItem value="pendiente">Pendiente</SelectItem>
                     <SelectItem value="aprobado">Aprobado</SelectItem>
                     <SelectItem value="pagado">Pagado</SelectItem>
@@ -270,7 +270,7 @@ export function PanelNomina() {
                     <SelectValue placeholder="Filtrar por perfil" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los perfiles</SelectItem>
+                    <SelectItem value="all">Todos los perfiles</SelectItem>
                     <SelectItem value="ARQUITECTO">Arquitecto</SelectItem>
                     <SelectItem value="DESARROLLADOR_SENIOR">Desarrollador Senior</SelectItem>
                     <SelectItem value="DESARROLLADOR_JUNIOR">Desarrollador Junior</SelectItem>
