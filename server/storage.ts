@@ -7,7 +7,8 @@ import {
   suppliers, Supplier, InsertSupplier,
   products, Product, InsertProduct,
   purchaseOrders, PurchaseOrder, InsertPurchaseOrder,
-  budgets, Budget, InsertBudget
+  budgets, Budget, InsertBudget,
+  recursosFinancieros
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";

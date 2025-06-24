@@ -15,6 +15,7 @@ import microLearningRouter from "./routes/microlearning.routes";
 import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
 import habilidadesRouter from "./routes/habilidades.routes";
+import recursosRouter from "./routes/recursos.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint para Kubernetes
@@ -34,6 +35,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas para módulo de habilidades
   app.use('/api/habilidades', habilidadesRouter);
+  
+  // Rutas para submódulo de recursos financieros
+  app.use('/api/finanzas/recursos', recursosRouter);
   // Projects routes
   app.get("/api/projects", async (req, res) => {
     try {
