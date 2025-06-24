@@ -113,6 +113,15 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      {/* Submódulo de Nómina - Protegido */}
+      <Route path="/finanzas/nomina">
+        <ProtectedRoute>
+          <MainLayout>
+            <NominaPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+
       {/* Documentación de API - Accesible para todos */}
       <Route path="/api-docs">
         <ApiDocumentation />

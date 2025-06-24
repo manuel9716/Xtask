@@ -1,0 +1,99 @@
+ Prompt para Replit (versión ajustada con énfasis en perfiles asignados)
+Actúa como un desarrollador senior utilizando arquitectura hexagonal y UI basada en componentes modulares. Crea el módulo Nómina dentro de Finanzas. Este módulo debe permitir seleccionar un proyecto y, al hacerlo, mostrar únicamente los perfiles registrados para ese proyecto en el submódulo Recursos. Cada perfil debe visualizarse con su costo, horas, dedicación y estado de pago.
+
+🎯 Requisitos clave:
+Mostrar listado de proyectos al ingresar a Nómina.
+
+Filtrar perfiles por proyecto seleccionado, obtenidos desde la tabla de recursos.
+
+Ejemplo: al seleccionar “El FAG”, se muestran únicamente:
+
+Dev Senior
+
+Scrum Master
+
+Arquitecto
+
+UX Designer
+
+No se pueden registrar perfiles nuevos desde esta vista.
+
+Solo ver y gestionar los ya registrados en el módulo Recursos.
+
+Mostrar por cada perfil:
+
+Salario mensual
+
+Valor/hora
+
+Total de horas asignadas
+
+% de dedicación
+
+Costo mensual y total estimado
+
+Estado: Pendiente, Pagado, Aprobado
+
+Botones de "Registrar Pago" y "Ver Detalle"
+
+Permitir filtrar por mes o ciclo de pago.
+
+🧱 Estructura esperada (resumen)
+bash
+Copiar
+Editar
+src/modules/finanzas/nomina/
+  application/
+    useCases/
+      listarNominaPorProyecto.ts
+      registrarPagoNomina.ts
+  domain/
+    entities/Nomina.ts
+  infrastructure/
+    api/nominaApi.ts
+  ui/
+    views/PanelNomina.tsx
+    components/NominaCard.tsx
+    components/DetallePagoModal.tsx
+📄 Modelo base de Nomina.ts
+ts
+Copiar
+Editar
+interface Nomina {
+  id: number;
+  proyectoId: number;
+  recursoId: number;
+  mes: string; // Ej: "2025-06"
+  salarioMensual: number;
+  bonificacion?: number;
+  horasTotales: number;
+  dedicacion: number;
+  estado: 'pendiente' | 'pagado' | 'aprobado';
+  totalPagar: number;
+  fechaPago?: string;
+}
+🖥️ Vista esperada (PanelNomina.tsx)
+Cards similares a las de “Recursos”
+
+Sección superior: selector de proyecto → filtra los perfiles
+
+Cards mostradas: una por perfil técnico
+
+Botones:
+
+Registrar pago → abre DetallePagoModal.tsx
+
+Ver historial
+
+📡 API esperada
+Método	Ruta
+GET	/api/nomina/proyectos → retorna proyectos con recursos
+GET	/api/nomina/:proyectoId → perfiles del proyecto
+POST	/api/nomina/:proyectoId/pagar → registra el pago
+
+📢 Enfatiza en Replit:
+No permitir crear nuevos perfiles desde este módulo.
+
+Mostrar únicamente los recursos técnicos previamente registrados por proyecto.
+
+Validar que todos los datos de costos y horas provienen del módulo Recursos.

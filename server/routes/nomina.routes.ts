@@ -1,777 +1,300 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { and, eq, like, or, ilike, sql } from 'drizzle-orm';
-import { employees, nominas, nominaDetalles, EstadoNomina } from '@shared/schema';
-import { z } from 'zod';
-import path from 'path';
-import fs from 'fs';
-import PDFDocument from 'pdfkit';
-
-// Esquema para validar los datos de la nómina
-const datosNominaSchema = z.object({
-  empleadoId: z.number(),
-  nombreEmpleado: z.string(),
-  salarioBase: z.number(),
-  periodo: z.object({
-    fechaInicio: z.string(),
-    fechaFin: z.string()
-  }),
-  ingresos: z.array(z.object({
-    nombre: z.string(),
-    valor: z.number(),
-    esDeduccion: z.boolean()
-  })),
-  deducciones: z.array(z.object({
-    nombre: z.string(),
-    valor: z.number(),
-    esDeduccion: z.boolean()
-  })),
-  totalIngresos: z.number(),
-  totalDeducciones: z.number(),
-  salarioNeto: z.number()
-});
-
-// Esquema para validar la creación de una nómina
-const crearNominaSchema = z.object({
-  empleadoId: z.number(),
-  periodo: z.string(),
-  salarioBase: z.string(),
-  totalIngresos: z.string(),
-  totalDeducciones: z.string(),
-  salarioNeto: z.string(),
-  estado: z.enum(['pendiente', 'pagada', 'cancelada']).default('pendiente'),
-  detalleIngresos: z.string().optional(),
-  detalleDeducciones: z.string().optional(),
-});
+import { recursosFinancieros, budgets, users } from '@shared/schema';
+import { eq, and, sql, desc } from 'drizzle-orm';
 
 const nominaRouter = Router();
 
-// Listar empleados para nómina con filtros
-nominaRouter.get('/empleados/listar', async (req: Request, res: Response) => {
+/**
+ * GET /api/nomina/proyectos
+ * Obtiene proyectos que tienen recursos asignados
+ */
+nominaRouter.get('/proyectos', async (req: Request, res: Response) => {
   try {
-    const page = Number(req.query.page) || 1;
-    const pageSize = Number(req.query.pageSize) || 10;
-    const search = req.query.search as string;
-    const department = req.query.department as string;
-    const contractStatus = req.query.contractStatus as string;
-    
-    const offset = (page - 1) * pageSize;
-    
-    // Construir las condiciones para el filtrado
-    const conditions = [];
-    
-    // Si hay búsqueda de texto
-    if (search) {
-      conditions.push(
-        or(
-          ilike(employees.firstName, `%${search}%`),
-          ilike(employees.lastName, `%${search}%`),
-          ilike(employees.position, `%${search}%`)
-        )
-      );
-    }
-    
-    // Si hay filtro por departamento
-    if (department) {
-      conditions.push(eq(employees.department, department));
-    }
-    
-    // Si hay filtro por estado de contrato
-    if (contractStatus) {
-      conditions.push(eq(employees.contractStatus, contractStatus));
-    }
-    
-    // Ejecutar la consulta con los filtros
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    
-    // Log para depuración
-    console.log("Filtros aplicados:", {
-      search,
-      department,
-      contractStatus,
-      whereClause
-    });
+    const proyectosConRecursos = await db
+      .select({
+        id: budgets.id,
+        nombre: budgets.nombre,
+        monto: budgets.monto,
+        totalRecursos: sql<number>`count(${recursosFinancieros.id})::int`,
+        costoTotal: sql<number>`sum(${recursosFinancieros.totalEstimado})::numeric`
+      })
+      .from(budgets)
+      .innerJoin(recursosFinancieros, eq(budgets.id, recursosFinancieros.presupuestoId))
+      .groupBy(budgets.id)
+      .orderBy(budgets.nombre);
 
-    // Obtener empleados filtrados
-    const empleadosFiltrados = await db
-      .select()
-      .from(employees)
-      .where(whereClause)
-      .limit(pageSize)
-      .offset(offset);
-    
-    // Log para depuración
-    console.log(`Empleados encontrados: ${empleadosFiltrados.length}`);
-    
-    // Obtener conteo total para la paginación
-    const [totalCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(employees)
-      .where(whereClause);
-    
-    const total = totalCount?.count || 0;
-    const totalPages = Math.ceil(total / pageSize);
-    
-    return res.status(200).json({
-      data: empleadosFiltrados,
-      total,
-      currentPage: page,
-      totalPages
-    });
+    res.json(proyectosConRecursos);
   } catch (error) {
-    console.error('Error al listar empleados para nómina:', error);
-    return res.status(500).json({ error: 'Error al listar empleados para nómina' });
+    console.error('Error al obtener proyectos con recursos:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 
-// Procesar y generar el PDF de nómina
-nominaRouter.post('/desprendible/generar', async (req: Request, res: Response) => {
+/**
+ * GET /api/nomina/:proyectoId
+ * Obtiene los recursos de un proyecto para gestión de nómina
+ */
+nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
   try {
-    // Validar los datos recibidos
-    const validacionResultado = datosNominaSchema.safeParse(req.body);
-    
-    if (!validacionResultado.success) {
-      return res.status(400).json({ 
-        error: 'Datos de nómina inválidos',
-        details: validacionResultado.error.format() 
-      });
-    }
-    
-    const datosNomina = validacionResultado.data;
-    
-    // Verificar que el empleado existe
-    const [empleado] = await db.select()
-      .from(employees)
-      .where(eq(employees.id, datosNomina.empleadoId));
-    
-    if (!empleado) {
-      return res.status(404).json({ error: 'Empleado no encontrado' });
-    }
-    
-    // Preparar directorio para PDFs
-    const pdfDir = path.resolve('./uploads/nomina');
-    if (!fs.existsSync(pdfDir)) {
-      fs.mkdirSync(pdfDir, { recursive: true });
-    }
-    
-    // Generar nombre único para el archivo
-    const timestamp = Date.now();
-    const nombreArchivo = `desprendible-${datosNomina.empleadoId}-${timestamp}.pdf`;
-    const rutaArchivo = path.join(pdfDir, nombreArchivo);
-    
-    // Crear PDF
-    const doc = new PDFDocument({ margin: 50 });
-    
-    // Pipe el PDF a un archivo en el servidor
-    doc.pipe(fs.createWriteStream(rutaArchivo));
-    
-    // Agregar contenido al PDF
-    // Título y encabezado
-    doc.fontSize(25).text('Desprendible de Nómina', { align: 'center' });
-    doc.moveDown();
-    
-    doc.fontSize(12).text(`Empleado: ${datosNomina.nombreEmpleado}`);
-    doc.fontSize(10).text(`Período: ${datosNomina.periodo.fechaInicio} al ${datosNomina.periodo.fechaFin}`);
-    doc.fontSize(10).text(`Fecha de generación: ${new Date().toLocaleDateString()}`);
-    doc.moveDown();
-    
-    // Línea divisoria
-    doc.moveTo(50, doc.y)
-       .lineTo(550, doc.y)
-       .stroke();
-    doc.moveDown();
-    
-    // Ingresos
-    doc.fontSize(14).text('Ingresos', { underline: true });
-    doc.moveDown(0.5);
-    
-    datosNomina.ingresos.forEach(ingreso => {
-      doc.fontSize(10).text(ingreso.nombre, { continued: true, width: 300 });
-      doc.text(`$${ingreso.valor.toLocaleString('es-CO')}`, { align: 'right' });
-    });
-    
-    doc.moveDown();
-    doc.fontSize(12).text('Total Ingresos:', { continued: true, width: 300 });
-    doc.text(`$${datosNomina.totalIngresos.toLocaleString('es-CO')}`, { align: 'right' });
-    doc.moveDown();
-    
-    // Línea divisoria
-    doc.moveTo(50, doc.y)
-       .lineTo(550, doc.y)
-       .stroke();
-    doc.moveDown();
-    
-    // Deducciones
-    doc.fontSize(14).text('Deducciones', { underline: true });
-    doc.moveDown(0.5);
-    
-    datosNomina.deducciones.forEach(deduccion => {
-      doc.fontSize(10).text(deduccion.nombre, { continued: true, width: 300 });
-      doc.text(`$${deduccion.valor.toLocaleString('es-CO')}`, { align: 'right' });
-    });
-    
-    doc.moveDown();
-    doc.fontSize(12).text('Total Deducciones:', { continued: true, width: 300 });
-    doc.text(`$${datosNomina.totalDeducciones.toLocaleString('es-CO')}`, { align: 'right' });
-    doc.moveDown();
-    
-    // Línea divisoria
-    doc.moveTo(50, doc.y)
-       .lineTo(550, doc.y)
-       .stroke();
-    doc.moveDown();
-    
-    // Total a pagar
-    doc.fontSize(14).text('Salario Neto a Pagar:', { continued: true, width: 300 });
-    doc.text(`$${datosNomina.salarioNeto.toLocaleString('es-CO')}`, { align: 'right' });
-    
-    // Finalizar PDF
-    doc.end();
-    
-    // Guardar registro en base de datos (simplificado)
-    // Esto debería expandirse para realmente guardar y vincular la nómina
-    
-    return res.status(200).json({ 
-      message: 'Desprendible generado correctamente',
-      pdfUrl: `/uploads/nomina/${nombreArchivo}`
-    });
-  } catch (error) {
-    console.error('Error al generar el desprendible de nómina:', error);
-    return res.status(500).json({ error: 'Error al generar el desprendible de nómina' });
-  }
-});
+    const { proyectoId } = req.params;
+    const { mes, estado, perfil } = req.query;
 
-// Obtener todas las nóminas de un empleado
-nominaRouter.get('/empleado/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const empleadoId = parseInt(id);
-    
-    // Buscar todas las nóminas donde el empleado tiene un detalle
-    const detallesNomina = await db.select({
-      nominaId: nominaDetalles.nominaId,
-      salarioBase: nominaDetalles.salarioBase,
-      totalIngresos: nominaDetalles.totalIngresos,
-      totalDeducciones: nominaDetalles.totalDeducciones,
-      salarioNeto: nominaDetalles.salarioNeto,
-      estado: nominaDetalles.estado,
-      pdfUrl: nominaDetalles.pdfUrl,
-      fechaGeneracion: nominaDetalles.fechaGeneracion
-    })
-    .from(nominaDetalles)
-    .where(eq(nominaDetalles.empleadoId, empleadoId))
-    .orderBy(sql`${nominaDetalles.fechaGeneracion} DESC`);
-    
-    // Si no hay resultados, devolver un array vacío
-    if (!detallesNomina.length) {
-      return res.status(200).json([]);
-    }
-    
-    // Obtener las cabeceras de nómina para cada detalle
-    const nominaIds = detallesNomina.map(detalle => detalle.nominaId);
-    
-    const cabecerasNomina = await db.select()
-      .from(nominas)
-      .where(sql`${nominas.id} IN (${nominaIds.join(',')})`);
-      
-    // Combinar la información
-    const nominasCompletas = detallesNomina.map(detalle => {
-      const cabecera = cabecerasNomina.find(c => c.id === detalle.nominaId);
-      return {
-        id: detalle.nominaId,
-        empleadoId,
-        periodo: `${new Date(cabecera?.periodoInicio || '').toLocaleDateString()} al ${new Date(cabecera?.periodoFin || '').toLocaleDateString()}`,
-        fechaGeneracion: new Date(detalle.fechaGeneracion).toISOString(),
-        salarioBase: detalle.salarioBase,
-        totalIngresos: detalle.totalIngresos,
-        totalDeducciones: detalle.totalDeducciones,
-        salarioNeto: detalle.salarioNeto,
-        estado: detalle.estado,
-        fechaPago: cabecera?.fechaPago ? new Date(cabecera.fechaPago).toISOString() : null,
-        pdfUrl: detalle.pdfUrl || `/api/nomina/${detalle.nominaId}/desprendible`
-      };
-    });
-    
-    return res.status(200).json(nominasCompletas);
-  } catch (error: any) {
-    console.error(`Error al obtener nóminas del empleado ${req.params.id}:`, error);
-    return res.status(500).json({ 
-      error: 'Error al obtener las nóminas del empleado',
-      details: error.message
-    });
-  }
-});
+    // Mes actual por defecto
+    const mesActual = (mes as string) || new Date().toISOString().slice(0, 7);
 
-// Generar una nueva nómina
-nominaRouter.post('/generar', async (req: Request, res: Response) => {
-  try {
-    // Validar los datos recibidos
-    const validacionResultado = crearNominaSchema.safeParse(req.body);
-    
-    if (!validacionResultado.success) {
-      return res.status(400).json({ 
-        error: 'Datos de nómina inválidos',
-        details: validacionResultado.error.format() 
-      });
-    }
-    
-    // Aquí deberíamos crear un registro en la tabla de nóminas
-    // Esta es una implementación de muestra, se debería expandir
-    
-    return res.status(201).json({
-      id: 3,
-      ...req.body,
-      fechaGeneracion: new Date().toISOString(),
-      pdfUrl: '/uploads/nomina/desprendible-nuevo.pdf'
-    });
-  } catch (error: any) {
-    console.error('Error al generar nómina:', error);
-    return res.status(500).json({ 
-      error: 'Error al generar la nómina',
-      details: error.message
-    });
-  }
-});
-
-// Crear una nueva nómina con múltiples empleados
-nominaRouter.post('/v1/procesarNomina', async (req: Request, res: Response) => {
-  try {
-    console.log('Recibiendo petición para crear nómina v1:', JSON.stringify(req.body));
-    console.log('Headers:', JSON.stringify(req.headers));
-    
-    const { 
-      periodoInicio, 
-      periodoFin, 
-      fechaPago, 
-      metodoPago, 
-      empleados, 
-      comentarios,
-      titulo = `Nómina ${new Date(periodoInicio).toLocaleDateString()} a ${new Date(periodoFin).toLocaleDateString()}`
-    } = req.body;
-    
-    // Validación detallada de datos
-    console.log('Datos extraídos:');
-    console.log('- periodoInicio:', periodoInicio);
-    console.log('- periodoFin:', periodoFin);
-    console.log('- fechaPago:', fechaPago);
-    console.log('- metodoPago:', metodoPago);
-    console.log('- empleados existe:', !!empleados);
-    console.log('- empleados es array:', Array.isArray(empleados));
-    console.log('- comentarios:', comentarios);
-    console.log('- titulo:', titulo);
-    
-    // Validación básica de datos
-    if (!periodoInicio || !periodoFin || !fechaPago || !metodoPago || !empleados || !Array.isArray(empleados)) {
-      console.error('Validación fallida: datos incompletos');
-      return res.status(400).json({ error: 'Datos incompletos o inválidos' });
-    }
-    
-    // Log para depuración
-    console.log(`Procesando nómina con ${empleados.length} empleados`);
-    console.log('Primer empleado:', empleados[0]);
-    
-    try {
-      // Cálculo del monto total de la nómina (asegurarse de que el string se pueda parsear)
-      const montoTotal = empleados.reduce((total, emp) => {
-        const salarioNeto = typeof emp.salarioNeto === 'string' 
-          ? parseFloat(emp.salarioNeto) 
-          : emp.salarioNeto;
-        
-        // Si salarioNeto no es un número válido, devolvemos total sin cambios
-        if (isNaN(salarioNeto)) {
-          console.warn(`Salario neto no válido para empleado ${emp.id}:`, emp.salarioNeto);
-          return total;
+    let query = db
+      .select({
+        // Datos de nómina (simulados basados en recursos)
+        id: sql<number>`${recursosFinancieros.id}`,
+        proyectoId: recursosFinancieros.presupuestoId,
+        recursoId: recursosFinancieros.id,
+        mes: sql<string>`'${mesActual}'`,
+        salarioMensual: recursosFinancieros.salarioMensual,
+        bonificacion: sql<number>`0`,
+        horasTotales: sql<number>`(${recursosFinancieros.diasAlMes} * ${recursosFinancieros.horasPorDia} * (${recursosFinancieros.dedicacionPorcentaje} / 100))::int`,
+        dedicacion: recursosFinancieros.dedicacionPorcentaje,
+        estado: sql<string>`'pendiente'`,
+        totalPagar: recursosFinancieros.salarioMensual,
+        fechaPago: sql<string>`null`,
+        creadoPor: recursosFinancieros.creadoPor,
+        createdAt: recursosFinancieros.createdAt,
+        updatedAt: recursosFinancieros.updatedAt,
+        // Datos del recurso
+        recurso: {
+          id: recursosFinancieros.id,
+          perfil: recursosFinancieros.perfil,
+          salarioMensual: recursosFinancieros.salarioMensual,
+          valorHora: recursosFinancieros.valorHora,
+          meses: recursosFinancieros.meses,
+          diasAlMes: recursosFinancieros.diasAlMes,
+          horasPorDia: recursosFinancieros.horasPorDia,
+          dedicacionPorcentaje: recursosFinancieros.dedicacionPorcentaje,
+          origen: recursosFinancieros.origen,
+          totalHoras: recursosFinancieros.totalHoras,
+          totalEstimado: recursosFinancieros.totalEstimado,
+        },
+        // Datos del proyecto
+        proyecto: {
+          id: budgets.id,
+          nombre: budgets.nombre,
+          monto: budgets.monto,
         }
-        
-        return total + salarioNeto;
-      }, 0);
-      
-      console.log('Monto total calculado:', montoTotal);
-      
-      // Crear la cabecera de nómina
-      const [nuevaNomina] = await db.insert(nominas)
-        .values({
-          titulo,
-          periodoInicio: new Date(periodoInicio),
-          periodoFin: new Date(periodoFin),
-          fechaPago: new Date(fechaPago),
-          metodoPago,
-          estado: EstadoNomina.PENDIENTE,
-          comentarios,
-          fechaCreacion: new Date(),
-          fechaActualizacion: new Date(),
-          creadoPor: req.user?.id || 1, // Usamos el ID del usuario autenticado o un valor por defecto
-          montoTotal: montoTotal.toString()
-        })
-        .returning();
-      
-      console.log('Cabecera de nómina creada:', nuevaNomina);
-      
-      // Crear los detalles por cada empleado
-      const detallesPromises = empleados.map(async (empleado) => {
-        // Convertir todos los valores a string para asegurar compatibilidad
-        const salarioBase = typeof empleado.salarioBase === 'string' 
-          ? empleado.salarioBase : empleado.salarioBase.toString();
-        
-        const totalIngresos = typeof empleado.totalIngresos === 'string' 
-          ? empleado.totalIngresos : empleado.totalIngresos.toString();
-          
-        const totalDeducciones = typeof empleado.totalDeducciones === 'string' 
-          ? empleado.totalDeducciones : empleado.totalDeducciones.toString();
-          
-        const salarioNeto = typeof empleado.salarioNeto === 'string' 
-          ? empleado.salarioNeto : empleado.salarioNeto.toString();
-        
-        // Asegurarse de que los detalles de ingresos y deducciones sean strings JSON
-        const detalleIngresos = typeof empleado.ingresos === 'string' 
-          ? empleado.ingresos : JSON.stringify(empleado.ingresos || []);
-          
-        const detalleDeducciones = typeof empleado.deducciones === 'string' 
-          ? empleado.deducciones : JSON.stringify(empleado.deducciones || []);
-        
-        console.log(`Creando detalle para empleado ID ${empleado.id}`);
-        
-        const [detalle] = await db.insert(nominaDetalles)
-          .values({
-            nominaId: nuevaNomina.id,
-            empleadoId: empleado.id,
-            salarioBase,
-            totalIngresos,
-            totalDeducciones,
-            salarioNeto,
-            detalleIngresos,
-            detalleDeducciones,
-            estado: EstadoNomina.PENDIENTE,
-            fechaGeneracion: new Date()
-          })
-          .returning();
-        return detalle;
-      });
-      
-      // Esperar a que se creen todos los detalles
-      const detallesNomina = await Promise.all(detallesPromises);
-      
-      console.log(`${detallesNomina.length} detalles de nómina creados`);
-      
-      // Retornar la nómina creada con sus detalles
-      console.log('Operación completada con éxito. Enviando respuesta 201...');
-      console.log('nuevaNomina:', nuevaNomina);
-      console.log('detallesNomina:', detallesNomina);
-      
-      return res.status(201).json({
-        ...nuevaNomina,
-        empleados: detallesNomina
-      });
-    } catch (dbError: any) {
-      console.error('Error en la operación de BD:', dbError);
-      console.error('Stack trace:', dbError.stack);
-      console.error('Mensaje de error:', dbError.message);
-      console.error('Consulta SQL (si está disponible):', dbError.query || 'No disponible');
-      console.error('Parámetros (si están disponibles):', dbError.parameters || 'No disponibles');
-      throw dbError; // Re-throw para el manejo global de errores
-    }
-  } catch (error: any) {
-    console.error('Error al crear nómina:', error);
-    return res.status(500).json({ error: 'Error al crear la nómina', details: error.message });
-  }
-});
-
-// Marcar una nómina como pagada
-nominaRouter.patch('/:id/marcar-pagada', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const nominaId = parseInt(id);
-    
-    // Verificar que la nómina existe
-    const [nominaExistente] = await db.select()
-      .from(nominas)
-      .where(eq(nominas.id, nominaId));
-      
-    if (!nominaExistente) {
-      return res.status(404).json({ error: 'Nómina no encontrada' });
-    }
-    
-    // Actualizar estado de la nómina
-    const [nominaActualizada] = await db.update(nominas)
-      .set({ 
-        estado: EstadoNomina.PAGADO,
-        fechaActualizacion: new Date(),
-        actualizadoPor: req.user?.id || 1 
       })
-      .where(eq(nominas.id, nominaId))
-      .returning();
-      
-    // Actualizar estado de todos los detalles de nómina asociados
-    await db.update(nominaDetalles)
-      .set({ estado: EstadoNomina.PAGADO })
-      .where(eq(nominaDetalles.nominaId, nominaId));
-    
-    return res.status(200).json(nominaActualizada);
-  } catch (error: any) {
-    console.error(`Error al marcar nómina ${req.params.id} como pagada:`, error);
-    return res.status(500).json({ 
-      error: 'Error al marcar la nómina como pagada',
-      details: error.message
-    });
-  }
-});
+      .from(recursosFinancieros)
+      .innerJoin(budgets, eq(recursosFinancieros.presupuestoId, budgets.id))
+      .where(eq(recursosFinancieros.presupuestoId, Number(proyectoId)));
 
-// Cancelar una nómina
-nominaRouter.patch('/:id/cancelar', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const nominaId = parseInt(id);
-    
-    // Verificar que la nómina existe
-    const [nominaExistente] = await db.select()
-      .from(nominas)
-      .where(eq(nominas.id, nominaId));
-      
-    if (!nominaExistente) {
-      return res.status(404).json({ error: 'Nómina no encontrada' });
-    }
-    
-    // Actualizar estado de la nómina
-    const [nominaActualizada] = await db.update(nominas)
-      .set({ 
-        estado: EstadoNomina.CANCELADO,
-        fechaActualizacion: new Date(),
-        actualizadoPor: req.user?.id || 1 
-      })
-      .where(eq(nominas.id, nominaId))
-      .returning();
-      
-    // Actualizar estado de todos los detalles de nómina asociados
-    await db.update(nominaDetalles)
-      .set({ estado: EstadoNomina.CANCELADO })
-      .where(eq(nominaDetalles.nominaId, nominaId));
-    
-    return res.status(200).json(nominaActualizada);
-  } catch (error: any) {
-    console.error(`Error al cancelar nómina ${req.params.id}:`, error);
-    return res.status(500).json({ 
-      error: 'Error al cancelar la nómina',
-      details: error.message
-    });
-  }
-});
-
-// Obtener URL del desprendible de nómina
-nominaRouter.get('/:id/desprendible-url', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const nominaId = parseInt(id);
-    
-    // Buscar en la tabla de detalles de nómina si hay un PDF guardado
-    const [detalle] = await db.select({
-      pdfUrl: nominaDetalles.pdfUrl,
-      empleadoId: nominaDetalles.empleadoId,
-      nominaId: nominaDetalles.nominaId
-    })
-    .from(nominaDetalles)
-    .where(eq(nominaDetalles.nominaId, nominaId))
-    .limit(1);
-    
-    if (!detalle) {
-      return res.status(404).json({ error: 'Detalle de nómina no encontrado' });
-    }
-    
-    // Si ya existe una URL guardada, devolverla
-    if (detalle.pdfUrl) {
-      return res.status(200).json({ pdfUrl: detalle.pdfUrl });
-    }
-    
-    // Si no, generamos una URL basada en el ID de la nómina y el empleado
-    const pdfUrl = `/api/nomina/${nominaId}/desprendible`;
-    
-    return res.status(200).json({
-      pdfUrl,
-      generado: false,
-      mensaje: 'El desprendible se generará en tiempo real'
-    });
-  } catch (error: any) {
-    console.error(`Error al obtener URL del desprendible ${req.params.id}:`, error);
-    return res.status(500).json({ 
-      error: 'Error al obtener la URL del desprendible',
-      details: error.message 
-    });
-  }
-});
-
-// Descargar desprendible de nómina
-nominaRouter.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const nominaId = parseInt(id);
-    
-    // Verificar si existe un PDF guardado para esta nómina
-    const [detalle] = await db.select({
-      pdfUrl: nominaDetalles.pdfUrl,
-      empleadoId: nominaDetalles.empleadoId,
-      nominaId: nominaDetalles.nominaId,
-      salarioBase: nominaDetalles.salarioBase,
-      totalIngresos: nominaDetalles.totalIngresos,
-      totalDeducciones: nominaDetalles.totalDeducciones,
-      salarioNeto: nominaDetalles.salarioNeto,
-      detalleIngresos: nominaDetalles.detalleIngresos,
-      detalleDeducciones: nominaDetalles.detalleDeducciones,
-      fechaGeneracion: nominaDetalles.fechaGeneracion
-    })
-    .from(nominaDetalles)
-    .where(eq(nominaDetalles.nominaId, nominaId))
-    .limit(1);
-    
-    if (!detalle) {
-      return res.status(404).json({ error: 'Detalle de nómina no encontrado' });
-    }
-    
-    // Si hay una URL de PDF guardada, intentar enviar ese archivo
-    if (detalle.pdfUrl && detalle.pdfUrl.startsWith('/uploads/')) {
-      const pdfPath = path.resolve(`.${detalle.pdfUrl}`);
-      
-      if (fs.existsSync(pdfPath)) {
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="desprendible-${nominaId}.pdf"`);
-        
-        const fileStream = fs.createReadStream(pdfPath);
-        return fileStream.pipe(res);
-      }
-    }
-    
-    // Si no hay un PDF o no se encuentra, generamos uno nuevo
-    // Obtener datos adicionales
-    const [empleado] = await db.select()
-      .from(employees)
-      .where(eq(employees.id, detalle.empleadoId));
-      
-    const [cabeceraNomina] = await db.select()
-      .from(nominas)
-      .where(eq(nominas.id, detalle.nominaId));
-    
-    if (!empleado || !cabeceraNomina) {
-      return res.status(404).json({ error: 'Datos incompletos para generar el desprendible' });
-    }
-    
-    // Parsear los datos de ingresos y deducciones
-    const ingresos = JSON.parse(detalle.detalleIngresos || '[]');
-    const deducciones = JSON.parse(detalle.detalleDeducciones || '[]');
-    
-    // Preparar directorio para PDFs
-    const pdfDir = path.resolve('./uploads/nomina');
-    if (!fs.existsSync(pdfDir)) {
-      fs.mkdirSync(pdfDir, { recursive: true });
-    }
-    
-    // Generar nombre para el archivo
-    const nombreArchivo = `desprendible-${detalle.nominaId}-${detalle.empleadoId}.pdf`;
-    const rutaArchivo = path.join(pdfDir, nombreArchivo);
-    
-    // Crear PDF
-    const doc = new PDFDocument({ margin: 50 });
-    
-    // Pipe el PDF a un archivo en el servidor y a la respuesta HTTP
-    const writeStream = fs.createWriteStream(rutaArchivo);
-    doc.pipe(writeStream);
-    doc.pipe(res);
-    
-    // Configurar headers para descarga
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${nombreArchivo}"`);
-    
-    // Añadir contenido al PDF
-    const nombreEmpleado = `${empleado.firstName || ''} ${empleado.lastName || ''}`.trim();
-    const periodoStr = `${new Date(cabeceraNomina.periodoInicio).toLocaleDateString()} al ${new Date(cabeceraNomina.periodoFin).toLocaleDateString()}`;
-    
-    // Título y encabezado
-    doc.fontSize(25).text('Desprendible de Nómina', { align: 'center' });
-    doc.moveDown();
-    
-    doc.fontSize(12).text(`Empleado: ${nombreEmpleado}`);
-    doc.fontSize(10).text(`Período: ${periodoStr}`);
-    doc.fontSize(10).text(`Fecha de generación: ${new Date().toLocaleDateString()}`);
-    doc.moveDown();
-    
-    // Línea divisoria
-    doc.moveTo(50, doc.y)
-       .lineTo(550, doc.y)
-       .stroke();
-    doc.moveDown();
-    
-    // Ingresos
-    doc.fontSize(14).text('Ingresos', { underline: true });
-    doc.moveDown(0.5);
-    
-    // Incluir el salario base como primer ingreso si no está en el detalle
-    if (!ingresos.some((i: any) => i.nombre === 'Salario base')) {
-      doc.fontSize(10).text('Salario base', { continued: true, width: 300 });
-      doc.text(`$${parseFloat(detalle.salarioBase).toLocaleString('es-CO')}`, { align: 'right' });
-    }
-    
-    ingresos.forEach((ingreso: any) => {
-      doc.fontSize(10).text(ingreso.nombre, { continued: true, width: 300 });
-      doc.text(`$${parseFloat(ingreso.valor).toLocaleString('es-CO')}`, { align: 'right' });
-    });
-    
-    doc.moveDown();
-    doc.fontSize(12).text('Total Ingresos:', { continued: true, width: 300 });
-    doc.text(`$${parseFloat(detalle.totalIngresos).toLocaleString('es-CO')}`, { align: 'right' });
-    doc.moveDown();
-    
-    // Línea divisoria
-    doc.moveTo(50, doc.y)
-       .lineTo(550, doc.y)
-       .stroke();
-    doc.moveDown();
-    
-    // Deducciones
-    doc.fontSize(14).text('Deducciones', { underline: true });
-    doc.moveDown(0.5);
-    
-    deducciones.forEach((deduccion: any) => {
-      doc.fontSize(10).text(deduccion.nombre, { continued: true, width: 300 });
-      doc.text(`$${parseFloat(deduccion.valor).toLocaleString('es-CO')}`, { align: 'right' });
-    });
-    
-    doc.moveDown();
-    doc.fontSize(12).text('Total Deducciones:', { continued: true, width: 300 });
-    doc.text(`$${parseFloat(detalle.totalDeducciones).toLocaleString('es-CO')}`, { align: 'right' });
-    doc.moveDown();
-    
-    // Línea divisoria
-    doc.moveTo(50, doc.y)
-       .lineTo(550, doc.y)
-       .stroke();
-    doc.moveDown();
-    
-    // Total a pagar
-    doc.fontSize(14).text('Salario Neto a Pagar:', { continued: true, width: 300 });
-    doc.text(`$${parseFloat(detalle.salarioNeto).toLocaleString('es-CO')}`, { align: 'right' });
-    
-    // Agregar método de pago y fecha
-    doc.moveDown(2);
-    doc.fontSize(10).text(`Método de pago: ${cabeceraNomina.metodoPago}`);
-    doc.fontSize(10).text(`Fecha de pago: ${new Date(cabeceraNomina.fechaPago).toLocaleDateString()}`);
-    
-    // Finalizar PDF
-    doc.end();
-    
-    // Guardar la ruta del PDF en la base de datos para futuras consultas
-    const pdfUrl = `/uploads/nomina/${nombreArchivo}`;
-    await db.update(nominaDetalles)
-      .set({ pdfUrl })
-      .where(and(
-        eq(nominaDetalles.nominaId, detalle.nominaId),
-        eq(nominaDetalles.empleadoId, detalle.empleadoId)
+    // Aplicar filtros
+    if (perfil) {
+      query = query.where(and(
+        eq(recursosFinancieros.presupuestoId, Number(proyectoId)),
+        eq(recursosFinancieros.perfil, perfil as string)
       ));
-    
-    // No necesitamos return ya que el stream se está enviando directamente
-  } catch (error: any) {
-    console.error(`Error al descargar desprendible ${req.params.id}:`, error);
-    return res.status(500).json({ 
-      error: 'Error al descargar el desprendible',
-      details: error.message
-    });
+    }
+
+    const recursos = await query.orderBy(recursosFinancieros.perfil);
+
+    // Filtrar por estado si se especifica (simulado ya que no tenemos tabla de nómina real)
+    let resultado = recursos;
+    if (estado && estado !== '') {
+      // Por ahora todos los recursos están en estado "pendiente"
+      resultado = estado === 'pendiente' ? recursos : [];
+    }
+
+    res.json(resultado);
+  } catch (error) {
+    console.error('Error al obtener recursos del proyecto:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 
-export default nominaRouter;
+/**
+ * GET /api/nomina/:proyectoId/resumen
+ * Obtiene resumen de nómina por proyecto
+ */
+nominaRouter.get('/:proyectoId/resumen', async (req: Request, res: Response) => {
+  try {
+    const { proyectoId } = req.params;
+    const { mes } = req.query;
+
+    const proyecto = await db
+      .select({
+        id: budgets.id,
+        nombre: budgets.nombre,
+        totalRecursos: sql<number>`count(${recursosFinancieros.id})::int`,
+        costoMensualTotal: sql<number>`sum(${recursosFinancieros.salarioMensual})::numeric`,
+        totalPendiente: sql<number>`sum(${recursosFinancieros.salarioMensual})::numeric`, // Simulado
+        totalPagado: sql<number>`0`, // Simulado
+        totalAprobado: sql<number>`0`, // Simulado
+      })
+      .from(budgets)
+      .innerJoin(recursosFinancieros, eq(budgets.id, recursosFinancieros.presupuestoId))
+      .where(eq(budgets.id, Number(proyectoId)))
+      .groupBy(budgets.id);
+
+    if (proyecto.length === 0) {
+      return res.status(404).json({ message: 'Proyecto no encontrado o sin recursos' });
+    }
+
+    const resumen = {
+      proyectoId: Number(proyectoId),
+      nombreProyecto: proyecto[0].nombre,
+      totalRecursos: proyecto[0].totalRecursos,
+      totalPendiente: Number(proyecto[0].totalPendiente),
+      totalPagado: Number(proyecto[0].totalPagado),
+      totalAprobado: Number(proyecto[0].totalAprobado),
+      costoMensualTotal: Number(proyecto[0].costoMensualTotal),
+    };
+
+    res.json(resumen);
+  } catch (error) {
+    console.error('Error al obtener resumen del proyecto:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * POST /api/nomina/:proyectoId/pagar
+ * Registra un pago de nómina (simulado)
+ */
+nominaRouter.post('/:proyectoId/pagar', async (req: Request, res: Response) => {
+  try {
+    const { proyectoId } = req.params;
+    const { recursoId, mes, bonificacion = 0, fechaPago, estado = 'pendiente' } = req.body;
+
+    // Validar que el recurso existe
+    const recurso = await db
+      .select()
+      .from(recursosFinancieros)
+      .where(and(
+        eq(recursosFinancieros.id, recursoId),
+        eq(recursosFinancieros.presupuestoId, Number(proyectoId))
+      ));
+
+    if (recurso.length === 0) {
+      return res.status(404).json({ message: 'Recurso no encontrado en el proyecto' });
+    }
+
+    const recursoData = recurso[0];
+    const totalPagar = Number(recursoData.salarioMensual) + Number(bonificacion);
+
+    // Por ahora simulamos la respuesta ya que no tenemos tabla de nómina real
+    const nominaSimulada = {
+      id: Date.now(), // ID temporal
+      proyectoId: Number(proyectoId),
+      recursoId: Number(recursoId),
+      mes,
+      salarioMensual: Number(recursoData.salarioMensual),
+      bonificacion: Number(bonificacion),
+      horasTotales: recursoData.totalHoras,
+      dedicacion: Number(recursoData.dedicacionPorcentaje),
+      estado,
+      totalPagar,
+      fechaPago,
+      creadoPor: req.user?.id || 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    res.status(201).json(nominaSimulada);
+  } catch (error) {
+    console.error('Error al registrar pago:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * PATCH /api/nomina/:nominaId/estado
+ * Actualiza el estado de una nómina (simulado)
+ */
+nominaRouter.patch('/:nominaId/estado', async (req: Request, res: Response) => {
+  try {
+    const { nominaId } = req.params;
+    const { estado, fechaPago, bonificacion } = req.body;
+
+    // Por ahora simulamos la respuesta
+    const nominaActualizada = {
+      id: Number(nominaId),
+      estado,
+      fechaPago,
+      bonificacion,
+      updatedAt: new Date().toISOString(),
+    };
+
+    res.json(nominaActualizada);
+  } catch (error) {
+    console.error('Error al actualizar estado:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * GET /api/nomina/recurso/:recursoId/historial
+ * Obtiene historial de nómina de un recurso (simulado)
+ */
+nominaRouter.get('/recurso/:recursoId/historial', async (req: Request, res: Response) => {
+  try {
+    const { recursoId } = req.params;
+
+    // Simulamos historial de los últimos 6 meses
+    const historial = [];
+    const fechaActual = new Date();
+    
+    for (let i = 0; i < 6; i++) {
+      const fecha = new Date(fechaActual.getFullYear(), fechaActual.getMonth() - i, 1);
+      const mes = fecha.toISOString().slice(0, 7);
+      
+      historial.push({
+        id: Date.now() + i,
+        recursoId: Number(recursoId),
+        mes,
+        estado: i === 0 ? 'pendiente' : (i % 2 === 0 ? 'pagado' : 'aprobado'),
+        fechaPago: i === 0 ? null : fecha.toISOString().split('T')[0],
+        createdAt: fecha.toISOString(),
+      });
+    }
+
+    res.json(historial);
+  } catch (error) {
+    console.error('Error al obtener historial:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * GET /api/nomina/metricas
+ * Obtiene métricas generales de nómina
+ */
+nominaRouter.get('/metricas', async (req: Request, res: Response) => {
+  try {
+    const { proyectoId } = req.query;
+
+    let whereCondition = undefined;
+    if (proyectoId) {
+      whereCondition = eq(recursosFinancieros.presupuestoId, Number(proyectoId));
+    }
+
+    const metricas = await db
+      .select({
+        totalMensual: sql<number>`sum(${recursosFinancieros.salarioMensual})::numeric`,
+        recursosActivos: sql<number>`count(${recursosFinancieros.id})::int`,
+      })
+      .from(recursosFinancieros)
+      .where(whereCondition);
+
+    const resultado = {
+      totalMensual: Number(metricas[0]?.totalMensual || 0),
+      pendientePago: Number(metricas[0]?.totalMensual || 0), // Simulado - todos pendientes
+      pagadoMes: 0, // Simulado
+      recursosActivos: Number(metricas[0]?.recursosActivos || 0),
+    };
+
+    res.json(resultado);
+  } catch (error) {
+    console.error('Error al obtener métricas:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+export { nominaRouter };
