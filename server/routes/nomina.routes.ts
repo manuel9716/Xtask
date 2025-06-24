@@ -11,47 +11,44 @@ const nominaRouter = Router();
  */
 nominaRouter.get('/proyectos', async (req: Request, res: Response) => {
   try {
-    // Primero obtener todos los recursos
-    const recursos = await db.select().from(recursosFinancieros);
-    
-    if (recursos.length === 0) {
-      return res.json([]);
-    }
+    // Usar query directa para evitar problemas de Drizzle
+    const result = await db.execute(sql`
+      SELECT DISTINCT
+        b.id,
+        b.name as nombre,
+        b.amount as monto
+      FROM budgets b 
+      WHERE EXISTS (
+        SELECT 1 FROM recursos_financieros rf 
+        WHERE rf.presupuesto_id = b.id
+      )
+      ORDER BY b.name
+    `);
 
-    // Obtener proyectos únicos que tienen recursos
-    const proyectoIds = [...new Set(recursos.map(r => r.presupuestoId))];
     const proyectosConMetricas = [];
+    
+    for (const row of result.rows) {
+      // Contar recursos y calcular costo total para cada proyecto
+      const recursosResult = await db.execute(sql`
+        SELECT 
+          COUNT(*)::int as total_recursos,
+          COALESCE(SUM(total_estimado), 0)::numeric as costo_total
+        FROM recursos_financieros 
+        WHERE presupuesto_id = ${row.id}
+      `);
 
-    // Procesar cada proyecto individualmente
-    for (const proyectoId of proyectoIds) {
-      try {
-        const presupuesto = await db
-          .select()
-          .from(budgets)
-          .where(eq(budgets.id, proyectoId))
-          .limit(1);
-
-        if (presupuesto.length > 0) {
-          const recursosDelProyecto = recursos.filter(r => r.presupuestoId === proyectoId);
-          const totalRecursos = recursosDelProyecto.length;
-          const costoTotal = recursosDelProyecto.reduce((total, recurso) => 
-            total + Number(recurso.totalEstimado || 0), 0);
-
-          proyectosConMetricas.push({
-            id: presupuesto[0].id,
-            nombre: presupuesto[0].name,
-            monto: presupuesto[0].amount,
-            totalRecursos: totalRecursos,
-            costoTotal: costoTotal
-          });
-        }
-      } catch (proyectoError) {
-        console.error(`Error procesando proyecto ${proyectoId}:`, proyectoError);
-        // Continúar con el siguiente proyecto
-      }
+      const metrics = recursosResult.rows[0];
+      
+      proyectosConMetricas.push({
+        id: row.id,
+        nombre: row.nombre,
+        monto: row.monto,
+        totalRecursos: metrics.total_recursos,
+        costoTotal: Number(metrics.costo_total || 0)
+      });
     }
 
-    res.json(proyectosConMetricas.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+    res.json(proyectosConMetricas);
   } catch (error) {
     console.error('Error al obtener proyectos con recursos:', error);
     res.status(500).json({ message: 'Error interno del servidor' });

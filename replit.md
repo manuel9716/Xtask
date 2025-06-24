@@ -121,7 +121,12 @@ The application follows a modular architecture with domain-driven design princip
 - **Volumes**: Persistent data storage for PostgreSQL
 
 ## Changelog
-- June 17, 2025. Initial setup
+- June 24, 2025: Implemented comprehensive Nómina module within Finanzas using hexagonal architecture
+  - Complete API endpoints for project-based payroll management
+  - Integration with existing Recursos submódulo data
+  - UI components with filtering, metrics, and payment processing functionality
+  - Fixed Drizzle ORM complex query issues using direct SQL execution
+- June 17, 2025: Initial setup
 
 ## User Preferences
 

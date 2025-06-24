@@ -113,6 +113,14 @@ function Router() {
           </MainLayout>
         </ProtectedRoute>
       </Route>
+      
+      <Route path="/finanzas/nomina">
+        <ProtectedRoute>
+          <MainLayout>
+            <NominaPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
 
       {/* Submódulo de Nómina - Protegido */}
       <Route path="/finanzas/nomina">
