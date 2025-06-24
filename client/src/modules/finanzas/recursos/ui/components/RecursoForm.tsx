@@ -82,10 +82,10 @@ export function RecursoForm({
       perfil: 'DESARROLLADOR_SENIOR',
       salarioMensual: initialData?.salarioMensual || 0,
       valorHora: initialData?.valorHora || undefined,
-      meses: 1,
-      diasAlMes: 22,
-      horasPorDia: 8,
-      dedicacionPorcentaje: 100,
+      meses: initialData?.meses || 1,
+      diasAlMes: initialData?.diasAlMes || 22,
+      horasPorDia: initialData?.horasPorDia || 8,
+      dedicacionPorcentaje: initialData?.dedicacionPorcentaje || 100,
       origen: 'INTERNO',
       creadoPor: 1,
       ...initialData,
@@ -285,8 +285,12 @@ export function RecursoForm({
                           type="number"
                           min="1"
                           max="36"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          placeholder="1"
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 1 : Number(e.target.value);
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -305,8 +309,12 @@ export function RecursoForm({
                           type="number"
                           min="1"
                           max="31"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          placeholder="22"
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 22 : Number(e.target.value);
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -327,8 +335,12 @@ export function RecursoForm({
                           type="number"
                           min="1"
                           max="24"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          placeholder="8"
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 8 : Number(e.target.value);
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -347,8 +359,12 @@ export function RecursoForm({
                           type="number"
                           min="1"
                           max="100"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          placeholder="100"
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 100 : Number(e.target.value);
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
