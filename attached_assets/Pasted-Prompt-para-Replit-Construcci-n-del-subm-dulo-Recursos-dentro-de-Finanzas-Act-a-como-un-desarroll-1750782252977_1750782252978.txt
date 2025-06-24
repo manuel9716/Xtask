@@ -1,0 +1,131 @@
+Prompt para Replit: Construcción del submódulo “Recursos” dentro de Finanzas
+Actúa como un desarrollador senior usando arquitectura hexagonal, con enfoque en manejo de costos y nómina distribuida por perfiles técnicos. Necesito construir un submódulo llamado Recursos dentro del módulo de Finanzas, que permita visualizar, registrar y controlar el costo de cada perfil técnico asignado a un proyecto, simulando la lógica de hoja de cálculo de cotización por perfil, salario, dedicación, horas y ejecución.
+
+🧱 Estructura esperada
+css
+Copiar
+Editar
+src/
+  modules/
+    finanzas/
+      recursos/
+        application/
+          useCases/
+            crearRecurso.ts
+            calcularCostoMensual.ts
+            listarRecursosPorPresupuesto.ts
+        domain/
+          entities/
+            Recurso.ts
+        infrastructure/
+          api/
+            recursosApi.ts
+        ui/
+          components/
+            RecursoCard.tsx
+            RecursoResumen.tsx
+            RecursoForm.tsx
+          views/
+            RecursosPresupuesto.tsx
+📌 Funcionalidad general
+Registrar un recurso técnico vinculado a un presupuesto
+
+Perfil: Arquitecto, QA, DevOps, etc.
+
+Salario mensual
+
+Valor hora
+
+Meses de ejecución
+
+% de dedicación
+
+Horas por mes
+
+Costo total estimado
+
+Origen: Interno o Externo
+
+Visualizar resumen de costos por perfil y total del equipo
+
+Tabla estilo Excel
+
+Totales por mes, por tipo de perfil y por origen
+
+Actualizar o eliminar un recurso
+
+Permitir editar condiciones de trabajo
+
+Confirmar antes de eliminar
+
+Resumen de costos integrados al módulo de presupuesto
+
+Total estimado de recursos humanos
+
+Visualizar costo real vs proyectado
+
+📄 Modelo de datos sugerido
+Tabla: recursos_financieros
+Campo	Tipo
+id	SERIAL
+presupuesto_id	INTEGER
+perfil	VARCHAR
+salario_mensual	DECIMAL
+valor_hora	DECIMAL
+meses	INTEGER
+dias_al_mes	INTEGER
+horas_por_dia	INTEGER
+dedicacion_porcentaje	DECIMAL
+origen	VARCHAR
+total_horas	INTEGER
+total_estimado	DECIMAL
+creado_por	INTEGER
+created_at	TIMESTAMP
+
+🧠 Casos de uso
+Caso de uso	Descripción
+crearRecurso.ts	Crea un recurso vinculado a un presupuesto
+calcularCostoMensual.ts	Calcula automáticamente horas y valor total
+listarRecursosPorPresupuesto.ts	Devuelve los recursos vinculados a un presupuesto para vista en tabla
+
+📡 API esperada
+Método	Ruta	Descripción
+GET	/api/finanzas/recursos/:presupuestoId	Listar recursos de un presupuesto
+POST	/api/finanzas/recursos	Crear recurso
+PATCH	/api/finanzas/recursos/:id	Editar recurso
+DELETE	/api/finanzas/recursos/:id	Eliminar recurso
+
+🎨 Interfaz esperada
+Vista principal: RecursosPresupuesto.tsx
+Ubicada dentro del módulo de Finanzas
+
+Componentes UI clave:
+RecursoForm.tsx: formulario para registrar cada perfil técnico
+
+RecursoCard.tsx: visualización de cada recurso
+
+RecursoResumen.tsx: tabla resumen estilo Excel con:
+
+Perfil
+
+Dedicación %
+
+Horas totales
+
+Salario mensual
+
+Total estimado
+
+Origen
+
+Botones de editar y eliminar
+
+🔢 Fórmulas clave de cálculo
+ts
+Copiar
+Editar
+const horasTotales = dias_al_mes * horas_por_dia * meses;
+const horasProyecto = horasTotales * (dedicacion_porcentaje / 100);
+const valorEstimado = valor_hora * horasProyecto;
+✅ Resultado esperado
+Un submódulo claro, estructurado y visual, que te permita simular el costo mensual y total de cada perfil técnico involucrado en un presupuesto o licitación, con exactitud tipo hoja de cálculo y capacidad de edición, sumatoria, visualización por origen y exportación futura.

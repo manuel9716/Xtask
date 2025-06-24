@@ -130,6 +130,25 @@ export const budgets = pgTable("budgets", {
   metadata: text("metadata"), // JSON data serialized - almacena porcentajes y reservas
 });
 
+// Tabla de recursos financieros para presupuestos
+export const recursosFinancieros = pgTable("recursos_financieros", {
+  id: serial("id").primaryKey(),
+  presupuestoId: integer("presupuesto_id").references(() => budgets.id).notNull(),
+  perfil: text("perfil").notNull(), // ARQUITECTO, DESARROLLADOR_SENIOR, etc.
+  salarioMensual: decimal("salario_mensual", { precision: 15, scale: 2 }).notNull(),
+  valorHora: decimal("valor_hora", { precision: 15, scale: 2 }).notNull(),
+  meses: integer("meses").notNull(),
+  diasAlMes: integer("dias_al_mes").notNull(),
+  horasPorDia: integer("horas_por_dia").notNull(),
+  dedicacionPorcentaje: decimal("dedicacion_porcentaje", { precision: 5, scale: 2 }).notNull(),
+  origen: text("origen").notNull(), // INTERNO, EXTERNO
+  totalHoras: integer("total_horas").notNull(),
+  totalEstimado: decimal("total_estimado", { precision: 15, scale: 2 }).notNull(),
+  creadoPor: integer("creado_por").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Gastos de presupuestos
 export const budgetExpenses = pgTable("budget_expenses", {
   id: serial("id").primaryKey(),
