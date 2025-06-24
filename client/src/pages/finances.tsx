@@ -321,7 +321,7 @@ export default function FinancesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las áreas</SelectItem>
-                {areas.map(area => (
+                {areas.filter(area => area && area.trim() !== '').map(area => (
                   <SelectItem key={area} value={area}>{area}</SelectItem>
                 ))}
               </SelectContent>

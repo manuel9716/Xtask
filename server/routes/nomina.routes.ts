@@ -243,26 +243,40 @@ nominaRouter.get('/metricas', async (req: Request, res: Response) => {
   try {
     const { proyectoId } = req.query;
 
-    let recursos;
-    if (proyectoId) {
-      recursos = await db
-        .select()
-        .from(recursosFinancieros)
-        .where(eq(recursosFinancieros.presupuestoId, Number(proyectoId)));
+    // Construir query con validación
+    let queryBase = `
+      SELECT 
+        COUNT(*)::int as recursos_activos,
+        COALESCE(SUM(salario_mensual), 0)::numeric as total_mensual
+      FROM recursos_financieros
+    `;
+
+    let result;
+    if (proyectoId && !isNaN(Number(proyectoId))) {
+      result = await db.execute(sql`
+        SELECT 
+          COUNT(*)::int as recursos_activos,
+          COALESCE(SUM(salario_mensual), 0)::numeric as total_mensual
+        FROM recursos_financieros 
+        WHERE presupuesto_id = ${Number(proyectoId)}
+      `);
     } else {
-      recursos = await db
-        .select()
-        .from(recursosFinancieros);
+      result = await db.execute(sql`
+        SELECT 
+          COUNT(*)::int as recursos_activos,
+          COALESCE(SUM(salario_mensual), 0)::numeric as total_mensual
+        FROM recursos_financieros
+      `);
     }
 
-    const totalMensual = recursos.reduce((total, recurso) => total + Number(recurso.salarioMensual || 0), 0);
-    const recursosActivos = recursos.length;
+    const metrics = result.rows[0];
+    const totalMensual = Number(metrics.total_mensual || 0);
 
     const resultado = {
       totalMensual: totalMensual,
       pendientePago: totalMensual, // Simulado - todos pendientes
       pagadoMes: 0, // Simulado
-      recursosActivos: recursosActivos,
+      recursosActivos: Number(metrics.recursos_activos || 0),
     };
 
     res.json(resultado);
