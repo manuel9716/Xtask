@@ -55,6 +55,7 @@ export function RecursosPresupuesto({
   const [editingRecurso, setEditingRecurso] = useState<Recurso | null>(null);
   const [mostrarModalLigar, setMostrarModalLigar] = useState(false);
   const [recursoALigar, setRecursoALigar] = useState<number | null>(null);
+  const [empleadosLigados, setEmpleadosLigados] = useState<Record<number, { id: number; name: string; position: string }>>({});
 
   // Hooks para datos
   const {
@@ -95,12 +96,34 @@ export function RecursosPresupuesto({
     setMostrarModalLigar(true);
   };
 
-  const handleConfirmarLigado = (empleadoId: number) => {
+  const handleConfirmarLigado = async (empleadoId: number) => {
     if (recursoALigar) {
-      console.log(`Ligando recurso ${recursoALigar} al empleado ${empleadoId}`);
-      setMostrarModalLigar(false);
-      setRecursoALigar(null);
-      alert('Recurso ligado exitosamente al empleado');
+      try {
+        // Obtener información del empleado seleccionado
+        const response = await fetch('/api/nomina/empleados/listar?contractStatus=active');
+        const empleados = await response.json();
+        const empleadoSeleccionado = empleados.find((emp: any) => emp.id === empleadoId);
+        
+        if (empleadoSeleccionado) {
+          // Guardar la relación recurso-empleado
+          setEmpleadosLigados(prev => ({
+            ...prev,
+            [recursoALigar]: {
+              id: empleadoSeleccionado.id,
+              name: `${empleadoSeleccionado.firstName} ${empleadoSeleccionado.lastName}`,
+              position: empleadoSeleccionado.position
+            }
+          }));
+          
+          console.log(`Ligando recurso ${recursoALigar} al empleado ${empleadoId}`);
+          setMostrarModalLigar(false);
+          setRecursoALigar(null);
+          alert('Recurso ligado exitosamente al empleado');
+        }
+      } catch (error) {
+        console.error('Error al obtener información del empleado:', error);
+        alert('Error al ligar el empleado');
+      }
     }
   };
 
@@ -284,6 +307,7 @@ export function RecursosPresupuesto({
                   onEdit={handleEditarRecurso}
                   onDelete={handleEliminarRecurso}
                   onLinkEmployee={handleLigarEmpleado}
+                  linkedEmployee={empleadosLigados[recurso.id] || null}
                   isDeleting={eliminarRecursoMutation.isPending}
                 />
               ))}
