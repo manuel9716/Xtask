@@ -14,6 +14,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -93,6 +94,14 @@ export function RecursoForm({
 
   const watchedValues = form.watch();
 
+  // Cálculo automático del salario mensual basado en valor por hora
+  const salarioMensualCalculado = watchedValues.valorHora * 8 * 30;
+
+  // Actualizar el salario mensual automáticamente cuando cambie el valor por hora
+  useEffect(() => {
+    form.setValue('salarioMensual', salarioMensualCalculado);
+  }, [watchedValues.valorHora, form, salarioMensualCalculado]);
+
   // Cálculos en tiempo real
   const horasTotales = calcularRecurso.horasTotales(
     watchedValues.diasAlMes,
@@ -109,6 +118,16 @@ export function RecursoForm({
     watchedValues.valorHora,
     horasProyecto
   );
+
+  // Función para formatear números en pesos colombianos
+  const formatCOP = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const handleSubmit = (data: CrearRecursoDTO) => {
     onSubmit(data);
@@ -194,24 +213,19 @@ export function RecursoForm({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="salarioMensual"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Salario Mensual (COP)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="4500000"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Campo de solo lectura para mostrar el salario calculado */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Salario Mensual (COP)</label>
+                <div className="flex items-center p-3 bg-gray-50 border rounded-md">
+                  <DollarSign className="h-4 w-4 text-gray-500 mr-2" />
+                  <span className="font-semibold text-lg">
+                    {formatCOP(salarioMensualCalculado)}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Calculado automáticamente: {watchedValues.valorHora ? formatCOP(watchedValues.valorHora) : '$0'} × 8 horas × 30 días
+                </p>
+              </div>
 
               <FormField
                 control={form.control}
@@ -220,13 +234,23 @@ export function RecursoForm({
                   <FormItem>
                     <FormLabel>Valor por Hora (COP)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="25000"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="number"
+                          placeholder="25000"
+                          className="pl-10"
+                          {...field}
+                          onChange={(e) => {
+                            const value = Number(e.target.value);
+                            field.onChange(value);
+                          }}
+                        />
+                      </div>
                     </FormControl>
+                    <FormDescription>
+                      Ingrese el valor por hora en pesos colombianos
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -360,7 +384,7 @@ export function RecursoForm({
                 <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                   <span className="text-sm font-medium text-green-600">Total Estimado:</span>
                   <span className="font-bold text-green-700 text-lg">
-                    {formatCurrency(totalEstimado)}
+                    {formatCOP(totalEstimado)}
                   </span>
                 </div>
               </div>
