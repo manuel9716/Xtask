@@ -195,7 +195,7 @@ nominaRouter.get('/:proyectoId/resumen', async (req: Request, res: Response) => 
 nominaRouter.post('/:proyectoId/pagar', async (req: Request, res: Response) => {
   try {
     const { proyectoId } = req.params;
-    const { recursoId, mes, bonificacion = 0, fechaPago, estado = 'pendiente' } = req.body;
+    const { recursoId, mes, bonificacion = 0, fechaPago, estado = 'pendiente', metodoPago = 'transferencia', referenciaPSE } = req.body;
 
     const recurso = await db
       .select()
