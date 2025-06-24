@@ -11,38 +11,45 @@ const nominaRouter = Router();
  */
 nominaRouter.get('/proyectos', async (req: Request, res: Response) => {
   try {
-    // Método más simple: obtener todos los recursos financieros y agrupar por proyecto
-    const recursosConProyecto = await db
-      .select()
-      .from(recursosFinancieros);
-
-    // Obtener datos de presupuestos para los proyectos que tienen recursos
-    const proyectoIds = [...new Set(recursosConProyecto.map(r => r.presupuestoId))];
+    // Primero obtener todos los recursos
+    const recursos = await db.select().from(recursosFinancieros);
     
-    if (proyectoIds.length === 0) {
+    if (recursos.length === 0) {
       return res.json([]);
     }
 
-    const presupuestos = await db
-      .select()
-      .from(budgets)
-      .where(sql`${budgets.id} = ANY(${proyectoIds})`);
+    // Obtener proyectos únicos que tienen recursos
+    const proyectoIds = [...new Set(recursos.map(r => r.presupuestoId))];
+    const proyectosConMetricas = [];
 
-    // Agrupar recursos por proyecto y calcular métricas
-    const proyectosConMetricas = presupuestos.map(presupuesto => {
-      const recursosDelProyecto = recursosConProyecto.filter(r => r.presupuestoId === presupuesto.id);
-      const totalRecursos = recursosDelProyecto.length;
-      const costoTotal = recursosDelProyecto.reduce((total, recurso) => 
-        total + Number(recurso.totalEstimado || 0), 0);
+    // Procesar cada proyecto individualmente
+    for (const proyectoId of proyectoIds) {
+      try {
+        const presupuesto = await db
+          .select()
+          .from(budgets)
+          .where(eq(budgets.id, proyectoId))
+          .limit(1);
 
-      return {
-        id: presupuesto.id,
-        nombre: presupuesto.name,
-        monto: presupuesto.amount,
-        totalRecursos: totalRecursos,
-        costoTotal: costoTotal
-      };
-    });
+        if (presupuesto.length > 0) {
+          const recursosDelProyecto = recursos.filter(r => r.presupuestoId === proyectoId);
+          const totalRecursos = recursosDelProyecto.length;
+          const costoTotal = recursosDelProyecto.reduce((total, recurso) => 
+            total + Number(recurso.totalEstimado || 0), 0);
+
+          proyectosConMetricas.push({
+            id: presupuesto[0].id,
+            nombre: presupuesto[0].name,
+            monto: presupuesto[0].amount,
+            totalRecursos: totalRecursos,
+            costoTotal: costoTotal
+          });
+        }
+      } catch (proyectoError) {
+        console.error(`Error procesando proyecto ${proyectoId}:`, proyectoError);
+        // Continúar con el siguiente proyecto
+      }
+    }
 
     res.json(proyectosConMetricas.sort((a, b) => a.nombre.localeCompare(b.nombre)));
   } catch (error) {
@@ -63,17 +70,17 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
     const mesActual = (mes as string) || new Date().toISOString().slice(0, 7);
 
     // Obtener recursos del proyecto
-    let whereConditions = eq(recursosFinancieros.presupuestoId, Number(proyectoId));
+    const allRecursos = await db
+      .select()
+      .from(recursosFinancieros);
+
+    let recursos = allRecursos.filter(r => r.presupuestoId === Number(proyectoId));
     
     if (perfil) {
-      whereConditions = and(whereConditions, eq(recursosFinancieros.perfil, perfil as string));
+      recursos = recursos.filter(r => r.perfil === perfil);
     }
 
-    const recursos = await db
-      .select()
-      .from(recursosFinancieros)
-      .where(whereConditions)
-      .orderBy(recursosFinancieros.perfil);
+    recursos.sort((a, b) => a.perfil.localeCompare(b.perfil));
 
     // Obtener datos del proyecto
     const proyecto = await db
