@@ -139,6 +139,10 @@ export default function FinancesPage() {
           <p className="text-gray-500">Gestión de presupuestos y finanzas</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline">
+            <Users className="mr-2 h-4 w-4" />
+            Recursos
+          </Button>
           <Dialog open={openDialog} onOpenChange={setOpenDialog}>
             <DialogTrigger asChild>
               <Button>
