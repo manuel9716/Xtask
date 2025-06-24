@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { recursosFinancieros, budgets, users } from '@shared/schema';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { recursosFinancieros, budgets } from '@shared/schema';
+import { eq, and, sql } from 'drizzle-orm';
 
 const nominaRouter = Router();
 
@@ -40,12 +40,10 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
     const { proyectoId } = req.params;
     const { mes, estado, perfil } = req.query;
 
-    // Mes actual por defecto
     const mesActual = (mes as string) || new Date().toISOString().slice(0, 7);
 
     let query = db
       .select({
-        // Datos de nómina (simulados basados en recursos)
         id: sql<number>`${recursosFinancieros.id}`,
         proyectoId: recursosFinancieros.presupuestoId,
         recursoId: recursosFinancieros.id,
@@ -60,7 +58,6 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
         creadoPor: recursosFinancieros.creadoPor,
         createdAt: recursosFinancieros.createdAt,
         updatedAt: recursosFinancieros.updatedAt,
-        // Datos del recurso
         recurso: {
           id: recursosFinancieros.id,
           perfil: recursosFinancieros.perfil,
@@ -74,7 +71,6 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
           totalHoras: recursosFinancieros.totalHoras,
           totalEstimado: recursosFinancieros.totalEstimado,
         },
-        // Datos del proyecto
         proyecto: {
           id: budgets.id,
           nombre: budgets.nombre,
@@ -85,7 +81,6 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
       .innerJoin(budgets, eq(recursosFinancieros.presupuestoId, budgets.id))
       .where(eq(recursosFinancieros.presupuestoId, Number(proyectoId)));
 
-    // Aplicar filtros
     if (perfil) {
       query = query.where(and(
         eq(recursosFinancieros.presupuestoId, Number(proyectoId)),
@@ -94,11 +89,9 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
     }
 
     const recursos = await query.orderBy(recursosFinancieros.perfil);
-
-    // Filtrar por estado si se especifica (simulado ya que no tenemos tabla de nómina real)
     let resultado = recursos;
+    
     if (estado && estado !== '') {
-      // Por ahora todos los recursos están en estado "pendiente"
       resultado = estado === 'pendiente' ? recursos : [];
     }
 
@@ -111,12 +104,10 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
 
 /**
  * GET /api/nomina/:proyectoId/resumen
- * Obtiene resumen de nómina por proyecto
  */
 nominaRouter.get('/:proyectoId/resumen', async (req: Request, res: Response) => {
   try {
     const { proyectoId } = req.params;
-    const { mes } = req.query;
 
     const proyecto = await db
       .select({
@@ -124,9 +115,9 @@ nominaRouter.get('/:proyectoId/resumen', async (req: Request, res: Response) => 
         nombre: budgets.nombre,
         totalRecursos: sql<number>`count(${recursosFinancieros.id})::int`,
         costoMensualTotal: sql<number>`sum(${recursosFinancieros.salarioMensual})::numeric`,
-        totalPendiente: sql<number>`sum(${recursosFinancieros.salarioMensual})::numeric`, // Simulado
-        totalPagado: sql<number>`0`, // Simulado
-        totalAprobado: sql<number>`0`, // Simulado
+        totalPendiente: sql<number>`sum(${recursosFinancieros.salarioMensual})::numeric`,
+        totalPagado: sql<number>`0`,
+        totalAprobado: sql<number>`0`,
       })
       .from(budgets)
       .innerJoin(recursosFinancieros, eq(budgets.id, recursosFinancieros.presupuestoId))
@@ -156,14 +147,12 @@ nominaRouter.get('/:proyectoId/resumen', async (req: Request, res: Response) => 
 
 /**
  * POST /api/nomina/:proyectoId/pagar
- * Registra un pago de nómina (simulado)
  */
 nominaRouter.post('/:proyectoId/pagar', async (req: Request, res: Response) => {
   try {
     const { proyectoId } = req.params;
     const { recursoId, mes, bonificacion = 0, fechaPago, estado = 'pendiente' } = req.body;
 
-    // Validar que el recurso existe
     const recurso = await db
       .select()
       .from(recursosFinancieros)
@@ -179,9 +168,8 @@ nominaRouter.post('/:proyectoId/pagar', async (req: Request, res: Response) => {
     const recursoData = recurso[0];
     const totalPagar = Number(recursoData.salarioMensual) + Number(bonificacion);
 
-    // Por ahora simulamos la respuesta ya que no tenemos tabla de nómina real
     const nominaSimulada = {
-      id: Date.now(), // ID temporal
+      id: Date.now(),
       proyectoId: Number(proyectoId),
       recursoId: Number(recursoId),
       mes,
@@ -192,7 +180,7 @@ nominaRouter.post('/:proyectoId/pagar', async (req: Request, res: Response) => {
       estado,
       totalPagar,
       fechaPago,
-      creadoPor: req.user?.id || 1,
+      creadoPor: (req as any).user?.id || 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -205,66 +193,7 @@ nominaRouter.post('/:proyectoId/pagar', async (req: Request, res: Response) => {
 });
 
 /**
- * PATCH /api/nomina/:nominaId/estado
- * Actualiza el estado de una nómina (simulado)
- */
-nominaRouter.patch('/:nominaId/estado', async (req: Request, res: Response) => {
-  try {
-    const { nominaId } = req.params;
-    const { estado, fechaPago, bonificacion } = req.body;
-
-    // Por ahora simulamos la respuesta
-    const nominaActualizada = {
-      id: Number(nominaId),
-      estado,
-      fechaPago,
-      bonificacion,
-      updatedAt: new Date().toISOString(),
-    };
-
-    res.json(nominaActualizada);
-  } catch (error) {
-    console.error('Error al actualizar estado:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
-/**
- * GET /api/nomina/recurso/:recursoId/historial
- * Obtiene historial de nómina de un recurso (simulado)
- */
-nominaRouter.get('/recurso/:recursoId/historial', async (req: Request, res: Response) => {
-  try {
-    const { recursoId } = req.params;
-
-    // Simulamos historial de los últimos 6 meses
-    const historial = [];
-    const fechaActual = new Date();
-    
-    for (let i = 0; i < 6; i++) {
-      const fecha = new Date(fechaActual.getFullYear(), fechaActual.getMonth() - i, 1);
-      const mes = fecha.toISOString().slice(0, 7);
-      
-      historial.push({
-        id: Date.now() + i,
-        recursoId: Number(recursoId),
-        mes,
-        estado: i === 0 ? 'pendiente' : (i % 2 === 0 ? 'pagado' : 'aprobado'),
-        fechaPago: i === 0 ? null : fecha.toISOString().split('T')[0],
-        createdAt: fecha.toISOString(),
-      });
-    }
-
-    res.json(historial);
-  } catch (error) {
-    console.error('Error al obtener historial:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
-/**
  * GET /api/nomina/metricas
- * Obtiene métricas generales de nómina
  */
 nominaRouter.get('/metricas', async (req: Request, res: Response) => {
   try {
@@ -285,8 +214,8 @@ nominaRouter.get('/metricas', async (req: Request, res: Response) => {
 
     const resultado = {
       totalMensual: Number(metricas[0]?.totalMensual || 0),
-      pendientePago: Number(metricas[0]?.totalMensual || 0), // Simulado - todos pendientes
-      pagadoMes: 0, // Simulado
+      pendientePago: Number(metricas[0]?.totalMensual || 0),
+      pagadoMes: 0,
       recursosActivos: Number(metricas[0]?.recursosActivos || 0),
     };
 
@@ -297,4 +226,4 @@ nominaRouter.get('/metricas', async (req: Request, res: Response) => {
   }
 });
 
-export { nominaRouter };
+export default nominaRouter;

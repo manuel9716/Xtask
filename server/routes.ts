@@ -5,7 +5,7 @@ import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupp
 import { eq } from "drizzle-orm";
 import express from "express";
 import empleadosRouter from "./routes/empleados.updated.routes";
-import nominaRouter from "./routes/nomina.routes";
+import nominaFinancieraRouter from "./routes/nomina.routes";
 import proyectosRouter from "./routes/proyectos.routes";
 import dashboardRouter from "./routes/dashboard.routes";
 import employeeProjectsRouter from "./routes/employee-projects.routes";
