@@ -21,13 +21,15 @@ import {
   DollarSign, 
   User, 
   CalendarDays,
-  TrendingUp 
+  TrendingUp,
+  UserPlus
 } from 'lucide-react';
 
 interface RecursoCardProps {
   recurso: Recurso;
   onEdit: (recurso: Recurso) => void;
   onDelete: (id: number) => void;
+  onLinkEmployee: (id: number) => void;
   isDeleting?: boolean;
 }
 
@@ -55,7 +57,7 @@ const PERFIL_LABELS: Record<string, string> = {
   'OTRO': 'Otro'
 };
 
-export function RecursoCard({ recurso, onEdit, onDelete, isDeleting = false }: RecursoCardProps) {
+export function RecursoCard({ recurso, onEdit, onDelete, onLinkEmployee, isDeleting = false }: RecursoCardProps) {
   const costoMensual = calculadoraCostos.costoMensual(recurso);
   const costoPorHora = calculadoraCostos.costoPorHora(recurso);
 
@@ -132,16 +134,26 @@ export function RecursoCard({ recurso, onEdit, onDelete, isDeleting = false }: R
         </div>
 
         {/* Acciones */}
-        <div className="flex gap-2 pt-3">
+        <div className="space-y-2 pt-3">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onEdit(recurso)}
-            className="flex-1"
+            onClick={() => onLinkEmployee(recurso.id)}
+            className="w-full bg-[#02BDEA]/10 hover:bg-[#02BDEA]/20 text-[#02BDEA] border-[#02BDEA]/30"
           >
-            <Edit2 className="h-4 w-4 mr-2" />
-            Editar
+            <UserPlus className="h-4 w-4 mr-2" />
+            Ligar a Empleado
           </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(recurso)}
+              className="flex-1"
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
           
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -174,6 +186,7 @@ export function RecursoCard({ recurso, onEdit, onDelete, isDeleting = false }: R
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          </div>
         </div>
       </CardContent>
     </Card>
