@@ -53,6 +53,8 @@ export function RecursosPresupuesto({
 }: RecursosPresupuestoProps) {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingRecurso, setEditingRecurso] = useState<Recurso | null>(null);
+  const [mostrarModalLigar, setMostrarModalLigar] = useState(false);
+  const [recursoALigar, setRecursoALigar] = useState<number | null>(null);
 
   // Hooks para datos
   const {
@@ -86,6 +88,20 @@ export function RecursosPresupuesto({
   const handleEditarRecurso = (recurso: Recurso) => {
     setEditingRecurso(recurso);
     setOpenDialog(true);
+  };
+
+  const handleLigarEmpleado = (recursoId: number) => {
+    setRecursoALigar(recursoId);
+    setMostrarModalLigar(true);
+  };
+
+  const handleConfirmarLigado = (empleadoId: number) => {
+    if (recursoALigar) {
+      console.log(`Ligando recurso ${recursoALigar} al empleado ${empleadoId}`);
+      setMostrarModalLigar(false);
+      setRecursoALigar(null);
+      alert('Recurso ligado exitosamente al empleado');
+    }
   };
 
   const handleEliminarRecurso = async (id: number) => {
@@ -267,6 +283,7 @@ export function RecursosPresupuesto({
                   recurso={recurso}
                   onEdit={handleEditarRecurso}
                   onDelete={handleEliminarRecurso}
+                  onLinkEmployee={handleLigarEmpleado}
                   isDeleting={eliminarRecursoMutation.isPending}
                 />
               ))}
@@ -278,6 +295,17 @@ export function RecursosPresupuesto({
           <RecursoResumen recursos={recursos} resumen={resumenLocal} />
         </TabsContent>
       </Tabs>
+
+      <ModalLigarEmpleado
+        isOpen={mostrarModalLigar}
+        onClose={() => {
+          setMostrarModalLigar(false);
+          setRecursoALigar(null);
+        }}
+        recursoId={recursoALigar}
+        onConfirmar={handleConfirmarLigado}
+        isLoading={false}
+      />
     </div>
   );
 }
