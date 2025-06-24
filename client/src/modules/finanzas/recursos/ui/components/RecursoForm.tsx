@@ -238,15 +238,37 @@ export function RecursoForm({
                     <FormLabel>Valor por Hora (COP)</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">$</span>
                         <Input
-                          type="number"
-                          placeholder="25000"
-                          className="pl-10"
-                          value={field.value || ''}
+                          type="text"
+                          placeholder="30,000"
+                          className="pl-8"
+                          value={field.value ? new Intl.NumberFormat('es-CO').format(field.value) : ''}
                           onChange={(e) => {
-                            const value = e.target.value === '' ? undefined : Number(e.target.value);
-                            field.onChange(value);
+                            // Remover formato y convertir a número
+                            const value = e.target.value.replace(/[^\d]/g, '');
+                            const numericValue = value ? parseInt(value, 10) : 0;
+                            field.onChange(numericValue);
+                          }}
+                          onKeyDown={(e) => {
+                            // Permitir solo números, backspace, delete, tab, escape, enter, home, end, left, right
+                            if (
+                              [46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
+                              // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+                              (e.keyCode === 65 && e.ctrlKey === true) ||
+                              (e.keyCode === 67 && e.ctrlKey === true) ||
+                              (e.keyCode === 86 && e.ctrlKey === true) ||
+                              (e.keyCode === 88 && e.ctrlKey === true) ||
+                              (e.keyCode === 90 && e.ctrlKey === true) ||
+                              // Allow home, end, left, right
+                              (e.keyCode >= 35 && e.keyCode <= 39)
+                            ) {
+                              return;
+                            }
+                            // Ensure that it is a number and stop the keypress
+                            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                              e.preventDefault();
+                            }
                           }}
                         />
                       </div>
