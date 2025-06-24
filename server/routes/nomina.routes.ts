@@ -11,20 +11,40 @@ const nominaRouter = Router();
  */
 nominaRouter.get('/proyectos', async (req: Request, res: Response) => {
   try {
-    const proyectosConRecursos = await db
-      .select({
-        id: budgets.id,
-        nombre: budgets.nombre,
-        monto: budgets.monto,
-        totalRecursos: sql<number>`count(${recursosFinancieros.id})::int`,
-        costoTotal: sql<number>`sum(${recursosFinancieros.totalEstimado})::numeric`
-      })
-      .from(budgets)
-      .innerJoin(recursosFinancieros, eq(budgets.id, recursosFinancieros.presupuestoId))
-      .groupBy(budgets.id)
-      .orderBy(budgets.nombre);
+    // Método más simple: obtener todos los recursos financieros y agrupar por proyecto
+    const recursosConProyecto = await db
+      .select()
+      .from(recursosFinancieros);
 
-    res.json(proyectosConRecursos);
+    // Obtener datos de presupuestos para los proyectos que tienen recursos
+    const proyectoIds = [...new Set(recursosConProyecto.map(r => r.presupuestoId))];
+    
+    if (proyectoIds.length === 0) {
+      return res.json([]);
+    }
+
+    const presupuestos = await db
+      .select()
+      .from(budgets)
+      .where(sql`${budgets.id} = ANY(${proyectoIds})`);
+
+    // Agrupar recursos por proyecto y calcular métricas
+    const proyectosConMetricas = presupuestos.map(presupuesto => {
+      const recursosDelProyecto = recursosConProyecto.filter(r => r.presupuestoId === presupuesto.id);
+      const totalRecursos = recursosDelProyecto.length;
+      const costoTotal = recursosDelProyecto.reduce((total, recurso) => 
+        total + Number(recurso.totalEstimado || 0), 0);
+
+      return {
+        id: presupuesto.id,
+        nombre: presupuesto.name,
+        monto: presupuesto.amount,
+        totalRecursos: totalRecursos,
+        costoTotal: costoTotal
+      };
+    });
+
+    res.json(proyectosConMetricas.sort((a, b) => a.nombre.localeCompare(b.nombre)));
   } catch (error) {
     console.error('Error al obtener proyectos con recursos:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
@@ -42,60 +62,74 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
 
     const mesActual = (mes as string) || new Date().toISOString().slice(0, 7);
 
-    let query = db
-      .select({
-        id: sql<number>`${recursosFinancieros.id}`,
-        proyectoId: recursosFinancieros.presupuestoId,
-        recursoId: recursosFinancieros.id,
-        mes: sql<string>`'${mesActual}'`,
-        salarioMensual: recursosFinancieros.salarioMensual,
-        bonificacion: sql<number>`0`,
-        horasTotales: sql<number>`(${recursosFinancieros.diasAlMes} * ${recursosFinancieros.horasPorDia} * (${recursosFinancieros.dedicacionPorcentaje} / 100))::int`,
-        dedicacion: recursosFinancieros.dedicacionPorcentaje,
-        estado: sql<string>`'pendiente'`,
-        totalPagar: recursosFinancieros.salarioMensual,
-        fechaPago: sql<string>`null`,
-        creadoPor: recursosFinancieros.creadoPor,
-        createdAt: recursosFinancieros.createdAt,
-        updatedAt: recursosFinancieros.updatedAt,
-        recurso: {
-          id: recursosFinancieros.id,
-          perfil: recursosFinancieros.perfil,
-          salarioMensual: recursosFinancieros.salarioMensual,
-          valorHora: recursosFinancieros.valorHora,
-          meses: recursosFinancieros.meses,
-          diasAlMes: recursosFinancieros.diasAlMes,
-          horasPorDia: recursosFinancieros.horasPorDia,
-          dedicacionPorcentaje: recursosFinancieros.dedicacionPorcentaje,
-          origen: recursosFinancieros.origen,
-          totalHoras: recursosFinancieros.totalHoras,
-          totalEstimado: recursosFinancieros.totalEstimado,
-        },
-        proyecto: {
-          id: budgets.id,
-          nombre: budgets.nombre,
-          monto: budgets.monto,
-        }
-      })
-      .from(recursosFinancieros)
-      .innerJoin(budgets, eq(recursosFinancieros.presupuestoId, budgets.id))
-      .where(eq(recursosFinancieros.presupuestoId, Number(proyectoId)));
-
-    if (perfil) {
-      query = query.where(and(
-        eq(recursosFinancieros.presupuestoId, Number(proyectoId)),
-        eq(recursosFinancieros.perfil, perfil as string)
-      ));
-    }
-
-    const recursos = await query.orderBy(recursosFinancieros.perfil);
-    let resultado = recursos;
+    // Obtener recursos del proyecto
+    let whereConditions = eq(recursosFinancieros.presupuestoId, Number(proyectoId));
     
-    if (estado && estado !== '') {
-      resultado = estado === 'pendiente' ? recursos : [];
+    if (perfil) {
+      whereConditions = and(whereConditions, eq(recursosFinancieros.perfil, perfil as string));
     }
 
-    res.json(resultado);
+    const recursos = await db
+      .select()
+      .from(recursosFinancieros)
+      .where(whereConditions)
+      .orderBy(recursosFinancieros.perfil);
+
+    // Obtener datos del proyecto
+    const proyecto = await db
+      .select()
+      .from(budgets)
+      .where(eq(budgets.id, Number(proyectoId)))
+      .limit(1);
+
+    const proyectoData = proyecto[0];
+
+    // Transformar recursos a formato de nómina
+    const resultado = recursos.map(recurso => {
+      const horasTotales = (recurso.diasAlMes || 22) * (recurso.horasPorDia || 8) * ((recurso.dedicacionPorcentaje || 100) / 100);
+      
+      return {
+        id: recurso.id,
+        proyectoId: Number(proyectoId),
+        recursoId: recurso.id,
+        mes: mesActual,
+        salarioMensual: recurso.salarioMensual,
+        bonificacion: 0,
+        horasTotales: Math.round(horasTotales),
+        dedicacion: recurso.dedicacionPorcentaje,
+        estado: 'pendiente',
+        totalPagar: recurso.salarioMensual,
+        fechaPago: null,
+        creadoPor: recurso.creadoPor,
+        createdAt: recurso.createdAt,
+        updatedAt: recurso.updatedAt,
+        recurso: {
+          id: recurso.id,
+          perfil: recurso.perfil,
+          salarioMensual: recurso.salarioMensual,
+          valorHora: recurso.valorHora,
+          meses: recurso.meses,
+          diasAlMes: recurso.diasAlMes,
+          horasPorDia: recurso.horasPorDia,
+          dedicacionPorcentaje: recurso.dedicacionPorcentaje,
+          origen: recurso.origen,
+          totalHoras: recurso.totalHoras,
+          totalEstimado: recurso.totalEstimado,
+        },
+        proyecto: proyectoData ? {
+          id: proyectoData.id,
+          nombre: proyectoData.name,
+          monto: proyectoData.amount,
+        } : null
+      };
+    });
+
+    // Filtrar por estado si se especifica
+    const resultadoFinal = estado && estado !== '' 
+      ? (estado === 'pendiente' ? resultado : [])
+      : resultado;
+
+    res.json(resultadoFinal);
   } catch (error) {
     console.error('Error al obtener recursos del proyecto:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
@@ -109,33 +143,39 @@ nominaRouter.get('/:proyectoId/resumen', async (req: Request, res: Response) => 
   try {
     const { proyectoId } = req.params;
 
+    // Obtener datos del proyecto
     const proyecto = await db
-      .select({
-        id: budgets.id,
-        nombre: budgets.nombre,
-        totalRecursos: sql<number>`count(${recursosFinancieros.id})::int`,
-        costoMensualTotal: sql<number>`sum(${recursosFinancieros.salarioMensual})::numeric`,
-        totalPendiente: sql<number>`sum(${recursosFinancieros.salarioMensual})::numeric`,
-        totalPagado: sql<number>`0`,
-        totalAprobado: sql<number>`0`,
-      })
+      .select()
       .from(budgets)
-      .innerJoin(recursosFinancieros, eq(budgets.id, recursosFinancieros.presupuestoId))
       .where(eq(budgets.id, Number(proyectoId)))
-      .groupBy(budgets.id);
+      .limit(1);
 
     if (proyecto.length === 0) {
-      return res.status(404).json({ message: 'Proyecto no encontrado o sin recursos' });
+      return res.status(404).json({ message: 'Proyecto no encontrado' });
     }
+
+    // Obtener recursos del proyecto
+    const recursos = await db
+      .select()
+      .from(recursosFinancieros)
+      .where(eq(recursosFinancieros.presupuestoId, Number(proyectoId)));
+
+    if (recursos.length === 0) {
+      return res.status(404).json({ message: 'Proyecto sin recursos asignados' });
+    }
+
+    // Calcular métricas
+    const totalRecursos = recursos.length;
+    const costoMensualTotal = recursos.reduce((total, recurso) => total + Number(recurso.salarioMensual || 0), 0);
 
     const resumen = {
       proyectoId: Number(proyectoId),
-      nombreProyecto: proyecto[0].nombre,
-      totalRecursos: proyecto[0].totalRecursos,
-      totalPendiente: Number(proyecto[0].totalPendiente),
-      totalPagado: Number(proyecto[0].totalPagado),
-      totalAprobado: Number(proyecto[0].totalAprobado),
-      costoMensualTotal: Number(proyecto[0].costoMensualTotal),
+      nombreProyecto: proyecto[0].name,
+      totalRecursos: totalRecursos,
+      totalPendiente: costoMensualTotal, // Simulado - todos pendientes
+      totalPagado: 0, // Simulado
+      totalAprobado: 0, // Simulado
+      costoMensualTotal: costoMensualTotal,
     };
 
     res.json(resumen);
@@ -199,24 +239,26 @@ nominaRouter.get('/metricas', async (req: Request, res: Response) => {
   try {
     const { proyectoId } = req.query;
 
-    let whereCondition = undefined;
+    let recursos;
     if (proyectoId) {
-      whereCondition = eq(recursosFinancieros.presupuestoId, Number(proyectoId));
+      recursos = await db
+        .select()
+        .from(recursosFinancieros)
+        .where(eq(recursosFinancieros.presupuestoId, Number(proyectoId)));
+    } else {
+      recursos = await db
+        .select()
+        .from(recursosFinancieros);
     }
 
-    const metricas = await db
-      .select({
-        totalMensual: sql<number>`sum(${recursosFinancieros.salarioMensual})::numeric`,
-        recursosActivos: sql<number>`count(${recursosFinancieros.id})::int`,
-      })
-      .from(recursosFinancieros)
-      .where(whereCondition);
+    const totalMensual = recursos.reduce((total, recurso) => total + Number(recurso.salarioMensual || 0), 0);
+    const recursosActivos = recursos.length;
 
     const resultado = {
-      totalMensual: Number(metricas[0]?.totalMensual || 0),
-      pendientePago: Number(metricas[0]?.totalMensual || 0),
-      pagadoMes: 0,
-      recursosActivos: Number(metricas[0]?.recursosActivos || 0),
+      totalMensual: totalMensual,
+      pendientePago: totalMensual, // Simulado - todos pendientes
+      pagadoMes: 0, // Simulado
+      recursosActivos: recursosActivos,
     };
 
     res.json(resultado);
