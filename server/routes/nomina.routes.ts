@@ -224,6 +224,8 @@ nominaRouter.post('/:proyectoId/pagar', async (req: Request, res: Response) => {
       estado,
       totalPagar,
       fechaPago,
+      metodoPago,
+      referenciaPSE: referenciaPSE || null,
       creadoPor: (req as any).user?.id || 1,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

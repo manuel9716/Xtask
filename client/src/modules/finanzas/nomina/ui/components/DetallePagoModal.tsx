@@ -32,7 +32,8 @@ import {
   Building2,
   Clock,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  CreditCard
 } from 'lucide-react';
 
 const registrarPagoSchema = z.object({
@@ -86,7 +87,33 @@ export function DetallePagoModal({
     calculosNomina.calcularTotalPagar(nomina.recurso.salarioMensual, watchedValues.bonificacion || 0) : 0;
 
   const handleSubmit = (data: RegistrarPagoForm) => {
-    onConfirmar(data);
+    const pagoData = {
+      ...data,
+      metodoPago: 'transferencia'
+    };
+    onConfirmar(pagoData);
+  };
+
+  const handlePSEPayment = () => {
+    const formData = form.getValues();
+    const totalPagar = totalCalculado;
+    
+    // Simular proceso de pago PSE
+    const pagoData = {
+      ...formData,
+      metodoPago: 'pse',
+      estado: 'procesando' as const,
+      referenciaPSE: `PSE-${Date.now()}`
+    };
+    
+    // Mostrar mensaje de confirmación PSE
+    if (window.confirm(`¿Confirmar pago PSE por ${formatCOP(totalPagar)}?\n\nSe abrirá el portal bancario para completar la transacción.`)) {
+      // Simular redirección a PSE
+      window.open(`https://www.pse.com.co/pago?ref=${pagoData.referenciaPSE}&amount=${totalPagar}`, '_blank');
+      
+      // Confirmar el pago como procesando
+      onConfirmar(pagoData);
+    }
   };
 
   if (!nomina) return null;
@@ -277,15 +304,37 @@ export function DetallePagoModal({
                 </div>
               </div>
 
+              {/* Información sobre métodos de pago */}
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">Opciones de Pago</span>
+                </div>
+                <p className="text-xs text-blue-700">
+                  • <strong>Confirmar Pago:</strong> Registro manual del pago
+                </p>
+                <p className="text-xs text-blue-700">
+                  • <strong>Pagar con PSE:</strong> Pago inmediato vía transferencia bancaria
+                </p>
+              </div>
+
               {/* Botones de acción */}
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={onClose}>
                   Cancelar
                 </Button>
                 <Button 
+                  type="button"
+                  onClick={handlePSEPayment}
+                  className="bg-[#FFA41B] hover:bg-[#FFA41B]/90 text-white"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Procesando...' : 'Pagar con PSE'}
+                </Button>
+                <Button 
                   type="submit" 
                   disabled={isLoading}
-                  className="bg-[#02BDEA] hover:bg-[#02BDEA]/90"
+                  className="bg-[#02BDEA] hover:bg-[#02BDEA]/90 text-white"
                 >
                   {isLoading ? 'Procesando...' : 'Confirmar Pago'}
                 </Button>
