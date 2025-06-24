@@ -80,8 +80,8 @@ export function RecursoForm({
     defaultValues: {
       presupuestoId,
       perfil: 'DESARROLLADOR_SENIOR',
-      salarioMensual: 0,
-      valorHora: 0,
+      salarioMensual: initialData?.salarioMensual || 0,
+      valorHora: initialData?.valorHora || undefined,
       meses: 1,
       diasAlMes: 22,
       horasPorDia: 8,
@@ -95,7 +95,7 @@ export function RecursoForm({
   const watchedValues = form.watch();
 
   // Cálculo automático del salario mensual basado en valor por hora
-  const salarioMensualCalculado = watchedValues.valorHora * 8 * 30;
+  const salarioMensualCalculado = (watchedValues.valorHora || 0) * 8 * 30;
 
   // Actualizar el salario mensual automáticamente cuando cambie el valor por hora
   useEffect(() => {
@@ -240,9 +240,9 @@ export function RecursoForm({
                           type="number"
                           placeholder="25000"
                           className="pl-10"
-                          {...field}
+                          value={field.value || ''}
                           onChange={(e) => {
-                            const value = Number(e.target.value);
+                            const value = e.target.value === '' ? undefined : Number(e.target.value);
                             field.onChange(value);
                           }}
                         />
