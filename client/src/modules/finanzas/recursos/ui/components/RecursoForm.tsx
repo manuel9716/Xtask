@@ -94,13 +94,16 @@ export function RecursoForm({
 
   const watchedValues = form.watch();
 
-  // Cálculo automático del salario mensual basado en valor por hora
-  const salarioMensualCalculado = (watchedValues.valorHora || 0) * 8 * 30;
+  // Cálculo automático del salario mensual basado en todos los parámetros
+  const salarioMensualCalculado = (watchedValues.valorHora || 0) * 
+    (watchedValues.diasAlMes || 0) * 
+    (watchedValues.horasPorDia || 0) * 
+    ((watchedValues.dedicacionPorcentaje || 0) / 100);
 
-  // Actualizar el salario mensual automáticamente cuando cambie el valor por hora
+  // Actualizar el salario mensual automáticamente cuando cambien los parámetros de cálculo
   useEffect(() => {
     form.setValue('salarioMensual', salarioMensualCalculado);
-  }, [watchedValues.valorHora, form, salarioMensualCalculado]);
+  }, [watchedValues.valorHora, watchedValues.diasAlMes, watchedValues.horasPorDia, watchedValues.dedicacionPorcentaje, form, salarioMensualCalculado]);
 
   // Cálculos en tiempo real
   const horasTotales = calcularRecurso.horasTotales(
@@ -223,7 +226,7 @@ export function RecursoForm({
                   </span>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Calculado automáticamente: {watchedValues.valorHora ? formatCOP(watchedValues.valorHora) : '$0'} × 8 horas × 30 días
+                  Calculado: {watchedValues.valorHora ? formatCOP(watchedValues.valorHora) : '$0'} × {watchedValues.diasAlMes || 0} días × {watchedValues.horasPorDia || 0} h × {watchedValues.dedicacionPorcentaje || 0}%
                 </p>
               </div>
 
