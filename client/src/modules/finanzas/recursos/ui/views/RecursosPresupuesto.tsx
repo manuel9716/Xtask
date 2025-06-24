@@ -14,11 +14,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useListarRecursosPorPresupuesto, useEliminarRecurso } from '../../application/useCases/listarRecursosPorPresupuesto';
 import { useCrearRecurso } from '../../application/useCases/crearRecurso';
-import { useCalcularCostoMensual, calculadoraCostos } from '../../application/useCases/calcularCostoMensual';
+import { useCalcularCostoMensual } from '../../application/useCases/calcularCostoMensual';
 import { RecursoForm } from '../components/RecursoForm';
 import { RecursoCard } from '../components/RecursoCard';
 import { RecursoResumen } from '../components/RecursoResumen';
-import { CrearRecursoDTO, Recurso } from '../../domain/entities/Recurso';
+import { CrearRecursoDTO, Recurso, calculadoraCostos } from '../../domain/entities/Recurso';
 import { 
   PlusCircle, 
   Users, 
