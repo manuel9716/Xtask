@@ -14,7 +14,7 @@ import { FiltrosFactura } from '../../domain/entities/Factura';
 interface FiltroFacturasProps {
   filtros: FiltrosFactura;
   onFiltrosChange: (filtros: FiltrosFactura) => void;
-  clientes: string[];
+  clientes?: string[];
 }
 
 export function FiltroFacturas({ filtros, onFiltrosChange, clientes }: FiltroFacturasProps) {
@@ -115,11 +115,11 @@ export function FiltroFacturas({ filtros, onFiltrosChange, clientes }: FiltroFac
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos los clientes</SelectItem>
-            {clientes.map(cliente => (
+            {clientes?.map(cliente => (
               <SelectItem key={cliente} value={cliente}>
                 {cliente}
               </SelectItem>
-            ))}
+            )) || []}
           </SelectContent>
         </Select>
 
@@ -177,10 +177,11 @@ export function FiltroFacturas({ filtros, onFiltrosChange, clientes }: FiltroFac
               mode="single"
               selected={filtros.fechaHasta ? new Date(filtros.fechaHasta) : undefined}
               onSelect={handleFechaHastaChange}
-              disabled={(date) =>
-                date > new Date() || 
-                (filtros.fechaDesde && date < new Date(filtros.fechaDesde))
-              }
+              disabled={(date) => {
+                if (date > new Date()) return true;
+                if (filtros.fechaDesde && date < new Date(filtros.fechaDesde)) return true;
+                return false;
+              }}
               initialFocus
             />
           </PopoverContent>

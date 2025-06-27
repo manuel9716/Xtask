@@ -221,6 +221,7 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
               </DialogHeader>
               <FacturaForm
                 proyectoId={proyectoSeleccionado}
+                userId={userId}
                 onSuccess={handleNuevaFacturaSuccess}
                 onCancel={() => setModalNuevaFactura(false)}
               />
@@ -245,7 +246,7 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
             <FiltroFacturas
               filtros={filtros}
               onFiltrosChange={setFiltros}
-              clientesDisponibles={clientesUnicos}
+              clientes={clientesUnicos}
             />
           </CardContent>
         </Card>
