@@ -1,0 +1,84 @@
+✅ Prompt para Replit: Estabilización y preparación para despliegue
+Actúa como un equipo de desarrollo senior. Analiza todo el proyecto XTask y realiza un proceso de estabilización integral. El objetivo es corregir errores, inconsistencias, malas prácticas, y preparar la aplicación para ser desplegada en producción.
+
+🧪 Instrucciones técnicas para Replit:
+Revisión de código completo
+
+Verifica que todos los módulos, componentes y servicios estén correctamente importados y referenciados.
+
+Revisa que no haya rutas rotas, componentes huérfanos o módulos duplicados.
+
+Corrección de errores comunes
+
+Detecta y corrige errores de compilación, tipado, referencias circulares o undefined.
+
+Valida todos los hooks (useEffect, useState, useQuery, etc.) estén bien usados.
+
+Limpieza de warnings y logs
+
+Elimina console.log innecesarios o duplicados.
+
+Quita imports sin usar.
+
+Limpia variables no utilizadas.
+
+Validación de dependencias
+
+Asegúrate de que el archivo package.json incluya todas las dependencias necesarias para producción.
+
+Actualiza dependencias obsoletas solo si es seguro.
+
+Optimización de arquitectura
+
+Revisa si algún componente grande debe dividirse en subcomponentes.
+
+Establece lazy-loading para vistas pesadas si es posible.
+
+Verificación de rutas y navegación
+
+Confirma que todas las rutas (/finanzas, /facturacion, /nomina, etc.) funcionen correctamente.
+
+Revisa que los parámetros dinámicos estén bien validados.
+
+Gestión de errores
+
+Añade controladores de errores globales si no existen (try/catch, ErrorBoundary).
+
+Verifica mensajes amigables en errores de red/API.
+
+Conexiones con backend
+
+Revisa que los endpoints definidos realmente existan.
+
+Confirma que todos los servicios estén conectados y devuelvan lo esperado.
+
+Comprueba compatibilidad de datos entre frontend y backend.
+
+Configuración de entorno para despliegue
+
+Revisa archivos .env y su uso correcto en llamadas a servicios.
+
+Asegúrate de tener el build script correcto (npm run build, etc.).
+
+Establece variables de entorno necesarias: API_URL, SUPABASE_KEY, STORAGE_BUCKET, etc.
+
+Generar build limpio y funcional
+
+Ejecuta el proceso de build completo.
+
+Genera archivos listos para subir a producción.
+
+Valida que la versión final funcione sin errores.
+
+🧾 Resultado esperado:
+Todo el código funcional y libre de errores o advertencias.
+
+Arquitectura ordenada y mantenible.
+
+Conexiones API validadas.
+
+Navegación estable en todas las vistas.
+
+Variables de entorno seguras.
+
+Aplicación lista para deploy sin necesidad de ajustes posteriores.
