@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, FileText, Download, Filter } from 'lucide-react';
+import { Loader2, Plus, FileText, Download, Filter, Mail } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { FacturaCard } from '../components/FacturaCard';
 import { FiltroFacturas } from '../components/FiltroFacturas';

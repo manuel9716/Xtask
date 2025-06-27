@@ -19,6 +19,15 @@ import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
 import habilidadesRouter from "./routes/habilidades.routes";
 import recursosRouter from "./routes/recursos.routes";
+import { MailService } from '@sendgrid/mail';
+import PDFDocument from 'pdfkit';
+import fs from 'fs';
+
+// Initialize SendGrid
+const mailService = new MailService();
+if (process.env.SENDGRID_API_KEY) {
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 // Configuración de multer para archivos de soporte
 const storage_multer = multer.diskStorage({
@@ -1569,6 +1578,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error al eliminar factura:', error);
       res.status(500).json({ message: "Error al eliminar factura" });
+    }
+  });
+
+  // Función para generar PDF de factura
+  async function generateInvoicePDF(factura: any): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 50 });
+      const buffers: Buffer[] = [];
+
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => {
+        const pdfBuffer = Buffer.concat(buffers);
+        resolve(pdfBuffer);
+      });
+      doc.on('error', reject);
+
+      // Header
+      doc.fontSize(20).text('FACTURA ELECTRÓNICA', 50, 50);
+      doc.fontSize(12).text(`Número: ${factura.numeroFactura}`, 50, 80);
+      doc.text(`Fecha: ${new Date(factura.fechaEmision).toLocaleDateString('es-CO')}`, 50, 95);
+
+      // Cliente
+      doc.fontSize(14).text('FACTURADO A:', 50, 130);
+      doc.fontSize(12).text(factura.cliente, 50, 150);
+
+      // Concepto
+      doc.fontSize(14).text('CONCEPTO:', 50, 190);
+      doc.fontSize(12).text(factura.concepto, 50, 210);
+
+      // Valores
+      doc.fontSize(14).text('DETALLES DE PAGO:', 50, 250);
+      doc.fontSize(12);
+      doc.text(`Subtotal: ${new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+      }).format(factura.valorSubtotal)}`, 50, 270);
+      
+      doc.text(`Total: ${new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+      }).format(factura.valorTotal)}`, 50, 290);
+
+      // Fechas
+      doc.text(`Fecha de Vencimiento: ${new Date(factura.fechaVencimiento).toLocaleDateString('es-CO')}`, 50, 320);
+      
+      if (factura.medioPago) {
+        doc.text(`Medio de Pago: ${factura.medioPago}`, 50, 340);
+      }
+
+      // Footer
+      doc.fontSize(10).text('Gracias por su confianza - XTask Platform', 50, 400);
+
+      doc.end();
+    });
+  }
+
+  // Endpoint para enviar factura por email con PDF adjunto
+  app.post("/api/facturacion/:id/enviar-email", async (req, res) => {
+    try {
+      const facturaId = parseInt(req.params.id);
+      const { destinatario, asunto, mensaje } = req.body;
+
+      if (!destinatario || !asunto) {
+        return res.status(400).json({ 
+          message: "Destinatario y asunto son requeridos" 
+        });
+      }
+
+      if (!process.env.SENDGRID_API_KEY) {
+        return res.status(500).json({ 
+          message: "Servicio de email no configurado" 
+        });
+      }
+
+      // Obtener datos de la factura
+      const [factura] = await db.select()
+        .from(facturasProyecto)
+        .where(eq(facturasProyecto.id, facturaId))
+        .limit(1);
+
+      if (!factura) {
+        return res.status(404).json({ message: "Factura no encontrada" });
+      }
+
+      // Generar PDF de la factura
+      const pdfBuffer = await generateInvoicePDF(factura);
+
+      // Configurar email
+      const emailData = {
+        to: destinatario,
+        from: 'noreply@xtask.com', // Cambiar por tu email verificado en SendGrid
+        subject: asunto,
+        text: mensaje || `Adjunto encontrará la factura ${factura.numeroFactura}.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">XTask - Factura Electrónica</h2>
+            <p>Estimado cliente,</p>
+            <p>${mensaje || `Adjunto encontrará la factura ${factura.numeroFactura} correspondiente a los servicios prestados.`}</p>
+            
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #1e40af;">Detalles de la Factura</h3>
+              <p><strong>Número:</strong> ${factura.numeroFactura}</p>
+              <p><strong>Cliente:</strong> ${factura.cliente}</p>
+              <p><strong>Concepto:</strong> ${factura.concepto}</p>
+              <p><strong>Valor Total:</strong> ${new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0
+              }).format(parseFloat(factura.valorTotal))}</p>
+              <p><strong>Fecha Vencimiento:</strong> ${new Date(factura.fechaVencimiento).toLocaleDateString('es-CO')}</p>
+            </div>
+            
+            <p>Gracias por su confianza.</p>
+            <p style="color: #6b7280; font-size: 12px;">
+              Este es un mensaje automático, por favor no responda a este correo.
+            </p>
+          </div>
+        `,
+        attachments: [
+          {
+            content: pdfBuffer.toString('base64'),
+            filename: `Factura-${factura.numeroFactura}.pdf`,
+            type: 'application/pdf',
+            disposition: 'attachment'
+          }
+        ]
+      };
+
+      // Enviar email
+      await mailService.send(emailData);
+
+      res.json({ 
+        success: true,
+        message: "Factura enviada por email exitosamente",
+        destinatario: destinatario
+      });
+
+    } catch (error: any) {
+      console.error('Error al enviar factura por email:', error);
+      res.status(500).json({ 
+        message: "Error al enviar la factura por email",
+        error: error.message 
+      });
     }
   });
 
