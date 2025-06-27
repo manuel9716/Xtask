@@ -5,6 +5,8 @@ import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -26,254 +28,101 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { DollarSign, Receipt, Upload } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
-const pagoSchema = z.object({
-  fecha: z.string().min(1, 'La fecha es requerida'),
-  monto: z.number().min(1, 'El monto debe ser mayor a 0'),
-  concepto: z.string().min(3, 'El concepto debe tener al menos 3 caracteres'),
-  area: z.string().min(1, 'El área es requerida'),
-  metodoPago: z.string().min(1, 'El método de pago es requerido'),
-  descripcion: z.string().optional(),
-  comprobante: z.any().optional(),
+const registroPagoSchema = z.object({
+  concepto: z.string().min(1, 'El concepto es requerido'),
+  monto: z.string().min(1, 'El monto es requerido'),
+  metodoPago: z.enum(['TRANSFERENCIA', 'EFECTIVO', 'CHEQUE', 'PSE'], {
+    required_error: 'Seleccione un método de pago',
+  }),
+  fecha: z.date({
+    required_error: 'La fecha es requerida',
+  }),
+  referencia: z.string().optional(),
+  observaciones: z.string().optional(),
 });
 
-type PagoFormData = z.infer<typeof pagoSchema>;
+type RegistroPagoForm = z.infer<typeof registroPagoSchema>;
 
 interface RegistroPagoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  presupuestoId: number;
+  onSubmit: (data: RegistroPagoForm) => void;
+  presupuestoId: number | null;
 }
 
-const areas = [
-  'Desarrollo',
-  'Marketing',
-  'Administración',
-  'Recursos Humanos',
-  'Finanzas',
-  'Operaciones',
-  'General'
-];
-
-const metodosPago = [
-  'Transferencia Bancaria',
-  'Cheque',
-  'Efectivo',
-  'Tarjeta de Crédito',
-  'PSE',
-  'Nequi',
-  'Daviplata'
-];
-
-export function RegistroPagoModal({ isOpen, onClose, presupuestoId }: RegistroPagoModalProps) {
-  const form = useForm<PagoFormData>({
-    resolver: zodResolver(pagoSchema),
+export const RegistroPagoModal: React.FC<RegistroPagoModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  presupuestoId,
+}) => {
+  const form = useForm<RegistroPagoForm>({
+    resolver: zodResolver(registroPagoSchema),
     defaultValues: {
-      fecha: new Date().toISOString().split('T')[0],
-      monto: 0,
       concepto: '',
-      area: '',
-      metodoPago: '',
-      descripcion: '',
+      monto: '',
+      metodoPago: 'TRANSFERENCIA',
+      referencia: '',
+      observaciones: '',
     },
   });
 
-  const formatCurrency = (value: string) => {
-    const number = value.replace(/[^\d]/g, '');
-    if (!number) return '';
-    return new Intl.NumberFormat('es-CO').format(parseInt(number));
+  const handleSubmit = (data: RegistroPagoForm) => {
+    onSubmit(data);
+    form.reset();
+    onClose();
   };
 
-  const handleSubmit = async (data: PagoFormData) => {
-    try {
-      console.log('Registrando pago:', { ...data, presupuestoId });
-      // Aquí iría la llamada a la API
-      // await fetch(`/api/finanzas/presupuestos/${presupuestoId}/pagos`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data)
-      // });
-      
-      alert('Pago registrado exitosamente');
-      form.reset();
-      onClose();
-    } catch (error) {
-      console.error('Error al registrar pago:', error);
-      alert('Error al registrar el pago');
-    }
+  const formatCurrency = (value: string) => {
+    const numericValue = value.replace(/[^\d]/g, '');
+    if (!numericValue) return '';
+    
+    const number = parseInt(numericValue);
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+    }).format(number);
+  };
+
+  const handleMontoChange = (value: string) => {
+    const numericValue = value.replace(/[^\d]/g, '');
+    form.setValue('monto', numericValue);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-[#02BDEA]" />
-            Registrar Nuevo Pago
-          </DialogTitle>
+          <DialogTitle>Registrar Pago</DialogTitle>
+          <DialogDescription>
+            Registre un pago realizado para este presupuesto
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Fecha */}
-              <FormField
-                control={form.control}
-                name="fecha"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fecha del Pago</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Monto */}
-              <FormField
-                control={form.control}
-                name="monto"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Monto (COP)</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          type="text"
-                          placeholder="0"
-                          className="pl-10"
-                          value={field.value ? formatCurrency(field.value.toString()) : ''}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/[^\d]/g, '');
-                            field.onChange(value ? parseInt(value) : 0);
-                          }}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Concepto */}
-              <FormField
-                control={form.control}
-                name="concepto"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Concepto</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Ej: Compra de materiales de oficina"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Área */}
-              <FormField
-                control={form.control}
-                name="area"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Área</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar área" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {areas.map((area) => (
-                          <SelectItem key={area} value={area}>
-                            {area}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Método de Pago */}
-              <FormField
-                control={form.control}
-                name="metodoPago"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Método de Pago</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar método" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {metodosPago.map((metodo) => (
-                          <SelectItem key={metodo} value={metodo}>
-                            {metodo}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Comprobante */}
-              <FormField
-                control={form.control}
-                name="comprobante"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Comprobante de Pago</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => field.onChange(e.target.files?.[0])}
-                          className="hidden"
-                          id="comprobante-upload"
-                        />
-                        <label
-                          htmlFor="comprobante-upload"
-                          className="flex-1 flex items-center justify-center gap-2 h-10 px-3 border border-input bg-background rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                        >
-                          <Upload className="h-4 w-4" />
-                          <span className="text-sm">
-                            {field.value?.name || 'Seleccionar archivo'}
-                          </span>
-                        </label>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Descripción */}
             <FormField
               control={form.control}
-              name="descripcion"
+              name="concepto"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descripción Adicional (Opcional)</FormLabel>
+                  <FormLabel>Concepto</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Detalles adicionales sobre el pago..."
-                      className="min-h-[100px]"
-                      {...field} 
+                    <Input
+                      placeholder="Descripción del pago"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -281,21 +130,138 @@ export function RegistroPagoModal({ isOpen, onClose, presupuestoId }: RegistroPa
               )}
             />
 
-            {/* Botones */}
-            <div className="flex justify-end gap-2 pt-4">
+            <FormField
+              control={form.control}
+              name="monto"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Monto</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        placeholder="0"
+                        value={formatCurrency(field.value)}
+                        onChange={(e) => handleMontoChange(e.target.value)}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="metodoPago"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Método de Pago</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione método de pago" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="TRANSFERENCIA">Transferencia Bancaria</SelectItem>
+                      <SelectItem value="PSE">PSE</SelectItem>
+                      <SelectItem value="EFECTIVO">Efectivo</SelectItem>
+                      <SelectItem value="CHEQUE">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="fecha"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Fecha del Pago</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-full pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground'
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, 'PPP', { locale: es })
+                          ) : (
+                            <span>Seleccionar fecha</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date('1900-01-01')
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="referencia"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Referencia</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Número de referencia o comprobante"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="observaciones"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Observaciones</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Observaciones adicionales..."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button 
-                type="submit" 
-                className="bg-[#02BDEA] hover:bg-[#02BDEA]/90"
-              >
+              <Button type="submit">
                 Registrar Pago
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-}
+};

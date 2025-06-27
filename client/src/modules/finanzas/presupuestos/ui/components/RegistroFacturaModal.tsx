@@ -5,6 +5,8 @@ import { z } from 'zod';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -19,120 +21,106 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { DollarSign, FileText, Upload, Building2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
-const facturaSchema = z.object({
-  proveedor: z.string().min(3, 'El proveedor debe tener al menos 3 caracteres'),
+const registroFacturaSchema = z.object({
   numeroFactura: z.string().min(1, 'El número de factura es requerido'),
-  valor: z.number().min(1, 'El valor debe ser mayor a 0'),
-  concepto: z.string().min(3, 'El concepto debe tener al menos 3 caracteres'),
-  fecha: z.string().min(1, 'La fecha es requerida'),
-  nit: z.string().optional(),
-  descripcion: z.string().optional(),
-  archivo: z.any().optional(),
+  proveedor: z.string().min(1, 'El proveedor es requerido'),
+  concepto: z.string().min(1, 'El concepto es requerido'),
+  monto: z.string().min(1, 'El monto es requerido'),
+  fechaFactura: z.date({
+    required_error: 'La fecha de factura es requerida',
+  }),
+  fechaVencimiento: z.date({
+    required_error: 'La fecha de vencimiento es requerida',
+  }),
+  estado: z.enum(['PENDIENTE', 'PAGADA', 'VENCIDA'], {
+    required_error: 'Seleccione un estado',
+  }),
+  categoria: z.string().optional(),
+  observaciones: z.string().optional(),
 });
 
-type FacturaFormData = z.infer<typeof facturaSchema>;
+type RegistroFacturaForm = z.infer<typeof registroFacturaSchema>;
 
 interface RegistroFacturaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  presupuestoId: number;
+  onSubmit: (data: RegistroFacturaForm) => void;
+  presupuestoId: number | null;
 }
 
-export function RegistroFacturaModal({ isOpen, onClose, presupuestoId }: RegistroFacturaModalProps) {
-  const form = useForm<FacturaFormData>({
-    resolver: zodResolver(facturaSchema),
+export const RegistroFacturaModal: React.FC<RegistroFacturaModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  presupuestoId,
+}) => {
+  const form = useForm<RegistroFacturaForm>({
+    resolver: zodResolver(registroFacturaSchema),
     defaultValues: {
-      proveedor: '',
       numeroFactura: '',
-      valor: 0,
+      proveedor: '',
       concepto: '',
-      fecha: new Date().toISOString().split('T')[0],
-      nit: '',
-      descripcion: '',
+      monto: '',
+      estado: 'PENDIENTE',
+      categoria: '',
+      observaciones: '',
     },
   });
 
-  const formatCurrency = (value: string) => {
-    const number = value.replace(/[^\d]/g, '');
-    if (!number) return '';
-    return new Intl.NumberFormat('es-CO').format(parseInt(number));
+  const handleSubmit = (data: RegistroFacturaForm) => {
+    onSubmit(data);
+    form.reset();
+    onClose();
   };
 
-  const handleSubmit = async (data: FacturaFormData) => {
-    try {
-      console.log('Registrando factura:', { ...data, presupuestoId });
-      // Aquí iría la llamada a la API
-      // await fetch(`/api/finanzas/presupuestos/${presupuestoId}/facturas`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data)
-      // });
-      
-      alert('Factura registrada exitosamente');
-      form.reset();
-      onClose();
-    } catch (error) {
-      console.error('Error al registrar factura:', error);
-      alert('Error al registrar la factura');
-    }
+  const formatCurrency = (value: string) => {
+    const numericValue = value.replace(/[^\d]/g, '');
+    if (!numericValue) return '';
+    
+    const number = parseInt(numericValue);
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+    }).format(number);
+  };
+
+  const handleMontoChange = (value: string) => {
+    const numericValue = value.replace(/[^\d]/g, '');
+    form.setValue('monto', numericValue);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[#02BDEA]" />
-            Registrar Nueva Factura
-          </DialogTitle>
+          <DialogTitle>Registrar Factura</DialogTitle>
+          <DialogDescription>
+            Registre una nueva factura para este presupuesto
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Proveedor */}
-              <FormField
-                control={form.control}
-                name="proveedor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Proveedor</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input 
-                          placeholder="Nombre del proveedor"
-                          className="pl-10"
-                          {...field} 
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* NIT */}
-              <FormField
-                control={form.control}
-                name="nit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>NIT (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="123456789-0"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Número de Factura */}
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="numeroFactura"
@@ -140,9 +128,9 @@ export function RegistroFacturaModal({ isOpen, onClose, presupuestoId }: Registr
                   <FormItem>
                     <FormLabel>Número de Factura</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="FC-2024-001"
-                        {...field} 
+                      <Input
+                        placeholder="F-001-00001"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -150,74 +138,17 @@ export function RegistroFacturaModal({ isOpen, onClose, presupuestoId }: Registr
                 )}
               />
 
-              {/* Fecha */}
               <FormField
                 control={form.control}
-                name="fecha"
+                name="proveedor"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Fecha de la Factura</FormLabel>
+                    <FormLabel>Proveedor</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Valor */}
-              <FormField
-                control={form.control}
-                name="valor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor (COP)</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          type="text"
-                          placeholder="0"
-                          className="pl-10"
-                          value={field.value ? formatCurrency(field.value.toString()) : ''}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/[^\d]/g, '');
-                            field.onChange(value ? parseInt(value) : 0);
-                          }}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Archivo PDF */}
-              <FormField
-                control={form.control}
-                name="archivo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Archivo de la Factura</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => field.onChange(e.target.files?.[0])}
-                          className="hidden"
-                          id="factura-upload"
-                        />
-                        <label
-                          htmlFor="factura-upload"
-                          className="flex-1 flex items-center justify-center gap-2 h-10 px-3 border border-input bg-background rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                        >
-                          <Upload className="h-4 w-4" />
-                          <span className="text-sm">
-                            {field.value?.name || 'Seleccionar PDF/imagen'}
-                          </span>
-                        </label>
-                      </div>
+                      <Input
+                        placeholder="Nombre del proveedor"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -225,7 +156,6 @@ export function RegistroFacturaModal({ isOpen, onClose, presupuestoId }: Registr
               />
             </div>
 
-            {/* Concepto */}
             <FormField
               control={form.control}
               name="concepto"
@@ -233,9 +163,9 @@ export function RegistroFacturaModal({ isOpen, onClose, presupuestoId }: Registr
                 <FormItem>
                   <FormLabel>Concepto</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Ej: Licencias de software, servicios de consultoría..."
-                      {...field} 
+                    <Input
+                      placeholder="Descripción de la factura"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -243,18 +173,161 @@ export function RegistroFacturaModal({ isOpen, onClose, presupuestoId }: Registr
               )}
             />
 
-            {/* Descripción */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="monto"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Monto</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="0"
+                        value={formatCurrency(field.value)}
+                        onChange={(e) => handleMontoChange(e.target.value)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="categoria"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoría</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Servicios, Suministros, etc."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="fechaFactura"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Fecha de Factura</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              'w-full pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, 'PPP', { locale: es })
+                            ) : (
+                              <span>Seleccionar fecha</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date('1900-01-01')
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="fechaVencimiento"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Fecha de Vencimiento</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              'w-full pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, 'PPP', { locale: es })
+                            ) : (
+                              <span>Seleccionar fecha</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < new Date('1900-01-01')}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="descripcion"
+              name="estado"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descripción Adicional (Opcional)</FormLabel>
+                  <FormLabel>Estado</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione estado" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="PENDIENTE">Pendiente</SelectItem>
+                      <SelectItem value="PAGADA">Pagada</SelectItem>
+                      <SelectItem value="VENCIDA">Vencida</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="observaciones"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Observaciones</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Detalles adicionales sobre la factura..."
-                      className="min-h-[100px]"
-                      {...field} 
+                    <Textarea
+                      placeholder="Observaciones adicionales..."
+                      className="resize-none"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -262,21 +335,17 @@ export function RegistroFacturaModal({ isOpen, onClose, presupuestoId }: Registr
               )}
             />
 
-            {/* Botones */}
-            <div className="flex justify-end gap-2 pt-4">
+            <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button 
-                type="submit" 
-                className="bg-[#02BDEA] hover:bg-[#02BDEA]/90"
-              >
+              <Button type="submit">
                 Registrar Factura
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
   );
-}
+};
