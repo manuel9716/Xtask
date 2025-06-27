@@ -1,0 +1,151 @@
+Prompt para Replit: Módulo completo de Facturación por Proyecto
+Actúa como un desarrollador experto en arquitectura hexagonal, UI escalable y manejo de operaciones financieras. Implementa un módulo de facturación que permita registrar, visualizar y controlar todas las facturas emitidas o recibidas por cada proyecto, desde la pestaña “Facturación”.
+
+🎯 Funcionalidades esperadas
+1. Selección de proyecto
+Muestra dropdown de proyectos con presupuesto activo
+
+Al seleccionar uno:
+
+Mostrar: nombre, presupuesto total, recursos asignados
+
+Listar facturas asociadas
+
+2. Listado de facturas
+Mostrar tarjetas por factura:
+
+Número (ej: #FAC-001)
+
+Cliente o proveedor
+
+Fecha
+
+Estado: Pendiente, Pagada, Rechazada, Vencida
+
+Valor total y subtotal
+
+Filtros:
+
+Por estado
+
+Por cliente
+
+Por fechas
+
+Barra de búsqueda inteligente
+
+3. Registro de nueva factura
+Botón “+ Nueva factura” → abrir modal FacturaForm.tsx
+
+Campos:
+
+Cliente o proveedor
+
+Concepto
+
+Valor subtotal
+
+IVA o retenciones
+
+Fecha emisión
+
+Fecha vencimiento
+
+Medio de pago
+
+Soporte adjunto (PDF)
+
+4. Edición / visualización de factura
+Modal detalle al hacer clic en tarjeta
+
+Botones: Editar, Cambiar estado, Ver soporte
+
+Historial de cambios
+
+📁 Estructura de carpetas sugerida
+css
+Copiar
+Editar
+src/
+  modules/
+    finanzas/
+      facturacion/
+        application/
+          useCases/
+            registrarFactura.ts
+            listarFacturasPorProyecto.ts
+            actualizarEstadoFactura.ts
+            calcularIndicadoresFacturacion.ts
+        domain/
+          entities/
+            Factura.ts
+        infrastructure/
+          api/
+            facturacionApi.ts
+        ui/
+          views/
+            FacturacionProyecto.tsx
+          components/
+            FacturaCard.tsx
+            FacturaForm.tsx
+            FiltroFacturas.tsx
+            IndicadoresFacturacion.tsx
+📄 Modelo sugerido: facturas_proyecto
+Campo	Tipo
+id	SERIAL
+proyecto_id	INTEGER
+numero_factura	TEXT
+tipo	ingreso / egreso
+cliente	TEXT
+concepto	TEXT
+valor_subtotal	DECIMAL
+valor_total	DECIMAL
+fecha_emision	DATE
+fecha_vencimiento	DATE
+estado	pendiente / pagada / rechazada / vencida
+medio_pago	TEXT
+soporte_url	TEXT (S3 o Supabase Storage)
+creado_por	INTEGER
+created_at	TIMESTAMP
+
+📊 Indicadores e innovaciones
+Agrega una sección de analítica (IndicadoresFacturacion.tsx) que muestre:
+
+% de facturas pagadas
+
+Días promedio de pago
+
+Facturas vencidas (con alerta)
+
+Total facturado vs ejecutado
+
+Proyección de ingresos en próximos 30 días
+
+📡 API esperada
+Método	Ruta
+GET	/api/facturacion/:proyectoId
+POST	/api/facturacion
+PATCH	/api/facturacion/:id/estado
+GET	/api/facturacion/:proyectoId/indicadores
+
+🧠 Funcionalidades propuestas adicionales
+Proyección de caja: muestra calendario de vencimientos futuros
+
+Exportar facturas: PDF o Excel por mes o por estado
+
+Notificaciones automáticas: alerta 5 días antes del vencimiento
+
+Sincronización con módulo de pagos: si ya se pagó, cambiar estado automáticamente
+
+Soporte con código QR para acceso rápido a factura escaneada
+
+✅ Resultado esperado
+Un módulo financiero sólido y visualmente coherente con el ecosistema XTask que permita a cualquier usuario:
+
+Tener control total sobre facturas emitidas
+
+Cumplir el ciclo completo de cobro y seguimiento
+
+Proyectar flujo financiero por proyecto
+
+Tener trazabilidad documental y estados actualizados

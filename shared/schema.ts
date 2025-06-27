@@ -29,6 +29,18 @@ export enum MetodoPago {
   OTRO = "OTRO"
 }
 
+export enum TipoFactura {
+  INGRESO = "INGRESO",
+  EGRESO = "EGRESO"
+}
+
+export enum EstadoFactura {
+  PENDIENTE = "PENDIENTE",
+  PAGADA = "PAGADA",
+  RECHAZADA = "RECHAZADA",
+  VENCIDA = "VENCIDA"
+}
+
 export enum ModalidadCapacitacion {
   PRESENCIAL = "PRESENCIAL",
   VIRTUAL = "VIRTUAL",
@@ -771,6 +783,37 @@ export type InsertUserKpi = z.infer<typeof insertUserKpiSchema>;
 
 export type BonificacionMensual = typeof bonificacionesMensuales.$inferSelect;
 export type InsertBonificacionMensual = z.infer<typeof insertBonificacionMensualSchema>;
+
+// Tabla de facturas por proyecto
+export const facturasProyecto = pgTable("facturas_proyecto", {
+  id: serial("id").primaryKey(),
+  proyectoId: integer("proyecto_id").references(() => projects.id).notNull(),
+  numeroFactura: text("numero_factura").notNull().unique(),
+  tipo: text("tipo").notNull().default(TipoFactura.INGRESO), // INGRESO o EGRESO
+  cliente: text("cliente").notNull(),
+  concepto: text("concepto").notNull(),
+  valorSubtotal: decimal("valor_subtotal", { precision: 15, scale: 2 }).notNull(),
+  valorTotal: decimal("valor_total", { precision: 15, scale: 2 }).notNull(),
+  fechaEmision: date("fecha_emision").notNull(),
+  fechaVencimiento: date("fecha_vencimiento").notNull(),
+  estado: text("estado").notNull().default(EstadoFactura.PENDIENTE),
+  medioPago: text("medio_pago"),
+  soporteUrl: text("soporte_url"),
+  creadoPor: integer("creado_por").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Esquema de inserción para facturas
+export const insertFacturaProyectoSchema = createInsertSchema(facturasProyecto).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+// Tipos para el módulo de facturación
+export type FacturaProyecto = typeof facturasProyecto.$inferSelect;
+export type InsertFacturaProyecto = z.infer<typeof insertFacturaProyectoSchema>;
 
 // Tipos para el módulo de Recursos Humanos - Evaluaciones y Capacitaciones
 export type Evaluacion = typeof evaluaciones.$inferSelect;
