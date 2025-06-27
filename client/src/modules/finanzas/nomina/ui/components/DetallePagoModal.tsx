@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,7 +24,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { NominaConDetalles, calculosNomina } from '../../domain/entities/Nomina';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   DollarSign, 
   Calendar, 
@@ -33,7 +35,11 @@ import {
   Clock,
   TrendingUp,
   AlertCircle,
-  CreditCard
+  CreditCard,
+  Landmark,
+  UserCheck,
+  Phone,
+  Mail
 } from 'lucide-react';
 
 const registrarPagoSchema = z.object({
@@ -53,6 +59,19 @@ interface DetallePagoModalProps {
   isLoading?: boolean;
 }
 
+interface EmpleadoVinculado {
+  id: number;
+  firstName: string;
+  lastName: string;
+  identification: string;
+  bankAccount: string;
+  paymentMethod: string;
+  phoneNumber: string;
+  email: string;
+  position: string;
+  department: string;
+}
+
 export function DetallePagoModal({ 
   isOpen, 
   onClose, 
@@ -60,6 +79,31 @@ export function DetallePagoModal({
   onConfirmar, 
   isLoading = false 
 }: DetallePagoModalProps) {
+  const [empleadoVinculado, setEmpleadoVinculado] = useState<EmpleadoVinculado | null>(null);
+  const [cargandoEmpleado, setCargandoEmpleado] = useState(false);
+
+  // Cargar datos del empleado vinculado si existe
+  useEffect(() => {
+    const cargarEmpleadoVinculado = async () => {
+      if (!nomina?.empleadoVinculado) return;
+      
+      setCargandoEmpleado(true);
+      try {
+        const response = await apiRequest('GET', `/api/employees/${nomina.empleadoVinculado}`);
+        const empleado = await response.json();
+        setEmpleadoVinculado(empleado);
+      } catch (error) {
+        console.error('Error al cargar empleado vinculado:', error);
+        setEmpleadoVinculado(null);
+      } finally {
+        setCargandoEmpleado(false);
+      }
+    };
+
+    if (isOpen) {
+      cargarEmpleadoVinculado();
+    }
+  }, [nomina?.empleadoVinculado, isOpen]);
   
   const form = useForm<RegistrarPagoForm>({
     resolver: zodResolver(registrarPagoSchema),
@@ -102,7 +146,7 @@ export function DetallePagoModal({
     const pagoData = {
       ...formData,
       metodoPago: 'pse',
-      estado: 'procesando' as const,
+      estado: 'pendiente' as const,
       referenciaPSE: `PSE-${Date.now()}`
     };
     

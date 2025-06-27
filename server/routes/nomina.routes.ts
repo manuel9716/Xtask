@@ -121,6 +121,7 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
           origen: recurso.origen,
           totalHoras: recurso.totalHoras,
           totalEstimado: recurso.totalEstimado,
+          empleadoVinculadoId: recurso.empleadoVinculadoId,
         },
         proyecto: proyectoData ? {
           id: proyectoData.id,
