@@ -8,7 +8,8 @@ import {
   products, Product, InsertProduct,
   purchaseOrders, PurchaseOrder, InsertPurchaseOrder,
   budgets, Budget, InsertBudget,
-  recursosFinancieros
+  recursosFinancieros,
+  facturasProyecto, FacturaProyecto, InsertFacturaProyecto
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -451,6 +452,8 @@ export class MemStorage implements IStorage {
 // Database storage implementation with Drizzle ORM
 export class DatabaseStorage implements IStorage {
   sessionStore: session.SessionStore;
+  db = db;
+  facturasProyecto = facturasProyecto;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 

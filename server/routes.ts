@@ -1335,10 +1335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ID de proyecto inválido" });
       }
 
-      let query = storage.db.select().from(storage.facturasProyecto).where(eq(storage.facturasProyecto.proyectoId, proyectoId));
-
-      // Aplicar filtros si existen
-      let facturas = await query;
+      const facturas = await db.select().from(facturasProyecto).where(eq(facturasProyecto.proyectoId, proyectoId));
 
       if (estado && estado !== 'todos') {
         facturas = facturas.filter(f => f.estado === estado);
