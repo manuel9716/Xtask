@@ -144,6 +144,7 @@ export const recursosFinancieros = pgTable("recursos_financieros", {
   origen: text("origen").notNull(), // INTERNO, EXTERNO
   totalHoras: integer("total_horas").notNull(),
   totalEstimado: decimal("total_estimado", { precision: 15, scale: 2 }).notNull(),
+  empleadoVinculadoId: integer("empleado_vinculado_id").references(() => employees.id),
   creadoPor: integer("creado_por").references(() => users.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

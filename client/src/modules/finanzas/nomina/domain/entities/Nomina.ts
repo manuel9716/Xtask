@@ -47,6 +47,7 @@ export interface NominaConDetalles extends Nomina {
     origen: string;
     totalHoras: number;
     totalEstimado: number;
+    empleadoVinculadoId?: number;
   };
   proyecto: {
     id: number;

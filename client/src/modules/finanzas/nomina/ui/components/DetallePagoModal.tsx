@@ -85,11 +85,11 @@ export function DetallePagoModal({
   // Cargar datos del empleado vinculado si existe
   useEffect(() => {
     const cargarEmpleadoVinculado = async () => {
-      if (!nomina?.empleadoVinculado) return;
+      if (!nomina?.recurso?.empleadoVinculadoId) return;
       
       setCargandoEmpleado(true);
       try {
-        const response = await apiRequest('GET', `/api/employees/${nomina.empleadoVinculado}`);
+        const response = await apiRequest('GET', `/api/employees/${nomina.recurso.empleadoVinculadoId}`);
         const empleado = await response.json();
         setEmpleadoVinculado(empleado);
       } catch (error) {
@@ -103,7 +103,7 @@ export function DetallePagoModal({
     if (isOpen) {
       cargarEmpleadoVinculado();
     }
-  }, [nomina?.empleadoVinculado, isOpen]);
+  }, [nomina?.recurso?.empleadoVinculadoId, isOpen]);
   
   const form = useForm<RegistrarPagoForm>({
     resolver: zodResolver(registrarPagoSchema),
@@ -233,6 +233,110 @@ export function DetallePagoModal({
               </div>
             </CardContent>
           </Card>
+
+          {/* Información del empleado vinculado */}
+          {nomina?.recurso?.empleadoVinculadoId && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-green-600" />
+                  Empleado Vinculado
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {cargandoEmpleado ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin w-6 h-6 border-2 border-[#02BDEA] border-t-transparent rounded-full mx-auto"></div>
+                    <p className="text-sm text-gray-500 mt-2">Cargando información del empleado...</p>
+                  </div>
+                ) : empleadoVinculado ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Nombre Completo</p>
+                        <p className="font-semibold">
+                          {empleadoVinculado.firstName} {empleadoVinculado.lastName}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Identificación</p>
+                        <p className="font-semibold">{empleadoVinculado.identification || 'No registrada'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Cargo</p>
+                        <p className="font-semibold">{empleadoVinculado.position}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Departamento</p>
+                        <p className="font-semibold">{empleadoVinculado.department}</p>
+                      </div>
+                    </div>
+
+                    {/* Información bancaria */}
+                    {(empleadoVinculado.bankAccount || empleadoVinculado.paymentMethod) && (
+                      <>
+                        <Separator />
+                        <div className="bg-green-50 p-3 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Landmark className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-green-800">Información Bancaria</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {empleadoVinculado.bankAccount && (
+                              <div>
+                                <p className="text-xs text-green-700">Número de Cuenta</p>
+                                <p className="font-semibold text-green-900">{empleadoVinculado.bankAccount}</p>
+                              </div>
+                            )}
+                            {empleadoVinculado.paymentMethod && (
+                              <div>
+                                <p className="text-xs text-green-700">Método de Pago</p>
+                                <p className="font-semibold text-green-900">{empleadoVinculado.paymentMethod}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Información de contacto */}
+                    {(empleadoVinculado.phoneNumber || empleadoVinculado.email) && (
+                      <>
+                        <Separator />
+                        <div className="grid grid-cols-2 gap-4">
+                          {empleadoVinculado.phoneNumber && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-gray-500" />
+                              <div>
+                                <p className="text-xs text-gray-500">Teléfono</p>
+                                <p className="text-sm font-medium">{empleadoVinculado.phoneNumber}</p>
+                              </div>
+                            </div>
+                          )}
+                          {empleadoVinculado.email && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-4 w-4 text-gray-500" />
+                              <div>
+                                <p className="text-xs text-gray-500">Email</p>
+                                <p className="text-sm font-medium">{empleadoVinculado.email}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      No se pudo cargar la información del empleado vinculado.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Formulario de pago */}
           <Form {...form}>
