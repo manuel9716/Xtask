@@ -8,7 +8,7 @@ import { Loader2, Plus, FileText, Download, Filter } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { FacturaCard } from '../components/FacturaCard';
 import { FiltroFacturas } from '../components/FiltroFacturas';
-import { IndicadoresFacturacion } from '../components/IndicadoresFacturacion';
+import { IndicadoresFacturacionComponent } from '../components/IndicadoresFacturacion';
 import { FacturaForm } from '../forms/FacturaForm';
 import { useListarFacturasPorProyecto } from '../../application/useCases/listarFacturasPorProyecto';
 import { useCalcularIndicadoresFacturacion } from '../../application/useCases/calcularIndicadoresFacturacion';
@@ -136,7 +136,7 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
 
       {/* Indicadores */}
       {indicadores && (
-        <IndicadoresFacturacion 
+        <IndicadoresFacturacionComponent 
           indicadores={indicadores} 
           isLoading={indicadoresLoading}
         />

@@ -1325,6 +1325,213 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.use('/api/nomina/v1', nominaV1Router);
 
+  // Rutas de facturación por proyecto
+  app.get("/api/facturacion/:proyectoId", async (req, res) => {
+    try {
+      const proyectoId = parseInt(req.params.proyectoId);
+      const { estado, cliente, fechaDesde, fechaHasta, busqueda } = req.query;
+
+      if (!proyectoId || isNaN(proyectoId)) {
+        return res.status(400).json({ message: "ID de proyecto inválido" });
+      }
+
+      let query = storage.db.select().from(storage.facturasProyecto).where(eq(storage.facturasProyecto.proyectoId, proyectoId));
+
+      // Aplicar filtros si existen
+      let facturas = await query;
+
+      if (estado && estado !== 'todos') {
+        facturas = facturas.filter(f => f.estado === estado);
+      }
+
+      if (cliente) {
+        facturas = facturas.filter(f => f.cliente.toLowerCase().includes(cliente.toString().toLowerCase()));
+      }
+
+      if (fechaDesde) {
+        facturas = facturas.filter(f => new Date(f.fechaEmision) >= new Date(fechaDesde.toString()));
+      }
+
+      if (fechaHasta) {
+        facturas = facturas.filter(f => new Date(f.fechaEmision) <= new Date(fechaHasta.toString()));
+      }
+
+      if (busqueda) {
+        const searchTerm = busqueda.toString().toLowerCase();
+        facturas = facturas.filter(f => 
+          f.numeroFactura.toLowerCase().includes(searchTerm) ||
+          f.cliente.toLowerCase().includes(searchTerm) ||
+          f.concepto.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      res.json(facturas);
+    } catch (error: any) {
+      console.error('Error al obtener facturas:', error);
+      res.status(500).json({ message: "Error al obtener facturas" });
+    }
+  });
+
+  app.get("/api/facturacion/:proyectoId/indicadores", async (req, res) => {
+    try {
+      const proyectoId = parseInt(req.params.proyectoId);
+
+      if (!proyectoId || isNaN(proyectoId)) {
+        return res.status(400).json({ message: "ID de proyecto inválido" });
+      }
+
+      const facturas = await storage.db.select().from(storage.facturasProyecto).where(eq(storage.facturasProyecto.proyectoId, proyectoId));
+
+      const totalFacturado = facturas.reduce((sum, f) => sum + parseFloat(f.valorTotal), 0);
+      const facturasPagadas = facturas.filter(f => f.estado === 'PAGADA');
+      const facturasVencidas = facturas.filter(f => {
+        const vencimiento = new Date(f.fechaVencimiento);
+        return vencimiento < new Date() && f.estado === 'PENDIENTE';
+      });
+
+      const totalPagado = facturasPagadas.reduce((sum, f) => sum + parseFloat(f.valorTotal), 0);
+      const totalPendiente = facturas.filter(f => f.estado === 'PENDIENTE').reduce((sum, f) => sum + parseFloat(f.valorTotal), 0);
+      const porcentajePagadas = facturas.length > 0 ? (facturasPagadas.length / facturas.length) * 100 : 0;
+
+      // Calcular días promedio de pago (simplificado)
+      const diasPromedioPago = 15; // Placeholder - implementar cálculo real
+
+      // Proyección de ingresos próximos 30 días
+      const fechaLimite = new Date();
+      fechaLimite.setDate(fechaLimite.getDate() + 30);
+      const proyeccionIngresos30Dias = facturas.filter(f => {
+        const vencimiento = new Date(f.fechaVencimiento);
+        return vencimiento <= fechaLimite && f.estado === 'PENDIENTE';
+      }).reduce((sum, f) => sum + parseFloat(f.valorTotal), 0);
+
+      // Distribución por estado
+      const distribucionPorEstado = {
+        PENDIENTE: facturas.filter(f => f.estado === 'PENDIENTE').length,
+        PAGADA: facturas.filter(f => f.estado === 'PAGADA').length,
+        RECHAZADA: facturas.filter(f => f.estado === 'RECHAZADA').length,
+        VENCIDA: facturasVencidas.length
+      };
+
+      const indicadores = {
+        totalFacturado,
+        totalPendiente,
+        totalPagado,
+        porcentajePagadas,
+        diasPromedioPago,
+        facturasVencidas: facturasVencidas.length,
+        proyeccionIngresos30Dias,
+        distribucionPorEstado
+      };
+
+      res.json(indicadores);
+    } catch (error: any) {
+      console.error('Error al calcular indicadores:', error);
+      res.status(500).json({ message: "Error al calcular indicadores" });
+    }
+  });
+
+  app.post("/api/facturacion", async (req, res) => {
+    try {
+      const facturaData = req.body;
+
+      // Validar datos requeridos
+      if (!facturaData.proyectoId || !facturaData.numeroFactura || !facturaData.cliente) {
+        return res.status(400).json({ message: "Datos de factura incompletos" });
+      }
+
+      // Verificar que el número de factura sea único
+      const facturaExistente = await storage.db.select().from(storage.facturasProyecto)
+        .where(eq(storage.facturasProyecto.numeroFactura, facturaData.numeroFactura));
+
+      if (facturaExistente.length > 0) {
+        return res.status(400).json({ message: "El número de factura ya existe" });
+      }
+
+      const [nuevaFactura] = await storage.db.insert(storage.facturasProyecto)
+        .values(facturaData)
+        .returning();
+
+      res.status(201).json(nuevaFactura);
+    } catch (error: any) {
+      console.error('Error al crear factura:', error);
+      res.status(500).json({ message: "Error al crear factura" });
+    }
+  });
+
+  app.patch("/api/facturacion/:id/estado", async (req, res) => {
+    try {
+      const facturaId = parseInt(req.params.id);
+      const { estado } = req.body;
+
+      if (!facturaId || isNaN(facturaId)) {
+        return res.status(400).json({ message: "ID de factura inválido" });
+      }
+
+      if (!estado) {
+        return res.status(400).json({ message: "Estado requerido" });
+      }
+
+      const [facturaActualizada] = await storage.db.update(storage.facturasProyecto)
+        .set({ estado, updatedAt: new Date() })
+        .where(eq(storage.facturasProyecto.id, facturaId))
+        .returning();
+
+      if (!facturaActualizada) {
+        return res.status(404).json({ message: "Factura no encontrada" });
+      }
+
+      res.json(facturaActualizada);
+    } catch (error: any) {
+      console.error('Error al actualizar estado de factura:', error);
+      res.status(500).json({ message: "Error al actualizar estado de factura" });
+    }
+  });
+
+  app.get("/api/facturacion/detalle/:id", async (req, res) => {
+    try {
+      const facturaId = parseInt(req.params.id);
+
+      if (!facturaId || isNaN(facturaId)) {
+        return res.status(400).json({ message: "ID de factura inválido" });
+      }
+
+      const [factura] = await storage.db.select().from(storage.facturasProyecto)
+        .where(eq(storage.facturasProyecto.id, facturaId));
+
+      if (!factura) {
+        return res.status(404).json({ message: "Factura no encontrada" });
+      }
+
+      res.json(factura);
+    } catch (error: any) {
+      console.error('Error al obtener detalle de factura:', error);
+      res.status(500).json({ message: "Error al obtener detalle de factura" });
+    }
+  });
+
+  app.delete("/api/facturacion/:id", async (req, res) => {
+    try {
+      const facturaId = parseInt(req.params.id);
+
+      if (!facturaId || isNaN(facturaId)) {
+        return res.status(400).json({ message: "ID de factura inválido" });
+      }
+
+      const [facturaEliminada] = await storage.db.delete(storage.facturasProyecto)
+        .where(eq(storage.facturasProyecto.id, facturaId))
+        .returning();
+
+      if (!facturaEliminada) {
+        return res.status(404).json({ message: "Factura no encontrada" });
+      }
+
+      res.json({ message: "Factura eliminada exitosamente" });
+    } catch (error: any) {
+      console.error('Error al eliminar factura:', error);
+      res.status(500).json({ message: "Error al eliminar factura" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

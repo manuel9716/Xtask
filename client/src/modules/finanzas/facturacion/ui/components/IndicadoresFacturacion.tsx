@@ -20,7 +20,7 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function IndicadoresFacturacion({ indicadores, isLoading }: IndicadoresFacturacionProps) {
+export function IndicadoresFacturacionComponent({ indicadores, isLoading }: IndicadoresFacturacionProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
