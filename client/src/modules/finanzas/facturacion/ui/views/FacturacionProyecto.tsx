@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Plus, FileText, Download, Filter, Mail } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { FacturaCard } from '../components/FacturaCard';
 import { FiltroFacturas } from '../components/FiltroFacturas';
 import { IndicadoresFacturacionComponent } from '../components/IndicadoresFacturacion';
@@ -13,10 +16,6 @@ import { FacturaForm } from '../forms/FacturaForm';
 import { useListarFacturasPorProyecto } from '../../application/useCases/listarFacturasPorProyecto';
 import { useCalcularIndicadoresFacturacion } from '../../application/useCases/calcularIndicadoresFacturacion';
 import { Factura, FiltrosFactura } from '../../domain/entities/Factura';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
 
 interface ProyectoData {
   id: number;
@@ -92,26 +91,22 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
   });
 
   // Obtener datos del proyecto
-  const { data: proyecto, isLoading: proyectoLoading } = useQuery<ProyectoData>({
+  const { data: proyecto, isLoading: proyectoLoading } = useQuery({
     queryKey: ['/api/projects', proyectoSeleccionado],
-    queryFn: async () => {
-      const response = await fetch(`/api/projects/${proyectoSeleccionado}`);
-      return response.json();
-    },
-    enabled: !!proyectoSeleccionado
+    enabled: !!proyectoSeleccionado,
   });
 
-  // Obtener facturas del proyecto
-  const { 
-    data: facturas = [], 
-    isLoading: facturasLoading, 
-    refetch: refetchFacturas 
-  } = useListarFacturasPorProyecto(proyectoSeleccionado || 0, filtros);
+  // Obtener facturas
+  const {
+    data: facturas = [],
+    isLoading: facturasLoading,
+    refetch: refetchFacturas,
+  } = useListarFacturasPorProyecto(proyectoSeleccionado || 0);
 
   // Obtener indicadores
-  const { 
-    data: indicadores, 
-    isLoading: indicadoresLoading 
+  const {
+    data: indicadores,
+    isLoading: indicadoresLoading,
   } = useCalcularIndicadoresFacturacion(proyectoSeleccionado || 0);
 
   // Obtener lista única de clientes para filtros
@@ -203,140 +198,136 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
       )}
 
       {/* Indicadores */}
-      {indicadores && (
-        <IndicadoresFacturacionComponent 
-          indicadores={indicadores} 
-          isLoading={indicadoresLoading}
-        />
+      {!indicadoresLoading && indicadores && (
+        <IndicadoresFacturacionComponent indicadores={indicadores} />
       )}
 
-      {/* Controles y filtros */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center space-x-2">
+      {/* Controles */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div className="flex flex-wrap gap-2">
+          <Dialog open={modalNuevaFactura} onOpenChange={setModalNuevaFactura}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Nueva Factura
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Nueva Factura</DialogTitle>
+              </DialogHeader>
+              <FacturaForm
+                proyectoId={proyectoSeleccionado}
+                onSuccess={handleNuevaFacturaSuccess}
+                onCancel={() => setModalNuevaFactura(false)}
+              />
+            </DialogContent>
+          </Dialog>
+
           <Button
             variant="outline"
-            size="sm"
             onClick={() => setMostrarFiltros(!mostrarFiltros)}
+            className="flex items-center gap-2"
           >
-            <Filter className="h-4 w-4 mr-2" />
+            <Filter className="h-4 w-4" />
             Filtros
           </Button>
-          
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
         </div>
-
-        <Dialog open={modalNuevaFactura} onOpenChange={setModalNuevaFactura}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Factura
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Registrar Nueva Factura</DialogTitle>
-            </DialogHeader>
-            <FacturaForm
-              proyectoId={proyectoSeleccionado}
-              userId={userId}
-              onSuccess={handleNuevaFacturaSuccess}
-              onCancel={() => setModalNuevaFactura(false)}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
 
-      {/* Filtros */}
+      {/* Panel de filtros */}
       {mostrarFiltros && (
-        <FiltroFacturas
-          filtros={filtros}
-          onFiltrosChange={setFiltros}
-          clientes={clientesUnicos}
-        />
+        <Card>
+          <CardContent className="pt-6">
+            <FiltroFacturas
+              filtros={filtros}
+              onFiltrosChange={setFiltros}
+              clientesDisponibles={clientesUnicos}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Lista de facturas */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Facturas del Proyecto
-          </h3>
-          <Badge variant="secondary">
-            {facturas.length} {facturas.length === 1 ? 'factura' : 'facturas'}
-          </Badge>
+      {facturasLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-
-        {facturasLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-gray-200 rounded"></div>
-                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                    <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : facturas.length === 0 ? (
-          <Card>
-            <CardContent className="py-12">
-              <div className="text-center">
-                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No hay facturas registradas
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  Comienza registrando la primera factura para este proyecto.
-                </p>
-                <Button onClick={() => setModalNuevaFactura(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Registrar Primera Factura
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {facturas.map((factura) => (
+      ) : facturas.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FileText className="h-16 w-16 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No hay facturas registradas
+            </h3>
+            <p className="text-gray-500 text-center max-w-md mb-4">
+              Comenzar creando la primera factura para este proyecto.
+            </p>
+            <Button onClick={() => setModalNuevaFactura(true)}>
+              Crear Primera Factura
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {facturas
+            .filter(factura => {
+              if (filtros.cliente && !factura.cliente.toLowerCase().includes(filtros.cliente.toLowerCase())) {
+                return false;
+              }
+              if (filtros.estado && factura.estado !== filtros.estado) {
+                return false;
+              }
+              if (filtros.fechaInicio && new Date(factura.fechaEmision) < new Date(filtros.fechaInicio)) {
+                return false;
+              }
+              if (filtros.fechaFin && new Date(factura.fechaEmision) > new Date(filtros.fechaFin)) {
+                return false;
+              }
+              return true;
+            })
+            .map((factura) => (
               <FacturaCard
                 key={factura.id}
                 factura={factura}
                 onEdit={handleEditarFactura}
                 onView={handleVerDetalle}
               />
-            ))}
-          </div>
-        )}
-      </div>
+            ))
+          }
+        </div>
+      )}
 
       {/* Modal de detalle de factura */}
       <Dialog open={modalDetalleFactura} onOpenChange={setModalDetalleFactura}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              Detalle de Factura {facturaSeleccionada?.numeroFactura}
+              Detalle de Factura
             </DialogTitle>
           </DialogHeader>
           {facturaSeleccionada && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Cliente</label>
-                  <p className="text-sm font-semibold">{facturaSeleccionada.cliente}</p>
+                  <label className="text-sm font-medium text-gray-500">Número de Factura</label>
+                  <p className="text-lg font-bold">{facturaSeleccionada.numeroFactura}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Estado</label>
-                  <Badge variant="secondary">{facturaSeleccionada.estado}</Badge>
+                  <Badge variant={
+                    facturaSeleccionada.estado === 'PAGADA' ? 'default' :
+                    facturaSeleccionada.estado === 'PENDIENTE' ? 'secondary' :
+                    'destructive'
+                  }>
+                    {facturaSeleccionada.estado}
+                  </Badge>
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-500">Cliente</label>
+                <p className="text-sm mt-1">{facturaSeleccionada.cliente}</p>
               </div>
               
               <div>
