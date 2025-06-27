@@ -160,6 +160,7 @@ export default function FinancesPage() {
               </DialogHeader>
               <PresupuestoForm
                 onSuccess={handleCreateSuccess}
+                onCancel={() => setOpenDialog(false)}
               />
             </DialogContent>
           </Dialog>
