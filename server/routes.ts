@@ -1581,6 +1581,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para descargar factura como PDF
+  app.get("/api/facturacion/:id/pdf", async (req, res) => {
+    try {
+      const facturaId = parseInt(req.params.id);
+
+      if (!facturaId || isNaN(facturaId)) {
+        return res.status(400).json({ message: "ID de factura inválido" });
+      }
+
+      // Obtener datos de la factura
+      const [factura] = await db.select()
+        .from(facturasProyecto)
+        .where(eq(facturasProyecto.id, facturaId))
+        .limit(1);
+
+      if (!factura) {
+        return res.status(404).json({ message: "Factura no encontrada" });
+      }
+
+      // Generar PDF
+      const pdfBuffer = await generateInvoicePDF(factura);
+
+      // Configurar headers para descarga
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Factura-${factura.numeroFactura}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      res.send(pdfBuffer);
+
+    } catch (error: any) {
+      console.error('Error al generar PDF de factura:', error);
+      res.status(500).json({ message: "Error al generar PDF de factura" });
+    }
+  });
+
   // Función para generar PDF de factura
   async function generateInvoicePDF(factura: any): Promise<Buffer> {
     return new Promise((resolve, reject) => {
@@ -1719,9 +1754,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error: any) {
       console.error('Error al enviar factura por email:', error);
+      
+      let errorMessage = "Error al enviar la factura por email";
+      
+      if (error.code === 401) {
+        errorMessage = "La clave API de SendGrid no es válida. Por favor, configura una clave válida en las variables de entorno.";
+      } else if (error.message?.includes('API key')) {
+        errorMessage = "Error de configuración del servicio de email. Verifica la clave API de SendGrid.";
+      }
+      
       res.status(500).json({ 
-        message: "Error al enviar la factura por email",
-        error: error.message 
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   });

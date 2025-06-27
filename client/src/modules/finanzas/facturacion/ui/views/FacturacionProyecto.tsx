@@ -364,8 +364,23 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
                 </div>
               )}
 
-              {/* Botón para enviar por email */}
-              <div className="flex justify-end pt-4 border-t">
+              {/* Botones de acción */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = `/api/facturacion/${facturaSeleccionada.id}/pdf`;
+                    link.download = `Factura-${facturaSeleccionada.numeroFactura}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Descargar PDF
+                </Button>
                 <Button 
                   onClick={handleEnviarEmail}
                   className="flex items-center gap-2"
