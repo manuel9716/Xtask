@@ -92,19 +92,19 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
 
     // Transformar recursos a formato de nómina
     const resultado = recursos.map(recurso => {
-      const horasTotales = (recurso.diasAlMes || 22) * (recurso.horasPorDia || 8) * ((recurso.dedicacionPorcentaje || 100) / 100);
+      const horasTotales = (Number(recurso.diasAlMes) || 22) * (Number(recurso.horasPorDia) || 8) * ((Number(recurso.dedicacionPorcentaje) || 100) / 100);
       
       return {
         id: recurso.id,
         proyectoId: projectId,
         recursoId: recurso.id,
         mes: mesActual,
-        salarioMensual: recurso.salarioMensual,
+        salarioMensual: Number(recurso.salarioMensual || 0),
         bonificacion: 0,
         horasTotales: Math.round(horasTotales),
-        dedicacion: recurso.dedicacionPorcentaje,
+        dedicacion: Number(recurso.dedicacionPorcentaje || 100),
         estado: 'pendiente',
-        totalPagar: recurso.salarioMensual,
+        totalPagar: Number(recurso.salarioMensual || 0),
         fechaPago: null,
         creadoPor: recurso.creadoPor,
         createdAt: recurso.createdAt,
@@ -149,11 +149,18 @@ nominaRouter.get('/:proyectoId/resumen', async (req: Request, res: Response) => 
   try {
     const { proyectoId } = req.params;
 
+    // Validar proyectoId
+    if (!proyectoId || isNaN(Number(proyectoId))) {
+      return res.status(400).json({ message: 'ID de proyecto inválido' });
+    }
+
+    const projectId = Number(proyectoId);
+
     // Obtener datos del proyecto
     const proyecto = await db
       .select()
       .from(budgets)
-      .where(eq(budgets.id, Number(proyectoId)))
+      .where(eq(budgets.id, projectId))
       .limit(1);
 
     if (proyecto.length === 0) {
