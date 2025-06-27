@@ -22,6 +22,7 @@ import { PresupuestoForm } from '@/modules/finanzas/presupuestos/ui/forms/Presup
 import { useListarPresupuestos } from '@/modules/finanzas/presupuestos/application/useListarPresupuestos';
 import { PresupuestoEstado } from '@/modules/finanzas/presupuestos/domain/entities/Presupuesto';
 import { EstadoBadge } from '@/modules/finanzas/presupuestos/ui/components/EstadoBadge';
+import { PanelFacturacion } from '@/modules/finanzas/facturacion/ui/views/PanelFacturacion';
 import { 
   DollarSign, 
   PieChart, 
@@ -165,60 +166,29 @@ export default function FinancesPage() {
           </Dialog>
         </div>
       </div>
-      
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => navigate('/finanzas/presupuestos')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md font-medium">Presupuestos</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="flex items-center justify-center">
-              <BarChart3 className="h-12 w-12 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => navigate('/finanzas/nomina')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md font-medium">Nómina</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="flex items-center justify-center">
-              <Users className="h-12 w-12 text-primary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="cursor-pointer hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md font-medium">Facturación</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="flex items-center justify-center">
-              <FileBarChart2 className="h-12 w-12 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="cursor-pointer hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md font-medium">Reportes</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-4">
-            <div className="flex items-center justify-center">
-              <PieChart className="h-12 w-12 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <Tabs defaultValue="presupuestos" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsTrigger value="presupuestos" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Presupuestos
+          </TabsTrigger>
+          <TabsTrigger value="nomina" className="flex items-center gap-2" onClick={() => navigate('/finanzas/nomina')}>
+            <Users className="h-4 w-4" />
+            Nómina
+          </TabsTrigger>
+          <TabsTrigger value="facturacion" className="flex items-center gap-2">
+            <FileBarChart2 className="h-4 w-4" />
+            Facturación
+          </TabsTrigger>
+          <TabsTrigger value="reportes" className="flex items-center gap-2">
+            <PieChart className="h-4 w-4" />
+            Reportes
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="presupuestos" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">Total Presupuestado</CardTitle>
@@ -610,6 +580,22 @@ export default function FinancesPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="facturacion" className="space-y-6">
+          <PanelFacturacion />
+        </TabsContent>
+
+        <TabsContent value="reportes" className="space-y-6">
+          <div className="text-center py-12">
+            <PieChart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Reportes Financieros
+            </h3>
+            <p className="text-gray-500">
+              Funcionalidad de reportes en desarrollo
+            </p>
           </div>
         </TabsContent>
       </Tabs>
