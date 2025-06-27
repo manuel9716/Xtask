@@ -1,0 +1,105 @@
+1. 🏠 Hero de bienvenida
+Mensaje claro: “Organiza, gestiona y potencia tu empresa con XTask”
+
+Subtítulo: “Una plataforma modular para proyectos, finanzas y talento”
+
+Botones:
+
+[Probar gratis]
+
+[Ver demo interactiva]
+
+[Ver funcionalidades]
+
+2. 🧰 Sección de funcionalidades principales
+Muestra por categoría:
+
+Gestión financiera: Presupuestos, Nómina, Facturación
+
+Proyectos: Planificación, tareas, seguimiento
+
+Proveedores: Inventario, compras, órdenes
+
+Administración: Roles, usuarios, configuración
+
+Cada módulo con ícono y descripción breve
+
+3. 🎯 Beneficios clave
+Aumenta la eficiencia de tu equipo
+
+Control total del presupuesto en tiempo real
+
+Automatización de tareas repetitivas
+
+Bonificaciones, KPIs y evaluaciones conectadas
+
+4. 🖼️ Capturas de pantalla o demo en video
+Slider de pantallas del sistema real
+
+Opción de ver un video corto (~1 minuto)
+
+5. 💬 Testimonios / Casos de uso
+Frases destacadas de usuarios actuales
+
+Empresas que ya usan XTask
+
+Aplicación a diferentes sectores (Gobierno, PYMEs, ONG, etc.)
+
+6. 📦 Planes y precios (iniciales o placeholder)
+Gratuito
+
+Profesional
+
+Empresarial
+
+Botón [Comparar planes]
+
+7. 📚 Recursos destacados
+Acceso a la documentación
+
+Tutoriales en video
+
+Chat de soporte / WhatsApp / Preguntas frecuentes
+
+8. 📥 Registro rápido / Contacto
+Formulario básico:
+
+Nombre
+
+Email
+
+Empresa (opcional)
+
+[Crear cuenta]
+
+O bien botón de registro con Google / Microsoft
+
+✅ Prompt para Replit
+Actúa como un equipo de diseño y desarrollo. Crea una landing page pública para XTask orientada a usuarios no registrados. Esta página debe ser moderna, responsiva y presentar las funcionalidades clave de la plataforma, sus beneficios, testimonios, capturas de pantalla y un formulario simple de registro.
+
+Componentes esperados:
+
+HeroSection.tsx
+
+FuncionesPrincipales.tsx
+
+BeneficiosGenerales.tsx
+
+TestimoniosClientes.tsx
+
+SliderCapturas.tsx
+
+PlanesYPrecios.tsx
+
+FormularioRegistro.tsx
+
+Footer.tsx (con redes, privacidad y enlaces)
+
+Diseño visual:
+
+Estilo moderno tipo SaaS
+
+Paleta de colores coherente con el sistema actual (violeta, blanco, acento azul)
+
+Uso de Tailwind o CSS moderno
+
