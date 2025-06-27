@@ -1287,31 +1287,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { nominas, nominaDetalles } = await import("@shared/schema");
       const { eq, and, sql, desc } = await import("drizzle-orm");
       
-      // Construir consulta SQL directa para evitar problemas de Drizzle ORM
-      let sqlQuery = `
-        SELECT * FROM nominas 
-        WHERE 1=1
-      `;
-      const params: any[] = [];
-      
-      // Aplicar filtros
-      if (filtros.estado) {
-        sqlQuery += ` AND estado = $${params.length + 1}`;
-        params.push(filtros.estado);
-      }
-      
-      if (filtros.mes && filtros.anio) {
-        const startDate = new Date(filtros.anio, filtros.mes - 1, 1);
-        const endDate = new Date(filtros.anio, filtros.mes, 0);
-        
-        sqlQuery += ` AND periodo_inicio >= $${params.length + 1} AND periodo_inicio <= $${params.length + 2}`;
-        params.push(startDate, endDate);
-      }
-      
-      sqlQuery += ` ORDER BY id DESC`;
-      
-      // Ejecutar consulta
-      const nominasDB = await db.execute(sql.raw(sqlQuery, ...params));
+      // Usar consulta simple de Drizzle ORM sin filtros complejos
+      const nominasDB = await db.select().from(nominas).orderBy(desc(nominas.id));
       
       console.log('Nóminas obtenidas de la BD:', nominasDB);
       
