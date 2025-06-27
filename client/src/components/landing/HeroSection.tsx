@@ -50,7 +50,7 @@ export function HeroSection() {
           <Button
             variant="outline"
             size="lg"
-            className="border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg font-semibold rounded-lg backdrop-blur-sm"
+            className="border-2 border-white text-white bg-white/10 hover:bg-white hover:text-[#251948] px-8 py-4 text-lg font-semibold rounded-lg backdrop-blur-sm transition-all duration-300"
             onClick={handleLogin}
           >
             <User className="mr-2 h-5 w-5" />
@@ -60,7 +60,7 @@ export function HeroSection() {
           <Button
             variant="outline"
             size="lg"
-            className="border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg font-semibold rounded-lg backdrop-blur-sm"
+            className="border-2 border-white text-white bg-white/10 hover:bg-white hover:text-[#251948] px-8 py-4 text-lg font-semibold rounded-lg backdrop-blur-sm transition-all duration-300"
             onClick={() => scrollToSection('demo')}
           >
             <Play className="mr-2 h-5 w-5" />
