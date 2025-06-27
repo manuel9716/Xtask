@@ -8,7 +8,7 @@ export function useRegistrarFactura() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (factura: InsertFacturaProyecto) => 
+    mutationFn: (factura: InsertFacturaProyecto | FormData) => 
       FacturacionApi.registrarFactura(factura),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/facturacion'] });

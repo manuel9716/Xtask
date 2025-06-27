@@ -50,6 +50,9 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Servir archivos estáticos desde uploads
+  app.use('/uploads', express.static('uploads'));
+
   // Health check endpoint para Kubernetes
   app.get('/api/health', (req, res) => {
     res.status(200).json({ 
@@ -1462,7 +1465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/facturacion", async (req, res) => {
+  app.post("/api/facturacion", upload.single('soporte'), async (req, res) => {
     try {
       const facturaData = req.body;
 
@@ -1477,6 +1480,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (facturaExistente.length > 0) {
         return res.status(400).json({ message: "El número de factura ya existe" });
+      }
+
+      // Agregar URL del archivo si se subió
+      if (req.file) {
+        facturaData.soporteUrl = `/uploads/facturas/${req.file.filename}`;
       }
 
       const [nuevaFactura] = await db.insert(facturasProyecto)

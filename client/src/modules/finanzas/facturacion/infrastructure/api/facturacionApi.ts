@@ -21,8 +21,23 @@ export class FacturacionApi {
     return response.json();
   }
 
-  static async registrarFactura(factura: InsertFacturaProyecto): Promise<Factura> {
-    const response = await apiRequest('POST', '/api/facturacion', factura);
+  static async registrarFactura(factura: InsertFacturaProyecto | FormData): Promise<Factura> {
+    let response;
+    
+    if (factura instanceof FormData) {
+      // Para FormData, usar fetch directamente para manejar archivos
+      response = await fetch('/api/facturacion', {
+        method: 'POST',
+        body: factura,
+      });
+    } else {
+      response = await apiRequest('POST', '/api/facturacion', factura);
+    }
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    
     return response.json();
   }
 
