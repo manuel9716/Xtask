@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Header } from '@/components/landing/Header';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { FuncionesPrincipales } from '@/components/landing/FuncionesPrincipales';
 import { BeneficiosGenerales } from '@/components/landing/BeneficiosGenerales';
@@ -12,9 +11,6 @@ import { Footer } from '@/components/landing/Footer';
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Header Navigation */}
-      <Header />
-      
       {/* Hero Section */}
       <HeroSection />
       
