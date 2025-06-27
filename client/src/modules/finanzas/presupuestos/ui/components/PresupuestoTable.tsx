@@ -14,11 +14,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, FileText, Edit, Eye, AlertTriangle } from 'lucide-react';
+import { MoreHorizontal, FileText, Edit, Eye, AlertTriangle, Settings } from 'lucide-react';
 import { Presupuesto, EstadoPresupuesto } from '../../domain/entities/Presupuesto';
 import { EstadoBadge } from './EstadoBadge';
 import { Progress } from '@/components/ui/progress';
 import { useTranslation } from 'react-i18next';
+import { ControlPresupuestoPanel } from './ControlPresupuestoPanel';
 
 interface PresupuestoTableProps {
   presupuestos: Presupuesto[];
@@ -40,6 +41,8 @@ export const PresupuestoTable: React.FC<PresupuestoTableProps> = ({
 }) => {
   const { t } = useTranslation();
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [controlPanelOpen, setControlPanelOpen] = useState(false);
+  const [selectedPresupuesto, setSelectedPresupuesto] = useState<Presupuesto | null>(null);
 
   // Ayudantes para formatear valores
   const formatMoney = (amount: number) => {
@@ -59,6 +62,16 @@ export const PresupuestoTable: React.FC<PresupuestoTableProps> = ({
     if (percent < 80) return 'bg-green-500';
     if (percent < 95) return 'bg-yellow-500';
     return 'bg-red-500';
+  };
+
+  const handleOpenControlPanel = (presupuesto: Presupuesto) => {
+    setSelectedPresupuesto(presupuesto);
+    setControlPanelOpen(true);
+  };
+
+  const handleCloseControlPanel = () => {
+    setControlPanelOpen(false);
+    setSelectedPresupuesto(null);
   };
 
   return (
@@ -122,32 +135,46 @@ export const PresupuestoTable: React.FC<PresupuestoTableProps> = ({
                   <EstadoBadge estado={presupuesto.estado} />
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">{t('common.openMenu')}</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onView?.(presupuesto)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        {t('finances.budgets.actions.viewDetails')}
-                      </DropdownMenuItem>
-                      
-                      {presupuesto.estado === EstadoPresupuesto.ACTIVO && (
-                        <DropdownMenuItem onClick={() => onEdit?.(presupuesto)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          {t('finances.budgets.actions.edit')}
+                  <div className="flex items-center gap-2 justify-end">
+                    {/* Botón principal de control */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenControlPanel(presupuesto)}
+                      className="h-8 w-8 p-0"
+                      title="Control de Presupuesto"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                    
+                    {/* Menú de acciones adicionales */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">{t('common.openMenu')}</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onView?.(presupuesto)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('finances.budgets.actions.viewDetails')}
                         </DropdownMenuItem>
-                      )}
-                      
-                      <DropdownMenuItem onClick={() => onExport?.(presupuesto)}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        {t('finances.budgets.actions.export')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        
+                        {presupuesto.estado === EstadoPresupuesto.ACTIVO && (
+                          <DropdownMenuItem onClick={() => onEdit?.(presupuesto)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            {t('finances.budgets.actions.edit')}
+                          </DropdownMenuItem>
+                        )}
+                        
+                        <DropdownMenuItem onClick={() => onExport?.(presupuesto)}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          {t('finances.budgets.actions.export')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
@@ -160,6 +187,14 @@ export const PresupuestoTable: React.FC<PresupuestoTableProps> = ({
         <AlertTriangle className="h-4 w-4" />
         {t('finances.budgets.activeBudgetsListInfo')}
       </div>
+
+      {/* Panel de Control del Presupuesto */}
+      <ControlPresupuestoPanel
+        isOpen={controlPanelOpen}
+        onClose={handleCloseControlPanel}
+        presupuestoId={selectedPresupuesto?.id || null}
+        presupuestoNombre={selectedPresupuesto?.nombre}
+      />
     </div>
   );
 };

@@ -1,0 +1,128 @@
+Prompt para Replit: Panel de Acciones de Control de Presupuesto por Proyecto
+Actúa como un desarrollador especializado en arquitectura hexagonal y experiencia de usuario moderna. Dentro del módulo de Finanzas, al hacer clic en el ícono de acciones 📄 de cualquier fila en la tabla de presupuestos, se debe abrir una ventana lateral o modal expandible con un panel completo de control de ese presupuesto.
+
+🧱 Estructura esperada
+css
+Copiar
+Editar
+src/
+  modules/
+    finanzas/
+      presupuestos/
+        ui/
+          components/
+            ControlPresupuestoPanel.tsx
+            TabsControlPresupuesto.tsx
+            RegistroPagoModal.tsx
+            RegistroFacturaModal.tsx
+            RegistroActivoModal.tsx
+            RegistroObservaciones.tsx
+🎯 Funcionalidades que debe permitir este panel
+1. 📌 Resumen general
+Nombre del proyecto
+
+Monto presupuestado
+
+% ejecución
+
+Total gastado
+
+Fecha inicio y fin
+
+2. 💳 Registro de pagos
+Registrar pagos realizados
+
+Monto, concepto, fecha y área
+
+Comprobantes adjuntos
+
+Botón: “+ Registrar nuevo pago”
+
+Lista de pagos registrados
+
+3. 📄 Facturación
+Registrar facturas asociadas al presupuesto
+
+Datos: proveedor, número de factura, valor, concepto, fecha
+
+Subida de PDF/imagen del soporte
+
+Tabla de facturas asociadas al presupuesto
+
+4. 💼 Control de activos
+Registro de activos adquiridos con ese presupuesto
+
+Datos: descripción, valor, responsable, ubicación, estado
+
+Estado: Operativo, Dañado, En préstamo, etc.
+
+Tabla con filtros por estado y valor
+
+5. 📝 Observaciones y documentación
+Bitácora editable de observaciones
+
+Campo multiformato para seguimiento interno
+
+Historial de cambios
+
+Adjuntos disponibles por sección
+
+6. 📊 Reportes
+Generar PDF o Excel del estado de ejecución
+
+Consolidado por tipo: Pagos, Facturas, Activos, General
+
+📄 Modelo de datos sugerido por sección
+Tabla: pagos_presupuesto
+presupuesto_id, fecha, monto, concepto, soporte, usuario_id
+
+Tabla: facturas_presupuesto
+presupuesto_id, proveedor, valor, numero_factura, archivo_pdf, fecha
+
+Tabla: activos_presupuesto
+presupuesto_id, descripcion, valor, responsable, estado, ubicacion
+
+Tabla: observaciones_presupuesto
+presupuesto_id, observacion, fecha, usuario_id, tipo
+
+🖥️ Interfaz visual (UX/UI)
+Al hacer clic en el ícono de acciones 📄:
+
+Abrir ControlPresupuestoPanel.tsx
+
+Navegación por tabs:
+
+Resumen
+
+Pagos
+
+Facturación
+
+Activos
+
+Observaciones
+
+Reportes
+
+Permitir scroll interno sin recargar toda la página
+
+📡 Endpoints sugeridos
+Método	Ruta
+GET	/api/finanzas/presupuestos/:id/detalle
+POST	/api/finanzas/presupuestos/:id/pagos
+POST	/api/finanzas/presupuestos/:id/facturas
+POST	/api/finanzas/presupuestos/:id/activos
+GET	/api/finanzas/presupuestos/:id/reportes
+
+✅ Resultado esperado
+Un centro de control completo y unificado para la ejecución financiera de cada presupuesto, accesible desde un clic, que incluya:
+
+Registro
+
+Seguimiento
+
+Soportes documentales
+
+Exportación
+
+Y que esté alineado visualmente al ecosistema XTask, sin salirse del flujo modular actual.
