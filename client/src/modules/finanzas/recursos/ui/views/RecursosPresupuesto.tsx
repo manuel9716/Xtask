@@ -100,7 +100,7 @@ export function RecursosPresupuesto({
     if (recursoALigar) {
       try {
         // Obtener información del empleado seleccionado
-        const response = await fetch('/api/nomina/empleados/listar?contractStatus=active');
+        const response = await fetch('/api/employees');
         const empleados = await response.json();
         const empleadoSeleccionado = empleados.find((emp: any) => emp.id === empleadoId);
         

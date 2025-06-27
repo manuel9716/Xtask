@@ -28,7 +28,7 @@ interface Empleado {
   phone?: string;
   position: string;
   department: string;
-  contractStatus: string;
+  status: string;
 }
 
 interface ModalLigarEmpleadoProps {
@@ -50,9 +50,9 @@ export function ModalLigarEmpleado({
 
   // Obtener lista de empleados activos
   const { data: empleados, isLoading: cargandoEmpleados } = useQuery({
-    queryKey: ['empleados', 'activos'],
+    queryKey: ['empleados', 'todos'],
     queryFn: async () => {
-      const response = await fetch('/api/nomina/empleados/listar?contractStatus=active');
+      const response = await fetch('/api/employees');
       if (!response.ok) {
         throw new Error('Error al obtener empleados');
       }
@@ -133,7 +133,7 @@ export function ModalLigarEmpleado({
                         {empleadoInfo.firstName} {empleadoInfo.lastName}
                       </h4>
                       <Badge className="bg-[#02BDEA] text-white">
-                        {empleadoInfo.contractStatus === 'active' ? 'Activo' : 'Inactivo'}
+                        {empleadoInfo.status === 'active' ? 'Activo' : 'Inactivo'}
                       </Badge>
                     </div>
                     
