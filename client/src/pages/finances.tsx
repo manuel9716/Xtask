@@ -22,7 +22,6 @@ import { PresupuestoForm } from '@/modules/finanzas/presupuestos/ui/forms/Presup
 import { useListarPresupuestos } from '@/modules/finanzas/presupuestos/application/useListarPresupuestos';
 import { PresupuestoEstado } from '@/modules/finanzas/presupuestos/domain/entities/Presupuesto';
 import { EstadoBadge } from '@/modules/finanzas/presupuestos/ui/components/EstadoBadge';
-import { PresupuestoTable } from '@/modules/finanzas/presupuestos/ui/components/PresupuestoTable';
 import { 
   DollarSign, 
   PieChart, 
@@ -159,8 +158,8 @@ export default function FinancesPage() {
                 </DialogDescription>
               </DialogHeader>
               <PresupuestoForm
+                areas={areas}
                 onSuccess={handleCreateSuccess}
-                onCancel={() => setOpenDialog(false)}
               />
             </DialogContent>
           </Dialog>
@@ -331,31 +330,287 @@ export default function FinancesPage() {
         </div>
 
         <TabsContent value="todos" className="mt-0">
-          <PresupuestoTable
-            presupuestos={presupuestosFiltrados}
-            isLoading={isLoading}
-          />
+          <div className="bg-white p-6 rounded-md shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-3 px-4 font-semibold text-gray-700">Nombre</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Monto</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">% Ejecución</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Monto Ejecución</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">% Garantía</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Monto Garantía</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Reservas</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {presupuestosFiltrados.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-4 text-center text-gray-500">
+                        No se encontraron presupuestos
+                      </td>
+                    </tr>
+                  ) : (
+                    presupuestosFiltrados.map((presupuesto) => {
+                      // Función auxiliar para formatear valores seguros
+                      const formatSafeNumber = (value: any) => {
+                        const num = typeof value === 'string' ? parseFloat(value) : value;
+                        return !isNaN(num) && num !== null && num !== undefined ? num : 0;
+                      };
+                      
+                      return (
+                        <tr key={presupuesto.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <div className="font-medium">{presupuesto.nombre}</div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(presupuesto.fechaInicio).toLocaleDateString()} - {new Date(presupuesto.fechaFin).toLocaleDateString()}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {formatCurrency(formatSafeNumber(presupuesto.monto))}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium">
+                              {(presupuesto as any).porcentajeEjecucionMeta !== undefined ? `${formatSafeNumber((presupuesto as any).porcentajeEjecucionMeta).toFixed(1)}%` : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {(presupuesto as any).montoEjecucion ? 
+                              formatCurrency(formatSafeNumber((presupuesto as any).montoEjecucion)) : 
+                              'N/A'
+                            }
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium">
+                              {(presupuesto as any).porcentajeGarantia !== undefined ? `${formatSafeNumber((presupuesto as any).porcentajeGarantia).toFixed(1)}%` : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {(presupuesto as any).montoGarantia ? 
+                              formatCurrency(formatSafeNumber((presupuesto as any).montoGarantia)) : 
+                              'N/A'
+                            }
+                          </td>
+                          <td className="py-3 px-4 font-medium">
+                            {(presupuesto as any).reservasFinancieras ? 
+                              formatCurrency(formatSafeNumber((presupuesto as any).reservasFinancieras)) : 
+                              'N/A'
+                            }
+                          </td>
+                          <td className="py-3 px-4">
+                            <EstadoBadge estado={presupuesto.estado} />
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="activos" className="mt-0">
-          <PresupuestoTable
-            presupuestos={presupuestosFiltrados.filter(p => p.estado === 'ACTIVO')}
-            isLoading={isLoading}
-          />
+          <div className="bg-white p-6 rounded-md shadow-sm">
+            {/* Contenido similar pero filtrado para ACTIVOS */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                {/* Contenido similar */}
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-3 px-4 font-semibold text-gray-700">Nombre</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Monto</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Gastado</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Ejecución</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Estado</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Área</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {presupuestosFiltrados
+                    .filter(p => p.estado === 'ACTIVO')
+                    .map((presupuesto) => (
+                      <tr key={presupuesto.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <div className="font-medium">{presupuesto.nombre}</div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(presupuesto.fechaInicio).toLocaleDateString()} - {new Date(presupuesto.fechaFin).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 font-medium">
+                          {formatCurrency(presupuesto.monto)}
+                        </td>
+                        <td className="py-3 px-4">
+                          {formatCurrency(presupuesto.gastado)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <Progress 
+                              value={presupuesto.porcentajeEjecucion} 
+                              className="h-2 w-24"
+                              aria-label={`${presupuesto.porcentajeEjecucion.toFixed(1)}% completado`}
+                            />
+                            <span className="text-xs font-medium">{presupuesto.porcentajeEjecucion.toFixed(1)}%</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <EstadoBadge estado={presupuesto.estado} />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant="outline" className="font-normal">
+                            {presupuesto.area}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm">
+                              <FileBarChart2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="alerta" className="mt-0">
-          <PresupuestoTable
-            presupuestos={presupuestosFiltrados.filter(p => p.estado === 'ALERTA')}
-            isLoading={isLoading}
-          />
+          <div className="bg-white p-6 rounded-md shadow-sm">
+            {/* Contenido similar pero filtrado para ALERTA */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                {/* Contenido similar */}
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-3 px-4 font-semibold text-gray-700">Nombre</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Monto</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Gastado</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Ejecución</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Estado</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Área</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {presupuestosFiltrados
+                    .filter(p => p.estado === 'ALERTA')
+                    .map((presupuesto) => (
+                      <tr key={presupuesto.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <div className="font-medium">{presupuesto.nombre}</div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(presupuesto.fechaInicio).toLocaleDateString()} - {new Date(presupuesto.fechaFin).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 font-medium">
+                          {formatCurrency(presupuesto.monto)}
+                        </td>
+                        <td className="py-3 px-4">
+                          {formatCurrency(presupuesto.gastado)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <Progress 
+                              value={presupuesto.porcentajeEjecucion} 
+                              className="h-2 w-24"
+                              aria-label={`${presupuesto.porcentajeEjecucion.toFixed(1)}% completado`}
+                            />
+                            <span className="text-xs font-medium">{presupuesto.porcentajeEjecucion.toFixed(1)}%</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <EstadoBadge estado={presupuesto.estado} />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant="outline" className="font-normal">
+                            {presupuesto.area}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm">
+                              <FileBarChart2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="completados" className="mt-0">
-          <PresupuestoTable
-            presupuestos={presupuestosFiltrados.filter(p => p.estado === 'COMPLETADO')}
-            isLoading={isLoading}
-          />
+          <div className="bg-white p-6 rounded-md shadow-sm">
+            {/* Contenido similar pero filtrado para COMPLETADO */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                {/* Contenido similar */}
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-3 px-4 font-semibold text-gray-700">Nombre</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Monto</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Gastado</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Ejecución</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Estado</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Área</th>
+                    <th className="py-3 px-4 font-semibold text-gray-700">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {presupuestosFiltrados
+                    .filter(p => p.estado === 'COMPLETADO')
+                    .map((presupuesto) => (
+                      <tr key={presupuesto.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <div className="font-medium">{presupuesto.nombre}</div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(presupuesto.fechaInicio).toLocaleDateString()} - {new Date(presupuesto.fechaFin).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 font-medium">
+                          {formatCurrency(presupuesto.monto)}
+                        </td>
+                        <td className="py-3 px-4">
+                          {formatCurrency(presupuesto.gastado)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <Progress 
+                              value={presupuesto.porcentajeEjecucion} 
+                              className="h-2 w-24"
+                              aria-label={`${presupuesto.porcentajeEjecucion.toFixed(1)}% completado`}
+                            />
+                            <span className="text-xs font-medium">{presupuesto.porcentajeEjecucion.toFixed(1)}%</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <EstadoBadge estado={presupuesto.estado} />
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant="outline" className="font-normal">
+                            {presupuesto.area}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm">
+                              <FileBarChart2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
