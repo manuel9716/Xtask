@@ -7,21 +7,17 @@ const nominaRouter = Router();
 
 /**
  * GET /api/nomina/proyectos
- * Obtiene proyectos que tienen recursos asignados
+ * Obtiene todos los proyectos con información de recursos
  */
 nominaRouter.get('/proyectos', async (req: Request, res: Response) => {
   try {
-    // Usar query directa para evitar problemas de Drizzle
+    // Obtener todos los proyectos
     const result = await db.execute(sql`
-      SELECT DISTINCT
+      SELECT 
         b.id,
         b.name as nombre,
         b.amount as monto
       FROM budgets b 
-      WHERE EXISTS (
-        SELECT 1 FROM recursos_financieros rf 
-        WHERE rf.presupuesto_id = b.id
-      )
       ORDER BY b.name
     `);
 
@@ -64,6 +60,12 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
     const { proyectoId } = req.params;
     const { mes, estado, perfil } = req.query;
 
+    // Validar proyectoId
+    if (!proyectoId || isNaN(Number(proyectoId))) {
+      return res.status(400).json({ message: 'ID de proyecto inválido' });
+    }
+
+    const projectId = Number(proyectoId);
     const mesActual = (mes as string) || new Date().toISOString().slice(0, 7);
 
     // Obtener recursos del proyecto
@@ -71,7 +73,7 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
       .select()
       .from(recursosFinancieros);
 
-    let recursos = allRecursos.filter(r => r.presupuestoId === Number(proyectoId));
+    let recursos = allRecursos.filter(r => r.presupuestoId === projectId);
     
     if (perfil) {
       recursos = recursos.filter(r => r.perfil === perfil);
@@ -83,7 +85,7 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
     const proyecto = await db
       .select()
       .from(budgets)
-      .where(eq(budgets.id, Number(proyectoId)))
+      .where(eq(budgets.id, projectId))
       .limit(1);
 
     const proyectoData = proyecto[0];
@@ -94,7 +96,7 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
       
       return {
         id: recurso.id,
-        proyectoId: Number(proyectoId),
+        proyectoId: projectId,
         recursoId: recurso.id,
         mes: mesActual,
         salarioMensual: recurso.salarioMensual,
@@ -162,7 +164,7 @@ nominaRouter.get('/:proyectoId/resumen', async (req: Request, res: Response) => 
     const recursos = await db
       .select()
       .from(recursosFinancieros)
-      .where(eq(recursosFinancieros.presupuestoId, Number(proyectoId)));
+      .where(eq(recursosFinancieros.presupuestoId, projectId));
 
     if (recursos.length === 0) {
       return res.status(404).json({ message: 'Proyecto sin recursos asignados' });
@@ -173,7 +175,7 @@ nominaRouter.get('/:proyectoId/resumen', async (req: Request, res: Response) => 
     const costoMensualTotal = recursos.reduce((total, recurso) => total + Number(recurso.salarioMensual || 0), 0);
 
     const resumen = {
-      proyectoId: Number(proyectoId),
+      proyectoId: projectId,
       nombreProyecto: proyecto[0].name,
       totalRecursos: totalRecursos,
       totalPendiente: costoMensualTotal, // Simulado - todos pendientes

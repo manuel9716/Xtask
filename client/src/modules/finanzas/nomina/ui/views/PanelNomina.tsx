@@ -182,7 +182,7 @@ export function PanelNomina() {
             Seleccionar Proyecto
           </CardTitle>
           <CardDescription>
-            Elige un proyecto para gestionar la nómina de sus recursos asignados
+            Elige cualquier proyecto para gestionar la nómina de sus recursos
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -199,21 +199,21 @@ export function PanelNomina() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                No se encontraron proyectos con recursos asignados. Asegúrate de tener presupuestos creados con recursos en el módulo Finanzas.
+                No se encontraron proyectos. Asegúrate de tener presupuestos creados en el módulo Finanzas.
               </AlertDescription>
             </Alert>
           ) : (
             <Select onValueChange={handleSeleccionarProyecto}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona un proyecto con recursos..." />
+                <SelectValue placeholder="Selecciona un proyecto..." />
               </SelectTrigger>
               <SelectContent>
                 {proyectos.map((proyecto) => (
                   <SelectItem key={proyecto.id} value={proyecto.id.toString()}>
                     <div className="flex items-center justify-between w-full">
                       <span>{proyecto.nombre}</span>
-                      <Badge variant="outline" className="ml-2">
-                        {proyecto.totalRecursos} recursos
+                      <Badge variant={proyecto.totalRecursos > 0 ? "default" : "secondary"} className="ml-2">
+                        {proyecto.totalRecursos} {proyecto.totalRecursos === 1 ? 'recurso' : 'recursos'}
                       </Badge>
                     </div>
                   </SelectItem>
@@ -323,10 +323,14 @@ export function PanelNomina() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                No se encontraron recursos para este proyecto con los filtros aplicados.
-                {!filtros.mes && !filtros.estado && !filtros.perfil && 
-                  " Asegúrate de que el proyecto tenga recursos registrados en el módulo Recursos."
-                }
+                {proyectoActual?.totalRecursos === 0 ? (
+                  <>Este proyecto no tiene recursos asignados. Puedes agregar recursos en el módulo Finanzas → Recursos.</>
+                ) : (
+                  <>No se encontraron recursos para este proyecto con los filtros aplicados.
+                  {!filtros.mes && !filtros.estado && !filtros.perfil && 
+                    " Asegúrate de que el proyecto tenga recursos registrados en el módulo Recursos."
+                  }</>
+                )}
               </AlertDescription>
             </Alert>
           )}
