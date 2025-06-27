@@ -1,5 +1,5 @@
 import { apiRequest } from '@/lib/queryClient';
-import { Factura, IndicadoresFacturacion, FiltrosFactura } from '../domain/entities/Factura';
+import { Factura, IndicadoresFacturacion, FiltrosFactura } from '../../domain/entities/Factura';
 import { InsertFacturaProyecto } from '@shared/schema';
 
 export class FacturacionApi {

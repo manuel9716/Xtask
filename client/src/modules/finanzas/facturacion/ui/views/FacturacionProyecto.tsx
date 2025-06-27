@@ -96,6 +96,9 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
     enabled: !!proyectoSeleccionado,
   });
 
+  // Propiedades por defecto para evitar errores
+  const proyectoData = proyecto || { name: '', description: '', budget: '0' };
+
   // Obtener facturas
   const {
     data: facturas = [],
@@ -173,20 +176,20 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
   return (
     <div className="space-y-6">
       {/* Header del proyecto */}
-      {proyecto && (
+      {proyectoData && (
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle className="text-xl font-bold text-gray-900">
-                  {proyecto.name}
+                  {proyectoData.name}
                 </CardTitle>
-                <p className="text-gray-600 mt-1">{proyecto.description}</p>
+                <p className="text-gray-600 mt-1">{proyectoData.description}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-500">Presupuesto Total</p>
                 <p className="text-2xl font-bold text-primary">
-                  {formatCurrency(proyecto.budget)}
+                  {formatCurrency(proyectoData.budget)}
                 </p>
                 <Badge variant="secondary" className="mt-1">
                   6 recursos asignados

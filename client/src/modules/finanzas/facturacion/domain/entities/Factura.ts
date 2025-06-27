@@ -37,6 +37,8 @@ export interface FiltrosFactura {
   cliente?: string;
   fechaDesde?: string;
   fechaHasta?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
   busqueda?: string;
 }
 

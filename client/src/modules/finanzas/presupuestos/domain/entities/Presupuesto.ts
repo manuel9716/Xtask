@@ -8,6 +8,15 @@ import { z } from 'zod';
  */
 export type PresupuestoEstado = 'ACTIVO' | 'ALERTA' | 'COMPLETADO';
 
+// Alias para mantener compatibilidad
+export const EstadoPresupuesto = {
+  ACTIVO: 'ACTIVO' as const,
+  ALERTA: 'ALERTA' as const,
+  COMPLETADO: 'COMPLETADO' as const
+} as const;
+
+export type EstadoPresupuesto = typeof EstadoPresupuesto[keyof typeof EstadoPresupuesto];
+
 /**
  * Entidad Presupuesto que representa un presupuesto en el sistema
  */
