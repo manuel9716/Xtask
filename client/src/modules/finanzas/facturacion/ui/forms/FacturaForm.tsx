@@ -62,16 +62,20 @@ export function FacturaForm({ proyectoId, userId, onSuccess, onCancel }: Factura
 
   // Formatear número como moneda colombiana
   const formatCurrency = (value: number): string => {
+    if (!value || value === 0) return '';
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(value);
   };
 
   // Convertir string de moneda a número
   const parseCurrency = (value: string): number => {
-    return parseFloat(value.replace(/[^\d.-]/g, '')) || 0;
+    // Remover todo excepto números
+    const cleanValue = value.replace(/[^\d]/g, '');
+    return parseInt(cleanValue) || 0;
   };
 
   // Manejar archivos arrastrados
@@ -223,6 +227,7 @@ export function FacturaForm({ proyectoId, userId, onSuccess, onCancel }: Factura
                       const numericValue = parseCurrency(e.target.value);
                       field.onChange(numericValue);
                     }}
+                    maxLength={20}
                   />
                 </FormControl>
                 <FormMessage />
@@ -245,6 +250,7 @@ export function FacturaForm({ proyectoId, userId, onSuccess, onCancel }: Factura
                       const numericValue = parseCurrency(e.target.value);
                       field.onChange(numericValue);
                     }}
+                    maxLength={20}
                   />
                 </FormControl>
                 <FormMessage />
