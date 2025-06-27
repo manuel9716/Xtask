@@ -15,6 +15,7 @@ import NominaDashboard from "@/pages/nomina-dashboard";
 import KpisDashboard from "@/pages/kpis-dashboard";
 import HabilidadesPage from "@/pages/habilidades";
 import HomePage from "@/pages/home";
+import AuthPage from "@/pages/auth-page";
 import ApiDocumentation from "@/pages/api-documentation";
 import RecursosPage from "@/pages/recursos-page";
 import NominaPage from "@/pages/nomina-page";
@@ -27,9 +28,8 @@ import { KpisRoutes } from "@/modules/kpis/ui/routes";
 import { ThemeProvider } from "@/hooks/use-theme";
 
 // Importaciones para el módulo de autenticación
-import { LoginPage } from "@/modules/auth/ui/views/LoginPage";
-import { AuthProvider } from "@/modules/auth/ui/context/AuthContext";
-import { ProtectedRoute } from "@/modules/auth/ui/components/ProtectedRoute";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
   return (
@@ -38,12 +38,7 @@ function Router() {
       <Route path="/" component={HomePage} />
       
       {/* Rutas de autenticación */}
-      <Route path="/auth/login">
-        <LoginPage />
-      </Route>
-      <Route path="/auth/register">
-        <LoginPage />
-      </Route>
+      <Route path="/auth" component={AuthPage} />
       
       {/* Dashboard (ahora como ruta secundaria) - Protegida */}
       <Route path="/dashboard">
@@ -146,13 +141,31 @@ function Router() {
       </Route>
       
       {/* Rutas de los módulos específicos - Protegidas */}
-      <ProtectedRoute>
-        <FinanzasRoutes />
-        <NominaRoutes />
-        <EmpleadosRoutes />
-        <ProyectosRoutes />
-        <KpisRoutes />
-      </ProtectedRoute>
+      <Route path="/finanzas/*">
+        <ProtectedRoute>
+          <FinanzasRoutes />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/nomina/*">
+        <ProtectedRoute>
+          <NominaRoutes />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/empleados/*">
+        <ProtectedRoute>
+          <EmpleadosRoutes />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/proyectos/*">
+        <ProtectedRoute>
+          <ProyectosRoutes />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/kpis/*">
+        <ProtectedRoute>
+          <KpisRoutes />
+        </ProtectedRoute>
+      </Route>
       
       <Route component={NotFound} />
     </Switch>
