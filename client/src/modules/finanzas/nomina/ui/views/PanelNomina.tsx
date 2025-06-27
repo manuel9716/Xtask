@@ -35,10 +35,12 @@ export function PanelNomina() {
   const [mostrarModalPago, setMostrarModalPago] = useState(false);
 
   // Queries
-  const { data: proyectos, isLoading: cargandoProyectos } = useProyectosConRecursos();
+  const { data: proyectos, isLoading: cargandoProyectos, error: errorProyectos } = useProyectosConRecursos();
   const { data: recursos, isLoading: cargandoRecursos } = useRecursosPorProyecto(proyectoSeleccionado, filtros);
   const { data: resumen } = useResumenNominaProyecto(proyectoSeleccionado, filtros.mes);
   const { data: metricas } = useMetricasNomina(proyectoSeleccionado || undefined);
+
+
 
   // Mutations
   const registrarPagoMutation = useRegistrarPago();
@@ -186,13 +188,27 @@ export function PanelNomina() {
         <CardContent>
           {cargandoProyectos ? (
             <Skeleton className="h-10 w-full" />
+          ) : errorProyectos ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Error al cargar proyectos: {errorProyectos.message}
+              </AlertDescription>
+            </Alert>
+          ) : !proyectos || proyectos.length === 0 ? (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                No se encontraron proyectos con recursos asignados. Asegúrate de tener presupuestos creados con recursos en el módulo Finanzas.
+              </AlertDescription>
+            </Alert>
           ) : (
             <Select onValueChange={handleSeleccionarProyecto}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un proyecto con recursos..." />
               </SelectTrigger>
               <SelectContent>
-                {proyectos?.map((proyecto) => (
+                {proyectos.map((proyecto) => (
                   <SelectItem key={proyecto.id} value={proyecto.id.toString()}>
                     <div className="flex items-center justify-between w-full">
                       <span>{proyecto.nombre}</span>

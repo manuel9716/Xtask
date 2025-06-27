@@ -245,22 +245,15 @@ nominaRouter.get('/metricas', async (req: Request, res: Response) => {
   try {
     const { proyectoId } = req.query;
 
-    // Construir query con validación
-    let queryBase = `
-      SELECT 
-        COUNT(*)::int as recursos_activos,
-        COALESCE(SUM(salario_mensual), 0)::numeric as total_mensual
-      FROM recursos_financieros
-    `;
-
     let result;
-    if (proyectoId && !isNaN(Number(proyectoId))) {
+    if (proyectoId && typeof proyectoId === 'string' && !isNaN(Number(proyectoId))) {
+      const projectIdNum = Number(proyectoId);
       result = await db.execute(sql`
         SELECT 
           COUNT(*)::int as recursos_activos,
           COALESCE(SUM(salario_mensual), 0)::numeric as total_mensual
         FROM recursos_financieros 
-        WHERE presupuesto_id = ${Number(proyectoId)}
+        WHERE presupuesto_id = ${projectIdNum}
       `);
     } else {
       result = await db.execute(sql`
