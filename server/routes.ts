@@ -5,6 +5,8 @@ import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupp
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "./db";
 import express from "express";
+import multer from "multer";
+import path from "path";
 import empleadosRouter from "./routes/empleados.updated.routes";
 import nominaFinancieraRouter from "./routes/nomina.routes";
 import proyectosRouter from "./routes/proyectos.routes";
@@ -17,6 +19,35 @@ import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
 import habilidadesRouter from "./routes/habilidades.routes";
 import recursosRouter from "./routes/recursos.routes";
+
+// Configuración de multer para archivos de soporte
+const storage_multer = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/facturas/')
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
+  }
+});
+
+const upload = multer({ 
+  storage: storage_multer,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  },
+  fileFilter: function (req, file, cb) {
+    const allowedTypes = /pdf|doc|docx|jpg|jpeg|png/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten archivos PDF, DOC, DOCX, JPG, JPEG, PNG'));
+    }
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint para Kubernetes

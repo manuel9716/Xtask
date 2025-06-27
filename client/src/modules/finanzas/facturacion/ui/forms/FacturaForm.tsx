@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { CalendarIcon, Upload } from 'lucide-react';
+import { CalendarIcon, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,8 @@ interface FacturaFormProps {
 
 export function FacturaForm({ proyectoId, userId, onSuccess, onCancel }: FacturaFormProps) {
   const registrarMutation = useRegistrarFactura();
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   const form = useForm<FacturaFormData>({
     resolver: zodResolver(facturaSchema),
@@ -58,15 +60,75 @@ export function FacturaForm({ proyectoId, userId, onSuccess, onCancel }: Factura
     }
   });
 
+  // Formatear número como moneda colombiana
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(value);
+  };
+
+  // Convertir string de moneda a número
+  const parseCurrency = (value: string): number => {
+    return parseFloat(value.replace(/[^\d.-]/g, '')) || 0;
+  };
+
+  // Manejar archivos arrastrados
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    const file = files[0];
+    
+    if (file && (file.type.includes('pdf') || file.type.includes('doc') || file.type.includes('image'))) {
+      setUploadedFile(file);
+    }
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+    }
+  }, []);
+
+  const removeFile = () => {
+    setUploadedFile(null);
+  };
+
   const onSubmit = async (data: FacturaFormData) => {
     try {
-      await registrarMutation.mutateAsync({
-        ...data,
-        fechaEmision: format(data.fechaEmision, 'yyyy-MM-dd'),
-        fechaVencimiento: format(data.fechaVencimiento, 'yyyy-MM-dd'),
-        valorSubtotal: data.valorSubtotal.toString(),
-        valorTotal: data.valorTotal.toString()
+      const formData = new FormData();
+      
+      // Agregar datos del formulario
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === 'fechaEmision' || key === 'fechaVencimiento') {
+          formData.append(key, format(value as Date, 'yyyy-MM-dd'));
+        } else if (key === 'valorSubtotal' || key === 'valorTotal') {
+          formData.append(key, value.toString());
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, value.toString());
+        }
       });
+
+      // Agregar archivo si existe
+      if (uploadedFile) {
+        formData.append('soporte', uploadedFile);
+      }
+
+      await registrarMutation.mutateAsync(formData);
       onSuccess();
     } catch (error) {
       console.error('Error al registrar factura:', error);
@@ -154,11 +216,13 @@ export function FacturaForm({ proyectoId, userId, onSuccess, onCancel }: Factura
                 <FormLabel>Valor Subtotal</FormLabel>
                 <FormControl>
                   <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    type="text"
+                    placeholder="$ 0"
+                    value={field.value ? formatCurrency(field.value) : ''}
+                    onChange={(e) => {
+                      const numericValue = parseCurrency(e.target.value);
+                      field.onChange(numericValue);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -174,11 +238,13 @@ export function FacturaForm({ proyectoId, userId, onSuccess, onCancel }: Factura
                 <FormLabel>Valor Total</FormLabel>
                 <FormControl>
                   <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    type="text"
+                    placeholder="$ 0"
+                    value={field.value ? formatCurrency(field.value) : ''}
+                    onChange={(e) => {
+                      const numericValue = parseCurrency(e.target.value);
+                      field.onChange(numericValue);
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
@@ -285,11 +351,52 @@ export function FacturaForm({ proyectoId, userId, onSuccess, onCancel }: Factura
           )}
         />
 
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-          <div className="flex flex-col items-center justify-center space-y-2">
-            <Upload className="h-6 w-6 text-gray-400" />
-            <p className="text-sm text-gray-500">Arrastrar archivo de soporte o hacer clic para seleccionar</p>
-            <p className="text-xs text-gray-400">PDF, DOC, DOCX (máx. 10MB)</p>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Archivo de Soporte (Opcional)</label>
+          <div 
+            className={cn(
+              "border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer",
+              isDragOver ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400",
+              uploadedFile && "border-green-500 bg-green-50"
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => document.getElementById('file-upload')?.click()}
+          >
+            <input
+              id="file-upload"
+              type="file"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            
+            {uploadedFile ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Upload className="h-5 w-5 text-green-600" />
+                  <span className="text-sm text-green-700">{uploadedFile.name}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile();
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center space-y-2">
+                <Upload className="h-6 w-6 text-gray-400" />
+                <p className="text-sm text-gray-500">Arrastrar archivo de soporte o hacer clic para seleccionar</p>
+                <p className="text-xs text-gray-400">PDF, DOC, DOCX (máx. 10MB)</p>
+              </div>
+            )}
           </div>
         </div>
 
