@@ -1,3 +1,4 @@
+import { Header } from '@/components/landing/Header';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { FuncionesPrincipales } from '@/components/landing/FuncionesPrincipales';
 import { BeneficiosGenerales } from '@/components/landing/BeneficiosGenerales';

@@ -1,10 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Zap } from "lucide-react";
+import { ArrowRight, Play, Zap, User } from "lucide-react";
+import { useLocation } from "wouter";
 
 export function HeroSection() {
+  const [, setLocation] = useLocation();
+  
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     element?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleLogin = () => {
+    setLocation('/auth');
   };
 
   return (
@@ -44,19 +51,20 @@ export function HeroSection() {
             variant="outline"
             size="lg"
             className="border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg font-semibold rounded-lg backdrop-blur-sm"
-            onClick={() => scrollToSection('demo')}
+            onClick={handleLogin}
           >
-            <Play className="mr-2 h-5 w-5" />
-            Ver demo interactiva
+            <User className="mr-2 h-5 w-5" />
+            Iniciar sesión
           </Button>
           
           <Button
-            variant="ghost"
+            variant="outline"
             size="lg"
-            className="text-white hover:bg-white/10 px-8 py-4 text-lg font-semibold rounded-lg"
-            onClick={() => scrollToSection('funcionalidades')}
+            className="border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg font-semibold rounded-lg backdrop-blur-sm"
+            onClick={() => scrollToSection('demo')}
           >
-            Ver funcionalidades
+            <Play className="mr-2 h-5 w-5" />
+            Ver demo
           </Button>
         </div>
 
