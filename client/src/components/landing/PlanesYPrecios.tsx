@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, Star, Zap } from "lucide-react";
@@ -211,29 +212,27 @@ export function PlanesYPrecios() {
                 </tr>
               </thead>
               <tbody>
-                {caracteristicasComparison.map((categoria, catIndex) => (
-                  <>
-                    <tr key={`cat-${catIndex}`} className="bg-gray-100">
-                      <td colSpan={4} className="px-6 py-3 text-sm font-semibold text-gray-700">
-                        {categoria.categoria}
+{caracteristicasComparison.map((categoria, catIndex) => [
+                  <tr key={`cat-${catIndex}`} className="bg-gray-100">
+                    <td colSpan={4} className="px-6 py-3 text-sm font-semibold text-gray-700">
+                      {categoria.categoria}
+                    </td>
+                  </tr>,
+                  ...categoria.items.map((item, itemIndex) => (
+                    <tr key={`item-${catIndex}-${itemIndex}`} className="border-b border-gray-200">
+                      <td className="px-6 py-4 text-sm text-gray-900">{item.feature}</td>
+                      <td className="px-6 py-4 text-center">
+                        {renderFeatureValue(item.gratuito)}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {renderFeatureValue(item.profesional)}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {renderFeatureValue(item.empresarial)}
                       </td>
                     </tr>
-                    {categoria.items.map((item, itemIndex) => (
-                      <tr key={`item-${catIndex}-${itemIndex}`} className="border-b border-gray-200">
-                        <td className="px-6 py-4 text-sm text-gray-900">{item.feature}</td>
-                        <td className="px-6 py-4 text-center">
-                          {renderFeatureValue(item.gratuito)}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {renderFeatureValue(item.profesional)}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {renderFeatureValue(item.empresarial)}
-                        </td>
-                      </tr>
-                    ))}
-                  </>
-                ))}
+                  ))
+                ]).flat()}
               </tbody>
             </table>
           </div>

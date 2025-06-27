@@ -121,6 +121,12 @@ The application follows a modular architecture with domain-driven design princip
 - **Volumes**: Persistent data storage for PostgreSQL
 
 ## Changelog
+- June 27, 2025: Transformed homepage into comprehensive marketing landing page
+  - Complete redesign from internal dashboard to external marketing focus
+  - Created full landing page component suite: HeroSection, FuncionesPrincipales, BeneficiosGenerales, SliderCapturas, TestimoniosClientes, PlanesYPrecios, FormularioRegistro, Footer
+  - Implemented hero message "Organiza, gestiona y potencia tu empresa con XTask"
+  - Added pricing plans, testimonials, feature showcases, and registration form
+  - Modern responsive design optimized for user acquisition and conversion
 - June 24, 2025: Implemented comprehensive Nómina module within Finanzas using hexagonal architecture
   - Complete API endpoints for project-based payroll management
   - Integration with existing Recursos submódulo data
