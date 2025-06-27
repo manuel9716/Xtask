@@ -13,6 +13,10 @@ import { FacturaForm } from '../forms/FacturaForm';
 import { useListarFacturasPorProyecto } from '../../application/useCases/listarFacturasPorProyecto';
 import { useCalcularIndicadoresFacturacion } from '../../application/useCases/calcularIndicadoresFacturacion';
 import { Factura, FiltrosFactura } from '../../domain/entities/Factura';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProyectoData {
   id: number;
@@ -42,6 +46,50 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
   const [modalNuevaFactura, setModalNuevaFactura] = useState(false);
   const [facturaSeleccionada, setFacturaSeleccionada] = useState<Factura | null>(null);
   const [modalDetalleFactura, setModalDetalleFactura] = useState(false);
+  const [modalEnviarEmail, setModalEnviarEmail] = useState(false);
+  const [emailData, setEmailData] = useState({
+    destinatario: '',
+    asunto: '',
+    mensaje: ''
+  });
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Mutation para enviar factura por email
+  const enviarEmailMutation = useMutation({
+    mutationFn: async ({ facturaId, emailData }: { facturaId: number, emailData: any }) => {
+      const response = await fetch(`/api/facturacion/${facturaId}/enviar-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al enviar email');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Email enviado",
+        description: `Factura enviada exitosamente a ${data.destinatario}`,
+      });
+      setModalEnviarEmail(false);
+      setEmailData({ destinatario: '', asunto: '', mensaje: '' });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error al enviar email",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Obtener datos del proyecto
   const { data: proyecto, isLoading: proyectoLoading } = useQuery<ProyectoData>({
@@ -83,6 +131,26 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
   const handleNuevaFacturaSuccess = () => {
     setModalNuevaFactura(false);
     refetchFacturas();
+  };
+
+  const handleEnviarEmail = () => {
+    if (facturaSeleccionada) {
+      setEmailData({
+        destinatario: '',
+        asunto: `Factura ${facturaSeleccionada.numeroFactura} - ${facturaSeleccionada.cliente}`,
+        mensaje: `Estimado cliente,\n\nAdjunto encontrará la factura ${facturaSeleccionada.numeroFactura} correspondiente a los servicios prestados.\n\nGracias por su confianza.`
+      });
+      setModalEnviarEmail(true);
+    }
+  };
+
+  const handleEnviarEmailSubmit = () => {
+    if (facturaSeleccionada && emailData.destinatario && emailData.asunto) {
+      enviarEmailMutation.mutate({ 
+        facturaId: facturaSeleccionada.id, 
+        emailData 
+      });
+    }
   };
 
   if (!proyectoSeleccionado) {
@@ -304,8 +372,88 @@ export function FacturacionProyecto({ proyectoSeleccionado, userId }: Facturacio
                   <p className="text-sm">{facturaSeleccionada.medioPago}</p>
                 </div>
               )}
+
+              {/* Botón para enviar por email */}
+              <div className="flex justify-end pt-4 border-t">
+                <Button 
+                  onClick={handleEnviarEmail}
+                  className="flex items-center gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  Enviar por Email
+                </Button>
+              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal para enviar email */}
+      <Dialog open={modalEnviarEmail} onOpenChange={setModalEnviarEmail}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              Enviar Factura por Email
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Destinatario</label>
+              <Input
+                type="email"
+                placeholder="cliente@empresa.com"
+                value={emailData.destinatario}
+                onChange={(e) => setEmailData(prev => ({ ...prev, destinatario: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">Asunto</label>
+              <Input
+                type="text"
+                value={emailData.asunto}
+                onChange={(e) => setEmailData(prev => ({ ...prev, asunto: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">Mensaje (Opcional)</label>
+              <Textarea
+                placeholder="Escriba un mensaje personalizado..."
+                value={emailData.mensaje}
+                onChange={(e) => setEmailData(prev => ({ ...prev, mensaje: e.target.value }))}
+                rows={4}
+                className="mt-1"
+              />
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setModalEnviarEmail(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleEnviarEmailSubmit}
+                disabled={!emailData.destinatario || !emailData.asunto || enviarEmailMutation.isPending}
+              >
+                {enviarEmailMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Enviar
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
