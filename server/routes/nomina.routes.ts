@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { recursosFinancieros, budgets } from '@shared/schema';
+import { recursosFinancieros, budgets, employees } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 
 const nominaRouter = Router();
@@ -244,6 +244,46 @@ nominaRouter.post('/:proyectoId/pagar', async (req: Request, res: Response) => {
     res.status(201).json(nominaSimulada);
   } catch (error) {
     console.error('Error al registrar pago:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * GET /api/nomina/empleados/:id
+ * Obtiene los datos de un empleado específico
+ */
+nominaRouter.get('/empleados/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const empleadoId = parseInt(id);
+    
+    if (isNaN(empleadoId)) {
+      return res.status(400).json({ message: 'ID de empleado inválido' });
+    }
+
+    const [empleado] = await db
+      .select({
+        id: employees.id,
+        firstName: employees.firstName,
+        lastName: employees.lastName,
+        identification: employees.identification,
+        position: employees.position,
+        department: employees.department,
+        phoneNumber: employees.phoneNumber,
+        bankAccount: employees.bankAccount,
+        paymentMethod: employees.paymentMethod,
+        email: employees.address // Usando address como email temporalmente
+      })
+      .from(employees)
+      .where(eq(employees.id, empleadoId));
+
+    if (!empleado) {
+      return res.status(404).json({ message: 'Empleado no encontrado' });
+    }
+
+    res.json(empleado);
+  } catch (error) {
+    console.error('Error al obtener empleado:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });

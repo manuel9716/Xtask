@@ -89,7 +89,7 @@ export function DetallePagoModal({
       
       setCargandoEmpleado(true);
       try {
-        const response = await apiRequest('GET', `/api/employees/${nomina.recurso.empleadoVinculadoId}`);
+        const response = await apiRequest('GET', `/api/nomina/empleados/${nomina.recurso.empleadoVinculadoId}`);
         const empleado = await response.json();
         setEmpleadoVinculado(empleado);
       } catch (error) {
