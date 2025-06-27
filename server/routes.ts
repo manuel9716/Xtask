@@ -16,6 +16,7 @@ import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
 import habilidadesRouter from "./routes/habilidades.routes";
 import recursosRouter from "./routes/recursos.routes";
+import presupuestosRouter from "./routes/presupuestos.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint para Kubernetes
@@ -38,6 +39,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas para submódulo de recursos financieros
   app.use('/api/finanzas/recursos', recursosRouter);
+
+  // Rutas para presupuestos
+  app.use('/api/finanzas/presupuestos', presupuestosRouter);
 
   // Rutas de nómina financiera
   app.use('/api/nomina', nominaFinancieraRouter);
@@ -207,10 +211,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rutas para presupuestos - Implementación directa
-  const presupuestosRouter = express.Router();
+  const presupuestosRouterLegacy = express.Router();
   
   // Obtener todos los presupuestos
-  presupuestosRouter.get('/', async (req: Request, res: Response) => {
+  presupuestosRouterLegacy.get('/', async (req: Request, res: Response) => {
     try {
       const organizationId = Number(req.query.organizationId) || 1;
       const presupuestos = await storage.getAllBudgets(organizationId);
@@ -324,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Crear un nuevo presupuesto
-  presupuestosRouter.post('/', async (req: Request, res: Response) => {
+  presupuestosRouterLegacy.post('/', async (req: Request, res: Response) => {
     try {
       // Preparar metadata con los nuevos campos financieros
       const financialMetadata: any = {};
@@ -540,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.use('/api/presupuestos', presupuestosRouter);
+  app.use('/api/presupuestos', presupuestosRouterLegacy);
 
   // Rutas de Nómina (Payroll) - API original, será reemplazado por router más completo
   const nominaLegacyRouter = express.Router();

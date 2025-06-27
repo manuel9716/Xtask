@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, FileText, Edit, Eye, AlertTriangle, Settings } from 'lucide-react';
-import { Presupuesto, EstadoPresupuesto } from '../../domain/entities/Presupuesto';
+import { Presupuesto } from '../../domain/entities/Presupuesto';
 import { EstadoBadge } from './EstadoBadge';
 import { Progress } from '@/components/ui/progress';
 import { useTranslation } from 'react-i18next';
@@ -161,7 +161,7 @@ export const PresupuestoTable: React.FC<PresupuestoTableProps> = ({
                           {t('finances.budgets.actions.viewDetails')}
                         </DropdownMenuItem>
                         
-                        {presupuesto.estado === EstadoPresupuesto.ACTIVO && (
+                        {presupuesto.estado === 'ACTIVO' && (
                           <DropdownMenuItem onClick={() => onEdit?.(presupuesto)}>
                             <Edit className="mr-2 h-4 w-4" />
                             {t('finances.budgets.actions.edit')}
