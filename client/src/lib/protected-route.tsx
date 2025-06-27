@@ -1,4 +1,4 @@
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/modules/auth/ui/context/AuthContext";
 import { Loader2 } from "lucide-react";
 import { Redirect } from "wouter";
 
@@ -7,7 +7,7 @@ export function ProtectedRoute({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -17,7 +17,7 @@ export function ProtectedRoute({
     );
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <Redirect to="/auth" />;
   }
 

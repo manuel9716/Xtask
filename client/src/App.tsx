@@ -28,7 +28,8 @@ import { KpisRoutes } from "@/modules/kpis/ui/routes";
 import { ThemeProvider } from "@/hooks/use-theme";
 
 // Importaciones para el módulo de autenticación
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider } from "@/modules/auth/ui/context/AuthContext";
+import { LoginPage } from "@/modules/auth/ui/views/LoginPage";
 import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
@@ -38,7 +39,9 @@ function Router() {
       <Route path="/" component={HomePage} />
       
       {/* Rutas de autenticación */}
-      <Route path="/auth" component={AuthPage} />
+      <Route path="/auth" component={LoginPage} />
+      <Route path="/auth/login" component={LoginPage} />
+      <Route path="/auth/register" component={LoginPage} />
       
       {/* Dashboard (ahora como ruta secundaria) - Protegida */}
       <Route path="/dashboard">
