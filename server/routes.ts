@@ -1,8 +1,9 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema, facturasProyecto } from "@shared/schema";
+import { eq, and, sql } from "drizzle-orm";
+import { db } from "./db";
 import express from "express";
 import empleadosRouter from "./routes/empleados.updated.routes";
 import nominaFinancieraRouter from "./routes/nomina.routes";
@@ -1335,27 +1336,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ID de proyecto inválido" });
       }
 
-      const facturas = await db.select().from(facturasProyecto).where(eq(facturasProyecto.proyectoId, proyectoId));
+      const allFacturas = await db.select().from(facturasProyecto).where(eq(facturasProyecto.proyectoId, proyectoId));
 
+      // Apply filters
+      let facturas = allFacturas;
+      
       if (estado && estado !== 'todos') {
-        facturas = facturas.filter(f => f.estado === estado);
+        facturas = facturas.filter((f: any) => f.estado === estado);
       }
 
       if (cliente) {
-        facturas = facturas.filter(f => f.cliente.toLowerCase().includes(cliente.toString().toLowerCase()));
+        facturas = facturas.filter((f: any) => f.cliente.toLowerCase().includes(cliente.toString().toLowerCase()));
       }
 
       if (fechaDesde) {
-        facturas = facturas.filter(f => new Date(f.fechaEmision) >= new Date(fechaDesde.toString()));
+        facturas = facturas.filter((f: any) => new Date(f.fechaEmision) >= new Date(fechaDesde.toString()));
       }
 
       if (fechaHasta) {
-        facturas = facturas.filter(f => new Date(f.fechaEmision) <= new Date(fechaHasta.toString()));
+        facturas = facturas.filter((f: any) => new Date(f.fechaEmision) <= new Date(fechaHasta.toString()));
       }
 
       if (busqueda) {
         const searchTerm = busqueda.toString().toLowerCase();
-        facturas = facturas.filter(f => 
+        facturas = facturas.filter((f: any) => 
           f.numeroFactura.toLowerCase().includes(searchTerm) ||
           f.cliente.toLowerCase().includes(searchTerm) ||
           f.concepto.toLowerCase().includes(searchTerm)
@@ -1377,7 +1381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ID de proyecto inválido" });
       }
 
-      const facturas = await storage.db.select().from(storage.facturasProyecto).where(eq(storage.facturasProyecto.proyectoId, proyectoId));
+      const facturas = await db.select().from(facturasProyecto).where(eq(facturasProyecto.proyectoId, proyectoId));
 
       const totalFacturado = facturas.reduce((sum, f) => sum + parseFloat(f.valorTotal), 0);
       const facturasPagadas = facturas.filter(f => f.estado === 'PAGADA');
@@ -1437,14 +1441,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Verificar que el número de factura sea único
-      const facturaExistente = await storage.db.select().from(storage.facturasProyecto)
-        .where(eq(storage.facturasProyecto.numeroFactura, facturaData.numeroFactura));
+      const facturaExistente = await db.select().from(facturasProyecto)
+        .where(eq(facturasProyecto.numeroFactura, facturaData.numeroFactura));
 
       if (facturaExistente.length > 0) {
         return res.status(400).json({ message: "El número de factura ya existe" });
       }
 
-      const [nuevaFactura] = await storage.db.insert(storage.facturasProyecto)
+      const [nuevaFactura] = await db.insert(facturasProyecto)
         .values(facturaData)
         .returning();
 
@@ -1468,9 +1472,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Estado requerido" });
       }
 
-      const [facturaActualizada] = await storage.db.update(storage.facturasProyecto)
+      const [facturaActualizada] = await db.update(facturasProyecto)
         .set({ estado, updatedAt: new Date() })
-        .where(eq(storage.facturasProyecto.id, facturaId))
+        .where(eq(facturasProyecto.id, facturaId))
         .returning();
 
       if (!facturaActualizada) {
