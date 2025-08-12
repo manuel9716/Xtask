@@ -100,13 +100,14 @@ export class PostgresNominaRepository implements INominaRepository {
     calendar: { fecha: Date; tipo: string; descripcion: string }[];
     nominasRecientes: any[];
   }> {
-    // KPIs principales
+    // KPIs principales  
     const kpisResult = await db.execute(sql`
       SELECT 
-        COUNT(*) FILTER (WHERE estado = 'activo') as empleados_activos,
-        COALESCE(SUM(salario_base), 0) as nomina_mensual
-      FROM empleados_nomina
-      WHERE estado = 'activo'
+        COUNT(e.id) as empleados_activos,
+        COALESCE(SUM(en.sueldo_base), 0) as nomina_mensual
+      FROM empleados e
+      INNER JOIN empleado_nomina en ON e.id = en.empleado_id
+      WHERE e.estado_contrato = 'activo'
     `);
 
     const bonificacionesResult = await db.execute(sql`
@@ -146,10 +147,11 @@ export class PostgresNominaRepository implements INominaRepository {
           e.created_at as fecha,
           CONCAT('Nuevo empleado: ', e.nombre, ' ', e.apellido, ' - ', e.cargo, ' (', COALESCE(p.name, 'Sin proyecto'), ')') as descripcion,
           'pendiente'::text as estado,
-          e.salario_base as monto,
+          en.sueldo_base as monto,
           COALESCE(p.name, 'Sin proyecto') as proyecto,
           'empleado_creado' as tipo_evento
-        FROM empleados_nomina e
+        FROM empleados e
+        INNER JOIN empleado_nomina en ON e.id = en.empleado_id
         LEFT JOIN empleado_proyecto ep ON e.id = ep.empleado_id
         LEFT JOIN projects p ON ep.proyecto_id = p.id
         WHERE e.created_at >= NOW() - INTERVAL '30 days'
@@ -166,7 +168,7 @@ export class PostgresNominaRepository implements INominaRepository {
           COALESCE(p.name, 'Sin proyecto') as proyecto,
           'nomina_pago' as tipo_evento
         FROM nominas n
-        JOIN empleados_nomina e ON n.empleado_id = e.id
+        JOIN empleados e ON n.empleado_id = e.id
         LEFT JOIN projects p ON n.proyecto_id = p.id
         WHERE n.created_at >= NOW() - INTERVAL '30 days'
       )
