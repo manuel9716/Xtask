@@ -351,6 +351,204 @@ export default function EmployeeDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Cronograma de Pagos - Nueva sección visual */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Cronograma de Pagos - Gráfico de barras */}
+            <Card className="lg:col-span-1">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Cronograma de Pagos</CardTitle>
+                <CardDescription>Últimos 6 meses</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Datos simulados para los últimos 6 meses */}
+                  {[
+                    { mes: '3 Abr', monto: 4200, proyecto: 'Proyecto A' },
+                    { mes: '10 Abr', monto: 4500, proyecto: 'Proyecto B' },
+                    { mes: '17 Abr', monto: 3800, proyecto: 'Proyecto A' },
+                    { mes: '24 Abr', monto: 4100, proyecto: 'Proyecto C' },
+                    { mes: '1 May', monto: 4300, proyecto: 'Proyecto B' },
+                  ].map((pago, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div className="text-xs text-muted-foreground w-14">
+                        {pago.mes}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium">{pago.proyecto}</span>
+                          <span className="text-sm font-semibold">${pago.monto.toLocaleString()}</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-blue-400 to-purple-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${(pago.monto / 4500) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Distribución de Gastos - Gráfico circular */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Distribución Gastos</CardTitle>
+                <CardDescription>Por tipo de pago</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-center mb-6">
+                  <div className="relative w-32 h-32">
+                    {/* Simulación de gráfico circular */}
+                    <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
+                      <path
+                        className="text-gray-200"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        fill="transparent"
+                        d="m18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                      <path
+                        className="text-blue-600"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeDasharray="60, 100"
+                        strokeLinecap="round"
+                        fill="transparent"
+                        d="m18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                      <path
+                        className="text-purple-600"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeDasharray="25, 100"
+                        strokeDashoffset="-60"
+                        strokeLinecap="round"
+                        fill="transparent"
+                        d="m18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-xs font-semibold">Total</div>
+                        <div className="text-sm font-bold">$21,900</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                      <span className="text-sm">Sueldos</span>
+                    </div>
+                    <span className="text-sm font-semibold">60%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-600 rounded-full"></div>
+                      <span className="text-sm">Bonificaciones</span>
+                    </div>
+                    <span className="text-sm font-semibold">25%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                      <span className="text-sm">Otros</span>
+                    </div>
+                    <span className="text-sm font-semibold">15%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Calendario y Nóminas Recientes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Calendario</CardTitle>
+                <CardDescription>Nóminas recientes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Mini calendario */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="text-center mb-3">
+                      <p className="text-sm font-semibold text-gray-700">ABRIL 2024</p>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 text-xs mb-2">
+                      <div className="text-center text-muted-foreground font-medium">S</div>
+                      <div className="text-center text-muted-foreground font-medium">M</div>
+                      <div className="text-center text-muted-foreground font-medium">T</div>
+                      <div className="text-center text-muted-foreground font-medium">W</div>
+                      <div className="text-center text-muted-foreground font-medium">T</div>
+                      <div className="text-center text-muted-foreground font-medium">F</div>
+                      <div className="text-center text-muted-foreground font-medium">S</div>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 text-xs">
+                      {Array.from({length: 30}, (_, i) => i + 1).map(day => (
+                        <div 
+                          key={day} 
+                          className={`text-center p-1 rounded text-xs ${
+                            [3, 10, 17, 24].includes(day) 
+                              ? 'bg-blue-500 text-white font-bold shadow-sm' 
+                              : 'text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Lista de nóminas recientes */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Nóminas Recientes</h4>
+                    
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div>
+                          <div className="text-sm font-medium">12/04/2024 - 14/05/24</div>
+                          <div className="text-xs text-green-700">Pagado</div>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 text-xs">
+                        Realizado
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div>
+                          <div className="text-sm font-medium">18/04/2024 - 21/05/24</div>
+                          <div className="text-xs text-blue-700">Pagado</div>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
+                        Procesado
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <div>
+                          <div className="text-sm font-medium">22/04/2024 - 25/04/24</div>
+                          <div className="text-xs text-yellow-700">Pendiente</div>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">
+                        Asegurar 78
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="personal" className="space-y-4">
