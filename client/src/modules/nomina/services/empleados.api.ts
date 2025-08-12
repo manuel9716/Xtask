@@ -61,6 +61,11 @@ export class EmpleadosApi {
     return response.json();
   }
 
+  static async getEmpleadoCompleto(id: number) {
+    const response = await apiRequest('GET', `/api/empleados/${id}?include=nomina,proyectos,historial`);
+    return response.json();
+  }
+
   static async updateEmpleado(id: number, data: any) {
     const response = await apiRequest('PATCH', `/api/empleados/${id}`, data);
     return response.json();

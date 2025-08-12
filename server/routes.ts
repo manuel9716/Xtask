@@ -22,7 +22,7 @@ import recursosRouter from "./routes/recursos.routes";
 import nominaRouter from "./modules/nomina/routes";
 import { empleadosRoutes } from "./modules/empleados/empleados.routes";
 import { nominaRoutes } from "./modules/nomina/nomina.routes";
-import empleadosAdvancedRouter from "./routes/empleados.routes";
+import empleadosAdvancedRouter, { exportRouter } from "./routes/empleados.routes";
 import nominasAdvancedRouter from "./routes/nominas.routes";
 import { verifyToken } from "./routes/auth.routes";
 // import { requireAuth } from "./middleware/auth.middleware"; // Temporalmente deshabilitado
@@ -104,6 +104,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas avanzadas para empleados individuales (temporalmente sin autenticación)
   app.use('/api/empleados', empleadosAdvancedRouter);
+  
+  // Rutas de exportación
+  app.use('/api', exportRouter);
   
   // Rutas avanzadas para nóminas detalladas
   app.use('/api/nominas-detail', verifyToken, nominasAdvancedRouter);

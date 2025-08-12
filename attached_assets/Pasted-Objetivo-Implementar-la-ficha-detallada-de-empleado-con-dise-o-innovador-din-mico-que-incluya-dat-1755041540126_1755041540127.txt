@@ -1,0 +1,121 @@
+Objetivo: Implementar la ficha detallada de empleado con diseño innovador, dinámico, que incluya datos personales, proyectos asignados, historial de nóminas, y con la opción de editar y eliminar la información. También debe mostrar un panel con KPIs (sueldo, bonificaciones, antigüedad), cronología de eventos, y la opción de marcar nóminas como pagadas.
+
+Instrucciones para Replit:
+Backend (API endpoints y lógica de datos):
+
+Endpoint GET /api/empleados/:id?include=nomina,proyectos,historial
+Devuelve la siguiente información:
+
+empleado: datos personales (nombre, apellido, cargo, fecha de ingreso, etc.).
+
+nomina: datos de nómina (sueldo base, bonificación, tasa de impuestos, deducciones, beneficios, etc.).
+
+proyectos: proyectos asignados al empleado (nombre, id).
+
+historial: eventos (alta, cambios salariales, pagos de nómina).
+
+gastoPorProyecto: total gastado por proyecto del empleado.
+
+ultimoPago: fecha y monto del último pago realizado.
+
+Endpoint PATCH /api/nominas/:id/estado
+Cambia el estado de la nómina (pendiente/pagada). Actualiza la nómina y devuelve la nueva información.
+
+Endpoint GET /api/nominas/:id
+Obtiene el detalle completo de una nómina, incluyendo proyecto y estado.
+
+Endpoint PUT /api/empleados/:id/proyectos
+Actualiza los proyectos asignados a un empleado (múltiples proyectos).
+
+Endpoint DELETE /api/empleados/:id
+Elimina (soft delete) un empleado, marcando como inactivo o cambiando el estado de activo a false.
+
+Frontend (UI y manejo de estado):
+
+Página EmployeeDetailPage.tsx:
+
+Header: Mostrar nombre, cargo, ubicación, estado (activo/inactivo), botones Editar y Eliminar.
+
+KPIs:
+
+Proyectos asignados: Número de proyectos actuales.
+
+Antigüedad: Años/meses desde que empezó a trabajar.
+
+Sueldo base: Sueldo base mensual.
+
+Bonificaciones del mes: Total de bonificaciones.
+
+Secciones:
+
+Resumen: Información básica, proyectos asignados, antigüedad, sueldo base, bonificaciones.
+
+Información Personal: Datos completos del empleado (nombre, apellido, documento, contacto de emergencia, etc.).
+
+Nómina: Historial de nóminas del empleado (rango de fechas, proyecto, sueldo, bono, deducción, impuestos, neto, estado). Cada fila debe tener un botón para marcar el estado de la nómina como pagada o pendiente.
+
+Proyectos: Lista de proyectos asignados al empleado, con opción de añadir o quitar proyectos (multi-select).
+
+Documentos: Si se sube algún contrato o documento, debe mostrarse aquí.
+
+Actividad: Cronología de eventos, como creación de empleado, cambios salariales, pagos de nómina, etc.
+
+Modales:
+
+EmployeeEditModal.tsx: Modal para editar los datos personales y de nómina del empleado. Usar React Hook Form + Zod para validación.
+
+ConfirmDeleteModal.tsx: Confirmación de eliminación de empleado con soft delete.
+
+Interacciones:
+
+Al hacer clic en Ver detalles desde la lista de empleados, debe navegar a /nomina/empleados/:id y mostrar la información completa del empleado.
+
+Al editar los datos, se deben actualizar en tiempo real sin recargar la página.
+
+Al eliminar un empleado, se debe marcar como inactivo (soft delete), y el empleado debe desaparecer de la lista.
+
+Frontend (cronología de eventos y tablas):
+
+Tabla de Nóminas: Mostrar una tabla con el historial de nóminas del empleado. Cada fila debe tener:
+
+Rango de fechas: Fecha de inicio y fin de la nómina.
+
+Proyecto: Nombre del proyecto relacionado.
+
+Sueldo neto: Neto de la nómina.
+
+Estado: Estado de la nómina (Pagado, Pendiente).
+
+Acción: Un botón para cambiar el estado a Pagado si está en Pendiente.
+
+Cronología de eventos: Mostrar todos los eventos importantes (alta del empleado, cambios salariales, pagos de nómina, etc.). Al hacer clic en un evento de nómina, debe abrir un modal o navegar a la página de detalle de esa nómina.
+
+Exportación de Nómina:
+
+Botón de Exportar en el detalle de la nómina: Debe permitir exportar la nómina en formato PDF o XLSX.
+
+Endpoint GET /api/nominas/:id/export: Permitir la descarga del archivo exportado cuando el usuario haga clic en el botón de exportar.
+
+Backend (Modelo de datos y validaciones):
+
+Modelo empleados:
+
+Asegúrate de que el modelo de empleados tenga campos como nombre, apellido, identificacion, fecha_ingreso, cargo, departamento, telefono, direccion, estado_contrato, tipo_contrato, habilidades, entre otros.
+
+Modelo nominas:
+
+Asegúrate de que el modelo de nominas tenga campos como empleado_id, rango_inicio, rango_fin, proyecto_id, sueldo_base, bonificacion, tasa_impuestos, base_deduccion, beneficios_base, neto, estado, fecha_pago.
+
+Criterios de aceptación:
+
+Al abrir /nomina/empleados/:id, la página muestra la información detallada del empleado, incluyendo todos los campos mencionados (con la opción de editar).
+
+Al editar la información del empleado, los cambios se guardan correctamente y se reflejan en tiempo real sin recargar la página.
+
+Al eliminar un empleado, este se marca como inactivo (soft delete) y desaparece de la lista de empleados activos.
+
+La cronología de eventos muestra todos los eventos históricos del empleado.
+
+La tabla de nóminas muestra el historial de nóminas, con la opción de marcar una nómina como pagada.
+
+Los botones de Exportar funcionan correctamente, permitiendo exportar las nóminas en PDF o XLSX.

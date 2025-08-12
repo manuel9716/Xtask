@@ -40,7 +40,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const empleadoId = parseInt(req.params.id);
     const includeParams = req.query.include as string;
-    const includes = includeParams ? includeParams.split(',') : [];
+    const includes = includeParams ? includeParams.split(',') : ['nomina', 'proyectos', 'historial'];
 
     // Obtener empleado básico
     const empleadoResult = await db.execute(sql`
@@ -57,7 +57,8 @@ router.get('/:id', async (req: Request, res: Response) => {
         e.telefono,
         e.direccion,
         e.contacto_emergencia,
-        e.user_id
+        e.user_id,
+        e.created_at
       FROM empleados e
       WHERE e.id = ${empleadoId}
     `);
@@ -70,7 +71,18 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     // Obtener datos de nómina
     const nominaResult = await db.execute(sql`
-      SELECT * FROM empleado_nomina WHERE empleado_id = ${empleadoId}
+      SELECT 
+        sueldo_base,
+        bonificacion,
+        tasa_impuestos,
+        base_deduccion,
+        beneficios_base,
+        metodo_pago,
+        cuenta_bancaria,
+        seguro_salud,
+        dias_vacaciones,
+        frecuencia_pago
+      FROM empleado_nomina WHERE empleado_id = ${empleadoId}
     `);
     const nominaData = nominaResult.rows[0] as any;
 
@@ -128,15 +140,69 @@ router.get('/:id', async (req: Request, res: Response) => {
       proyectos = proyectosBasicResult.rows as any[];
     }
 
+    // Calcular último pago
+    let ultimoPago: any = null;
+    const pagosPagados = nominas.filter(n => n.estado === 'pagada');
+    if (pagosPagados.length > 0) {
+      ultimoPago = {
+        fecha: pagosPagados[0].fecha_pago,
+        monto: pagosPagados[0].neto
+      };
+    }
+    
+    // Crear historial de eventos
+    let historial = [
+      {
+        tipo: 'alta',
+        fecha: empleado.created_at || empleado.fecha_ingreso,
+        descripcion: 'Empleado registrado en el sistema',
+        detalle: `Fecha de ingreso: ${empleado.fecha_ingreso}`
+      }
+    ];
+    
+    // Agregar eventos de nóminas al historial
+    nominas.forEach(nomina => {
+      historial.push({
+        tipo: nomina.estado === 'pagada' ? 'pago' : 'nomina_creada',
+        fecha: nomina.estado === 'pagada' ? nomina.fecha_pago : nomina.created_at,
+        descripcion: nomina.estado === 'pagada' ? 
+          `Nómina pagada - $${Number(nomina.neto).toLocaleString()}` : 
+          `Nómina creada - $${Number(nomina.neto).toLocaleString()}`,
+        detalle: `Proyecto: ${nomina.proyecto_nombre || 'Sin proyecto'}`
+      });
+    });
+    
+    historial.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+    // Calcular gasto por proyecto
+    const gastoResult = await db.execute(sql`
+      SELECT 
+        p.name as proyecto_nombre,
+        SUM(ni.neto) as total_gastado
+      FROM nomina_items ni
+      INNER JOIN nominas_nuevas nn ON ni.nomina_id = nn.id
+      LEFT JOIN projects p ON nn.proyecto_id = p.id
+      WHERE ni.empleado_id = ${empleadoId} AND nn.estado = 'pagada'
+      GROUP BY p.id, p.name
+    `);
+    const gastoPorProyecto = gastoResult.rows as any[];
+
     const empleadoResponse = {
       ...empleado,
       nomina: nominaData ? {
         sueldo_base: nominaData.sueldo_base,
+        bonificacion: nominaData.bonificacion,
         frecuencia_pago: nominaData.frecuencia_pago,
-        metodo_pago: nominaData.metodo_pago
+        metodo_pago: nominaData.metodo_pago,
+        tasa_impuestos: nominaData.tasa_impuestos,
+        base_deduccion: nominaData.base_deduccion,
+        beneficios_base: nominaData.beneficios_base
       } : null,
       proyectos,
       nominas,
+      historial,
+      gastoPorProyecto,
+      ultimoPago,
       contratos: [] // TODO: implementar contratos
     };
 
@@ -325,6 +391,56 @@ router.patch('/:id/historial-nomina/:nominaId/estado', async (req: Request, res:
     res.json({ message: `Nómina marcada como ${estado}` });
   } catch (error) {
     console.error('Error al actualizar estado de nómina:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Endpoint para exportar nómina (endpoint global, no por empleado)
+export const exportRouter = Router();
+
+exportRouter.get('/nominas/:nominaId/export', async (req: Request, res: Response) => {
+  try {
+    const nominaId = parseInt(req.params.nominaId);
+    
+    // Obtener datos de la nómina
+    const nominaResult = await db.execute(sql`
+      SELECT 
+        nn.*,
+        ni.sueldo,
+        ni.bono,
+        ni.deduccion,
+        ni.impuestos,
+        ni.neto,
+        e.nombre,
+        e.apellido,
+        e.identificacion,
+        e.cargo,
+        p.name as proyecto_nombre
+      FROM nominas_nuevas nn
+      LEFT JOIN nomina_items ni ON nn.id = ni.nomina_id
+      LEFT JOIN empleados e ON ni.empleado_id = e.id
+      LEFT JOIN projects p ON nn.proyecto_id = p.id
+      WHERE nn.id = ${nominaId}
+    `);
+    
+    const nomina = nominaResult.rows[0] as any;
+    
+    if (!nomina) {
+      return res.status(404).json({ message: 'Nómina no encontrada' });
+    }
+    
+    // Por ahora, devolvemos un JSON con los datos
+    // TODO: Implementar generación de PDF con PDFKit
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=nomina-${nominaId}.json`);
+    res.json({
+      nomina: nomina,
+      generado: new Date(),
+      mensaje: 'Exportación de nómina - PDF pendiente de implementar'
+    });
+    
+  } catch (error) {
+    console.error('Error al exportar nómina:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
