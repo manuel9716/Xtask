@@ -144,14 +144,14 @@ export class PostgresNominaRepository implements INominaRepository {
         SELECT 
           e.id,
           e.created_at as fecha,
-          CONCAT('Nuevo empleado: ', e.nombre, ' ', e.apellido, ' - ', e.cargo, ' (', COALESCE(p.nombre, 'Sin proyecto'), ')') as descripcion,
+          CONCAT('Nuevo empleado: ', e.nombre, ' ', e.apellido, ' - ', e.cargo, ' (', COALESCE(p.name, 'Sin proyecto'), ')') as descripcion,
           'pendiente'::text as estado,
           e.salario_base as monto,
-          COALESCE(p.nombre, 'Sin proyecto') as proyecto,
+          COALESCE(p.name, 'Sin proyecto') as proyecto,
           'empleado_creado' as tipo_evento
         FROM empleados_nomina e
         LEFT JOIN empleado_proyecto ep ON e.id = ep.empleado_id
-        LEFT JOIN proyectos p ON ep.proyecto_id = p.id
+        LEFT JOIN projects p ON ep.proyecto_id = p.id
         WHERE e.created_at >= NOW() - INTERVAL '30 days'
       )
       UNION ALL
@@ -160,14 +160,14 @@ export class PostgresNominaRepository implements INominaRepository {
         SELECT 
           n.id,
           COALESCE(n.fecha_pago, n.created_at) as fecha,
-          CONCAT(e.nombre, ' ', e.apellido, ' - Pago nómina - ', COALESCE(p.nombre, 'Sin proyecto')) as descripcion,
+          CONCAT(e.nombre, ' ', e.apellido, ' - Pago nómina - ', COALESCE(p.name, 'Sin proyecto')) as descripcion,
           n.estado,
           n.valor_neto as monto,
-          COALESCE(p.nombre, 'Sin proyecto') as proyecto,
+          COALESCE(p.name, 'Sin proyecto') as proyecto,
           'nomina_pago' as tipo_evento
         FROM nominas n
         JOIN empleados_nomina e ON n.empleado_id = e.id
-        LEFT JOIN proyectos p ON n.proyecto_id = p.id
+        LEFT JOIN projects p ON n.proyecto_id = p.id
         WHERE n.created_at >= NOW() - INTERVAL '30 days'
       )
       ORDER BY fecha DESC
@@ -187,12 +187,13 @@ export class PostgresNominaRepository implements INominaRepository {
     // Gráfico de gastos por proyecto
     const gastosProyectoResult = await db.execute(sql`
       SELECT 
-        'Proyecto ' || COALESCE(proyecto_id::text, 'Sin asignar') as proyecto,
-        SUM(valor_neto) as monto
-      FROM nominas
-      WHERE EXTRACT(MONTH FROM periodo_inicio) = EXTRACT(MONTH FROM CURRENT_DATE)
-        AND EXTRACT(YEAR FROM periodo_inicio) = EXTRACT(YEAR FROM CURRENT_DATE)
-      GROUP BY proyecto_id
+        COALESCE(p.name, 'Sin asignar') as proyecto,
+        SUM(n.valor_neto) as monto
+      FROM nominas n
+      LEFT JOIN projects p ON n.proyecto_id = p.id
+      WHERE EXTRACT(MONTH FROM n.periodo_inicio) = EXTRACT(MONTH FROM CURRENT_DATE)
+        AND EXTRACT(YEAR FROM n.periodo_inicio) = EXTRACT(YEAR FROM CURRENT_DATE)
+      GROUP BY p.name, n.proyecto_id
       ORDER BY monto DESC
     `);
 
