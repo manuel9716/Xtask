@@ -43,68 +43,104 @@ router.get('/:id', async (req: Request, res: Response) => {
     const includes = includeParams ? includeParams.split(',') : [];
 
     // Obtener empleado básico
-    const [empleado] = await db
-      .select()
-      .from(empleados)
-      .where(eq(empleados.id, empleadoId));
+    const empleadoResult = await db.execute(sql`
+      SELECT 
+        e.id,
+        e.nombre,
+        e.apellido,
+        e.identificacion,
+        e.depto,
+        e.cargo,
+        e.fecha_ingreso,
+        e.estado_contrato,
+        e.tipo_contrato,
+        e.telefono,
+        e.direccion,
+        e.contacto_emergencia,
+        e.user_id
+      FROM empleados e
+      WHERE e.id = ${empleadoId}
+    `);
+    
+    const empleado = empleadoResult.rows[0] as any;
 
     if (!empleado) {
       return res.status(404).json({ message: 'Empleado no encontrado' });
     }
 
     // Obtener datos de nómina
-    const [nominaData] = await db
-      .select()
-      .from(empleado_nomina)
-      .where(eq(empleado_nomina.empleado_id, empleadoId));
+    const nominaResult = await db.execute(sql`
+      SELECT * FROM empleado_nomina WHERE empleado_id = ${empleadoId}
+    `);
+    const nominaData = nominaResult.rows[0] as any;
 
     let proyectos: any[] = [];
     let nominas: any[] = [];
 
     // Incluir proyectos si se solicita
     if (includes.includes('proyectos')) {
-      proyectos = await db
-        .select({
-          id: projects.id,
-          nombre: projects.name,
-          descripcion: projects.description,
-        })
-        .from(empleado_proyecto)
-        .innerJoin(projects, eq(empleado_proyecto.proyecto_id, projects.id))
-        .where(eq(empleado_proyecto.empleado_id, empleadoId));
+      const proyectosResult = await db.execute(sql`
+        SELECT 
+          p.id,
+          p.name as nombre,
+          p.description as descripcion
+        FROM empleado_proyecto ep
+        INNER JOIN projects p ON ep.proyecto_id = p.id
+        WHERE ep.empleado_id = ${empleadoId} AND ep.activo = true
+      `);
+      proyectos = proyectosResult.rows as any[];
     }
 
     // Incluir nóminas si se solicita
     if (includes.includes('nominas')) {
-      nominas = await db
-        .select({
-          id: nominas_nuevas.id,
-          rango_inicio: nominas_nuevas.rango_inicio,
-          rango_fin: nominas_nuevas.rango_fin,
-          estado: nominas_nuevas.estado,
-          proyecto_nombre: projects.name,
-          sueldo: nomina_items.sueldo,
-          bono: nomina_items.bono,
-          deduccion: nomina_items.deduccion,
-          impuestos: nomina_items.impuestos,
-          neto: nomina_items.neto,
-        })
-        .from(nomina_items)
-        .innerJoin(nominas_nuevas, eq(nomina_items.nomina_id, nominas_nuevas.id))
-        .leftJoin(projects, eq(nominas_nuevas.proyecto_id, projects.id))
-        .where(eq(nomina_items.empleado_id, empleadoId))
-        .orderBy(sql`${nominas_nuevas.rango_inicio} DESC`);
+      const nominasResult = await db.execute(sql`
+        SELECT 
+          nn.id,
+          nn.rango_inicio,
+          nn.rango_fin,
+          nn.estado,
+          p.name as proyecto_nombre,
+          ni.sueldo,
+          ni.bono,
+          ni.deduccion,
+          ni.impuestos,
+          ni.neto
+        FROM nomina_items ni
+        INNER JOIN nominas_nuevas nn ON ni.nomina_id = nn.id
+        LEFT JOIN projects p ON nn.proyecto_id = p.id
+        WHERE ni.empleado_id = ${empleadoId}
+        ORDER BY nn.rango_inicio DESC
+      `);
+      nominas = nominasResult.rows as any[];
     }
 
-    const result = {
+    // Siempre incluir proyectos para la vista básica
+    if (proyectos.length === 0) {
+      const proyectosBasicResult = await db.execute(sql`
+        SELECT 
+          p.id,
+          p.name as nombre,
+          p.description as descripcion
+        FROM empleado_proyecto ep
+        INNER JOIN projects p ON ep.proyecto_id = p.id
+        WHERE ep.empleado_id = ${empleadoId} AND ep.activo = true
+      `);
+      proyectos = proyectosBasicResult.rows as any[];
+    }
+
+    const empleadoResponse = {
       ...empleado,
-      nomina: nominaData,
+      nomina: nominaData ? {
+        sueldo_base: nominaData.sueldo_base,
+        frecuencia_pago: nominaData.frecuencia_pago,
+        metodo_pago: nominaData.metodo_pago
+      } : null,
       proyectos,
       nominas,
       contratos: [] // TODO: implementar contratos
     };
 
-    res.json(result);
+    res.json(empleadoResponse);
   } catch (error) {
     console.error('Error al obtener empleado:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
