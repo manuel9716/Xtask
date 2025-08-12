@@ -50,11 +50,20 @@ export function Timeline({ items }: TimelineProps) {
   };
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('es-CO', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }).format(date);
+    try {
+      // Verificar si la fecha es válida
+      if (!date || isNaN(date.getTime())) {
+        return 'Fecha no disponible';
+      }
+      
+      return new Intl.DateTimeFormat('es-CO', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }).format(date);
+    } catch (error) {
+      return 'Fecha no disponible';
+    }
   };
 
   return (

@@ -154,11 +154,11 @@ export class PostgresNominaRepository implements INominaRepository {
 
     const timeline: TimelineItem[] = timelineResult.rows.map((row: any) => ({
       id: row.id,
-      fecha: new Date(row.fecha || new Date()),
+      fecha: row.fecha ? new Date(row.fecha) : new Date(),
       descripcion: row.descripcion,
       estado: row.estado as 'pagado' | 'pendiente' | 'retrasado',
-      monto: parseFloat(row.monto),
-      proyecto: row.proyecto
+      monto: parseFloat(row.monto) || 0,
+      proyecto: row.proyecto || 'Sin proyecto'
     }));
 
     // Gráfico de gastos por proyecto

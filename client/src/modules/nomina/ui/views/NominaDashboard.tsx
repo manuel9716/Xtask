@@ -105,7 +105,10 @@ export default function NominaDashboard() {
   }
 
   const kpis = dashboardData?.kpis;
-  const timeline = dashboardData?.timeline || [];
+  const timeline = (dashboardData?.timeline || []).map(item => ({
+    ...item,
+    fecha: new Date(item.fecha)
+  }));
   const charts = dashboardData?.charts;
 
   return (
@@ -137,12 +140,12 @@ export default function NominaDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Proyecto</label>
-              <Select value={filtros.proyectoId} onValueChange={(value) => setFiltros(prev => ({...prev, proyectoId: value}))}>
+              <Select value={filtros.proyectoId || "all"} onValueChange={(value) => setFiltros(prev => ({...prev, proyectoId: value === "all" ? "" : value}))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar proyecto" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los proyectos</SelectItem>
+                  <SelectItem value="all">Todos los proyectos</SelectItem>
                   <SelectItem value="1">Proyecto Alpha</SelectItem>
                   <SelectItem value="2">Proyecto Beta</SelectItem>
                 </SelectContent>
@@ -150,12 +153,12 @@ export default function NominaDashboard() {
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Empleado</label>
-              <Select value={filtros.empleadoId} onValueChange={(value) => setFiltros(prev => ({...prev, empleadoId: value}))}>
+              <Select value={filtros.empleadoId || "all"} onValueChange={(value) => setFiltros(prev => ({...prev, empleadoId: value === "all" ? "" : value}))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar empleado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los empleados</SelectItem>
+                  <SelectItem value="all">Todos los empleados</SelectItem>
                 </SelectContent>
               </Select>
             </div>
