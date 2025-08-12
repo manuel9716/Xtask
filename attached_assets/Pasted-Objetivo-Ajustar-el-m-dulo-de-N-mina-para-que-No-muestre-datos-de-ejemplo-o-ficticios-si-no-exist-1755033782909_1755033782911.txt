@@ -1,0 +1,56 @@
+Objetivo:
+Ajustar el módulo de Nómina para que:
+
+No muestre datos de ejemplo o ficticios si no existen empleados reales.
+
+Se actualice automáticamente la vista (cronología, KPIs y gráficos) cuando se registre un nuevo empleado real, sin necesidad de recargar manualmente.
+
+Backend:
+
+Eliminar cualquier seed o carga automática de datos de empleados, nóminas o pagos.
+
+Modificar los endpoints GET /api/nomina/dashboard, GET /api/nominas y GET /api/empleados para que:
+
+Si no existen empleados en la base de datos, devuelvan arrays vacíos y conteos en 0.
+
+Al insertar un empleado (POST /api/empleados), retornar inmediatamente el objeto completo del nuevo empleado creado, con datos necesarios para refrescar el dashboard.
+
+Frontend:
+
+En DashboardNomina.tsx:
+
+Agregar control de estado vacío en KPIs, cronología y gráficos:
+
+Si empleados.length === 0, mostrar texto "No hay registros aún. Los datos aparecerán cuando se agreguen empleados".
+
+En gráficos, mostrar placeholder con mensaje "Sin datos" cuando los datasets estén vacíos.
+
+Implementar refresco automático:
+
+Escuchar el evento de creación exitosa desde NewEmployeeModal.
+
+Llamar nuevamente a GET /api/nomina/dashboard y recargar cronología, KPIs y gráficos con los datos actualizados.
+
+En NewEmployeeModal.tsx:
+
+Al terminar createEmpleado(), emitir un callback onCreated() que actualice el store/estado global.
+
+Cerrar modal y disparar reloadDashboard() para mostrar los datos del nuevo empleado en la vista.
+
+Criterios de aceptación:
+
+Si la base de datos está vacía, el módulo de Nómina no muestra información ni nombres ficticios.
+
+Los placeholders se ven claros en cronología, KPIs y gráficos cuando no hay datos.
+
+Al crear un nuevo empleado real, la información se actualiza en menos de 2 segundos en todos los campos del dashboard sin recargar la página.
+
+No se requieren acciones manuales del usuario para ver el nuevo registro.
+
+Las APIs solo devuelven datos reales guardados en la base.
+
+Extra:
+
+Mantener la misma lógica en todos los ambientes (dev, test, prod).
+
+Implementar una animación de "fade-in" opcional para cuando se cargan los primeros datos.

@@ -96,7 +96,7 @@ export function Timeline({ items }: TimelineProps) {
             </p>
           ) : (
             items.map((item) => (
-              <div key={item.id} className="flex items-start space-x-3">
+              <div key={`${item.tipo_evento || 'nomina'}-${item.id}`} className="flex items-start space-x-3">
                 <div className="mt-1">
                   {getStatusIcon(item.estado, item.tipo_evento)}
                 </div>

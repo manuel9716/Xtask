@@ -25,9 +25,10 @@ import { useNominaStore } from "../state/nomina.store";
 interface NewEmployeeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEmployeeCreated?: () => void;
 }
 
-export function NewEmployeeModal({ open, onOpenChange }: NewEmployeeModalProps) {
+export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewEmployeeModalProps) {
   const [currentTab, setCurrentTab] = useState("personal");
   const [contratoFile, setContratoFile] = useState<File | null>(null);
   const { toast } = useToast();
@@ -99,6 +100,7 @@ export function NewEmployeeModal({ open, onOpenChange }: NewEmployeeModalProps) 
       }
 
       reloadDashboard();
+      onEmployeeCreated?.(); // Callback para notificar al dashboard
       onOpenChange(false);
       form.reset();
       setContratoFile(null);

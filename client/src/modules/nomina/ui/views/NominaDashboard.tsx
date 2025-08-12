@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +48,7 @@ export default function NominaDashboard() {
   });
   const [showNewEmployeeModal, setShowNewEmployeeModal] = useState(false);
   const [showCreatePayrollWizard, setShowCreatePayrollWizard] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: dashboardData, isLoading, error } = useQuery<DashboardData>({
     queryKey: ['/api/nomina-modulo/dashboard', filtros],
@@ -70,6 +71,17 @@ export default function NominaDashboard() {
       minimumFractionDigits: 0
     }).format(amount);
   };
+
+  // Función para recargar el dashboard después de crear un empleado
+  const handleEmployeeCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/nomina-modulo/dashboard'] });
+    setShowNewEmployeeModal(false);
+  };
+
+  // Verificar si hay datos para mostrar
+  const hasEmployees = (dashboardData?.kpis?.empleadosActivos || 0) > 0;
+  const hasTimelineData = (dashboardData?.timeline || []).length > 0;
+  const hasChartData = (dashboardData?.charts?.historico6Meses || []).length > 0;
 
   if (isLoading) {
     return (
@@ -161,8 +173,7 @@ export default function NominaDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los proyectos</SelectItem>
-                  <SelectItem value="1">Proyecto Alpha</SelectItem>
-                  <SelectItem value="2">Proyecto Beta</SelectItem>
+                  {/* Los proyectos se cargarán dinámicamente desde la API cuando existan */}
                 </SelectContent>
               </Select>
             </div>
@@ -198,29 +209,45 @@ export default function NominaDashboard() {
       </Card>
 
       {/* KPIs */}
-      {kpis && (
+      {!hasEmployees ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No hay empleados registrados</h3>
+              <p className="text-muted-foreground mb-4">
+                Los datos de KPIs aparecerán cuando se agreguen empleados al sistema.
+              </p>
+              <Button onClick={() => setShowNewEmployeeModal(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Registrar Primer Empleado
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             title="Empleados Activos"
-            value={kpis.empleadosActivos}
+            value={kpis?.empleadosActivos || 0}
             icon={<Users className="h-4 w-4" />}
             subtitle="Personal activo"
           />
           <KpiCard
             title="Nómina Mensual"
-            value={formatCurrency(kpis.nominaMensual)}
+            value={formatCurrency(kpis?.nominaMensual || 0)}
             icon={<DollarSign className="h-4 w-4" />}
             subtitle="Total mes actual"
           />
           <KpiCard
             title="Bonificaciones"
-            value={formatCurrency(kpis.bonificacionesMes)}
+            value={formatCurrency(kpis?.bonificacionesMes || 0)}
             icon={<TrendingUp className="h-4 w-4" />}
             subtitle="Bonos del mes"
           />
           <KpiCard
             title="Pagos Procesados"
-            value={`${kpis.porcentajePagadas}%`}
+            value={`${kpis?.porcentajePagadas || 0}%`}
             icon={<CalendarDays className="h-4 w-4" />}
             subtitle="Del total programado"
           />
@@ -248,7 +275,8 @@ export default function NominaDashboard() {
       {/* Modales */}
       <NewEmployeeModal 
         open={showNewEmployeeModal} 
-        onOpenChange={setShowNewEmployeeModal} 
+        onOpenChange={setShowNewEmployeeModal}
+        onEmployeeCreated={handleEmployeeCreated}
       />
       <CreatePayrollWizard 
         open={showCreatePayrollWizard} 

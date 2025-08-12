@@ -197,7 +197,7 @@ export class PostgresNominaRepository implements INominaRepository {
       ORDER BY monto DESC
     `);
 
-    // Gráfico sueldos vs bonos
+    // Gráfico sueldos vs bonos del mes actual
     const sueldosBonosResult = await db.execute(sql`
       SELECT 
         SUM(salario_base) as sueldos,
@@ -209,7 +209,19 @@ export class PostgresNominaRepository implements INominaRepository {
 
     const sueldosBonosData = sueldosBonosResult.rows[0] as any;
 
-    // Datos de gráficos
+    // Histórico de los últimos 6 meses con datos reales
+    const historicoResult = await db.execute(sql`
+      SELECT 
+        TO_CHAR(DATE_TRUNC('month', periodo_inicio), 'Mon') as mes,
+        SUM(salario_base) as sueldos,
+        SUM(bonificaciones) as bonos
+      FROM nominas
+      WHERE periodo_inicio >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months'
+      GROUP BY DATE_TRUNC('month', periodo_inicio)
+      ORDER BY DATE_TRUNC('month', periodo_inicio) ASC
+    `);
+
+    // Datos de gráficos usando solo información real de la base de datos
     const charts: ChartData = {
       gastoPorProyecto: gastosProyectoResult.rows.map((row: any) => ({
         proyecto: row.proyecto,
@@ -219,14 +231,11 @@ export class PostgresNominaRepository implements INominaRepository {
         { name: "Sueldos", value: parseFloat(sueldosBonosData?.sueldos) || 0 },
         { name: "Bonos", value: parseFloat(sueldosBonosData?.bonos) || 0 }
       ],
-      historico6Meses: [
-        { mes: "Jul", sueldos: 380000, bonos: 50000 },
-        { mes: "Ago", sueldos: 420000, bonos: 60000 },
-        { mes: "Sep", sueldos: 410000, bonos: 55000 },
-        { mes: "Oct", sueldos: 450000, bonos: 70000 },
-        { mes: "Nov", sueldos: 430000, bonos: 65000 },
-        { mes: "Dic", sueldos: parseFloat(sueldosBonosData?.sueldos) || 460000, bonos: parseFloat(sueldosBonosData?.bonos) || 75000 }
-      ]
+      historico6Meses: historicoResult.rows.map((row: any) => ({
+        mes: row.mes,
+        sueldos: parseFloat(row.sueldos) || 0,
+        bonos: parseFloat(row.bonos) || 0
+      }))
     };
 
     return {
