@@ -26,6 +26,8 @@ import { EmpleadosRoutes } from "@/modules/nomina/empleados/ui/routes";
 import { ProyectosRoutes } from "@/modules/proyectos/ui/routes";
 import { KpisRoutes } from "@/modules/kpis/ui/routes";
 import { ThemeProvider } from "@/hooks/use-theme";
+import EmployeeDetailPage from "@/modules/nomina/pages/EmployeeDetailPage";
+import PayrollDetailPage from "@/modules/nomina/pages/PayrollDetailPage";
 
 // Importaciones para el módulo de autenticación
 import { AuthProvider } from "@/modules/auth/ui/context/AuthContext";
@@ -99,6 +101,24 @@ function Router() {
         <ProtectedRoute>
           <MainLayout>
             <HabilidadesPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      {/* Rutas detalladas de empleados */}
+      <Route path="/empleados/:id">
+        <ProtectedRoute>
+          <MainLayout>
+            <EmployeeDetailPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      {/* Rutas detalladas de nóminas */}
+      <Route path="/nominas/:id">
+        <ProtectedRoute>
+          <MainLayout>
+            <PayrollDetailPage />
           </MainLayout>
         </ProtectedRoute>
       </Route>

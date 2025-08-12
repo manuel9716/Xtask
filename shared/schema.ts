@@ -291,6 +291,8 @@ export const empleados = pgTable("empleados", {
   telefono: text("telefono"),
   direccion: text("direccion"),
   contacto_emergencia: text("contacto_emergencia"),
+  activo: boolean("activo").default(true).notNull(),
+  deleted_at: timestamp("deleted_at"),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -317,7 +319,10 @@ export const empleado_proyecto = pgTable("empleado_proyecto", {
   empleado_id: integer("empleado_id").references(() => empleados.id).notNull(),
   proyecto_id: integer("proyecto_id").references(() => projects.id).notNull(),
   fecha_asignacion: timestamp("fecha_asignacion").defaultNow().notNull(),
-});
+  activo: boolean("activo").default(true).notNull(),
+}, (table) => ({
+  uniqueEmployeeProject: uniqueIndex("unique_empleado_proyecto").on(table.empleado_id, table.proyecto_id),
+}));
 
 // Contratos de empleados
 export const empleado_contratos = pgTable("empleado_contratos", {
@@ -340,6 +345,8 @@ export const nominas_nuevas = pgTable("nominas_nuevas", {
   total_sueldos: decimal("total_sueldos", { precision: 12, scale: 2 }).notNull(),
   total_bonos: decimal("total_bonos", { precision: 12, scale: 2 }).notNull(),
   total_deducciones: decimal("total_deducciones", { precision: 12, scale: 2 }).notNull(),
+  total_impuestos: decimal("total_impuestos", { precision: 12, scale: 2 }).notNull().default("0"),
+  total_neto: decimal("total_neto", { precision: 12, scale: 2 }).notNull().default("0"),
   creado_por: integer("creado_por").references(() => users.id).notNull(),
   creado_at: timestamp("creado_at").defaultNow().notNull(),
 });

@@ -55,4 +55,27 @@ export class EmpleadosApi {
     const response = await apiRequest("GET", `/api/empleados-nomina?${params}`);
     return response.json();
   }
+
+  static async getEmpleado(id: number) {
+    const response = await apiRequest('GET', `/api/empleados/${id}?include=proyectos,nominas`);
+    return response.json();
+  }
+
+  static async updateEmpleado(id: number, data: any) {
+    const response = await apiRequest('PATCH', `/api/empleados/${id}`, data);
+    return response.json();
+  }
+
+  static async updateEmpleadoProyectos(id: number, proyectosIds: number[]) {
+    const response = await apiRequest('PUT', `/api/empleados/${id}/proyectos`, { proyectosIds });
+    return response.json();
+  }
+
+  static async deleteEmpleado(id: number) {
+    const response = await apiRequest('DELETE', `/api/empleados/${id}`);
+    return response.json();
+  }
 }
+
+// Export default instance
+export const empleadosApi = EmpleadosApi;

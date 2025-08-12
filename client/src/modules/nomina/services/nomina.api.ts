@@ -32,8 +32,27 @@ export class NominaApi {
     return response.json();
   }
 
-  static async exportNomina(nominaId: number, format: 'pdf' | 'xlsx') {
-    const response = await fetch(`/api/nominas/${nominaId}/export?format=${format}`, {
+  static async getEmpleadosForNomina(filtros: { proyectoId?: number; q?: string } = {}) {
+    const params = new URLSearchParams();
+    if (filtros.proyectoId) params.set('proyectoId', filtros.proyectoId.toString());
+    if (filtros.q) params.set('q', filtros.q);
+    
+    const response = await apiRequest("GET", `/api/empleados-nomina?${params}`);
+    return response.json();
+  }
+
+  static async getNomina(id: number) {
+    const response = await apiRequest('GET', `/api/nominas/${id}`);
+    return response.json();
+  }
+
+  static async setNominaEstado(id: number, estado: string) {
+    const response = await apiRequest('PATCH', `/api/nominas/${id}/estado`, { estado });
+    return response.json();
+  }
+
+  static async exportNomina(id: number, format: 'pdf' | 'xlsx') {
+    const response = await fetch(`/api/nominas/${id}/export?format=${format}`, {
       method: 'GET',
     });
     
@@ -43,13 +62,7 @@ export class NominaApi {
     
     return response.blob();
   }
-
-  static async getEmpleadosForNomina(filtros: { proyectoId?: number; q?: string } = {}) {
-    const params = new URLSearchParams();
-    if (filtros.proyectoId) params.set('proyectoId', filtros.proyectoId.toString());
-    if (filtros.q) params.set('q', filtros.q);
-    
-    const response = await apiRequest("GET", `/api/empleados-nomina?${params}`);
-    return response.json();
-  }
 }
+
+// Export default instance
+export const nominaApi = NominaApi;

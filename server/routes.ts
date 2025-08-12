@@ -22,6 +22,8 @@ import recursosRouter from "./routes/recursos.routes";
 import nominaRouter from "./modules/nomina/routes";
 import { empleadosRoutes } from "./modules/empleados/empleados.routes";
 import { nominaRoutes } from "./modules/nomina/nomina.routes";
+import empleadosAdvancedRouter from "./routes/empleados.routes";
+import nominasAdvancedRouter from "./routes/nominas.routes";
 import { verifyToken } from "./routes/auth.routes";
 import { MailService } from '@sendgrid/mail';
 import PDFDocument from 'pdfkit';
@@ -98,6 +100,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas para gestión de nóminas (requieren autenticación)
   app.use('/api/nominas', verifyToken, nominaRoutes);
+  
+  // Rutas avanzadas para empleados individuales
+  app.use('/api/empleados', verifyToken, empleadosAdvancedRouter);
+  
+  // Rutas avanzadas para nóminas detalladas
+  app.use('/api/nominas-detail', verifyToken, nominasAdvancedRouter);
   // Projects routes
   app.get("/api/projects", async (req, res) => {
     try {
