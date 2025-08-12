@@ -205,7 +205,7 @@ export default function EmployeeDetailPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{empleado.proyectos?.length || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  {empleado.proyectos?.map(p => p.nombre).join(', ') || 'Sin proyectos'}
+                  {empleado.proyectos?.map((p: any) => p.nombre).join(', ') || 'Sin proyectos'}
                 </p>
               </CardContent>
             </Card>
@@ -309,7 +309,7 @@ export default function EmployeeDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {empleado.nominas.map((nomina) => (
+                    {empleado.nominas.map((nomina: any) => (
                       <TableRow key={nomina.id}>
                         <TableCell>
                           {new Date(nomina.rango_inicio).toLocaleDateString()} - {new Date(nomina.rango_fin).toLocaleDateString()}
@@ -380,7 +380,7 @@ export default function EmployeeDetailPage() {
             <CardContent>
               {empleado.contratos && empleado.contratos.length > 0 ? (
                 <div className="space-y-4">
-                  {empleado.contratos.map((contrato) => (
+                  {empleado.contratos.map((contrato: any) => (
                     <div key={contrato.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <FileText className="h-5 w-5 text-muted-foreground" />
@@ -427,7 +427,7 @@ export default function EmployeeDetailPage() {
                     </p>
                   </div>
                 </div>
-                {empleado.nominas?.map((nomina) => (
+                {empleado.nominas?.map((nomina: any) => (
                   <div key={nomina.id} className="flex items-start gap-3">
                     <div className={`w-2 h-2 rounded-full mt-2 ${
                       nomina.estado === 'pagada' ? 'bg-green-500' : 'bg-yellow-500'
