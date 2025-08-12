@@ -280,14 +280,9 @@ export default function NominaDashboard() {
         </div>
       )}
 
-      {/* Gráficos y Empleados */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="col-span-4">
-          {charts && <GastosPorProyectoChart data={charts.gastoPorProyecto} />}
-        </div>
-        <div className="col-span-3">
-          <EmpleadosList empleados={empleados} isLoading={isLoading} />
-        </div>
+      {/* Sección de Empleados */}
+      <div className="w-full">
+        <EmpleadosList empleados={empleados} isLoading={isLoading} />
       </div>
 
       {/* Gráficos inferiores */}

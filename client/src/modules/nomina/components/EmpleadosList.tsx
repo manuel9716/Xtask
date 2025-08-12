@@ -120,21 +120,21 @@ export function EmpleadosList({ empleados, isLoading }: EmpleadosListProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div className="space-y-4 max-h-[600px] overflow-y-auto">
           {empleados.map((empleado) => (
             <div
               key={empleado.id}
-              className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              className="flex items-center space-x-6 p-6 border rounded-lg hover:bg-muted/50 transition-colors bg-card shadow-sm"
             >
-              <Avatar className="h-12 w-12">
-                <AvatarFallback className="bg-primary/10 text-primary">
+              <Avatar className="h-14 w-14">
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
                   {getInitials(empleado.nombre, empleado.apellido)}
                 </AvatarFallback>
               </Avatar>
               
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center space-x-2">
-                  <h4 className="font-semibold text-sm">
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center space-x-3">
+                  <h4 className="font-semibold text-base">
                     {empleado.nombre} {empleado.apellido}
                   </h4>
                   <Badge variant={getEstadoBadgeVariant(empleado.estado_contrato)} className="text-xs">
@@ -142,7 +142,7 @@ export function EmpleadosList({ empleados, isLoading }: EmpleadosListProps) {
                   </Badge>
                 </div>
                 
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground font-medium">
                   {empleado.cargo} - {empleado.depto}
                 </p>
                 
@@ -168,7 +168,7 @@ export function EmpleadosList({ empleados, isLoading }: EmpleadosListProps) {
                 </div>
               </div>
               
-              <Button variant="outline" size="sm" asChild>
+              <Button variant="outline" size="default" asChild className="min-w-[120px]">
                 <Link href={`/nomina/empleados/${empleado.id}`}>
                   <Eye className="h-4 w-4 mr-2" />
                   Ver detalles
