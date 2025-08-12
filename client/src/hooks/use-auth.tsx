@@ -27,17 +27,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     isLoading,
   } = useQuery<SelectUser | null, Error>({
-    queryKey: ["/api/user"],
+    queryKey: ["/api/auth/me"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const res = await apiRequest("POST", "/api/auth/login", credentials);
+      const data = await res.json();
+      
+      // Guardar el token en localStorage
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
+      
+      return data.user;
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
+      queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.fullName || user.username}!`,
@@ -54,11 +61,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      const res = await apiRequest("POST", "/api/auth/register", credentials);
+      const data = await res.json();
+      
+      // Guardar el token en localStorage
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
+      
+      return data.user;
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
+      queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Registration successful",
         description: `Welcome to XTask, ${user.fullName || user.username}!`,
@@ -75,10 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
+      // Limpiar token del localStorage
+      localStorage.removeItem('auth_token');
+      queryClient.setQueryData(["/api/auth/me"], null);
       toast({
         title: "Logged out successfully",
       });

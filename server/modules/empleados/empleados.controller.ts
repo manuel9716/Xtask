@@ -73,7 +73,7 @@ const upload = multer({
 export class EmpleadosController {
   static async createEmpleado(req: Request, res: Response) {
     try {
-      if (!req.user) {
+      if (!req.user || !req.user.id) {
         return res.status(401).json({ error: "No autenticado" });
       }
 
