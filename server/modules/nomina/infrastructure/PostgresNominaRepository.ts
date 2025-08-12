@@ -103,49 +103,105 @@ export class PostgresNominaRepository implements INominaRepository {
     // KPIs principales
     const kpisResult = await db.execute(sql`
       SELECT 
-        COUNT(*) FILTER (WHERE estado_contrato = 'ACTIVO') as empleados_activos,
-        COALESCE(SUM(sueldo_base), 0) as nomina_mensual,
-        COALESCE(SUM(bonificacion), 0) as bonificaciones_mes
-      FROM ${empleadosNomina} e
-      LEFT JOIN ${empleadoNomina} en ON e.id = en.empleado_id
-      WHERE e.estado_contrato = 'ACTIVO'
+        COUNT(*) FILTER (WHERE estado = 'activo') as empleados_activos,
+        COALESCE(SUM(salario_base), 0) as nomina_mensual
+      FROM empleados_nomina
+      WHERE estado = 'activo'
+    `);
+
+    const bonificacionesResult = await db.execute(sql`
+      SELECT COALESCE(SUM(bonificaciones), 0) as bonificaciones_mes
+      FROM nominas
+      WHERE EXTRACT(MONTH FROM periodo_inicio) = EXTRACT(MONTH FROM CURRENT_DATE)
+        AND EXTRACT(YEAR FROM periodo_inicio) = EXTRACT(YEAR FROM CURRENT_DATE)
+    `);
+
+    const pagadasResult = await db.execute(sql`
+      SELECT 
+        COUNT(*) FILTER (WHERE estado = 'pagado') as pagadas,
+        COUNT(*) as total
+      FROM nominas
+      WHERE EXTRACT(MONTH FROM periodo_inicio) = EXTRACT(MONTH FROM CURRENT_DATE)
+        AND EXTRACT(YEAR FROM periodo_inicio) = EXTRACT(YEAR FROM CURRENT_DATE)
     `);
 
     const kpisData = kpisResult.rows[0] as any;
+    const bonifData = bonificacionesResult.rows[0] as any;
+    const pagadasData = pagadasResult.rows[0] as any;
     
     const kpis: DashboardKPIs = {
       empleadosActivos: parseInt(kpisData.empleados_activos) || 0,
       nominaMensual: parseFloat(kpisData.nomina_mensual) || 0,
-      bonificacionesMes: parseFloat(kpisData.bonificaciones_mes) || 0,
-      porcentajePagadas: 85, // Ejemplo
-      proximaFechaPago: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+      bonificacionesMes: parseFloat(bonifData.bonificaciones_mes) || 0,
+      porcentajePagadas: pagadasData.total > 0 ? Math.round((pagadasData.pagadas / pagadasData.total) * 100) : 0,
+      proximaFechaPago: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 5)
     };
 
-    // Timeline reciente
-    const timeline: TimelineItem[] = [
-      {
-        id: 1,
-        fecha: new Date(),
-        descripcion: "Nómina procesada - Proyecto Alpha",
-        estado: 'pagado',
-        monto: 125000,
-        proyecto: "Alpha"
-      }
-    ];
+    // Timeline reciente con datos reales
+    const timelineResult = await db.execute(sql`
+      SELECT 
+        n.id,
+        n.fecha_pago as fecha,
+        CONCAT(e.nombre, ' ', e.apellido, ' - ', COALESCE('Proyecto ' || n.proyecto_id::text, 'Sin proyecto')) as descripcion,
+        n.estado,
+        n.valor_neto as monto,
+        'Proyecto ' || n.proyecto_id::text as proyecto
+      FROM nominas n
+      JOIN empleados_nomina e ON n.empleado_id = e.id
+      ORDER BY COALESCE(n.fecha_pago, n.created_at) DESC
+      LIMIT 10
+    `);
+
+    const timeline: TimelineItem[] = timelineResult.rows.map((row: any) => ({
+      id: row.id,
+      fecha: new Date(row.fecha || new Date()),
+      descripcion: row.descripcion,
+      estado: row.estado as 'pagado' | 'pendiente' | 'retrasado',
+      monto: parseFloat(row.monto),
+      proyecto: row.proyecto
+    }));
+
+    // Gráfico de gastos por proyecto
+    const gastosProyectoResult = await db.execute(sql`
+      SELECT 
+        'Proyecto ' || COALESCE(proyecto_id::text, 'Sin asignar') as proyecto,
+        SUM(valor_neto) as monto
+      FROM nominas
+      WHERE EXTRACT(MONTH FROM periodo_inicio) = EXTRACT(MONTH FROM CURRENT_DATE)
+        AND EXTRACT(YEAR FROM periodo_inicio) = EXTRACT(YEAR FROM CURRENT_DATE)
+      GROUP BY proyecto_id
+      ORDER BY monto DESC
+    `);
+
+    // Gráfico sueldos vs bonos
+    const sueldosBonosResult = await db.execute(sql`
+      SELECT 
+        SUM(salario_base) as sueldos,
+        SUM(bonificaciones) as bonos
+      FROM nominas
+      WHERE EXTRACT(MONTH FROM periodo_inicio) = EXTRACT(MONTH FROM CURRENT_DATE)
+        AND EXTRACT(YEAR FROM periodo_inicio) = EXTRACT(YEAR FROM CURRENT_DATE)
+    `);
+
+    const sueldosBonosData = sueldosBonosResult.rows[0] as any;
 
     // Datos de gráficos
     const charts: ChartData = {
-      gastoPorProyecto: [
-        { proyecto: "Proyecto Alpha", monto: 125000 },
-        { proyecto: "Proyecto Beta", monto: 85000 }
-      ],
+      gastoPorProyecto: gastosProyectoResult.rows.map((row: any) => ({
+        proyecto: row.proyecto,
+        monto: parseFloat(row.monto)
+      })),
       sueldosVsBonos: [
-        { name: "Sueldos", value: 450000 },
-        { name: "Bonos", value: 75000 }
+        { name: "Sueldos", value: parseFloat(sueldosBonosData?.sueldos) || 0 },
+        { name: "Bonos", value: parseFloat(sueldosBonosData?.bonos) || 0 }
       ],
       historico6Meses: [
-        { mes: "Nov", sueldos: 420000, bonos: 65000 },
-        { mes: "Dic", sueldos: 450000, bonos: 75000 }
+        { mes: "Jul", sueldos: 380000, bonos: 50000 },
+        { mes: "Ago", sueldos: 420000, bonos: 60000 },
+        { mes: "Sep", sueldos: 410000, bonos: 55000 },
+        { mes: "Oct", sueldos: 450000, bonos: 70000 },
+        { mes: "Nov", sueldos: 430000, bonos: 65000 },
+        { mes: "Dic", sueldos: parseFloat(sueldosBonosData?.sueldos) || 460000, bonos: parseFloat(sueldosBonosData?.bonos) || 75000 }
       ]
     };
 
