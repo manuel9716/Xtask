@@ -1,0 +1,109 @@
+Estructura de carpetas a crear/ajustar:
+
+apps/web/src/modules/nomina/
+
+components/ (KpiCard, Timeline, Charts, CalendarWidget, PayrollList, Alerts, NewEmployeeModal)
+
+pages/DashboardNomina.tsx
+
+state/nomina.store.ts
+
+services/nomina.api.ts
+
+schemas/ (empleado.schemas.ts, filtros.schemas.ts)
+
+apps/api/src/modules/nomina/
+
+domain/ (entidades y puertos)
+
+application/ (servicios)
+
+infrastructure/ (controllers, repos, prisma/orm)
+
+routes/nomina.routes.ts
+
+Feature flag: Crear ENABLE_NOMINA_NEW_UI=true (env/const) y ruta /nomina que cargue DashboardNomina solo si está activo; mantener la UI anterior como fallback.
+
+Modelo de datos mínimo (Prisma o TypeORM):
+
+empleados(id, user_id, nombre, apellido, identificacion UNIQUE, depto, cargo, fecha_ingreso, estado_contrato, tipo_contrato, telefono, direccion, contacto_emergencia, created_at)
+
+empleado_nomina(empleado_id FK, sueldo_base, bonificacion, tasa_impuestos, base_deduccion, beneficios_base, metodo_pago, cuenta_bancaria, seguro_salud, dias_vacaciones, frecuencia_pago, fecha_inicio_nomina)
+
+proyectos(id, nombre, descripcion)
+
+empleado_proyecto(empleado_id, proyecto_id)
+
+contratos(id, empleado_id, filename, mime, size, url, uploaded_at)
+
+nominas(id, rango_inicio, rango_fin, proyecto_id NULL, estado, total_sueldos, total_bonos, total_deducciones, creado_por, creado_at)
+
+nomina_items(id, nomina_id, empleado_id, sueldo, bono, deduccion, impuestos, neto)
+
+Endpoints iniciales (crear con controladores/servicios/repos):
+
+GET /api/nomina/dashboard → devuelve { KPIs, timeline, charts, calendar, nominasRecientes } en base a filtros ?proyectoId&empleadoId&from&to.
+
+GET /api/empleados?query=... (para selects)
+
+POST /api/empleados (validar identificación única)
+
+POST /api/contratos/upload (PDF/DOCX máx 5 MB)
+
+Landing /nomina (DashboardNomina.tsx) – Secciones:
+
+KPIs: Empleados activos, Nómina mensual, Bonificaciones del mes, % pagadas, Próxima fecha de pago.
+
+Timeline mensual (pagado/pendiente/retrasado) con filtros por proyecto/empleado.
+
+Charts: barras “Gasto por proyecto”, donut “Sueldos vs Bonos”, línea “Histórico 6 meses”.
+
+Calendario: pagos programados y vencimientos de contratos.
+
+Nóminas recientes con badges y acciones (Ver/Editar/Pagar).
+
+Alertas (pendientes, faltan cuentas bancarias, etc.).
+
+Interacción y UX:
+
+Filtros persistentes en querystring; loading skeletons; toasts.
+
+Accesos rápidos arriba: + Nuevo Empleado, + Nueva Nómina, Procesar Pagos, Generar Reporte.
+
+Crear NewEmployeeModal (sólo esqueleto ahora; abrir/cerrar y formulario paso 1).
+
+Seeds (datos de prueba):
+
+3 proyectos: “La FAC”, “Finagro2025”, “ANM”.
+
+15 empleados distribuidos en esos proyectos con sueldos y algunos con bonificación.
+
+3 nóminas recientes (dos pagadas, una pendiente).
+
+Fechas de pago el día 15 y 30 del mes.
+
+Validaciones (Zod):
+
+Empleado: nombre, apellido, identificación obligatorios; sueldo_base ≥ 0; fecha_ingreso ≤ hoy.
+
+API dashboard debe respetar filtros y devolver totales coherentes.
+
+Criterios de aceptación (entrega de esta tarea):
+
+/nomina muestra los 6 bloques con datos seed y responde a filtros sin recargar.
+
+GET /api/nomina/dashboard retorna JSON con KPIs, timeline y datasets de gráficos.
+
+No hay errores en consola; Lighthouse A11y ≥ 90.
+
+Código tipado, lint ok, y componentes en modules/nomina/components.
+
+Feature flag funcionando (se puede desactivar y ver la UI anterior).
+
+Output esperado en este PR:
+
+Migraciones/seed aplicadas.
+
+Rutas de API y página DashboardNomina.tsx implementadas.
+
+Capturas o GIF corto mostrando filtros y render de widgets.

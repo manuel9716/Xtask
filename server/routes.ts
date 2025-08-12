@@ -19,6 +19,7 @@ import authRouter from "./routes/auth.routes";
 import kpiRouter from "./routes/kpi.routes";
 import habilidadesRouter from "./routes/habilidades.routes";
 import recursosRouter from "./routes/recursos.routes";
+import nominaRouter from "./modules/nomina/routes";
 import { MailService } from '@sendgrid/mail';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
@@ -85,6 +86,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Rutas de nómina financiera
   app.use('/api/nomina', nominaFinancieraRouter);
+  
+  // Rutas del nuevo módulo de Nómina
+  app.use('/api/nomina-modulo', nominaRouter);
   // Projects routes
   app.get("/api/projects", async (req, res) => {
     try {

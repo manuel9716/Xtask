@@ -181,7 +181,100 @@ export const budgetExpenses = pgTable("budget_expenses", {
 
 // ========== MÓDULO DE NÓMINA ==========
 
-// Tabla de nóminas grupales (cabecera)
+// Tabla de empleados para nómina (esquema actualizado)
+export const empleadosNomina = pgTable("empleados_nomina", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  nombre: text("nombre").notNull(),
+  apellido: text("apellido").notNull(),
+  identificacion: text("identificacion").notNull(),
+  depto: text("depto").notNull(),
+  cargo: text("cargo").notNull(),
+  fechaIngreso: timestamp("fecha_ingreso").notNull(),
+  estadoContrato: text("estado_contrato").notNull().default("ACTIVO"), // ACTIVO, SUSPENDIDO, TERMINADO
+  tipoContrato: text("tipo_contrato").notNull().default("INDEFINIDO"), // INDEFINIDO, FIJO, FREELANCE
+  telefono: text("telefono"),
+  direccion: text("direccion"),
+  contactoEmergencia: text("contacto_emergencia"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    identificacionIdx: uniqueIndex("empleados_nomina_identificacion_idx").on(table.identificacion),
+  };
+});
+
+// Datos de nómina por empleado (esquema específico de nómina)
+export const empleadoNomina = pgTable("empleado_nomina", {
+  id: serial("id").primaryKey(),
+  empleadoId: integer("empleado_id").references(() => empleadosNomina.id).notNull(),
+  sueldoBase: decimal("sueldo_base", { precision: 12, scale: 2 }).notNull(),
+  bonificacion: decimal("bonificacion", { precision: 12, scale: 2 }).default("0"),
+  tasaImpuestos: decimal("tasa_impuestos", { precision: 5, scale: 2 }).default("0"),
+  baseDeduccion: decimal("base_deduccion", { precision: 12, scale: 2 }).default("0"),
+  beneficiosBase: decimal("beneficios_base", { precision: 12, scale: 2 }).default("0"),
+  metodoPago: text("metodo_pago").notNull().default("TRANSFERENCIA"),
+  cuentaBancaria: text("cuenta_bancaria"),
+  seguroSalud: text("seguro_salud"),
+  diasVacaciones: integer("dias_vacaciones").default(15),
+  frecuenciaPago: text("frecuencia_pago").notNull().default("MENSUAL"), // MENSUAL, QUINCENAL, SEMANAL
+  fechaInicioNomina: timestamp("fecha_inicio_nomina").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Relación empleado-proyecto
+export const empleadoProyecto = pgTable("empleado_proyecto", {
+  id: serial("id").primaryKey(),
+  empleadoId: integer("empleado_id").references(() => empleadosNomina.id).notNull(),
+  proyectoId: integer("proyecto_id").references(() => projects.id).notNull(),
+  fechaAsignacion: timestamp("fecha_asignacion").defaultNow().notNull(),
+  fechaDesasignacion: timestamp("fecha_desasignacion"),
+  rol: text("rol").default("MIEMBRO"), // MIEMBRO, LIDER, COORDINADOR
+  porcentajeDedicacion: decimal("porcentaje_dedicacion", { precision: 5, scale: 2 }).default("100"),
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
+// Contratos de empleados
+export const contratos = pgTable("contratos", {
+  id: serial("id").primaryKey(),
+  empleadoId: integer("empleado_id").references(() => empleadosNomina.id).notNull(),
+  filename: text("filename").notNull(),
+  mime: text("mime").notNull(),
+  size: integer("size").notNull(), // en bytes
+  url: text("url").notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+});
+
+// Tabla de nóminas (cabecera de cada período de pago)
+export const nominasNuevas = pgTable("nominas_nuevas", {
+  id: serial("id").primaryKey(),
+  rangoInicio: timestamp("rango_inicio").notNull(),
+  rangoFin: timestamp("rango_fin").notNull(),
+  proyectoId: integer("proyecto_id").references(() => projects.id), // NULL para nómina general
+  estado: text("estado").notNull().default("PENDIENTE"), // PENDIENTE, PROCESADA, PAGADA, CANCELADA
+  totalSueldos: decimal("total_sueldos", { precision: 15, scale: 2 }).default("0"),
+  totalBonos: decimal("total_bonos", { precision: 15, scale: 2 }).default("0"),
+  totalDeducciones: decimal("total_deducciones", { precision: 15, scale: 2 }).default("0"),
+  creadoPor: integer("creado_por").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Items individuales de cada nómina
+export const nominaItems = pgTable("nomina_items", {
+  id: serial("id").primaryKey(),
+  nominaId: integer("nomina_id").references(() => nominasNuevas.id).notNull(),
+  empleadoId: integer("empleado_id").references(() => empleadosNomina.id).notNull(),
+  sueldo: decimal("sueldo", { precision: 12, scale: 2 }).notNull(),
+  bono: decimal("bono", { precision: 12, scale: 2 }).default("0"),
+  deduccion: decimal("deduccion", { precision: 12, scale: 2 }).default("0"),
+  impuestos: decimal("impuestos", { precision: 12, scale: 2 }).default("0"),
+  neto: decimal("neto", { precision: 12, scale: 2 }).notNull(),
+  calculadoAt: timestamp("calculado_at").defaultNow().notNull(),
+});
+
+// Tabla de nóminas grupales (cabecera) - MANTENER POR COMPATIBILIDAD
 export const nominas = pgTable("nominas", {
   id: serial("id").primaryKey(),
   titulo: text("titulo"),
@@ -198,7 +291,7 @@ export const nominas = pgTable("nominas", {
   montoTotal: decimal("monto_total", { precision: 12, scale: 2 }).notNull(),
 });
 
-// Detalle de nómina por empleado
+// Detalle de nómina por empleado - MANTENER POR COMPATIBILIDAD
 export const nominaDetalles = pgTable("nomina_detalles", {
   id: serial("id").primaryKey(),
   nominaId: integer("nomina_id").references(() => nominas.id).notNull(),
@@ -704,7 +797,132 @@ export type InsertFinancialCategory = z.infer<typeof insertFinancialCategorySche
 export type FinancialAudit = typeof financialAudits.$inferSelect;
 export type InsertFinancialAudit = z.infer<typeof insertFinancialAuditSchema>;
 
-// Tipos para el módulo de Nómina
+// ========== ESQUEMAS ZOD PARA NÓMINA ==========
+
+// Esquemas para empleados de nómina
+export const insertEmpleadoNominaSchema = createInsertSchema(empleadosNomina).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(50),
+  apellido: z.string().min(2, "El apellido debe tener al menos 2 caracteres").max(50),
+  identificacion: z.string().min(5, "La identificación debe tener al menos 5 caracteres").max(20),
+  fechaIngreso: z.preprocess(
+    (arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+      return undefined;
+    },
+    z.date({
+      required_error: "La fecha de ingreso es requerida",
+      invalid_type_error: "La fecha de ingreso debe ser una fecha válida",
+    }).refine(date => date <= new Date(), {
+      message: "La fecha de ingreso no puede ser futura"
+    })
+  )
+});
+
+export const insertEmpleadoNominaDataSchema = createInsertSchema(empleadoNomina).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  sueldoBase: z.preprocess((val) => Number(val), z.number().min(0, "El sueldo base debe ser mayor o igual a 0")),
+  fechaInicioNomina: z.preprocess(
+    (arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+      return undefined;
+    },
+    z.date({
+      required_error: "La fecha de inicio de nómina es requerida",
+      invalid_type_error: "La fecha de inicio de nómina debe ser una fecha válida",
+    })
+  )
+});
+
+export const insertEmpleadoProyectoSchema = createInsertSchema(empleadoProyecto).omit({
+  id: true,
+  fechaAsignacion: true,
+});
+
+export const insertContratoSchema = createInsertSchema(contratos).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export const insertNominaNuevaSchema = createInsertSchema(nominasNuevas).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  rangoInicio: z.preprocess(
+    (arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+      return undefined;
+    },
+    z.date({
+      required_error: "La fecha de inicio del período es requerida",
+      invalid_type_error: "La fecha de inicio debe ser una fecha válida",
+    })
+  ),
+  rangoFin: z.preprocess(
+    (arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+      return undefined;
+    },
+    z.date({
+      required_error: "La fecha de fin del período es requerida",
+      invalid_type_error: "La fecha de fin debe ser una fecha válida",
+    })
+  )
+});
+
+export const insertNominaItemSchema = createInsertSchema(nominaItems).omit({
+  id: true,
+  calculadoAt: true,
+});
+
+// Esquemas de filtros para el dashboard
+export const filtrosNominaSchema = z.object({
+  proyectoId: z.number().optional(),
+  empleadoId: z.number().optional(),
+  from: z.preprocess(
+    (arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+      return undefined;
+    },
+    z.date().optional()
+  ),
+  to: z.preprocess(
+    (arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) return new Date(arg as string);
+      return undefined;
+    },
+    z.date().optional()
+  )
+});
+
+// Tipos para el módulo de Nómina (NUEVOS)
+export type EmpleadoNomina = typeof empleadosNomina.$inferSelect;
+export type InsertEmpleadoNomina = z.infer<typeof insertEmpleadoNominaSchema>;
+
+export type EmpleadoNominaData = typeof empleadoNomina.$inferSelect;
+export type InsertEmpleadoNominaData = z.infer<typeof insertEmpleadoNominaDataSchema>;
+
+export type EmpleadoProyecto = typeof empleadoProyecto.$inferSelect;
+export type InsertEmpleadoProyecto = z.infer<typeof insertEmpleadoProyectoSchema>;
+
+export type Contrato = typeof contratos.$inferSelect;
+export type InsertContrato = z.infer<typeof insertContratoSchema>;
+
+export type NominaNueva = typeof nominasNuevas.$inferSelect;
+export type InsertNominaNueva = z.infer<typeof insertNominaNuevaSchema>;
+
+export type NominaItem = typeof nominaItems.$inferSelect;
+export type InsertNominaItem = z.infer<typeof insertNominaItemSchema>;
+
+export type FiltrosNomina = z.infer<typeof filtrosNominaSchema>;
+
+// Tipos para el módulo de Nómina (COMPATIBILIDAD)
 export type Nomina = typeof nominas.$inferSelect;
 export type InsertNomina = z.infer<typeof insertNominaSchema>;
 
