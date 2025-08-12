@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, UserPlus } from "lucide-react";
 
 interface TimelineItem {
   id: number;
@@ -9,6 +9,7 @@ interface TimelineItem {
   estado: 'pagado' | 'pendiente' | 'retrasado';
   monto: number;
   proyecto?: string;
+  tipo_evento?: 'empleado_creado' | 'nomina_pago';
 }
 
 interface TimelineProps {
@@ -16,7 +17,13 @@ interface TimelineProps {
 }
 
 export function Timeline({ items }: TimelineProps) {
-  const getStatusIcon = (estado: string) => {
+  const getStatusIcon = (estado: string, tipoEvento?: string) => {
+    // Icono especial para empleados creados
+    if (tipoEvento === 'empleado_creado') {
+      return <UserPlus className="h-4 w-4 text-blue-600" />;
+    }
+    
+    // Iconos por estado para nóminas
     switch (estado) {
       case 'pagado':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
@@ -27,7 +34,17 @@ export function Timeline({ items }: TimelineProps) {
     }
   };
 
-  const getStatusBadge = (estado: string) => {
+  const getStatusBadge = (estado: string, tipoEvento?: string) => {
+    // Badge especial para empleados creados
+    if (tipoEvento === 'empleado_creado') {
+      return (
+        <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+          Nuevo Empleado
+        </Badge>
+      );
+    }
+    
+    // Badges por estado para nóminas
     const variants: Record<string, "default" | "secondary" | "destructive"> = {
       pagado: "default",
       pendiente: "secondary",
@@ -81,14 +98,14 @@ export function Timeline({ items }: TimelineProps) {
             items.map((item) => (
               <div key={item.id} className="flex items-start space-x-3">
                 <div className="mt-1">
-                  {getStatusIcon(item.estado)}
+                  {getStatusIcon(item.estado, item.tipo_evento)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-foreground">
                       {item.descripcion}
                     </p>
-                    {getStatusBadge(item.estado)}
+                    {getStatusBadge(item.estado, item.tipo_evento)}
                   </div>
                   <div className="mt-1 flex items-center space-x-2 text-xs text-muted-foreground">
                     <span>{formatDate(item.fecha)}</span>

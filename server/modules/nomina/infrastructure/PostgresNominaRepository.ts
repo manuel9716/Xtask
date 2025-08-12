@@ -137,19 +137,41 @@ export class PostgresNominaRepository implements INominaRepository {
       proximaFechaPago: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 5)
     };
 
-    // Timeline reciente con datos reales
+    // Timeline reciente con datos reales - combinando empleados creados y nóminas
     const timelineResult = await db.execute(sql`
-      SELECT 
-        n.id,
-        n.fecha_pago as fecha,
-        CONCAT(e.nombre, ' ', e.apellido, ' - ', COALESCE('Proyecto ' || n.proyecto_id::text, 'Sin proyecto')) as descripcion,
-        n.estado,
-        n.valor_neto as monto,
-        'Proyecto ' || n.proyecto_id::text as proyecto
-      FROM nominas n
-      JOIN empleados_nomina e ON n.empleado_id = e.id
-      ORDER BY COALESCE(n.fecha_pago, n.created_at) DESC
-      LIMIT 10
+      (
+        -- Eventos de empleados creados
+        SELECT 
+          e.id,
+          e.created_at as fecha,
+          CONCAT('Nuevo empleado: ', e.nombre, ' ', e.apellido, ' - ', e.cargo, ' (', COALESCE(p.nombre, 'Sin proyecto'), ')') as descripcion,
+          'pendiente'::text as estado,
+          e.salario_base as monto,
+          COALESCE(p.nombre, 'Sin proyecto') as proyecto,
+          'empleado_creado' as tipo_evento
+        FROM empleados_nomina e
+        LEFT JOIN empleado_proyecto ep ON e.id = ep.empleado_id
+        LEFT JOIN proyectos p ON ep.proyecto_id = p.id
+        WHERE e.created_at >= NOW() - INTERVAL '30 days'
+      )
+      UNION ALL
+      (
+        -- Eventos de nóminas procesadas
+        SELECT 
+          n.id,
+          COALESCE(n.fecha_pago, n.created_at) as fecha,
+          CONCAT(e.nombre, ' ', e.apellido, ' - Pago nómina - ', COALESCE(p.nombre, 'Sin proyecto')) as descripcion,
+          n.estado,
+          n.valor_neto as monto,
+          COALESCE(p.nombre, 'Sin proyecto') as proyecto,
+          'nomina_pago' as tipo_evento
+        FROM nominas n
+        JOIN empleados_nomina e ON n.empleado_id = e.id
+        LEFT JOIN proyectos p ON n.proyecto_id = p.id
+        WHERE n.created_at >= NOW() - INTERVAL '30 days'
+      )
+      ORDER BY fecha DESC
+      LIMIT 15
     `);
 
     const timeline: TimelineItem[] = timelineResult.rows.map((row: any) => ({
@@ -158,7 +180,8 @@ export class PostgresNominaRepository implements INominaRepository {
       descripcion: row.descripcion,
       estado: row.estado as 'pagado' | 'pendiente' | 'retrasado',
       monto: parseFloat(row.monto) || 0,
-      proyecto: row.proyecto || 'Sin proyecto'
+      proyecto: row.proyecto || 'Sin proyecto',
+      tipo_evento: row.tipo_evento as 'empleado_creado' | 'nomina_pago'
     }));
 
     // Gráfico de gastos por proyecto

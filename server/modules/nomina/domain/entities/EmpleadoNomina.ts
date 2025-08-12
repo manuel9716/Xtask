@@ -75,6 +75,7 @@ export interface TimelineItem {
   estado: 'pagado' | 'pendiente' | 'retrasado';
   monto: number;
   proyecto?: string;
+  tipo_evento?: 'empleado_creado' | 'nomina_pago';
 }
 
 export interface ChartData {
