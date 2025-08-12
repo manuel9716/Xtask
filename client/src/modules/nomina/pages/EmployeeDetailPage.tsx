@@ -13,6 +13,7 @@ import { Link } from 'wouter';
 import { EmployeeEditModal } from '../components/EmployeeEditModal';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { ProjectMultiSelect } from '../components/ProjectMultiSelect';
+import { HistorialNominaTable } from '../components/HistorialNominaTable';
 import { empleadosApi } from '../services/empleados.api';
 import { nominaApi } from '../services/nomina.api';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +28,12 @@ export default function EmployeeDetailPage() {
   const { data: empleado, isLoading, refetch } = useQuery({
     queryKey: ['/api/empleados', id],
     queryFn: () => empleadosApi.getEmpleado(parseInt(id!)),
+    enabled: !!id,
+  });
+
+  const { data: historialNomina, isLoading: isLoadingHistorial, refetch: refetchHistorial } = useQuery({
+    queryKey: ['/api/empleados', id, 'historial-nomina'],
+    queryFn: () => empleadosApi.getHistorialNomina(parseInt(id!)),
     enabled: !!id,
   });
 
@@ -49,8 +56,9 @@ export default function EmployeeDetailPage() {
 
   const handleChangeNominaEstado = async (nominaId: number, nuevoEstado: string) => {
     try {
-      await nominaApi.setNominaEstado(nominaId, nuevoEstado);
+      await empleadosApi.updateEstadoNomina(parseInt(id!), nominaId, nuevoEstado);
       refetch();
+      refetchHistorial();
       toast({
         title: "Estado actualizado",
         description: `La nómina ha sido marcada como ${nuevoEstado}`,
@@ -272,6 +280,14 @@ export default function EmployeeDetailPage() {
         </TabsContent>
 
         <TabsContent value="nominas" className="space-y-4">
+          <HistorialNominaTable
+            historial={historialNomina || []}
+            isLoading={isLoadingHistorial}
+            onChangeEstado={handleChangeNominaEstado}
+          />
+        </TabsContent>
+
+        <TabsContent value="proyectos" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Historial de Nóminas</CardTitle>

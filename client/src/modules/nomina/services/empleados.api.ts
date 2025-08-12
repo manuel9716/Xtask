@@ -75,6 +75,18 @@ export class EmpleadosApi {
     const response = await apiRequest('DELETE', `/api/empleados/${id}`);
     return response.json();
   }
+
+  static async getHistorialNomina(empleadoId: number) {
+    const response = await apiRequest('GET', `/api/empleados/${empleadoId}/historial-nomina`);
+    return response.json();
+  }
+
+  static async updateEstadoNomina(empleadoId: number, nominaId: number, estado: string) {
+    const response = await apiRequest('PATCH', `/api/empleados/${empleadoId}/historial-nomina/${nominaId}/estado`, {
+      estado
+    });
+    return response.json();
+  }
 }
 
 // Export default instance

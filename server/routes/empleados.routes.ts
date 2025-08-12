@@ -46,7 +46,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const [empleado] = await db
       .select()
       .from(empleados)
-      .where(and(eq(empleados.id, empleadoId), eq(empleados.activo, true)));
+      .where(eq(empleados.id, empleadoId));
 
     if (!empleado) {
       return res.status(404).json({ message: 'Empleado no encontrado' });
@@ -71,10 +71,7 @@ router.get('/:id', async (req: Request, res: Response) => {
         })
         .from(empleado_proyecto)
         .innerJoin(projects, eq(empleado_proyecto.proyecto_id, projects.id))
-        .where(and(
-          eq(empleado_proyecto.empleado_id, empleadoId),
-          eq(empleado_proyecto.activo, true)
-        ));
+        .where(eq(empleado_proyecto.empleado_id, empleadoId));
     }
 
     // Incluir nóminas si se solicita
@@ -176,10 +173,9 @@ router.put('/:id/proyectos', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'proyectosIds debe ser un array' });
     }
 
-    // Marcar todas las asignaciones actuales como inactivas
+    // Eliminar todas las asignaciones actuales
     await db
-      .update(empleado_proyecto)
-      .set({ activo: false })
+      .delete(empleado_proyecto)
       .where(eq(empleado_proyecto.empleado_id, empleadoId));
 
     // Crear nuevas asignaciones
@@ -187,7 +183,6 @@ router.put('/:id/proyectos', async (req: Request, res: Response) => {
       const assignments = proyectosIds.map(proyectoId => ({
         empleado_id: empleadoId,
         proyecto_id: proyectoId,
-        activo: true,
       }));
 
       await db.insert(empleado_proyecto).values(assignments);
@@ -200,35 +195,102 @@ router.put('/:id/proyectos', async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/empleados/:id - Soft delete del empleado
+// DELETE /api/empleados/:id - Eliminar empleado (dar de baja)
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const empleadoId = parseInt(req.params.id);
 
-    // Marcar empleado como inactivo
-    const [updatedEmpleado] = await db
-      .update(empleados)
-      .set({ 
-        activo: false,
-        deleted_at: sql`NOW()`,
-        estado_contrato: 'inactivo'
-      })
-      .where(eq(empleados.id, empleadoId))
-      .returning();
+    // Verificar que el empleado existe
+    const [empleado] = await db
+      .select()
+      .from(empleados)
+      .where(eq(empleados.id, empleadoId));
 
-    if (!updatedEmpleado) {
+    if (!empleado) {
       return res.status(404).json({ message: 'Empleado no encontrado' });
     }
 
-    // Marcar asignaciones de proyectos como inactivas
+    // Marcar como inactivo en lugar de eliminar físicamente
     await db
-      .update(empleado_proyecto)
-      .set({ activo: false })
+      .update(empleados)
+      .set({ 
+        estado_contrato: 'inactivo'
+      })
+      .where(eq(empleados.id, empleadoId));
+
+    // Eliminar relaciones de proyectos
+    await db
+      .delete(empleado_proyecto)
       .where(eq(empleado_proyecto.empleado_id, empleadoId));
 
-    res.json({ message: 'Empleado eliminado correctamente' });
+    res.json({ message: 'Empleado dado de baja correctamente' });
   } catch (error) {
     console.error('Error al eliminar empleado:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// GET /api/empleados/:id/historial-nomina - Obtener historial de nóminas del empleado
+router.get('/:id/historial-nomina', async (req: Request, res: Response) => {
+  try {
+    const empleadoId = parseInt(req.params.id);
+
+    // Obtener historial de nóminas del empleado
+    const historial = await db
+      .select({
+        id: nominas_nuevas.id,
+        fecha: nominas_nuevas.rango_inicio,
+        periodo_inicio: nominas_nuevas.rango_inicio,
+        periodo_fin: nominas_nuevas.rango_fin,
+        estado: nominas_nuevas.estado,
+        valor_bruto: nomina_items.sueldo,
+        valor_neto: nomina_items.neto,
+        bonificaciones: nomina_items.bono,
+        deducciones: nomina_items.deduccion,
+        impuestos: nomina_items.impuestos,
+        proyecto_nombre: projects.name,
+        fecha_pago: nominas_nuevas.fecha_pago,
+        metodo_pago: empleado_nomina.metodo_pago,
+      })
+      .from(nomina_items)
+      .innerJoin(nominas_nuevas, eq(nomina_items.nomina_id, nominas_nuevas.id))
+      .innerJoin(empleado_nomina, eq(nomina_items.empleado_id, empleado_nomina.empleado_id))
+      .leftJoin(projects, eq(nominas_nuevas.proyecto_id, projects.id))
+      .where(eq(nomina_items.empleado_id, empleadoId))
+      .orderBy(sql`${nominas_nuevas.rango_inicio} DESC`);
+
+    res.json(historial);
+  } catch (error) {
+    console.error('Error al obtener historial de nómina:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// PATCH /api/empleados/:id/historial-nomina/:nominaId/estado - Cambiar estado de nómina específica
+router.patch('/:id/historial-nomina/:nominaId/estado', async (req: Request, res: Response) => {
+  try {
+    const nominaId = parseInt(req.params.nominaId);
+    const { estado } = req.body as { estado: string };
+
+    if (!['pendiente', 'pagado', 'aprobado', 'rechazado'].includes(estado)) {
+      return res.status(400).json({ message: 'Estado inválido' });
+    }
+
+    const updateData: any = { estado };
+    
+    // Si se marca como pagado, establecer fecha de pago
+    if (estado === 'pagado') {
+      updateData.fecha_pago = new Date();
+    }
+
+    await db
+      .update(nominas_nuevas)
+      .set(updateData)
+      .where(eq(nominas_nuevas.id, nominaId));
+
+    res.json({ message: `Nómina marcada como ${estado}` });
+  } catch (error) {
+    console.error('Error al actualizar estado de nómina:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
