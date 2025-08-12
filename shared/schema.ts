@@ -274,6 +274,99 @@ export const nominaItems = pgTable("nomina_items", {
   calculadoAt: timestamp("calculado_at").defaultNow().notNull(),
 });
 
+// Nuevas tablas para módulo de nómina con empleados
+
+// Empleados (nueva tabla)
+export const empleados = pgTable("empleados", {
+  id: serial("id").primaryKey(),
+  user_id: integer("user_id").references(() => users.id),
+  nombre: text("nombre").notNull(),
+  apellido: text("apellido").notNull(),
+  identificacion: text("identificacion").notNull().unique(),
+  depto: text("depto").notNull(),
+  cargo: text("cargo").notNull(),
+  fecha_ingreso: date("fecha_ingreso").notNull(),
+  estado_contrato: text("estado_contrato").notNull().default("activo"), // activo, inactivo, suspendido
+  tipo_contrato: text("tipo_contrato").notNull(), // indefinido, fijo, obra_labor, prestacion_servicios
+  telefono: text("telefono"),
+  direccion: text("direccion"),
+  contacto_emergencia: text("contacto_emergencia"),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Datos de nómina por empleado
+export const empleado_nomina = pgTable("empleado_nomina", {
+  id: serial("id").primaryKey(),
+  empleado_id: integer("empleado_id").references(() => empleados.id).notNull(),
+  sueldo_base: decimal("sueldo_base", { precision: 12, scale: 2 }).notNull(),
+  bonificacion: decimal("bonificacion", { precision: 12, scale: 2 }).default("0").notNull(),
+  tasa_impuestos: decimal("tasa_impuestos", { precision: 5, scale: 4 }).default("0.19").notNull(),
+  base_deduccion: decimal("base_deduccion", { precision: 12, scale: 2 }).default("0").notNull(),
+  beneficios_base: decimal("beneficios_base", { precision: 12, scale: 2 }).default("0").notNull(),
+  metodo_pago: text("metodo_pago").notNull(), // transferencia, efectivo, cheque
+  cuenta_bancaria: text("cuenta_bancaria"),
+  seguro_salud: text("seguro_salud"),
+  dias_vacaciones: integer("dias_vacaciones").default(15).notNull(),
+  frecuencia_pago: text("frecuencia_pago").notNull(), // quincenal, mensual
+  fecha_inicio_nomina: date("fecha_inicio_nomina").notNull(),
+});
+
+// Relación empleado-proyecto
+export const empleado_proyecto = pgTable("empleado_proyecto", {
+  id: serial("id").primaryKey(),
+  empleado_id: integer("empleado_id").references(() => empleados.id).notNull(),
+  proyecto_id: integer("proyecto_id").references(() => projects.id).notNull(),
+  fecha_asignacion: timestamp("fecha_asignacion").defaultNow().notNull(),
+});
+
+// Contratos de empleados
+export const empleado_contratos = pgTable("empleado_contratos", {
+  id: serial("id").primaryKey(),
+  empleado_id: integer("empleado_id").references(() => empleados.id).notNull(),
+  filename: text("filename").notNull(),
+  mime_type: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  url: text("url").notNull(),
+  uploaded_at: timestamp("uploaded_at").defaultNow().notNull(),
+});
+
+// Nuevas tablas para nóminas con el nuevo modelo
+export const nominas_nuevas = pgTable("nominas_nuevas", {
+  id: serial("id").primaryKey(),
+  rango_inicio: date("rango_inicio").notNull(),
+  rango_fin: date("rango_fin").notNull(),
+  proyecto_id: integer("proyecto_id").references(() => projects.id),
+  estado: text("estado").notNull().default("pendiente"), // pendiente, procesando, pagada, cancelada
+  total_sueldos: decimal("total_sueldos", { precision: 12, scale: 2 }).notNull(),
+  total_bonos: decimal("total_bonos", { precision: 12, scale: 2 }).notNull(),
+  total_deducciones: decimal("total_deducciones", { precision: 12, scale: 2 }).notNull(),
+  creado_por: integer("creado_por").references(() => users.id).notNull(),
+  creado_at: timestamp("creado_at").defaultNow().notNull(),
+});
+
+// Items de nómina (detalle por empleado)
+export const nomina_items = pgTable("nomina_items", {
+  id: serial("id").primaryKey(),
+  nomina_id: integer("nomina_id").references(() => nominas_nuevas.id).notNull(),
+  empleado_id: integer("empleado_id").references(() => empleados.id).notNull(),
+  sueldo: decimal("sueldo", { precision: 12, scale: 2 }).notNull(),
+  bono: decimal("bono", { precision: 12, scale: 2 }).default("0").notNull(),
+  deduccion: decimal("deduccion", { precision: 12, scale: 2 }).default("0").notNull(),
+  impuestos: decimal("impuestos", { precision: 12, scale: 2 }).default("0").notNull(),
+  neto: decimal("neto", { precision: 12, scale: 2 }).notNull(),
+});
+
+// Log de pagos
+export const payments_log = pgTable("payments_log", {
+  id: serial("id").primaryKey(),
+  nomina_id: integer("nomina_id").references(() => nominas_nuevas.id).notNull(),
+  fecha_pago: timestamp("fecha_pago").notNull(),
+  monto: decimal("monto", { precision: 12, scale: 2 }).notNull(),
+  estado: text("estado").notNull(), // pagada, parcial
+  nota: text("nota"),
+  creado_at: timestamp("creado_at").defaultNow().notNull(),
+});
+
 // Tabla de nóminas grupales (cabecera) - MANTENER POR COMPATIBILIDAD
 export const nominas = pgTable("nominas", {
   id: serial("id").primaryKey(),

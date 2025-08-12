@@ -1,0 +1,105 @@
+Objetivo:
+
+Hacer funcional Crear Nómina con wizard (preview + creación + procesar).
+
+Agregar Nuevo Empleado (modal wizard) dentro del módulo de Nómina.
+
+Actualizar dashboard tras crear/procesar.
+
+1) Rutas y archivos a crear/modificar (frontend)
+Editar apps/web/src/modules/nomina/pages/DashboardNomina.tsx
+
+En el header de este módulo, agregar 2 botones:
+
++ Nuevo Empleado → abre NewEmployeeModal
+
++ Crear Nómina → abre CreatePayrollWizard
+
+No ponerlos en navbar global.
+
+Crear componentes
+
+apps/web/src/modules/nomina/components/NewEmployeeModal.tsx
+
+apps/web/src/modules/nomina/components/CreatePayrollWizard.tsx
+
+Servicios
+
+apps/web/src/modules/nomina/services/empleados.api.ts
+
+apps/web/src/modules/nomina/services/nomina.api.ts
+
+Schemas Zod
+
+apps/web/src/modules/nomina/schemas/empleado.schemas.ts
+
+apps/web/src/modules/nomina/schemas/nomina.schemas.ts
+
+Estado (si no existe)
+
+apps/web/src/modules/nomina/state/nomina.store.ts
+
+Exponer: reloadDashboard() para refrescar KPIs, cronología, gráficos y listas.
+
+Stack esperado: React + Tailwind, React Hook Form + Zod, Recharts, Day.js.
+
+2) Rutas y archivos a crear/modificar (backend)
+Nómina
+
+apps/api/src/modules/nomina/nomina.routes.ts
+
+apps/api/src/modules/nomina/nomina.controller.ts
+
+apps/api/src/modules/nomina/nomina.service.ts
+
+Empleados
+
+apps/api/src/modules/empleados/empleados.routes.ts
+
+apps/api/src/modules/empleados/empleados.controller.ts
+
+apps/api/src/modules/empleados/empleados.service.ts
+
+Upload contrato dentro de empleados.controller (Multer)
+
+Montar en /api/nomina y /api/empleados.
+
+3) Esquema de datos (usar/migrar)
+empleados(id, user_id, nombre, apellido, identificacion UNIQUE, depto, cargo, fecha_ingreso, estado_contrato, tipo_contrato, telefono, direccion, contacto_emergencia, created_at)
+
+empleado_nomina(empleado_id FK, sueldo_base, bonificacion, tasa_impuestos, base_deduccion, beneficios_base, metodo_pago, cuenta_bancaria, seguro_salud, dias_vacaciones, frecuencia_pago, fecha_inicio_nomina)
+
+proyectos(id, nombre, descripcion)
+
+empleado_proyecto(empleado_id, proyecto_id)
+
+contratos(id, empleado_id, filename, mime, size, url, uploaded_at)
+
+nominas(id, rango_inicio, rango_fin, proyecto_id NULL, estado, total_sueldos, total_bonos, total_deducciones, creado_por, creado_at)
+
+nomina_items(id, nomina_id, empleado_id, sueldo, bono, deduccion, impuestos, neto)
+
+payments_log(id, nomina_id, fecha_pago, monto, estado, nota, creado_at)
+
+4) Endpoints requeridos
+Empleados
+
+POST /api/empleados (transacción: empleado + empleado_nomina + empleado_proyecto)
+
+POST /api/empleados/:id/contrato (Multer; PDF/DOCX ≤ 5 MB)
+
+GET /api/empleados?proyectoId?&q? (para selects)
+
+GET /api/proyectos y GET /api/usuarios?query=
+
+Nómina
+
+POST /api/nominas/preview → calcula items (no persiste)
+
+POST /api/nominas → crea nomina + items; valida no duplicar por (rango_inicio, rango_fin, proyecto_id)
+
+POST /api/nominas/:id/procesar → pagada/parcial + payments_log
+
+GET /api/nominas/:id → detalle
+
+GET /api/nominas/:id/export?format=pdf|xlsx → server-side export

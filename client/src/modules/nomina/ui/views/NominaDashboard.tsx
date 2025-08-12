@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, CalendarDays, Users, DollarSign, TrendingUp, Plus, Filter, Download, Search } from "lucide-react";
+import { Calendar, CalendarDays, Users, DollarSign, TrendingUp, Plus, Filter, Download, UserPlus } from "lucide-react";
 import { KpiCard } from "../components/KpiCard";
 import { Timeline } from "../components/Timeline";
 import { GastosPorProyectoChart } from "../components/GastosPorProyectoChart";
 import { SueldosVsBonosChart } from "../components/SueldosVsBonosChart";
 import { HistoricoChart } from "../components/HistoricoChart";
+import { NewEmployeeModal } from "../../components/NewEmployeeModal";
+import { CreatePayrollWizard } from "../../components/CreatePayrollWizard";
 import { apiRequest } from "@/lib/queryClient";
 
 interface DashboardData {
@@ -44,6 +46,8 @@ export default function NominaDashboard() {
     from: "",
     to: ""
   });
+  const [showNewEmployeeModal, setShowNewEmployeeModal] = useState(false);
+  const [showCreatePayrollWizard, setShowCreatePayrollWizard] = useState(false);
 
   const { data: dashboardData, isLoading, error } = useQuery<DashboardData>({
     queryKey: ['/api/nomina-modulo/dashboard', filtros],
@@ -117,7 +121,18 @@ export default function NominaDashboard() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Módulo de Nómina</h2>
         <div className="flex items-center space-x-2">
-          <Button size="sm">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => setShowNewEmployeeModal(true)}
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Nuevo Empleado
+          </Button>
+          <Button 
+            size="sm"
+            onClick={() => setShowCreatePayrollWizard(true)}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Crear Nómina
           </Button>
@@ -229,6 +244,16 @@ export default function NominaDashboard() {
           <HistoricoChart data={charts.historico6Meses} />
         </div>
       )}
+
+      {/* Modales */}
+      <NewEmployeeModal 
+        open={showNewEmployeeModal} 
+        onOpenChange={setShowNewEmployeeModal} 
+      />
+      <CreatePayrollWizard 
+        open={showCreatePayrollWizard} 
+        onOpenChange={setShowCreatePayrollWizard} 
+      />
     </div>
   );
 }
