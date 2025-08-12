@@ -1,0 +1,84 @@
+Contexto: Proyecto XTask → trabajar solo en el módulo Nómina.
+Problema: Al hacer clic en “Ver detalles” en la lista de empleados aparece pantalla en blanco.
+Objetivo: Implementar la ficha de detalle del empleado con visualización de datos reales, edición y eliminación (soft‑delete), multi‑proyecto y enlace a historial de nóminas.
+
+Instrucciones para implementar
+1) Rutas (frontend)
+
+Agregar ruta: /nomina/empleados/:id que renderice EmployeeDetailPage.
+
+Archivos:
+
+Crear apps/web/src/modules/nomina/pages/EmployeeDetailPage.tsx.
+
+Si aplica, registrar la ruta en el router del módulo (no tocar rutas globales).
+
+En la tarjeta/lista donde está el botón Ver detalles, navegar a /nomina/empleados/{empleado.id}.
+
+2) Servicios de API (frontend)
+Crear/ampliar apps/web/src/modules/nomina/services/empleados.api.ts:
+
+getEmpleado(id) → GET /api/empleados/:id?include=nomina,proyectos
+
+updateEmpleado(id, body) → PATCH /api/empleados/:id
+
+updateEmpleadoProyectos(id, proyectosIds) → PUT /api/empleados/:id/proyectos
+
+deleteEmpleado(id) → DELETE /api/empleados/:id (soft‑delete)
+
+3) Endpoints (backend)
+En apps/api/src/modules/empleados/* implementar:
+
+GET /api/empleados/:id?include=nomina,proyectos
+
+Devuelve datos personales del empleado + objeto nomina (sueldo_base, bonificacion, tasa_impuestos, base_deduccion, beneficios_base, metodo_pago, cuenta_bancaria, dias_vacaciones, frecuencia_pago, fecha_inicio_nomina) + arreglo proyectos asignados.
+
+Si include=nomina también retornar nominas (historial del empleado con join nomina_items↔nominas: id, rango_inicio, rango_fin, proyecto, neto, estado).
+
+PATCH /api/empleados/:id (validación server‑side; actualiza personales y de nómina).
+
+PUT /api/empleados/:id/proyectos (reemplaza many‑to‑many en empleado_proyecto).
+
+DELETE /api/empleados/:id → soft‑delete (activo=false o deleted_at), sin borrar histórico.
+
+Proteger con requireAuth y roles admin/finanzas.
+
+4) Página EmployeeDetailPage.tsx (UI mínima obligatoria)
+
+Header con: nombre completo, cargo/departamento, badge de estado (activo/inactivo) y botones:
+
+Editar → abre modal con formulario (React Hook Form + Zod) para editar datos personales y de nómina; guarda con updateEmpleado.
+
+Eliminar → modal de confirmación; ejecuta deleteEmpleado; al éxito redirigir a /nomina y refrescar dashboard.
+
+Secciones/Tabs:
+
+Información Personal: nombre, apellido, documento, cargo/rol, departamento, fecha ingreso, teléfono, dirección, contacto de emergencia, tipo/estado de contrato, habilidades.
+
+Información de Nómina: sueldo_base, bonificacion, tasa_impuestos, base_deduccion, beneficios_base, metodo_pago, cuenta_bancaria, dias_vacaciones, frecuencia_pago, fecha_inicio_nomina.
+
+Proyectos: listado de proyectos asignados + botón “Editar proyectos” (multiselect) que guarda con updateEmpleadoProyectos.
+
+Historial de Nóminas: tabla con columnas (Rango, Proyecto, Neto, Estado, Acción).
+
+Acción Ver debe navegar a /nomina/nominas/:id (si la ruta ya existe) o abrir modal resumen.
+
+Estados: loading con skeleton; si 404 mostrar “Empleado no encontrado” + botón “Volver”.
+
+5) Integración con dashboard
+
+En la cronología/listado del dashboard, los eventos de “Nuevo empleado …” deben linkear a /nomina/empleados/:id.
+
+Tras editar o eliminar desde la ficha, invalidar/recargar el dashboard (KPIs/cronología) sin recargar página.
+
+6) Criterios de aceptación
+
+Ver detalles abre /nomina/empleados/:id mostrando datos reales guardados al crear (nombre, apellido, documento, cargo, sueldo, bonificaciones, etc.).
+
+Editar persiste cambios y se reflejan al volver a la página sin recarga completa.
+
+Eliminar realiza soft‑delete, redirige al dashboard y el empleado ya no aparece en listados activos.
+
+Multi‑proyecto funcionando: se pueden asignar/desasignar varios proyectos y verlos en la ficha.
+
+Sin pantalla en blanco ni errores en consola; manejo de loading/empty states y toasts de éxito/error.

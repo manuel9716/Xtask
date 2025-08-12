@@ -18,7 +18,8 @@ import {
   Download,
   FileDown,
   Briefcase,
-  Clock
+  Clock,
+  Eye
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -339,6 +340,12 @@ export default function EmpleadosPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() => setLocation(`/nomina/empleados/${empleado.id}`)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              Ver detalles
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => setLocation(`/admin/nomina/empleados/${empleado.id}/editar`)}
                             >

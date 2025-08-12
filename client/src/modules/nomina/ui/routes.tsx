@@ -2,6 +2,7 @@ import { Route, useRoute } from 'wouter';
 import { MainLayout } from '@/layouts/main-layout';
 import ListadoNominaPage from './pages/ListadoNominaPage';
 import { DetalleNominaPage } from './pages/DetalleNominaPage';
+import EmployeeDetailPage from '../pages/EmployeeDetailPage';
 
 // Componente auxiliar para manejar parámetros de ruta para DetalleNominaPage
 function DetalleNominaRoute() {
@@ -18,6 +19,12 @@ export function NominaRoutes() {
       <Route path="/nomina/listado">
         <MainLayout>
           <ListadoNominaPage />
+        </MainLayout>
+      </Route>
+      
+      <Route path="/nomina/empleados/:id">
+        <MainLayout>
+          <EmployeeDetailPage />
         </MainLayout>
       </Route>
       

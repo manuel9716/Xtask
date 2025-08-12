@@ -106,7 +106,7 @@ export default function EmployeeDetailPage() {
               <h2 className="text-xl font-semibold mb-2">Empleado no encontrado</h2>
               <p className="text-muted-foreground mb-4">El empleado solicitado no existe</p>
               <Button asChild>
-                <Link href="/nomina">Volver al dashboard</Link>
+                <Link to="/nomina">Volver al dashboard</Link>
               </Button>
             </div>
           </CardContent>
@@ -140,7 +140,7 @@ export default function EmployeeDetailPage() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/nomina">Nómina</Link>
+              <Link to="/nomina">Nómina</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -156,7 +156,7 @@ export default function EmployeeDetailPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/nomina">
+            <Link to="/nomina">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
             </Link>
@@ -287,72 +287,12 @@ export default function EmployeeDetailPage() {
           />
         </TabsContent>
 
-        <TabsContent value="proyectos" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Historial de Nóminas</CardTitle>
-              <CardDescription>Registro completo de pagos de nómina</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {empleado.nominas && empleado.nominas.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Período</TableHead>
-                      <TableHead>Proyecto</TableHead>
-                      <TableHead>Sueldo</TableHead>
-                      <TableHead>Bono</TableHead>
-                      <TableHead>Deducciones</TableHead>
-                      <TableHead>Neto</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead>Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {empleado.nominas.map((nomina: any) => (
-                      <TableRow key={nomina.id}>
-                        <TableCell>
-                          {new Date(nomina.rango_inicio).toLocaleDateString()} - {new Date(nomina.rango_fin).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>{nomina.proyecto_nombre || 'Sin proyecto'}</TableCell>
-                        <TableCell>${Number(nomina.sueldo).toLocaleString()}</TableCell>
-                        <TableCell>${Number(nomina.bono).toLocaleString()}</TableCell>
-                        <TableCell>${Number(nomina.deduccion).toLocaleString()}</TableCell>
-                        <TableCell className="font-medium">${Number(nomina.neto).toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Badge variant={getNominaEstadoBadgeVariant(nomina.estado)}>
-                            {nomina.estado}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {nomina.estado === 'pendiente' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleChangeNominaEstado(nomina.id, 'pagada')}
-                              >
-                                Marcar Pagada
-                              </Button>
-                            )}
-                            <Button size="sm" variant="ghost" asChild>
-                              <Link href={`/nomina/nominas/${nomina.id}`}>
-                                Ver
-                              </Link>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No hay nóminas registradas</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="nominas" className="space-y-4">
+          <HistorialNominaTable
+            historial={historialNomina || []}
+            isLoading={isLoadingHistorial}
+            onChangeEstado={handleChangeNominaEstado}
+          />
         </TabsContent>
 
         <TabsContent value="proyectos" className="space-y-4">
