@@ -99,6 +99,7 @@ export class PostgresNominaRepository implements INominaRepository {
     charts: ChartData;
     calendar: { fecha: Date; tipo: string; descripcion: string }[];
     nominasRecientes: any[];
+    empleados: any[];
   }> {
     // KPIs principales  
     const kpisResult = await db.execute(sql`
@@ -246,12 +247,83 @@ export class PostgresNominaRepository implements INominaRepository {
       }))
     };
 
+    // Obtener lista completa de empleados con datos de nómina y proyectos
+    const empleadosResult = await db.execute(sql`
+      SELECT 
+        e.id,
+        e.nombre,
+        e.apellido,
+        e.identificacion,
+        e.depto,
+        e.cargo,
+        e.fecha_ingreso,
+        e.estado_contrato,
+        e.tipo_contrato,
+        e.telefono,
+        e.direccion,
+        e.contacto_emergencia,
+        en.sueldo_base,
+        en.frecuencia_pago,
+        en.metodo_pago
+      FROM empleados e
+      LEFT JOIN empleado_nomina en ON e.id = en.empleado_id
+      WHERE e.estado_contrato = 'activo'
+      ORDER BY e.nombre ASC
+    `);
+
+    // Obtener proyectos asignados a cada empleado
+    const empleadosProyectosResult = await db.execute(sql`
+      SELECT 
+        ep.empleado_id,
+        p.id as proyecto_id,
+        p.name as proyecto_nombre,
+        p.description as proyecto_descripcion
+      FROM empleado_proyecto ep
+      INNER JOIN projects p ON ep.proyecto_id = p.id
+      WHERE ep.activo = true
+    `);
+
+    // Mapear proyectos por empleado
+    const proyectosPorEmpleado = empleadosProyectosResult.rows.reduce((acc: any, row: any) => {
+      const empleadoId = row.empleado_id;
+      if (!acc[empleadoId]) acc[empleadoId] = [];
+      acc[empleadoId].push({
+        id: row.proyecto_id,
+        nombre: row.proyecto_nombre,
+        descripcion: row.proyecto_descripcion
+      });
+      return acc;
+    }, {});
+
+    // Formatear empleados con datos completos
+    const empleados = empleadosResult.rows.map((row: any) => ({
+      id: row.id,
+      nombre: row.nombre,
+      apellido: row.apellido,
+      identificacion: row.identificacion,
+      depto: row.depto,
+      cargo: row.cargo,
+      fecha_ingreso: row.fecha_ingreso,
+      estado_contrato: row.estado_contrato,
+      tipo_contrato: row.tipo_contrato,
+      telefono: row.telefono,
+      direccion: row.direccion,
+      contacto_emergencia: row.contacto_emergencia,
+      nomina: row.sueldo_base ? {
+        sueldo_base: parseFloat(row.sueldo_base),
+        frecuencia_pago: row.frecuencia_pago,
+        metodo_pago: row.metodo_pago
+      } : null,
+      proyectos: proyectosPorEmpleado[row.id] || []
+    }));
+
     return {
       kpis,
       timeline,
       charts,
       calendar: [],
-      nominasRecientes: []
+      nominasRecientes: [],
+      empleados
     };
   }
 

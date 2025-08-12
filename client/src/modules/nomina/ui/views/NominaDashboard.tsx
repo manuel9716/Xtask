@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar, CalendarDays, Users, DollarSign, TrendingUp, Plus, Filter, Download, UserPlus } from "lucide-react";
 import { KpiCard } from "../components/KpiCard";
 import { Timeline } from "../components/Timeline";
+import { EmpleadosList } from "../../components/EmpleadosList";
 import { GastosPorProyectoChart } from "../components/GastosPorProyectoChart";
 import { SueldosVsBonosChart } from "../components/SueldosVsBonosChart";
 import { HistoricoChart } from "../components/HistoricoChart";
@@ -37,6 +38,30 @@ interface DashboardData {
   };
   calendar: Array<{ fecha: Date; tipo: string; descripcion: string }>;
   nominasRecientes: any[];
+  empleados: Array<{
+    id: number;
+    nombre: string;
+    apellido: string;
+    identificacion: string;
+    depto: string;
+    cargo: string;
+    fecha_ingreso: string;
+    estado_contrato: string;
+    tipo_contrato: string;
+    telefono?: string;
+    direccion?: string;
+    contacto_emergencia?: string;
+    nomina?: {
+      sueldo_base: number;
+      frecuencia_pago: string;
+      metodo_pago: string;
+    };
+    proyectos?: Array<{
+      id: number;
+      nombre: string;
+      descripcion: string;
+    }>;
+  }>;
 }
 
 export default function NominaDashboard() {
@@ -82,6 +107,7 @@ export default function NominaDashboard() {
   const hasEmployees = (dashboardData?.kpis?.empleadosActivos || 0) > 0;
   const hasTimelineData = (dashboardData?.timeline || []).length > 0;
   const hasChartData = (dashboardData?.charts?.historico6Meses || []).length > 0;
+  const empleados = dashboardData?.empleados || [];
 
   if (isLoading) {
     return (
@@ -254,13 +280,13 @@ export default function NominaDashboard() {
         </div>
       )}
 
-      {/* Gráficos y Timeline */}
+      {/* Gráficos y Empleados */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <div className="col-span-4">
           {charts && <GastosPorProyectoChart data={charts.gastoPorProyecto} />}
         </div>
         <div className="col-span-3">
-          <Timeline items={timeline} />
+          <EmpleadosList empleados={empleados} isLoading={isLoading} />
         </div>
       </div>
 
