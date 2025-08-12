@@ -249,12 +249,13 @@ router.get('/:id/historial-nomina', async (req: Request, res: Response) => {
         deducciones: nomina_items.deduccion,
         impuestos: nomina_items.impuestos,
         proyecto_nombre: projects.name,
-        fecha_pago: nominas_nuevas.fecha_pago,
+        fecha_pago: nominas_nuevas.creado_at, // Usar creado_at como fecha_pago temporal
         metodo_pago: empleado_nomina.metodo_pago,
       })
       .from(nomina_items)
       .innerJoin(nominas_nuevas, eq(nomina_items.nomina_id, nominas_nuevas.id))
-      .innerJoin(empleado_nomina, eq(nomina_items.empleado_id, empleado_nomina.empleado_id))
+      .innerJoin(empleados, eq(nomina_items.empleado_id, empleados.id))
+      .leftJoin(empleado_nomina, eq(empleados.id, empleado_nomina.empleado_id))
       .leftJoin(projects, eq(nominas_nuevas.proyecto_id, projects.id))
       .where(eq(nomina_items.empleado_id, empleadoId))
       .orderBy(sql`${nominas_nuevas.rango_inicio} DESC`);
@@ -278,10 +279,7 @@ router.patch('/:id/historial-nomina/:nominaId/estado', async (req: Request, res:
 
     const updateData: any = { estado };
     
-    // Si se marca como pagado, establecer fecha de pago
-    if (estado === 'pagado') {
-      updateData.fecha_pago = new Date();
-    }
+    // Actualizar estado - fecha_pago no existe en la tabla actual
 
     await db
       .update(nominas_nuevas)

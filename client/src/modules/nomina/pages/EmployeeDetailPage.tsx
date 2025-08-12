@@ -79,7 +79,7 @@ export default function EmployeeDetailPage() {
         title: "Empleado eliminado",
         description: "El empleado ha sido dado de baja correctamente",
       });
-      setLocation('/finanzas/nomina');
+      setLocation('/nomina');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -106,7 +106,7 @@ export default function EmployeeDetailPage() {
               <h2 className="text-xl font-semibold mb-2">Empleado no encontrado</h2>
               <p className="text-muted-foreground mb-4">El empleado solicitado no existe</p>
               <Button asChild>
-                <Link href="/finanzas/nomina">Volver al dashboard</Link>
+                <Link href="/nomina">Volver al dashboard</Link>
               </Button>
             </div>
           </CardContent>
@@ -140,7 +140,7 @@ export default function EmployeeDetailPage() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/finanzas/nomina">Nómina</Link>
+              <Link href="/nomina">Nómina</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -156,7 +156,7 @@ export default function EmployeeDetailPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/finanzas/nomina">
+            <Link href="/nomina">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
             </Link>
