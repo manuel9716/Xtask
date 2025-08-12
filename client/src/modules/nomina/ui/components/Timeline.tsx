@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, CheckCircle, AlertCircle, UserPlus } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface TimelineItem {
   id: number;
@@ -10,6 +11,8 @@ interface TimelineItem {
   monto: number;
   proyecto?: string;
   tipo_evento?: 'empleado_creado' | 'nomina_pago';
+  empleado_id?: number;
+  nomina_id?: number;
 }
 
 interface TimelineProps {
@@ -17,6 +20,16 @@ interface TimelineProps {
 }
 
 export function Timeline({ items }: TimelineProps) {
+  const [, setLocation] = useLocation();
+
+  const handleItemClick = (item: TimelineItem) => {
+    if (item.tipo_evento === 'empleado_creado' && item.empleado_id) {
+      setLocation(`/empleados/${item.empleado_id}`);
+    } else if (item.nomina_id) {
+      setLocation(`/nominas/${item.nomina_id}`);
+    }
+  };
+
   const getStatusIcon = (estado: string, tipoEvento?: string) => {
     // Icono especial para empleados creados
     if (tipoEvento === 'empleado_creado') {
@@ -96,13 +109,25 @@ export function Timeline({ items }: TimelineProps) {
             </p>
           ) : (
             items.map((item) => (
-              <div key={`${item.tipo_evento || 'nomina'}-${item.id}`} className="flex items-start space-x-3">
+              <div 
+                key={`${item.tipo_evento || 'nomina'}-${item.id}`} 
+                className={`flex items-start space-x-3 p-2 rounded-lg transition-colors ${
+                  (item.tipo_evento === 'empleado_creado' && item.empleado_id) || item.nomina_id 
+                    ? 'hover:bg-muted cursor-pointer' 
+                    : ''
+                }`}
+                onClick={() => handleItemClick(item)}
+              >
                 <div className="mt-1">
                   {getStatusIcon(item.estado, item.tipo_evento)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">
+                    <p className={`text-sm font-medium ${
+                      (item.tipo_evento === 'empleado_creado' && item.empleado_id) || item.nomina_id 
+                        ? 'text-primary hover:underline' 
+                        : 'text-foreground'
+                    }`}>
                       {item.descripcion}
                     </p>
                     {getStatusBadge(item.estado, item.tipo_evento)}

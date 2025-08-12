@@ -30,7 +30,7 @@ import { useLocation } from 'wouter';
 import { EstadoNomina } from '../../domain/entities/Nomina';
 
 interface NominasTableProps {
-  nominas: (Payroll & { nombreEmpleado?: string })[];
+  nominas: (Payroll & { nombreEmpleado?: string; empleadoId?: number })[];
   isLoading: boolean;
   onMarcarPagada: (nominaId: number) => void;
   onAprobar: (nominaId: number) => void;
@@ -84,7 +84,12 @@ export function NominasTable({
 
   // Ver detalles de la nómina
   const verDetalle = (nominaId: number) => {
-    navigate(`/finanzas/nomina/${nominaId}`);
+    navigate(`/nominas/${nominaId}`);
+  };
+
+  // Navegar al detalle del empleado
+  const verEmpleado = (empleadoId: number) => {
+    navigate(`/empleados/${empleadoId}`);
   };
 
   // Manejo de acciones según el estado
@@ -126,7 +131,18 @@ export function NominasTable({
             nominas.map((nomina) => (
               <TableRow key={nomina.id}>
                 <TableCell className="font-medium">#{nomina.id}</TableCell>
-                <TableCell>{nomina.nombreEmpleado || `Empleado #${nomina.employeeId}`}</TableCell>
+                <TableCell>
+                  {nomina.empleadoId ? (
+                    <button
+                      onClick={() => verEmpleado(nomina.empleadoId!)}
+                      className="text-primary hover:underline font-medium cursor-pointer"
+                    >
+                      {nomina.nombreEmpleado || `Empleado #${nomina.employeeId}`}
+                    </button>
+                  ) : (
+                    nomina.nombreEmpleado || `Empleado #${nomina.employeeId}`
+                  )}
+                </TableCell>
                 <TableCell>
                   {formatFecha(nomina.periodStart)} - {formatFecha(nomina.periodEnd)}
                 </TableCell>

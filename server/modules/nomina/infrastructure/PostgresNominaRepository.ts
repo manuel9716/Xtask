@@ -149,7 +149,9 @@ export class PostgresNominaRepository implements INominaRepository {
           'pendiente'::text as estado,
           en.sueldo_base as monto,
           COALESCE(p.name, 'Sin proyecto') as proyecto,
-          'empleado_creado' as tipo_evento
+          'empleado_creado' as tipo_evento,
+          e.id as empleado_id,
+          NULL as nomina_id
         FROM empleados e
         INNER JOIN empleado_nomina en ON e.id = en.empleado_id
         LEFT JOIN empleado_proyecto ep ON e.id = ep.empleado_id
@@ -166,7 +168,9 @@ export class PostgresNominaRepository implements INominaRepository {
           n.estado,
           n.valor_neto as monto,
           COALESCE(p.name, 'Sin proyecto') as proyecto,
-          'nomina_pago' as tipo_evento
+          'nomina_pago' as tipo_evento,
+          e.id as empleado_id,
+          n.id as nomina_id
         FROM nominas n
         JOIN empleados e ON n.empleado_id = e.id
         LEFT JOIN projects p ON n.proyecto_id = p.id
@@ -183,7 +187,9 @@ export class PostgresNominaRepository implements INominaRepository {
       estado: row.estado as 'pagado' | 'pendiente' | 'retrasado',
       monto: parseFloat(row.monto) || 0,
       proyecto: row.proyecto || 'Sin proyecto',
-      tipo_evento: row.tipo_evento as 'empleado_creado' | 'nomina_pago'
+      tipo_evento: row.tipo_evento as 'empleado_creado' | 'nomina_pago',
+      empleado_id: row.empleado_id ? parseInt(row.empleado_id) : undefined,
+      nomina_id: row.nomina_id ? parseInt(row.nomina_id) : undefined
     }));
 
     // Gráfico de gastos por proyecto

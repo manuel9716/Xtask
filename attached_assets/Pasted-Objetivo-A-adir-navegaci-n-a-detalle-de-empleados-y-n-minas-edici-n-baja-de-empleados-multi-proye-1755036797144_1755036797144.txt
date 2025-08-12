@@ -1,0 +1,137 @@
+Objetivo: Añadir navegación a detalle de empleados y nóminas, edición/baja de empleados, multi‑proyecto, historial de nóminas y exportación.
+
+1) Rutas y archivos (frontend)
+Editar router del módulo para añadir:
+
+/nomina/empleados (lista simple) — opcional si ya existe
+
+/nomina/empleados/:id → EmployeeDetailPage
+
+/nomina/nominas/:id → PayrollDetailPage
+
+Crear archivos:
+
+apps/web/src/modules/nomina/pages/EmployeeDetailPage.tsx
+
+apps/web/src/modules/nomina/pages/PayrollDetailPage.tsx
+
+apps/web/src/modules/nomina/components/EmployeeEditModal.tsx
+
+apps/web/src/modules/nomina/components/ConfirmDeleteModal.tsx
+
+apps/web/src/modules/nomina/components/ProjectMultiSelect.tsx
+
+Servicios (ampliar/crear):
+
+apps/web/src/modules/nomina/services/empleados.api.ts
+
+getEmpleado(id) → GET /api/empleados/:id?include=proyectos,nominas
+
+updateEmpleado(id, body) → PATCH /api/empleados/:id
+
+updateEmpleadoProyectos(id, proyectosIds) → PUT /api/empleados/:id/proyectos
+
+deleteEmpleado(id) → DELETE /api/empleados/:id (soft‑delete)
+
+apps/web/src/modules/nomina/services/nomina.api.ts
+
+getNomina(id) → GET /api/nominas/:id
+
+setNominaEstado(id, estado) → PATCH /api/nominas/:id/estado ( pendiente | pagada | parcial )
+
+exportNomina(id, format) → GET /api/nominas/:id/export?format=pdf|xlsx
+
+Interacciones desde el dashboard (DashboardNomina.tsx):
+
+Los elementos de Cronología y Nóminas recientes deben linkear:
+
+click en “Nuevo empleado …” → /nomina/empleados/:id
+
+click en “Pago nómina …” o fila de nómina → /nomina/nominas/:id
+
+2) Páginas
+EmployeeDetailPage.tsx
+Layout en tabs (mantener estilo del sistema):
+
+Resumen: datos principales + KPIs personales (proyectos asignados, antigüedad, último pago).
+
+Información personal: todos los campos editables (usa EmployeeEditModal con React Hook Form + Zod).
+
+Nóminas: tabla con historial (rango, proyecto, sueldo, bono, deducción, impuestos, neto, estado).
+
+Chip de estado con toggle: si está pendiente permitir cambiar a pagada con setNominaEstado. Confirmación previa.
+
+Botón Ver abre /nomina/nominas/:id.
+
+Proyectos: ProjectMultiSelect para asignar/desasignar múltiples proyectos (updateEmpleadoProyectos).
+
+Documentos: contrato(s) subidos con opción de descargar (si ya lo tenéis).
+
+Actividad: timeline del empleado (alta, modificaciones, pagos).
+
+Acciones arriba a la derecha:
+
+Editar → abre EmployeeEditModal.
+
+Eliminar → ConfirmDeleteModal → deleteEmpleado (soft‑delete) → redirigir a /nomina/empleados y refrescar dashboard.
+
+PayrollDetailPage.tsx
+Mostrar encabezado con: Rango de fechas, Proyecto (o “Sin proyecto”), Estado (badge), Totales (sueldos/bonos/deducciones/impuestos/neto).
+
+Tabla de items: Empleado, Sueldo, Bono, Deducción, Impuestos, Neto.
+
+Acciones:
+
+Marcar como Pagada / Marcar como Pendiente → setNominaEstado.
+
+Exportar PDF y Exportar XLSX → exportNomina(id, "pdf" | "xlsx").
+
+Breadcrumb para volver al dashboard.
+
+3) Backend (endpoints nuevos/ajustes)
+empleados.routes.ts
+
+GET /api/empleados/:id → devuelve empleado + [proyectos] + nominas (historial de nomina_items con join hacia nominas).
+
+PATCH /api/empleados/:id → actualiza info personal/laboral (validación Zod/DTO).
+
+PUT /api/empleados/:id/proyectos → reemplaza asignaciones en empleado_proyecto (many‑to‑many).
+
+DELETE /api/empleados/:id → soft‑delete (campo deleted_at o activo=false) y cascada lógica donde aplique.
+
+nomina.routes.ts
+
+GET /api/nominas/:id → detalle completo (+ items).
+
+PATCH /api/nominas/:id/estado → cambia estado (pendiente|pagada|parcial) y registra en payments_log.
+
+GET /api/nominas/:id/export → genera PDF/XLSX server‑side; forzar descarga.
+
+4) Modelo de datos (confirma o ajusta)
+empleados(..., activo boolean DEFAULT true, deleted_at TIMESTAMP NULL)
+
+empleado_proyecto(empleado_id, proyecto_id) (unique compuesto)
+
+nominas(estado ENUM('pendiente','pagada','parcial') DEFAULT 'pendiente')
+
+payments_log(id, nomina_id, fecha_pago, monto, estado, nota, created_at)
+
+5) UX / Estados
+Optimistic update al cambiar estado de nómina: actualizar badge y totales; si falla, revertir y mostrar toast.
+
+Confirmaciones: al eliminar empleado y al marcar nómina como pagada.
+
+Permisos: acciones de editar/eliminar y cambiar estado solo para roles admin/finanzas.
+
+Accesibilidad: tabs navegables con teclado; toasts con aria-live.
+
+6) Criterios de aceptación
+Desde el dashboard, puedo entrar a /nomina/empleados/:id y ver tabs con la información; Editar guarda cambios; Eliminar hace soft‑delete y redirige.
+
+En la tab Nóminas del empleado veo todo su historial y puedo cambiar pendiente → pagada.
+
+Puedo abrir /nomina/nominas/:id, ver detalle e Exportar en PDF/XLSX.
+
+Multi‑proyecto funcionando: asigno/desasigno y se refleja en la tab y en el dashboard.
+
+No hay datos ficticios ni errores en consola; loaders/toasts visibles; accesible por teclado

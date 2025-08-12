@@ -76,6 +76,8 @@ export interface TimelineItem {
   monto: number;
   proyecto?: string;
   tipo_evento?: 'empleado_creado' | 'nomina_pago';
+  empleado_id?: number;
+  nomina_id?: number;
 }
 
 export interface ChartData {
