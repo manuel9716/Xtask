@@ -34,6 +34,11 @@ const nominaProcessSchema = z.object({
 export class NominaController {
   static async previewNomina(req: Request, res: Response) {
     try {
+      // Permitir preview sin autenticación en desarrollo
+      if (!req.user && process.env.NODE_ENV !== 'development') {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+
       const validatedData = nominaPreviewSchema.parse(req.body);
       const preview = await NominaService.previewNomina(validatedData);
       

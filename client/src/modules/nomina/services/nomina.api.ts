@@ -13,7 +13,7 @@ export interface NominaPreviewResponse {
 
 export class NominaApi {
   static async previewNomina(data: NominaPreview) {
-    const response = await apiRequest("POST", "/api/nominas/preview", data);
+    const response = await apiRequest("POST", "/api/nominas-preview/preview", data);
     return response.json();
   }
 

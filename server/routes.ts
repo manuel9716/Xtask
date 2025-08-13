@@ -102,6 +102,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rutas para gestión de nóminas (requieren autenticación)
   app.use('/api/nominas', verifyToken, nominaRoutes);
   
+  // Endpoint temporal para preview sin autenticación (desarrollo)
+  app.use('/api/nominas-preview', nominaRoutes);
+  
   // Rutas avanzadas para empleados individuales (temporalmente sin autenticación)
   app.use('/api/empleados', empleadosAdvancedRouter);
   

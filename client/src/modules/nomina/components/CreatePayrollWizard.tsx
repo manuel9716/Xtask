@@ -48,12 +48,12 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
 
   const { data: proyectos } = useQuery({
     queryKey: ['/api/proyectos'],
-    queryFn: () => EmpleadosApi.getProyectos(),
+    queryFn: () => fetch('/api/proyectos').then(r => r.json()).then(data => data.data),
   });
 
   const { data: empleados } = useQuery({
-    queryKey: ['/api/empleados'],
-    queryFn: () => EmpleadosApi.getEmpleados(),
+    queryKey: ['/api/nomina-modulo/empleados'],
+    queryFn: () => fetch('/api/nomina-modulo/empleados').then(r => r.json()),
   });
 
   const previewMutation = useMutation({
@@ -188,7 +188,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
                 <CardDescription>Define el rango de fechas y proyecto para la nómina</CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={form.handleSubmit(() => setCurrentStep(2))} className="space-y-4">
+                <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="rango_inicio">Fecha de Inicio *</Label>
@@ -239,11 +239,28 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <Button type="submit">
+                    <Button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const fechaInicio = form.getValues("rango_inicio");
+                        const fechaFin = form.getValues("rango_fin");
+                        
+                        if (!fechaInicio) {
+                          form.setError("rango_inicio", { message: "La fecha de inicio es obligatoria" });
+                          return;
+                        }
+                        if (!fechaFin) {
+                          form.setError("rango_fin", { message: "La fecha de fin es obligatoria" });
+                          return;
+                        }
+                        
+                        setCurrentStep(2);
+                      }}
+                    >
                       Continuar
                     </Button>
                   </div>
-                </form>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
