@@ -191,10 +191,7 @@ export default function ListadoNominaPage() {
           <NominasTable 
             nominas={nominas}
             isLoading={isLoading}
-            onMarcarPagada={handleOpenMarcarPagada}
-            onAprobar={(nominaId) => handleOpenCambiarEstado(nominaId, EstadoNomina.APROBADO)}
-            onRechazar={(nominaId) => handleOpenCambiarEstado(nominaId, EstadoNomina.RECHAZADO)}
-            onDescargarDesprendible={handleDescargarDesprendible}
+            onCambiarEstado={handleOpenCambiarEstado}
           />
           
           {/* Paginación */}

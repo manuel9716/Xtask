@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -9,61 +9,48 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Payroll } from '@shared/schema';
-import { 
-  Eye, 
-  FileDown, 
-  MoreHorizontal, 
-  CheckCircle, 
-  XCircle, 
-  CreditCard 
-} from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Payroll } from '@shared/schema';
+import { Eye } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { EstadoNomina } from '../../domain/entities/Nomina';
 
 interface NominasTableProps {
   nominas: (Payroll & { nombreEmpleado?: string; empleadoId?: number })[];
   isLoading: boolean;
-  onMarcarPagada: (nominaId: number) => void;
-  onAprobar: (nominaId: number) => void;
-  onRechazar: (nominaId: number) => void;
-  onDescargarDesprendible: (nominaId: number) => void;
+  onCambiarEstado: (nominaId: number, nuevoEstado: string) => void;
 }
 
 export function NominasTable({
   nominas,
   isLoading,
-  onMarcarPagada,
-  onAprobar,
-  onRechazar,
-  onDescargarDesprendible
+  onCambiarEstado
 }: NominasTableProps) {
   const [_, navigate] = useLocation();
 
-  // Renderizar estado con un badge de color apropiado
-  const renderEstado = (estado: string) => {
-    switch (estado) {
-      case EstadoNomina.PENDIENTE:
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 hover:bg-yellow-100">Pendiente</Badge>;
-      case EstadoNomina.APROBADO:
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-100">Aprobado</Badge>;
-      case EstadoNomina.PAGADO:
-        return <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-100">Pagado</Badge>;
-      case EstadoNomina.RECHAZADO:
-        return <Badge variant="outline" className="bg-red-50 text-red-700 hover:bg-red-100">Rechazado</Badge>;
-      case EstadoNomina.CANCELADO:
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 hover:bg-gray-100">Cancelado</Badge>;
-      default:
-        return <Badge variant="outline">{estado}</Badge>;
-    }
+  // Renderizar estado editable con select
+  const renderEstado = (nomina: any) => {
+    return (
+      <Select
+        value={nomina.status}
+        onValueChange={(nuevoEstado) => onCambiarEstado(nomina.id, nuevoEstado)}
+      >
+        <SelectTrigger className="w-32">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="pendiente">Pendiente</SelectItem>
+          <SelectItem value="pagada">Pagada</SelectItem>
+          <SelectItem value="cancelada">Cancelada</SelectItem>
+        </SelectContent>
+      </Select>
+    );
   };
 
   // Formatear fecha
@@ -87,16 +74,6 @@ export function NominasTable({
     navigate(`/nominas/${nominaId}`);
   };
 
-  // Navegar al detalle del empleado
-  const verEmpleado = (empleadoId: number) => {
-    navigate(`/empleados/${empleadoId}`);
-  };
-
-  // Manejo de acciones según el estado
-  const puedeAprobar = (estado: string) => estado === EstadoNomina.PENDIENTE;
-  const puedeRechazar = (estado: string) => estado === EstadoNomina.PENDIENTE;
-  const puedePagar = (estado: string) => estado === EstadoNomina.APROBADO;
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
@@ -110,85 +87,52 @@ export function NominasTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Empleado</TableHead>
             <TableHead>Período</TableHead>
-            <TableHead>Sueldo Bruto</TableHead>
-            <TableHead>Deducciones</TableHead>
-            <TableHead>Sueldo Neto</TableHead>
+            <TableHead>Proyecto</TableHead>
+            <TableHead>Valor Bruto</TableHead>
+            <TableHead>Valor Neto</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead>Fecha Pago</TableHead>
+            <TableHead className="text-center">Vista</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {nominas.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                 No hay nóminas disponibles
               </TableCell>
             </TableRow>
           ) : (
             nominas.map((nomina) => (
               <TableRow key={nomina.id}>
-                <TableCell className="font-medium">#{nomina.id}</TableCell>
-                <TableCell>
-                  {nomina.empleadoId ? (
-                    <button
-                      onClick={() => verEmpleado(nomina.empleadoId!)}
-                      className="text-primary hover:underline font-medium cursor-pointer"
-                    >
-                      {nomina.nombreEmpleado || `Empleado #${nomina.employeeId}`}
-                    </button>
-                  ) : (
-                    nomina.nombreEmpleado || `Empleado #${nomina.employeeId}`
-                  )}
-                </TableCell>
                 <TableCell>
                   {formatFecha(nomina.periodStart)} - {formatFecha(nomina.periodEnd)}
                 </TableCell>
-                <TableCell>{formatMonto(nomina.grossSalary)}</TableCell>
-                <TableCell>{formatMonto(nomina.deductions)}</TableCell>
-                <TableCell>{formatMonto(nomina.netSalary)}</TableCell>
-                <TableCell>{renderEstado(nomina.status)}</TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Abrir menú</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => verDetalle(nomina.id)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        Ver detalles
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDescargarDesprendible(nomina.id)}>
-                        <FileDown className="mr-2 h-4 w-4" />
-                        Descargar desprendible
-                      </DropdownMenuItem>
-                      {puedeAprobar(nomina.status) && (
-                        <DropdownMenuItem onClick={() => onAprobar(nomina.id)}>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Aprobar
-                        </DropdownMenuItem>
-                      )}
-                      {puedeRechazar(nomina.status) && (
-                        <DropdownMenuItem onClick={() => onRechazar(nomina.id)}>
-                          <XCircle className="mr-2 h-4 w-4" />
-                          Rechazar
-                        </DropdownMenuItem>
-                      )}
-                      {puedePagar(nomina.status) && (
-                        <DropdownMenuItem onClick={() => onMarcarPagada(nomina.id)}>
-                          <CreditCard className="mr-2 h-4 w-4" />
-                          Marcar como pagada
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <TableCell>
+                  {nomina.projectName || 'Sin proyecto'}
+                </TableCell>
+                <TableCell className="font-medium">
+                  {formatMonto(nomina.grossSalary)}
+                </TableCell>
+                <TableCell className="font-bold text-green-600">
+                  {formatMonto(nomina.netSalary)}
+                </TableCell>
+                <TableCell>
+                  {renderEstado(nomina)}
+                </TableCell>
+                <TableCell>
+                  {nomina.paymentDate ? formatFecha(nomina.paymentDate) : '-'}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => verDetalle(nomina.id)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
