@@ -52,16 +52,15 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
   });
 
   const { data: empleados } = useQuery({
-    queryKey: ['/api/empleados', form.watch("proyecto_id")],
-    queryFn: () => EmpleadosApi.getEmpleados({ proyectoId: form.watch("proyecto_id") }),
-    enabled: !!form.watch("proyecto_id") || currentStep >= 2,
+    queryKey: ['/api/empleados'],
+    queryFn: () => EmpleadosApi.getEmpleados(),
   });
 
   const previewMutation = useMutation({
     mutationFn: NominaApi.previewNomina,
     onSuccess: (data) => {
       setPreviewData(data);
-      setSelectedItems(data.items.map(item => ({ ...item, selected: true })));
+      setSelectedItems(data.items.map((item: any) => ({ ...item, selected: true })));
       setCurrentStep(3);
     },
     onError: (error: any) => {
@@ -230,7 +229,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos los proyectos</SelectItem>
-                        {proyectos?.map((proyecto) => (
+                        {proyectos?.map((proyecto: any) => (
                           <SelectItem key={proyecto.id} value={proyecto.id.toString()}>
                             {proyecto.nombre}
                           </SelectItem>
@@ -259,7 +258,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
                 <div className="space-y-4">
                   {empleados && empleados.length > 0 ? (
                     <div className="space-y-2">
-                      {empleados.map((empleado) => (
+                      {empleados.map((empleado: any) => (
                         <div key={empleado.id} className="flex items-center space-x-2 p-3 border rounded">
                           <Checkbox
                             id={`empleado-${empleado.id}`}
