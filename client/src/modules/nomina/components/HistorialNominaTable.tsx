@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye } from 'lucide-react';
+import { Eye, Calendar } from 'lucide-react';
 import { EstadoNomina } from '../domain/entities/Nomina';
 
 interface HistorialNominaItem {
