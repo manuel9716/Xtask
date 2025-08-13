@@ -352,119 +352,161 @@ export default function EmployeeDetailPage() {
             </Card>
           )}
 
-          {/* Cronograma de Pagos - Nueva sección visual */}
+          {/* Cronograma de Pagos - Nueva sección visual con datos reales */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Cronograma de Pagos - Gráfico de barras */}
             <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Cronograma de Pagos</CardTitle>
-                <CardDescription>Últimos 6 meses</CardDescription>
+                <CardDescription>Últimos pagos realizados</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Datos simulados para los últimos 6 meses */}
-                  {[
-                    { mes: '3 Abr', monto: 4200, proyecto: 'Proyecto A' },
-                    { mes: '10 Abr', monto: 4500, proyecto: 'Proyecto B' },
-                    { mes: '17 Abr', monto: 3800, proyecto: 'Proyecto A' },
-                    { mes: '24 Abr', monto: 4100, proyecto: 'Proyecto C' },
-                    { mes: '1 May', monto: 4300, proyecto: 'Proyecto B' },
-                  ].map((pago, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className="text-xs text-muted-foreground w-14">
-                        {pago.mes}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">{pago.proyecto}</span>
-                          <span className="text-sm font-semibold">${pago.monto.toLocaleString()}</span>
+                  {/* Usar datos reales de pagos */}
+                  {empleado.pagos && empleado.pagos.length > 0 ? (
+                    empleado.pagos.slice(0, 6).map((pago: any, index: number) => {
+                      const maxMonto = Math.max(...empleado.pagos.slice(0, 6).map((p: any) => Number(p.neto || 0)));
+                      const porcentaje = maxMonto > 0 ? (Number(pago.neto || 0) / maxMonto) * 100 : 0;
+                      const fechaPago = new Date(pago.fecha_pago || pago.fecha_fin);
+                      const fechaFormateada = fechaPago.toLocaleDateString('es-ES', { 
+                        day: '2-digit', 
+                        month: 'short' 
+                      });
+                      
+                      return (
+                        <div key={index} className="flex items-center gap-3">
+                          <div className="text-xs text-muted-foreground w-14">
+                            {fechaFormateada}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">
+                                {pago.proyecto_nombre || 'Sin proyecto'}
+                              </span>
+                              <span className="text-sm font-semibold">
+                                ${Number(pago.neto || 0).toLocaleString('es-ES')}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  pago.estado === 'pagada' 
+                                    ? 'bg-gradient-to-r from-green-400 to-green-600'
+                                    : 'bg-gradient-to-r from-yellow-400 to-orange-500'
+                                }`}
+                                style={{ width: `${porcentaje}%` }}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2">
-                          <div 
-                            className="bg-gradient-to-r from-blue-400 to-purple-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${(pago.monto / 4500) * 100}%` }}
-                          />
-                        </div>
-                      </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center text-muted-foreground py-4">
+                      <p className="text-sm">No hay pagos registrados</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Distribución de Gastos - Gráfico circular */}
+            {/* Distribución de Gastos - Gráfico circular con datos reales */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Distribución Gastos</CardTitle>
                 <CardDescription>Por tipo de pago</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="flex items-center justify-center mb-6">
-                  <div className="relative w-32 h-32">
-                    {/* Simulación de gráfico circular */}
-                    <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
-                      <path
-                        className="text-gray-200"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        fill="transparent"
-                        d="m18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      <path
-                        className="text-blue-600"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeDasharray="60, 100"
-                        strokeLinecap="round"
-                        fill="transparent"
-                        d="m18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                      <path
-                        className="text-purple-600"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeDasharray="25, 100"
-                        strokeDashoffset="-60"
-                        strokeLinecap="round"
-                        fill="transparent"
-                        d="m18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-xs font-semibold">Total</div>
-                        <div className="text-sm font-bold">$21,900</div>
+                {empleado.pagos && empleado.pagos.length > 0 ? (() => {
+                  // Calcular totales de datos reales
+                  const totalSueldos = empleado.pagos.reduce((sum: number, pago: any) => 
+                    sum + Number(pago.sueldo || 0), 0);
+                  const totalBonificaciones = empleado.pagos.reduce((sum: number, pago: any) => 
+                    sum + Number(pago.bonificaciones || 0), 0);
+                  const totalDescuentos = empleado.pagos.reduce((sum: number, pago: any) => 
+                    sum + Number(pago.descuentos || 0), 0);
+                  const totalGeneral = totalSueldos + totalBonificaciones + totalDescuentos;
+                  
+                  const porcentajeSueldos = totalGeneral > 0 ? (totalSueldos / totalGeneral * 100) : 0;
+                  const porcentajeBonificaciones = totalGeneral > 0 ? (totalBonificaciones / totalGeneral * 100) : 0;
+                  const porcentajeDescuentos = totalGeneral > 0 ? (totalDescuentos / totalGeneral * 100) : 0;
+                  
+                  return (
+                    <>
+                      <div className="flex items-center justify-center mb-6">
+                        <div className="relative w-32 h-32">
+                          <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 36 36">
+                            <path
+                              className="text-gray-200"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              fill="transparent"
+                              d="m18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path
+                              className="text-blue-600"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              strokeDasharray={`${porcentajeSueldos}, 100`}
+                              strokeLinecap="round"
+                              fill="transparent"
+                              d="m18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path
+                              className="text-purple-600"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              strokeDasharray={`${porcentajeBonificaciones}, 100`}
+                              strokeDashoffset={`-${porcentajeSueldos}`}
+                              strokeLinecap="round"
+                              fill="transparent"
+                              d="m18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-center">
+                              <div className="text-xs font-semibold">Total</div>
+                              <div className="text-sm font-bold">
+                                ${totalGeneral.toLocaleString('es-ES')}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                            <span className="text-sm">Sueldos</span>
+                          </div>
+                          <span className="text-sm font-semibold">{porcentajeSueldos.toFixed(0)}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-purple-600 rounded-full"></div>
+                            <span className="text-sm">Bonificaciones</span>
+                          </div>
+                          <span className="text-sm font-semibold">{porcentajeBonificaciones.toFixed(0)}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                            <span className="text-sm">Descuentos</span>
+                          </div>
+                          <span className="text-sm font-semibold">{porcentajeDescuentos.toFixed(0)}%</span>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })() : (
+                  <div className="text-center text-muted-foreground py-8">
+                    <p className="text-sm">No hay datos de distribución disponibles</p>
                   </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                      <span className="text-sm">Sueldos</span>
-                    </div>
-                    <span className="text-sm font-semibold">60%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-purple-600 rounded-full"></div>
-                      <span className="text-sm">Bonificaciones</span>
-                    </div>
-                    <span className="text-sm font-semibold">25%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-                      <span className="text-sm">Otros</span>
-                    </div>
-                    <span className="text-sm font-semibold">15%</span>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Calendario y Nóminas Recientes */}
+            {/* Calendario y Nóminas Recientes con datos reales */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Calendario</CardTitle>
@@ -472,78 +514,79 @@ export default function EmployeeDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Mini calendario */}
+                  {/* Mini calendario con días de pago reales */}
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="text-center mb-3">
-                      <p className="text-sm font-semibold text-gray-700">ABRIL 2024</p>
+                      <p className="text-sm font-semibold text-gray-700">
+                        {new Date().toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase()}
+                      </p>
                     </div>
                     <div className="grid grid-cols-7 gap-1 text-xs mb-2">
-                      <div className="text-center text-muted-foreground font-medium">S</div>
+                      <div className="text-center text-muted-foreground font-medium">D</div>
+                      <div className="text-center text-muted-foreground font-medium">L</div>
                       <div className="text-center text-muted-foreground font-medium">M</div>
-                      <div className="text-center text-muted-foreground font-medium">T</div>
-                      <div className="text-center text-muted-foreground font-medium">W</div>
-                      <div className="text-center text-muted-foreground font-medium">T</div>
-                      <div className="text-center text-muted-foreground font-medium">F</div>
+                      <div className="text-center text-muted-foreground font-medium">X</div>
+                      <div className="text-center text-muted-foreground font-medium">J</div>
+                      <div className="text-center text-muted-foreground font-medium">V</div>
                       <div className="text-center text-muted-foreground font-medium">S</div>
                     </div>
                     <div className="grid grid-cols-7 gap-1 text-xs">
-                      {Array.from({length: 30}, (_, i) => i + 1).map(day => (
-                        <div 
-                          key={day} 
-                          className={`text-center p-1 rounded text-xs ${
-                            [3, 10, 17, 24].includes(day) 
-                              ? 'bg-blue-500 text-white font-bold shadow-sm' 
-                              : 'text-gray-600 hover:bg-gray-200'
-                          }`}
-                        >
-                          {day}
-                        </div>
-                      ))}
+                      {(() => {
+                        const fechasPago = empleado.pagos?.map((pago: any) => {
+                          const fecha = new Date(pago.fecha_pago || pago.fecha_fin);
+                          return fecha.getDate();
+                        }) || [];
+                        
+                        const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+                        return Array.from({length: daysInMonth}, (_, i) => i + 1).map(day => (
+                          <div 
+                            key={day} 
+                            className={`text-center p-1 rounded text-xs transition-colors ${
+                              fechasPago.includes(day) 
+                                ? 'bg-blue-500 text-white font-bold shadow-sm' 
+                                : 'text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {day}
+                          </div>
+                        ));
+                      })()}
                     </div>
                   </div>
 
-                  {/* Lista de nóminas recientes */}
+                  {/* Lista de nóminas recientes con datos reales */}
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold text-gray-700 mb-2">Nóminas Recientes</h4>
                     
-                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <div>
-                          <div className="text-sm font-medium">12/04/2024 - 14/05/24</div>
-                          <div className="text-xs text-green-700">Pagado</div>
-                        </div>
+                    {empleado.nominas && empleado.nominas.length > 0 ? (
+                      empleado.nominas.slice(0, 3).map((nomina: any, index: number) => {
+                        const estiloEstado = nomina.estado === 'pagada' ? 'green' : 
+                                           nomina.estado === 'procesada' ? 'blue' : 'yellow';
+                        
+                        return (
+                          <div key={index} className={`flex items-center justify-between p-3 bg-${estiloEstado}-50 rounded-lg border border-${estiloEstado}-100`}>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 bg-${estiloEstado}-500 rounded-full`}></div>
+                              <div>
+                                <div className="text-sm font-medium">
+                                  {new Date(nomina.fecha_inicio).toLocaleDateString('es-ES')} - {new Date(nomina.fecha_fin).toLocaleDateString('es-ES')}
+                                </div>
+                                <div className={`text-xs text-${estiloEstado}-700 capitalize`}>
+                                  {nomina.estado}
+                                </div>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className={`bg-${estiloEstado}-100 text-${estiloEstado}-800 border-${estiloEstado}-200 text-xs`}>
+                              ${Number(nomina.neto || 0).toLocaleString('es-ES')}
+                            </Badge>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center text-muted-foreground py-4">
+                        <p className="text-sm">No hay nóminas registradas</p>
                       </div>
-                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 text-xs">
-                        Realizado
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <div>
-                          <div className="text-sm font-medium">18/04/2024 - 21/05/24</div>
-                          <div className="text-xs text-blue-700">Pagado</div>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
-                        Procesado
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                        <div>
-                          <div className="text-sm font-medium">22/04/2024 - 25/04/24</div>
-                          <div className="text-xs text-yellow-700">Pendiente</div>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">
-                        Asegurar 78
-                      </Badge>
-                    </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

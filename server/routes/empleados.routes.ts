@@ -187,6 +187,32 @@ router.get('/:id', async (req: Request, res: Response) => {
     `);
     const gastoPorProyecto = gastoResult.rows as any[];
 
+    // Obtener datos de pagos detallados para gráficos si se incluye 'pagos'
+    let pagos: any[] = [];
+    if (includes.includes('pagos')) {
+      const pagosResult = await db.execute(sql`
+        SELECT 
+          nn.id as nomina_id,
+          nn.rango_inicio as fecha_inicio,
+          nn.rango_fin as fecha_fin,
+          nn.created_at as fecha_pago,
+          ni.sueldo,
+          ni.bono as bonificaciones,
+          ni.deduccion as descuentos,
+          ni.neto,
+          nn.estado,
+          p.name as proyecto_nombre,
+          p.id as proyecto_id
+        FROM nomina_items ni
+        INNER JOIN nominas_nuevas nn ON ni.nomina_id = nn.id
+        LEFT JOIN projects p ON nn.proyecto_id = p.id
+        WHERE ni.empleado_id = ${empleadoId}
+        ORDER BY nn.rango_inicio DESC, nn.created_at DESC
+        LIMIT 12
+      `);
+      pagos = pagosResult.rows as any[];
+    }
+
     const empleadoResponse = {
       ...empleado,
       nomina: nominaData ? {
@@ -200,6 +226,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       } : null,
       proyectos,
       nominas,
+      pagos, // Nueva propiedad para cronología de pagos
       historial,
       gastoPorProyecto,
       ultimoPago,

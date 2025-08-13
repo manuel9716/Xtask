@@ -1,0 +1,76 @@
+El proyecto XTask ya tiene la página de detalles de empleado funcionando correctamente. Ahora se necesita que los campos de Cronograma de Pagos, Distribución de Gastos y Calendario se actualicen con datos reales asociados al empleado. Los datos deben provenir de la base de datos (nóminas, pagos y proyectos), y no deben incluir información falsa o de ejemplo.
+
+Instrucciones para Implementación
+1) Backend (API endpoints y lógica de datos)
+Endpoint GET /api/empleados/:id?include=nomina,proyectos,pagos
+Asegúrate de que este endpoint devuelva los siguientes datos completos:
+
+Empleado: Nombre, cargo, proyectos asignados, datos personales.
+
+Nominas: Historial completo de nóminas del empleado, con detalles de pagos, fechas de pago, proyectos asociados, estado (pagado/pendiente), y montos.
+
+Proyectos: Lista de proyectos asignados al empleado, con nombres y montos asociados (porcentaje del gasto mensual, si aplica).
+
+Pagos: Cronología de pagos procesados, con detalles de la nómina, fechas de pago y sueldos correspondientes.
+
+Ejemplo de datos de respuesta:
+
+Empleado: Manuel Rodríguez
+
+Nombre, cargo, proyectos asignados (ej: "Finagro2025"), fecha de ingreso, etc.
+
+Nómina:
+
+Rango de fechas, proyecto, neto, estado, fecha de pago.
+
+Proyectos:
+
+Nombre de proyectos con sus montos anuales.
+
+Pagos:
+
+Historial de pagos: Monto, fecha de pago, estado, proyecto.
+
+2) Frontend (UI y manejo de estado)
+En la página EmployeeDetailPage.tsx, realiza las siguientes modificaciones:
+
+Cronograma de Pagos:
+
+Mostrar los pagos reales de acuerdo con los datos de la API (pagos).
+
+Organizar los pagos por fecha de pago y asociarlos con el proyecto correspondiente.
+
+Mostrar el estado del pago (Pagado/Pendiente) y la cantidad correspondiente.
+
+Distribución de Gastos:
+
+Crear un gráfico de donut o barra que muestre la distribución de sueldos y bonificaciones por proyecto.
+
+Calendario:
+
+Mostrar un calendario con los días de pago, usando un componente de calendario que resalte las fechas importantes (días de pago).
+
+Nóminas Recientes:
+
+Mostrar las nóminas recientes del empleado con estado (Pagado/Pendiente).
+
+Permitir cambiar el estado de la nómina de Pendiente a Pagado.
+
+3) Gráficos y Componentes Dinámicos
+Distribución de Gastos: Crear un gráfico de donut o barra que muestre la distribución de sueldos y bonificaciones por proyecto.
+
+Usa Recharts o Chart.js para visualizar los datos de los proyectos y su gasto correspondiente.
+
+Calendario con Nóminas Recientes:
+Utilizar un componente de calendario para mostrar los días de pago.
+
+Los días de pago deben estar asociados con la nómina del empleado.
+
+4) Criterios de aceptación:
+Cronograma de Pagos: Muestra los pagos reales del empleado, con fechas, proyectos y estado de pago (Pagado/Pendiente).
+
+Distribución de Gastos: Gráfico dinámico que muestra la distribución de los sueldos y bonificaciones por proyecto.
+
+Calendario: Muestra un calendario con los días de pago y otros eventos importantes (vencimientos, ausencias).
+
+Nóminas Recientes: La tabla muestra las nóminas procesadas y su estado, con la opción de cambiar el estado a Pagado si es necesario.

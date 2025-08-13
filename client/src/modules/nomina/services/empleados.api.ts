@@ -62,7 +62,7 @@ export class EmpleadosApi {
   }
 
   static async getEmpleadoCompleto(id: number) {
-    const response = await apiRequest('GET', `/api/empleados/${id}?include=nomina,proyectos,historial`);
+    const response = await apiRequest('GET', `/api/empleados/${id}?include=nomina,proyectos,pagos,historial`);
     return response.json();
   }
 
@@ -89,6 +89,13 @@ export class EmpleadosApi {
   static async updateEstadoNomina(empleadoId: number, nominaId: number, estado: string) {
     const response = await apiRequest('PATCH', `/api/empleados/${empleadoId}/historial-nomina/${nominaId}/estado`, {
       estado
+    });
+    return response.json();
+  }
+
+  static async actualizarEstadoNomina(nominaId: number, nuevoEstado: string) {
+    const response = await apiRequest('PATCH', `/api/nominas/${nominaId}/estado`, {
+      estado: nuevoEstado
     });
     return response.json();
   }
