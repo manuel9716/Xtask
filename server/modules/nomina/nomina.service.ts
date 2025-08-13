@@ -150,7 +150,7 @@ export class NominaService {
       // Calcular totales
       const totalSueldos = data.items.reduce((sum, item) => sum + item.sueldo, 0);
       const totalBonos = data.items.reduce((sum, item) => sum + item.bono, 0);
-      const totalDeducciones = data.items.reduce((sum, item) => sum + item.deduccion + item.impuestos, 0);
+      const totalNeto = data.items.reduce((sum, item) => sum + item.neto, 0);
 
       // Crear la nómina
       const [nomina] = await tx
@@ -161,7 +161,7 @@ export class NominaService {
           proyecto_id: data.proyecto_id || null,
           total_sueldos: totalSueldos.toString(),
           total_bonos: totalBonos.toString(),
-          total_deducciones: totalDeducciones.toString(),
+          total_neto: totalNeto.toString(),
           creado_por: userId,
         })
         .returning();
@@ -175,8 +175,8 @@ export class NominaService {
             empleado_id: item.empleado_id,
             sueldo: item.sueldo.toString(),
             bono: item.bono.toString(),
-            deduccion: item.deduccion.toString(),
-            impuestos: item.impuestos.toString(),
+            deduccion: "0",
+            impuestos: "0",
             neto: item.neto.toString(),
           });
       }

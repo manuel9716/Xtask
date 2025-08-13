@@ -124,9 +124,9 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
         empleado_id: item.empleado_id,
         sueldo: item.sueldo,
         bono: item.bono,
-        deduccion: item.deduccion,
-        impuestos: item.impuestos,
-        neto: item.neto,
+        deduccion: 0,
+        impuestos: 0,
+        neto: item.sueldo + item.bono,
       })),
     };
 
@@ -138,6 +138,16 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
       prev.map(item => 
         item.empleado_id === empleadoId 
           ? { ...item, selected: !item.selected }
+          : item
+      )
+    );
+  };
+
+  const updateItemValue = (empleadoId: number, field: 'sueldo' | 'bono', value: number) => {
+    setSelectedItems(prev =>
+      prev.map(item =>
+        item.empleado_id === empleadoId
+          ? { ...item, [field]: value }
           : item
       )
     );
@@ -344,12 +354,12 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
               <CardContent>
                 {previewData && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <Card>
                         <CardContent className="p-4">
                           <p className="text-sm text-muted-foreground">Total Sueldos</p>
                           <p className="text-2xl font-bold">
-                            {formatCurrency(previewData.totales.total_sueldos)}
+                            {formatCurrency(selectedItems.filter(i => i.selected).reduce((sum, item) => sum + item.sueldo, 0))}
                           </p>
                         </CardContent>
                       </Card>
@@ -357,15 +367,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
                         <CardContent className="p-4">
                           <p className="text-sm text-muted-foreground">Total Bonos</p>
                           <p className="text-2xl font-bold">
-                            {formatCurrency(previewData.totales.total_bonos)}
-                          </p>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-4">
-                          <p className="text-sm text-muted-foreground">Deducciones</p>
-                          <p className="text-2xl font-bold">
-                            {formatCurrency(previewData.totales.total_deducciones)}
+                            {formatCurrency(selectedItems.filter(i => i.selected).reduce((sum, item) => sum + item.bono, 0))}
                           </p>
                         </CardContent>
                       </Card>
@@ -373,7 +375,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
                         <CardContent className="p-4">
                           <p className="text-sm text-muted-foreground">Total Neto</p>
                           <p className="text-2xl font-bold text-green-600">
-                            {formatCurrency(selectedTotal)}
+                            {formatCurrency(selectedItems.filter(i => i.selected).reduce((sum, item) => sum + item.sueldo + item.bono, 0))}
                           </p>
                         </CardContent>
                       </Card>
@@ -386,9 +388,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
                           <TableHead>Empleado</TableHead>
                           <TableHead className="text-right">Sueldo</TableHead>
                           <TableHead className="text-right">Bonos</TableHead>
-                          <TableHead className="text-right">Deducciones</TableHead>
-                          <TableHead className="text-right">Impuestos</TableHead>
-                          <TableHead className="text-right">Neto</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -404,19 +404,25 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
                               {item.empleado_nombre}
                             </TableCell>
                             <TableCell className="text-right">
-                              {formatCurrency(item.sueldo)}
+                              <Input
+                                type="number"
+                                value={item.sueldo}
+                                onChange={(e) => updateItemValue(item.empleado_id, 'sueldo', parseFloat(e.target.value) || 0)}
+                                className="w-28 text-right"
+                                min="0"
+                              />
                             </TableCell>
                             <TableCell className="text-right">
-                              {formatCurrency(item.bono)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(item.deduccion)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(item.impuestos)}
+                              <Input
+                                type="number"
+                                value={item.bono}
+                                onChange={(e) => updateItemValue(item.empleado_id, 'bono', parseFloat(e.target.value) || 0)}
+                                className="w-28 text-right"
+                                min="0"
+                              />
                             </TableCell>
                             <TableCell className="text-right font-bold">
-                              {formatCurrency(item.neto)}
+                              {formatCurrency(item.sueldo + item.bono)}
                             </TableCell>
                           </TableRow>
                         ))}
