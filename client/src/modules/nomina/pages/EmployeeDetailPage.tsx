@@ -558,10 +558,10 @@ export default function EmployeeDetailPage() {
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold text-gray-700 mb-2">Nóminas Recientes</h4>
                     
-                    {empleado.nominas && empleado.nominas.length > 0 ? (
-                      empleado.nominas.slice(0, 3).map((nomina: any, index: number) => {
-                        const estiloEstado = nomina.estado === 'pagada' ? 'green' : 
-                                           nomina.estado === 'procesada' ? 'blue' : 'yellow';
+                    {empleado.pagos && empleado.pagos.length > 0 ? (
+                      empleado.pagos.slice(0, 3).map((pago: any, index: number) => {
+                        const estiloEstado = pago.estado === 'pagada' ? 'green' : 
+                                           pago.estado === 'procesada' ? 'blue' : 'yellow';
                         
                         return (
                           <div key={index} className={`flex items-center justify-between p-3 bg-${estiloEstado}-50 rounded-lg border border-${estiloEstado}-100`}>
@@ -569,15 +569,15 @@ export default function EmployeeDetailPage() {
                               <div className={`w-2 h-2 bg-${estiloEstado}-500 rounded-full`}></div>
                               <div>
                                 <div className="text-sm font-medium">
-                                  {new Date(nomina.fecha_inicio).toLocaleDateString('es-ES')} - {new Date(nomina.fecha_fin).toLocaleDateString('es-ES')}
+                                  {new Date(pago.fecha_inicio).toLocaleDateString('es-ES')} - {new Date(pago.fecha_fin).toLocaleDateString('es-ES')}
                                 </div>
                                 <div className={`text-xs text-${estiloEstado}-700 capitalize`}>
-                                  {nomina.estado}
+                                  {pago.estado}
                                 </div>
                               </div>
                             </div>
                             <Badge variant="outline" className={`bg-${estiloEstado}-100 text-${estiloEstado}-800 border-${estiloEstado}-200 text-xs`}>
-                              ${Number(nomina.neto || 0).toLocaleString('es-ES')}
+                              ${Number(pago.neto || 0).toLocaleString('es-ES')}
                             </Badge>
                           </div>
                         );

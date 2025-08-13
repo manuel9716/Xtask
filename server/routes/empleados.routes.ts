@@ -164,7 +164,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     nominas.forEach(nomina => {
       historial.push({
         tipo: nomina.estado === 'pagada' ? 'pago' : 'nomina_creada',
-        fecha: nomina.estado === 'pagada' ? nomina.fecha_pago : nomina.created_at,
+        fecha: nomina.rango_fin || new Date().toISOString(),
         descripcion: nomina.estado === 'pagada' ? 
           `Nómina pagada - $${Number(nomina.neto).toLocaleString()}` : 
           `Nómina creada - $${Number(nomina.neto).toLocaleString()}`,
@@ -195,7 +195,7 @@ router.get('/:id', async (req: Request, res: Response) => {
           nn.id as nomina_id,
           nn.rango_inicio as fecha_inicio,
           nn.rango_fin as fecha_fin,
-          nn.created_at as fecha_pago,
+          nn.rango_fin as fecha_pago,
           ni.sueldo,
           ni.bono as bonificaciones,
           ni.deduccion as descuentos,
@@ -207,7 +207,7 @@ router.get('/:id', async (req: Request, res: Response) => {
         INNER JOIN nominas_nuevas nn ON ni.nomina_id = nn.id
         LEFT JOIN projects p ON nn.proyecto_id = p.id
         WHERE ni.empleado_id = ${empleadoId}
-        ORDER BY nn.rango_inicio DESC, nn.created_at DESC
+        ORDER BY nn.rango_inicio DESC
         LIMIT 12
       `);
       pagos = pagosResult.rows as any[];
