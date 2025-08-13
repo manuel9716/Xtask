@@ -1,5 +1,5 @@
 import { db } from "../../db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { 
   empleados, 
   empleado_nomina, 
@@ -139,7 +139,7 @@ export class NominaService {
             eq(nominas_nuevas.rango_fin, data.rango_fin),
             data.proyecto_id 
               ? eq(nominas_nuevas.proyecto_id, data.proyecto_id)
-              : eq(nominas_nuevas.proyecto_id, null)
+              : isNull(nominas_nuevas.proyecto_id)
           )
         );
 
@@ -161,7 +161,7 @@ export class NominaService {
           proyecto_id: data.proyecto_id || null,
           total_sueldos: totalSueldos.toString(),
           total_bonos: totalBonos.toString(),
-          total_neto: totalNeto.toString(),
+          total_deducciones: "0",
           creado_por: userId,
         })
         .returning();
