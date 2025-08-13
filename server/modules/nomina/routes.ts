@@ -5,7 +5,9 @@ import path from 'path';
 import fs from 'fs';
 import { NominaService } from './application/services/NominaService';
 import { PostgresNominaRepository } from './infrastructure/PostgresNominaRepository';
-import { insertEmpleadoNominaSchema, insertEmpleadoNominaDataSchema, filtrosNominaSchema } from '@shared/schema';
+import { insertEmpleadoNominaSchema, insertEmpleadoNominaDataSchema, filtrosNominaSchema, empleados as empleados_table } from '@shared/schema';
+import { db } from '../../db';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 const nominaRepository = new PostgresNominaRepository();
@@ -62,7 +64,27 @@ router.get('/dashboard', async (req, res) => {
 router.get('/empleados', async (req, res) => {
   try {
     const query = req.query.q as string;
-    const empleados = await nominaService.getEmpleados(query);
+    
+    // Obtener empleados activos directamente con SQL
+    const result = await db.execute(`
+      SELECT id, nombre, apellido, cargo, depto 
+      FROM empleados 
+      WHERE activo = true
+    `);
+    
+    console.log('Empleados SQL result:', result);
+    console.log('Empleados rows:', result.rows);
+    
+    // Mapear resultado a formato esperado
+    const empleados = result.rows.map((row: any) => ({
+      id: row.id,
+      nombre: row.nombre,
+      apellido: row.apellido,
+      cargo: row.cargo,
+      depto: row.depto
+    }));
+    
+    console.log('Empleados mapeados:', empleados);
     res.json(empleados);
   } catch (error) {
     console.error('Error obteniendo empleados:', error);
