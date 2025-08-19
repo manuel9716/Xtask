@@ -225,4 +225,41 @@ router.get('/:id/export', async (req: Request, res: Response) => {
   }
 });
 
+// DELETE /api/nominas/:id - Eliminar nómina
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    const nominaId = parseInt(req.params.id);
+
+    // Verificar que la nómina existe
+    const [nomina] = await db
+      .select()
+      .from(nominas_nuevas)
+      .where(eq(nominas_nuevas.id, nominaId));
+
+    if (!nomina) {
+      return res.status(404).json({ message: 'Nómina no encontrada' });
+    }
+
+    // Eliminar items de la nómina primero (por restricción de FK)
+    await db
+      .delete(nomina_items)
+      .where(eq(nomina_items.nomina_id, nominaId));
+
+    // Eliminar registros de payments_log relacionados
+    await db
+      .delete(payments_log)
+      .where(eq(payments_log.nomina_id, nominaId));
+
+    // Eliminar la nómina principal
+    await db
+      .delete(nominas_nuevas)
+      .where(eq(nominas_nuevas.id, nominaId));
+
+    res.json({ message: 'Nómina eliminada exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar nómina:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 export default router;
