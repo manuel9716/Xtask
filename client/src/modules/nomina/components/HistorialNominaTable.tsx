@@ -24,6 +24,17 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -276,14 +287,31 @@ export function HistorialNominaTable({
                           
                           <DialogFooter className="flex gap-2">
                             {onEliminar && (
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                onClick={() => selectedNomina && onEliminar(selectedNomina.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Eliminar
-                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" size="sm">
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Eliminar
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Eliminar nómina?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta acción no se puede deshacer. Se eliminará permanentemente esta nómina y todos los datos relacionados.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => selectedNomina && onEliminar(selectedNomina.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Eliminar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             )}
                             {onExportar && (
                               <Button 
@@ -292,7 +320,7 @@ export function HistorialNominaTable({
                                 onClick={() => selectedNomina && onExportar(selectedNomina.id)}
                               >
                                 <Download className="h-4 w-4 mr-1" />
-                                Exportar
+                                Exportar PDF
                               </Button>
                             )}
                           </DialogFooter>

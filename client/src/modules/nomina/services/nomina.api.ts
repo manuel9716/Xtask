@@ -52,8 +52,12 @@ export class NominaApi {
   }
 
   static async exportNomina(id: number, format: 'pdf' | 'xlsx' = 'pdf') {
+    const token = localStorage.getItem('token');
     const response = await fetch(`/api/nominas/${id}/export?format=${format}`, {
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     
     if (!response.ok) {
