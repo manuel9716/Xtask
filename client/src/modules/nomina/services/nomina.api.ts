@@ -66,8 +66,18 @@ export class NominaApi {
   }
 
   static async eliminarNomina(id: number) {
-    const response = await apiRequest('DELETE', `/api/nominas/${id}`);
-    return response.json();
+    try {
+      const response = await apiRequest('DELETE', `/api/nominas/${id}`);
+      if (response.ok) {
+        return await response.json();
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error en eliminarNomina:', error);
+      throw error;
+    }
   }
 }
 

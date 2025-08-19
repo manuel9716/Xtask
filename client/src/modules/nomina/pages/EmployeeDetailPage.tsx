@@ -74,13 +74,17 @@ export default function EmployeeDetailPage() {
 
   const handleEliminarNomina = async (nominaId: number) => {
     try {
-      await nominaApi.eliminarNomina(nominaId);
+      console.log('Eliminando nómina:', nominaId);
+      const result = await nominaApi.eliminarNomina(nominaId);
+      console.log('Resultado:', result);
+      
       refetchHistorial();
       toast({
         title: "Nómina eliminada",
         description: "La nómina ha sido eliminada correctamente",
       });
     } catch (error: any) {
+      console.error('Error al eliminar:', error);
       toast({
         title: "Error",
         description: error.message || "Error al eliminar nómina",
