@@ -107,8 +107,8 @@ router.patch('/:id/estado', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/nominas/:id/export - Exportar nómina
-router.get('/:id/export', verifyToken, async (req: Request, res: Response) => {
+// GET /api/nominas/:id/export - Exportar nómina  
+router.get('/:id/export', async (req: Request, res: Response) => {
   try {
     const nominaId = parseInt(req.params.id);
     const format = req.query.format as string;

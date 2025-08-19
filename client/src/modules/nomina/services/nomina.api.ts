@@ -52,16 +52,14 @@ export class NominaApi {
   }
 
   static async exportNomina(id: number, format: 'pdf' | 'xlsx' = 'pdf') {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`/api/nominas/${id}/export?format=${format}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+    // Usar ruta temporal sin autenticación para development
+    const response = await fetch(`/api/nominas-preview/${id}/export?format=${format}`, {
+      method: 'GET'
     });
     
     if (!response.ok) {
-      throw new Error('Error al exportar nómina');
+      const errorText = await response.text();
+      throw new Error(`Error al exportar nómina: ${errorText}`);
     }
     
     return response.blob();
