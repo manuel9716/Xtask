@@ -72,6 +72,49 @@ export default function EmployeeDetailPage() {
     }
   };
 
+  const handleEliminarNomina = async (nominaId: number) => {
+    try {
+      await nominaApi.eliminarNomina(nominaId);
+      refetchHistorial();
+      toast({
+        title: "Nómina eliminada",
+        description: "La nómina ha sido eliminada correctamente",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al eliminar nómina",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportarNomina = async (nominaId: number) => {
+    try {
+      const blob = await nominaApi.exportNomina(nominaId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `nomina-${nominaId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Nómina exportada",
+        description: "La nómina ha sido exportada correctamente",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Error al exportar nómina",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDelete = async () => {
     try {
       await empleadosApi.deleteEmpleado(parseInt(id!));
@@ -636,14 +679,8 @@ export default function EmployeeDetailPage() {
             historial={historialNomina || []}
             isLoading={isLoadingHistorial}
             onChangeEstado={handleChangeNominaEstado}
-          />
-        </TabsContent>
-
-        <TabsContent value="nominas" className="space-y-4">
-          <HistorialNominaTable
-            historial={historialNomina || []}
-            isLoading={isLoadingHistorial}
-            onChangeEstado={handleChangeNominaEstado}
+            onEliminar={handleEliminarNomina}
+            onExportar={handleExportarNomina}
           />
         </TabsContent>
 

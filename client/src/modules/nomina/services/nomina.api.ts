@@ -51,7 +51,7 @@ export class NominaApi {
     return response.json();
   }
 
-  static async exportNomina(id: number, format: 'pdf' | 'xlsx') {
+  static async exportNomina(id: number, format: 'pdf' | 'xlsx' = 'pdf') {
     const response = await fetch(`/api/nominas/${id}/export?format=${format}`, {
       method: 'GET',
     });
@@ -61,6 +61,11 @@ export class NominaApi {
     }
     
     return response.blob();
+  }
+
+  static async eliminarNomina(id: number) {
+    const response = await apiRequest('DELETE', `/api/nominas/${id}`);
+    return response.json();
   }
 }
 

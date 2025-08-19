@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -15,8 +15,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, Calendar } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Eye, Calendar, Trash2, Download, DollarSign, CreditCard, Calendar as CalendarIcon } from 'lucide-react';
 import { EstadoNomina } from '../domain/entities/Nomina';
 
 interface HistorialNominaItem {
@@ -39,13 +50,18 @@ interface HistorialNominaTableProps {
   historial: HistorialNominaItem[];
   isLoading: boolean;
   onChangeEstado: (nominaId: number, nuevoEstado: string) => void;
+  onEliminar?: (nominaId: number) => void;
+  onExportar?: (nominaId: number) => void;
 }
 
 export function HistorialNominaTable({
   historial,
   isLoading,
-  onChangeEstado
+  onChangeEstado,
+  onEliminar,
+  onExportar
 }: HistorialNominaTableProps) {
+  const [selectedNomina, setSelectedNomina] = useState<HistorialNominaItem | null>(null);
   
   const renderEstado = (item: HistorialNominaItem) => {
     return (
@@ -132,7 +148,6 @@ export function HistorialNominaTable({
                 <TableRow>
                   <TableHead>Período</TableHead>
                   <TableHead>Proyecto</TableHead>
-                  <TableHead>Valor Bruto</TableHead>
                   <TableHead>Valor Neto</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Fecha Pago</TableHead>
@@ -152,14 +167,6 @@ export function HistorialNominaTable({
                         {item.proyecto_nombre || 'Sin proyecto'}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {formatMonto(item.valor_bruto)}
-                      {item.bonificaciones > 0 && (
-                        <div className="text-xs text-green-500">
-                          +{formatMonto(item.bonificaciones)} bonos
-                        </div>
-                      )}
-                    </TableCell>
                     <TableCell className="font-bold text-green-600">
                       {formatMonto(item.valor_neto)}
                     </TableCell>
@@ -170,13 +177,127 @@ export function HistorialNominaTable({
                       {item.fecha_pago ? formatFecha(item.fecha_pago) : '-'}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => setSelectedNomina(item)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                              <DollarSign className="h-5 w-5" />
+                              Detalle de Nómina
+                            </DialogTitle>
+                            <DialogDescription>
+                              Información completa del pago de nómina
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          {selectedNomina && (
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Período</label>
+                                  <p className="text-sm">{formatPeriodo(selectedNomina.periodo_inicio, selectedNomina.periodo_fin)}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Proyecto</label>
+                                  <p className="text-sm">{selectedNomina.proyecto_nombre || 'Sin proyecto'}</p>
+                                </div>
+                              </div>
+                              
+                              <Separator />
+                              
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium">Sueldo Base:</span>
+                                  <span className="text-sm">{formatMonto(selectedNomina.valor_bruto)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium text-green-600">Bonificaciones:</span>
+                                  <span className="text-sm text-green-600">+{formatMonto(selectedNomina.bonificaciones)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium text-red-600">Deducciones:</span>
+                                  <span className="text-sm text-red-600">-{formatMonto(selectedNomina.deducciones)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium text-red-600">Impuestos:</span>
+                                  <span className="text-sm text-red-600">-{formatMonto(selectedNomina.impuestos)}</span>
+                                </div>
+                                
+                                <Separator />
+                                
+                                <div className="flex justify-between items-center">
+                                  <span className="text-lg font-bold">Total:</span>
+                                  <span className="text-lg font-bold text-green-600">{formatMonto(selectedNomina.valor_neto)}</span>
+                                </div>
+                              </div>
+                              
+                              <Separator />
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                                    <CalendarIcon className="h-3 w-3" />
+                                    Fecha de Pago
+                                  </label>
+                                  <p className="text-sm">{selectedNomina.fecha_pago ? formatFecha(selectedNomina.fecha_pago) : 'Sin fecha'}</p>
+                                </div>
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                                    <CreditCard className="h-3 w-3" />
+                                    Método de Pago
+                                  </label>
+                                  <p className="text-sm capitalize">{selectedNomina.metodo_pago}</p>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Estado</label>
+                                <div className="mt-1">
+                                  <Badge variant="outline" className={
+                                    selectedNomina.estado === 'pagada' ? 'bg-green-50 text-green-700' :
+                                    selectedNomina.estado === 'pendiente' ? 'bg-yellow-50 text-yellow-700' :
+                                    'bg-red-50 text-red-700'
+                                  }>
+                                    {selectedNomina.estado}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <DialogFooter className="flex gap-2">
+                            {onEliminar && (
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => selectedNomina && onEliminar(selectedNomina.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Eliminar
+                              </Button>
+                            )}
+                            {onExportar && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => selectedNomina && onExportar(selectedNomina.id)}
+                              >
+                                <Download className="h-4 w-4 mr-1" />
+                                Exportar
+                              </Button>
+                            )}
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </TableCell>
                   </TableRow>
                 ))}
