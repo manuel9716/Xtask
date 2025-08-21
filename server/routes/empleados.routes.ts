@@ -339,11 +339,14 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Empleado no encontrado' });
     }
 
-    // Marcar como inactivo en lugar de eliminar físicamente
+    // Marcar como eliminado usando soft delete
     await db
       .update(empleados)
       .set({ 
-        estado_contrato: 'inactivo'
+        estado_contrato: 'inactivo',
+        deleted_at: new Date(),
+        // Modificar identificación para evitar restricción única
+        identificacion: `${empleado.identificacion}_deleted_${Date.now()}`
       })
       .where(eq(empleados.id, empleadoId));
 

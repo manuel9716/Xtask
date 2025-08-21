@@ -37,7 +37,20 @@ interface NewEmpleado {
 export class EmpleadosService {
   static async createEmpleado(data: NewEmpleado, userId: number) {
     return await db.transaction(async (tx) => {
-      // 1. Crear el empleado
+      // 1. Verificar si existe un empleado activo con la misma identificación
+      const empleadosExistentes = await tx
+        .select()
+        .from(empleados)
+        .where(and(
+          eq(empleados.identificacion, data.empleado.identificacion),
+          isNull(empleados.deleted_at)
+        ));
+
+      if (empleadosExistentes.length > 0) {
+        throw new Error(`Ya existe un empleado activo con la identificación ${data.empleado.identificacion}`);
+      }
+
+      // 2. Crear el empleado
       const [empleado] = await tx
         .insert(empleados)
         .values({
@@ -46,15 +59,25 @@ export class EmpleadosService {
         })
         .returning();
 
-      // 2. Crear los datos de nómina
+      // 3. Crear los datos de nómina
       await tx
         .insert(empleado_nomina)
         .values({
           empleado_id: empleado.id,
-          ...data.nomina,
+          sueldo_base: data.nomina.sueldo_base.toString(),
+          bonificacion: data.nomina.bonificacion.toString(),
+          tasa_impuestos: data.nomina.tasa_impuestos.toString(),
+          base_deduccion: data.nomina.base_deduccion.toString(),
+          beneficios_base: data.nomina.beneficios_base.toString(),
+          metodo_pago: data.nomina.metodo_pago,
+          cuenta_bancaria: data.nomina.cuenta_bancaria,
+          seguro_salud: data.nomina.seguro_salud,
+          dias_vacaciones: data.nomina.dias_vacaciones,
+          frecuencia_pago: data.nomina.frecuencia_pago,
+          fecha_inicio_nomina: data.nomina.fecha_inicio_nomina,
         });
 
-      // 3. Asignar al proyecto
+      // 4. Asignar al proyecto
       await tx
         .insert(empleado_proyecto)
         .values({
