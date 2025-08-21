@@ -47,6 +47,12 @@ export function ProjectsTable({ limit, className, showPagination = false }: Proj
     queryKey: ["/api/projects"],
   });
 
+  const handleEliminarProyecto = () => {
+    // Invalidar y actualizar la caché inmediatamente después de eliminar
+    queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+    queryClient.refetchQueries({ queryKey: ["/api/projects"] });
+  };
+
   const projectCount = projects?.length || 0;
   const totalPages = Math.ceil(projectCount / projectsPerPage);
   
@@ -229,6 +235,7 @@ export function ProjectsTable({ limit, className, showPagination = false }: Proj
                               return EstadoProyecto.ACTIVO;
                           }
                         })()} 
+                        onEliminar={handleEliminarProyecto}
                         onEstadoCambiado={() => {
                           // Invalidar la caché para refrescar la tabla inmediatamente
                           queryClient.invalidateQueries({ queryKey: ["/api/projects"] });

@@ -6,8 +6,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MoreVertical, CheckCircle2, ClockIcon, PauseCircle, ExternalLink, Edit } from "lucide-react";
+import { MoreVertical, CheckCircle2, ClockIcon, PauseCircle, ExternalLink, Edit, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
 import { CambiarEstadoProyectoDialog } from "./CambiarEstadoProyectoDialog";
@@ -30,6 +40,8 @@ export function MenuAccionesProyecto({
   onEstadoCambiado,
 }: MenuAccionesProyectoProps) {
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
+  const [dialogoEliminarAbierto, setDialogoEliminarAbierto] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
   const { toast } = useToast();
 
   // Función para cambiar estados directamente
@@ -48,6 +60,29 @@ export function MenuAccionesProyecto({
         description: "No se pudo cambiar el estado del proyecto",
         variant: "destructive",
       });
+    }
+  };
+
+  // Función para eliminar proyecto
+  const eliminarProyecto = async () => {
+    setEliminando(true);
+    try {
+      await proyectosApi.eliminar(proyectoId);
+      toast({
+        title: "Proyecto eliminado",
+        description: "El proyecto ha sido eliminado correctamente",
+      });
+      if (onEliminar) onEliminar(proyectoId);
+    } catch (error) {
+      console.error("Error al eliminar proyecto:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el proyecto",
+        variant: "destructive",
+      });
+    } finally {
+      setEliminando(false);
+      setDialogoEliminarAbierto(false);
     }
   };
 
@@ -179,17 +214,14 @@ export function MenuAccionesProyecto({
           )}
 
           {/* Opción de eliminar */}
-          {onEliminar && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onEliminar(proyectoId)}
-                className="text-destructive focus:text-destructive"
-              >
-                Eliminar
-              </DropdownMenuItem>
-            </>
-          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => setDialogoEliminarAbierto(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Eliminar proyecto
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -203,6 +235,28 @@ export function MenuAccionesProyecto({
       >
         <span></span>
       </CambiarEstadoProyectoDialog>
+
+      {/* Diálogo de confirmación para eliminar */}
+      <AlertDialog open={dialogoEliminarAbierto} onOpenChange={setDialogoEliminarAbierto}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar proyecto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El proyecto y toda su información asociada se eliminarán permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={eliminarProyecto}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={eliminando}
+            >
+              {eliminando ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
