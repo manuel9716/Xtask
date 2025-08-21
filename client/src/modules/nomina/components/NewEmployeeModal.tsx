@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/modules/auth/ui/context/AuthContext";
 import { 
   Dialog, 
   DialogContent, 
@@ -34,7 +33,6 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
   const [contratoFile, setContratoFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { reloadDashboard } = useNominaStore();
-  const { user } = useAuth();
 
   const form = useForm<NewEmpleado>({
     resolver: zodResolver(newEmpleadoSchema),
@@ -72,18 +70,12 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
   });
 
   const { data: proyectos } = useQuery({
-    queryKey: ['/api/projects'],
-    queryFn: async () => {
-      const response = await fetch('/api/projects');
-      if (!response.ok) {
-        throw new Error('Error al obtener proyectos');
-      }
-      return response.json();
-    },
+    queryKey: ['/api/proyectos'],
+    queryFn: () => EmpleadosApi.getProyectos(),
   });
 
   const createEmpleadoMutation = useMutation({
-    mutationFn: (data: any) => EmpleadosApi.createEmpleado(data),
+    mutationFn: EmpleadosApi.createEmpleado,
     onSuccess: async (empleado) => {
       toast({
         title: "Empleado creado exitosamente",
@@ -124,21 +116,7 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
   });
 
   const onSubmit = (data: NewEmpleado) => {
-    // Simplificar los datos - usar endpoint básico
-    const empleadoData = {
-      firstName: data.empleado.nombre,
-      lastName: data.empleado.apellido,
-      identification: data.empleado.identificacion,
-      position: data.empleado.cargo,
-      department: data.empleado.depto,
-      tipoContrato: data.empleado.tipo_contrato,
-      claseRiesgoARL: "1",
-      phoneNumber: data.empleado.telefono,
-      auxilioTransporte: false
-    };
-
-    console.log("Enviando datos del empleado:", empleadoData);
-    createEmpleadoMutation.mutate(empleadoData);
+    createEmpleadoMutation.mutate(data);
   };
 
   const nextTab = () => {
@@ -535,7 +513,7 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
                       <SelectContent>
                         {proyectos?.map((proyecto) => (
                           <SelectItem key={proyecto.id} value={proyecto.id.toString()}>
-                            {proyecto.name}
+                            {proyecto.nombre}
                           </SelectItem>
                         ))}
                       </SelectContent>

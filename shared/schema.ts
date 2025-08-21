@@ -70,39 +70,6 @@ export enum NivelHabilidad {
   EXPERTO = "experto"
 }
 
-// Enums para marco legal colombiano
-export enum TipoContrato {
-  INDEFINIDO = "indefinido",
-  FIJO = "fijo",
-  PRESTACION_SERVICIOS = "prestacion_servicios",
-  POR_HORAS = "por_horas"
-}
-
-export enum ClaseRiesgoARL {
-  CLASE_I = "1",
-  CLASE_II = "2", 
-  CLASE_III = "3",
-  CLASE_IV = "4",
-  CLASE_V = "5"
-}
-
-export enum EstadoNominaColombia {
-  BORRADOR = "borrador",
-  CALCULADA = "calculada",
-  APROBADA = "aprobada",
-  PAGADA = "pagada",
-  CERRADA = "cerrada"
-}
-
-export enum TipoNovedad {
-  INCAPACIDAD = "incapacidad",
-  LICENCIA = "licencia",
-  HORAS_EXTRAS = "horas_extras",
-  BONO_ESPECIAL = "bono_especial",
-  VACACIONES = "vacaciones",
-  DESCUENTO = "descuento"
-}
-
 // Interfaces
 export interface FiltrosProyecto {
   busqueda?: string;
@@ -664,7 +631,7 @@ export const taskComments = pgTable("task_comments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Employees (HR) - Extendido para marco legal colombiano
+// Employees (HR)
 export const employees = pgTable("employees", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -692,22 +659,6 @@ export const employees = pgTable("employees", {
   tipoPago: text("tipo_pago"), // Tipo de pago (mensual, quincenal, etc.)
   fechaInicioNomina: timestamp("fecha_inicio_nomina"), // Fecha de inicio para cálculos de nómina
   id_employed_proyects: integer("id_employed_proyects").references(() => projects.id), // ID del proyecto asignado al empleado
-  
-  // Campos extendidos para marco legal colombiano
-  tipoContrato: text("tipo_contrato").notNull().default("indefinido"), // indefinido, fijo, prestacion_servicios, por_horas
-  salarioPorHora: decimal("salario_por_hora", { precision: 10, scale: 2 }), // Para contratos por horas
-  horasPorSemana: integer("horas_por_semana"), // Para contratos por horas
-  honorarios: decimal("honorarios", { precision: 10, scale: 2 }), // Para prestación de servicios
-  claseRiesgoARL: text("clase_riesgo_arl").default("1"), // Clase de riesgo ARL (1-5)
-  eps: text("eps"), // EPS del empleado
-  pensiones: text("pensiones"), // Fondo de pensiones
-  arl: text("arl"), // ARL del empleado
-  cajaCompensacion: text("caja_compensacion"), // Caja de compensación familiar
-  auxilioTransporte: boolean("auxilio_transporte").default(false), // Si recibe auxilio de transporte
-  retencionFuente: decimal("retencion_fuente", { precision: 5, scale: 2 }).default("0"), // % retención en la fuente
-  activo: boolean("activo").default(true), // Para soft delete
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // User Skills
@@ -785,28 +736,7 @@ export const insertProjectSchema = createInsertSchema(projects).omit({ id: true,
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true });
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true });
 export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({ id: true, createdAt: true });
-export const insertEmployeeSchema = createInsertSchema(employees).omit({ 
-  id: true, 
-  createdAt: true, 
-  updatedAt: true 
-}).extend({
-  // Validaciones específicas para marco legal colombiano
-  tipoContrato: z.enum(["indefinido", "fijo", "prestacion_servicios", "por_horas"], {
-    required_error: "El tipo de contrato es requerido"
-  }),
-  salary: z.preprocess((val) => val ? Number(val) : undefined, z.number().min(0, "El salario debe ser mayor o igual a 0").optional()),
-  salarioPorHora: z.preprocess((val) => val ? Number(val) : undefined, z.number().min(0).optional()),
-  horasPorSemana: z.preprocess((val) => val ? Number(val) : undefined, z.number().min(1).max(48, "Las horas semanales no pueden exceder 48").optional()),
-  honorarios: z.preprocess((val) => val ? Number(val) : undefined, z.number().min(0).optional()),
-  claseRiesgoARL: z.enum(["1", "2", "3", "4", "5"], {
-    required_error: "La clase de riesgo ARL es requerida"
-  }),
-  identification: z.string().min(5, "La identificación debe tener al menos 5 caracteres").max(20),
-  hireDate: z.preprocess((val) => {
-    if (typeof val === "string") return new Date(val);
-    return val;
-  }, z.date()),
-});
+export const insertEmployeeSchema = createInsertSchema(employees).omit({ id: true });
 export const insertEmployeeProjectSchema = createInsertSchema(employeeProjects).omit({ id: true, assignedAt: true });
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true, createdAt: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
@@ -966,81 +896,6 @@ export type InsertFinancialCategory = z.infer<typeof insertFinancialCategorySche
 
 export type FinancialAudit = typeof financialAudits.$inferSelect;
 export type InsertFinancialAudit = z.infer<typeof insertFinancialAuditSchema>;
-
-// ========== NUEVAS TABLAS PARA NÓMINA COLOMBIANA ==========
-
-// Historial de contratos
-export const historialContratos = pgTable("historial_contratos", {
-  id: serial("id").primaryKey(),
-  empleadoId: integer("empleado_id").references(() => employees.id).notNull(),
-  tipoContrato: text("tipo_contrato").notNull(), // indefinido, fijo, prestacion_servicios, por_horas
-  salarioAnterior: decimal("salario_anterior", { precision: 10, scale: 2 }),
-  salarioNuevo: decimal("salario_nuevo", { precision: 10, scale: 2 }),
-  horasAnterior: integer("horas_anterior"),
-  horasNuevo: integer("horas_nuevo"),
-  bonificacionesAnterior: decimal("bonificaciones_anterior", { precision: 10, scale: 2 }),
-  bonificacionesNuevo: decimal("bonificaciones_nuevo", { precision: 10, scale: 2 }),
-  fechaCambio: timestamp("fecha_cambio").defaultNow().notNull(),
-  observaciones: text("observaciones"),
-  creadoPor: integer("creado_por").references(() => users.id).notNull(),
-});
-
-// Prestaciones sociales acumuladas
-export const prestacionesSociales = pgTable("prestaciones_sociales", {
-  id: serial("id").primaryKey(),
-  empleadoId: integer("empleado_id").references(() => employees.id).notNull(),
-  año: integer("año").notNull(),
-  mes: integer("mes").notNull(),
-  prima: decimal("prima", { precision: 10, scale: 2 }).default("0"),
-  cesantias: decimal("cesantias", { precision: 10, scale: 2 }).default("0"),
-  interesesCesantias: decimal("intereses_cesantias", { precision: 10, scale: 2 }).default("0"),
-  vacaciones: decimal("vacaciones", { precision: 10, scale: 2 }).default("0"),
-  calculadoAt: timestamp("calculado_at").defaultNow().notNull(),
-});
-
-// Novedades de nómina
-export const novedadesNomina = pgTable("novedades_nomina", {
-  id: serial("id").primaryKey(),
-  empleadoId: integer("empleado_id").references(() => employees.id).notNull(),
-  tipo: text("tipo").notNull(), // incapacidad, licencia, horas_extras, bono_especial, vacaciones, descuento
-  descripcion: text("descripcion").notNull(),
-  valor: decimal("valor", { precision: 10, scale: 2 }).notNull(),
-  horas: decimal("horas", { precision: 5, scale: 2 }), // Para horas extras
-  fechaInicio: date("fecha_inicio"),
-  fechaFin: date("fecha_fin"),
-  aplicadaEnNomina: integer("aplicada_en_nomina").references(() => nominas_nuevas.id),
-  estado: text("estado").default("pendiente"), // pendiente, aplicada, cancelada
-  creadaPor: integer("creada_por").references(() => users.id).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// Configuración de parámetros legales colombianos
-export const parametrosLegales = pgTable("parametros_legales", {
-  id: serial("id").primaryKey(),
-  año: integer("año").notNull(),
-  salarioMinimo: decimal("salario_minimo", { precision: 10, scale: 2 }).notNull(),
-  auxilioTransporte: decimal("auxilio_transporte", { precision: 10, scale: 2 }).notNull(),
-  uvt: decimal("uvt", { precision: 10, scale: 2 }).notNull(), // Unidad de Valor Tributario
-  salud: decimal("salud", { precision: 5, scale: 2 }).default("4.0"), // 4%
-  pension: decimal("pension", { precision: 5, scale: 2 }).default("4.0"), // 4%
-  arlPorcentajes: text("arl_porcentajes"), // JSON con porcentajes por clase de riesgo
-  vigenciaDesde: date("vigencia_desde").notNull(),
-  vigenciaHasta: date("vigencia_hasta"),
-  activo: boolean("activo").default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// Calendario de pagos
-export const calendarioPagos = pgTable("calendario_pagos", {
-  id: serial("id").primaryKey(),
-  proyectoId: integer("proyecto_id").references(() => projects.id),
-  fechaPago: date("fecha_pago").notNull(),
-  descripcion: text("descripcion").notNull(),
-  montoEstimado: decimal("monto_estimado", { precision: 15, scale: 2 }),
-  estado: text("estado").default("programado"), // programado, ejecutado, cancelado
-  tipo: text("tipo").default("nomina"), // nomina, prestaciones, bonos
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
 
 // ========== ESQUEMAS ZOD PARA NÓMINA ==========
 
@@ -1287,26 +1142,3 @@ export type InsertCapacitacion = z.infer<typeof insertCapacitacionSchema>;
 
 export type EmpleadoCapacitacion = typeof empleadoCapacitaciones.$inferSelect;
 export type InsertEmpleadoCapacitacion = z.infer<typeof insertEmpleadoCapacitacionSchema>;
-
-// Esquemas para nuevas tablas de nómina colombiana
-export const insertHistorialContratoSchema = createInsertSchema(historialContratos).omit({ id: true });
-export const insertPrestacionesSocialesSchema = createInsertSchema(prestacionesSociales).omit({ id: true, calculadoAt: true });
-export const insertNovedadNominaSchema = createInsertSchema(novedadesNomina).omit({ id: true, createdAt: true });
-export const insertParametrosLegalesSchema = createInsertSchema(parametrosLegales).omit({ id: true, createdAt: true });
-export const insertCalendarioPagosSchema = createInsertSchema(calendarioPagos).omit({ id: true, createdAt: true });
-
-// Tipos para nuevas tablas
-export type HistorialContrato = typeof historialContratos.$inferSelect;
-export type InsertHistorialContrato = z.infer<typeof insertHistorialContratoSchema>;
-
-export type PrestacionesSociales = typeof prestacionesSociales.$inferSelect;
-export type InsertPrestacionesSociales = z.infer<typeof insertPrestacionesSocialesSchema>;
-
-export type NovedadNomina = typeof novedadesNomina.$inferSelect;
-export type InsertNovedadNomina = z.infer<typeof insertNovedadNominaSchema>;
-
-export type ParametrosLegales = typeof parametrosLegales.$inferSelect;
-export type InsertParametrosLegales = z.infer<typeof insertParametrosLegalesSchema>;
-
-export type CalendarioPagos = typeof calendarioPagos.$inferSelect;
-export type InsertCalendarioPagos = z.infer<typeof insertCalendarioPagosSchema>;

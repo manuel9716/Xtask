@@ -24,8 +24,6 @@ import { empleadosRoutes } from "./modules/empleados/empleados.routes";
 import { nominaRoutes } from "./modules/nomina/nomina.routes";
 import empleadosAdvancedRouter, { exportRouter } from "./routes/empleados.routes";
 import nominasAdvancedRouter from "./routes/nominas.routes";
-import empleadosColombiaRouter from "./routes/empleados-colombia.routes";
-import parametrosLegalesRouter from "./routes/parametros-legales.routes";
 import { verifyToken } from "./routes/auth.routes";
 // import { requireAuth } from "./middleware/auth.middleware"; // Temporalmente deshabilitado
 import { MailService } from '@sendgrid/mail';
@@ -109,12 +107,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Rutas avanzadas para empleados individuales (temporalmente sin autenticación)
   app.use('/api/empleados', empleadosAdvancedRouter);
-  
-  // Rutas para empleados con marco legal colombiano
-  app.use('/api/empleados-colombia', empleadosColombiaRouter);
-  
-  // Rutas para parámetros legales colombianos
-  app.use('/api/parametros-legales', parametrosLegalesRouter);
   
   // Rutas de exportación
   app.use('/api', exportRouter);

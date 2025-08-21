@@ -1,125 +1,105 @@
 import { apiRequest } from "@/lib/queryClient";
-import type { Employee, InsertEmployee, HistorialContrato, NovedadNomina, PrestacionesSociales, ParametrosLegales } from "@shared/schema";
+import { NewEmpleado } from "../schemas/empleado.schemas";
 
 export class EmpleadosApi {
-  // Gestión general de empleados
-  static async getAllEmpleados() {
-    const response = await apiRequest("GET", "/api/employees");
+  static async createEmpleado(data: NewEmpleado) {
+    const response = await apiRequest("POST", "/api/empleados-nomina", data);
+    return response.json();
+  }
+
+  static async uploadContrato(empleadoId: number, file: File) {
+    const formData = new FormData();
+    formData.append('contrato', file);
+    
+    const response = await fetch(`/api/empleados-nomina/${empleadoId}/contrato`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al subir contrato');
+    }
+    
+    return response.json();
+  }
+
+  static async getProyectos() {
+    const response = await apiRequest("GET", "/api/proyectos");
+    const data = await response.json();
+    
+    // Transformar el formato de la respuesta para que coincida con lo esperado
+    if (data.data && Array.isArray(data.data)) {
+      return data.data.map((proyecto: any) => ({
+        id: proyecto.id,
+        nombre: proyecto.nombre || proyecto.name,
+      }));
+    }
+    
+    // Si ya es un array directamente
+    if (Array.isArray(data)) {
+      return data.map((proyecto: any) => ({
+        id: proyecto.id,
+        nombre: proyecto.nombre || proyecto.name,
+      }));
+    }
+    
+    // Valor por defecto si no hay datos válidos
+    return [];
+  }
+
+  static async getEmpleados(filtros: { proyectoId?: number; q?: string } = {}) {
+    const params = new URLSearchParams();
+    if (filtros.proyectoId) params.set('proyectoId', filtros.proyectoId.toString());
+    if (filtros.q) params.set('q', filtros.q);
+    
+    const response = await apiRequest("GET", `/api/empleados-nomina?${params}`);
     return response.json();
   }
 
   static async getEmpleado(id: number) {
-    const response = await apiRequest("GET", `/api/employees/${id}`);
+    const response = await apiRequest('GET', `/api/empleados/${id}?include=proyectos,nominas`);
     return response.json();
   }
 
-  static async createEmpleado(empleado: any) {
-    const response = await apiRequest("POST", "/api/employees", empleado);
-    return response.json();
-  }
-}
-
-export class EmpleadosColombiaApi {
-  // Gestión de empleados con marco legal colombiano
-  static async getAllEmpleados() {
-    const response = await apiRequest("GET", "/api/empleados-colombia");
+  static async getEmpleadoCompleto(id: number) {
+    const response = await apiRequest('GET', `/api/empleados/${id}?include=nomina,proyectos,pagos,historial`);
     return response.json();
   }
 
-  static async getEmpleado(id: number) {
-    const response = await apiRequest("GET", `/api/empleados-colombia/${id}`);
+  static async updateEmpleado(id: number, data: any) {
+    const response = await apiRequest('PATCH', `/api/empleados/${id}`, data);
     return response.json();
   }
 
-  static async createEmpleado(empleado: InsertEmployee) {
-    const response = await apiRequest("POST", "/api/empleados-colombia", empleado);
-    return response.json();
-  }
-
-  static async updateEmpleado(id: number, empleado: Partial<InsertEmployee>) {
-    const response = await apiRequest("PATCH", `/api/empleados-colombia/${id}`, empleado);
+  static async updateEmpleadoProyectos(id: number, proyectosIds: number[]) {
+    const response = await apiRequest('PUT', `/api/empleados/${id}/proyectos`, { proyectosIds });
     return response.json();
   }
 
   static async deleteEmpleado(id: number) {
-    const response = await apiRequest("DELETE", `/api/empleados-colombia/${id}`);
+    const response = await apiRequest('DELETE', `/api/empleados/${id}`);
     return response.json();
   }
 
-  // Gestión de contratos
-  static async getHistorialContratos(empleadoId: number) {
-    const response = await apiRequest("GET", `/api/empleados-colombia/${empleadoId}/historial-contratos`);
+  static async getHistorialNomina(empleadoId: number) {
+    const response = await apiRequest('GET', `/api/empleados/${empleadoId}/historial-nomina`);
     return response.json();
   }
 
-  static async createCambioContrato(empleadoId: number, cambio: any) {
-    const response = await apiRequest("POST", `/api/empleados-colombia/${empleadoId}/cambio-contrato`, cambio);
-    return response.json();
-  }
-
-  // Prestaciones sociales
-  static async getPrestacionesSociales(empleadoId: number, año?: number) {
-    const params = año ? `?año=${año}` : '';
-    const response = await apiRequest("GET", `/api/empleados-colombia/${empleadoId}/prestaciones${params}`);
-    return response.json();
-  }
-
-  static async calcularPrestaciones(empleadoId: number, año: number, mes: number) {
-    const response = await apiRequest("POST", `/api/empleados-colombia/${empleadoId}/calcular-prestaciones`, { año, mes });
-    return response.json();
-  }
-
-  // Novedades de nómina
-  static async getNovedades(empleadoId: number) {
-    const response = await apiRequest("GET", `/api/empleados-colombia/${empleadoId}/novedades`);
-    return response.json();
-  }
-
-  static async createNovedad(empleadoId: number, novedad: any) {
-    const response = await apiRequest("POST", `/api/empleados-colombia/${empleadoId}/novedades`, novedad);
-    return response.json();
-  }
-
-  static async updateNovedad(empleadoId: number, novedadId: number, novedad: any) {
-    const response = await apiRequest("PATCH", `/api/empleados-colombia/${empleadoId}/novedades/${novedadId}`, novedad);
-    return response.json();
-  }
-
-  static async deleteNovedad(empleadoId: number, novedadId: number) {
-    const response = await apiRequest("DELETE", `/api/empleados-colombia/${empleadoId}/novedades/${novedadId}`);
-    return response.json();
-  }
-
-  // Validaciones legales
-  static async validarSalarioMinimo(tipoContrato: string, valor: number, horas?: number) {
-    const response = await apiRequest("POST", "/api/empleados-colombia/validar-salario", { 
-      tipoContrato, 
-      valor, 
-      horas 
+  static async updateEstadoNomina(empleadoId: number, nominaId: number, estado: string) {
+    const response = await apiRequest('PATCH', `/api/empleados/${empleadoId}/historial-nomina/${nominaId}/estado`, {
+      estado
     });
     return response.json();
   }
 
-  static async getParametrosLegales(año?: number) {
-    const params = año ? `?año=${año}` : '';
-    const response = await apiRequest("GET", `/api/parametros-legales${params}`);
-    return response.json();
-  }
-
-  // Cálculos de nómina
-  static async calcularNomina(empleadoId: number, periodo: { inicio: string, fin: string }) {
-    const response = await apiRequest("POST", `/api/empleados-colombia/${empleadoId}/calcular-nomina`, periodo);
-    return response.json();
-  }
-
-  static async simularNomina(empleadoId: number, periodo: { inicio: string, fin: string }, novedades?: any[]) {
-    const response = await apiRequest("POST", `/api/empleados-colombia/${empleadoId}/simular-nomina`, { 
-      periodo, 
-      novedades 
+  static async actualizarEstadoNomina(nominaId: number, nuevoEstado: string) {
+    const response = await apiRequest('PATCH', `/api/nominas/${nominaId}/estado`, {
+      estado: nuevoEstado
     });
     return response.json();
   }
 }
 
-// Exportaciones para compatibilidad hacia atrás
-export const empleadosApi = new EmpleadosColombiaApi();
+// Export default instance
+export const empleadosApi = EmpleadosApi;
