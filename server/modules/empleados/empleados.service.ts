@@ -1,5 +1,5 @@
 import { db } from "../../db";
-import { eq, and, or, ilike } from "drizzle-orm";
+import { eq, and, or, ilike, isNull } from "drizzle-orm";
 import { empleados, empleado_nomina, empleado_proyecto, empleado_contratos, projects } from "@shared/schema";
 // Tipos locales
 interface NewEmpleado {
