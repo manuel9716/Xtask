@@ -83,7 +83,7 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
   });
 
   const createEmpleadoMutation = useMutation({
-    mutationFn: (data: any) => EmpleadosColombiaApi.createEmpleado(data),
+    mutationFn: (data: any) => EmpleadosApi.createEmpleado(data),
     onSuccess: async (empleado) => {
       toast({
         title: "Empleado creado exitosamente",

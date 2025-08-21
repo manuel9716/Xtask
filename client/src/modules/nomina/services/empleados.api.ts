@@ -1,6 +1,24 @@
 import { apiRequest } from "@/lib/queryClient";
 import type { Employee, InsertEmployee, HistorialContrato, NovedadNomina, PrestacionesSociales, ParametrosLegales } from "@shared/schema";
 
+export class EmpleadosApi {
+  // Gestión general de empleados
+  static async getAllEmpleados() {
+    const response = await apiRequest("GET", "/api/employees");
+    return response.json();
+  }
+
+  static async getEmpleado(id: number) {
+    const response = await apiRequest("GET", `/api/employees/${id}`);
+    return response.json();
+  }
+
+  static async createEmpleado(empleado: any) {
+    const response = await apiRequest("POST", "/api/employees", empleado);
+    return response.json();
+  }
+}
+
 export class EmpleadosColombiaApi {
   // Gestión de empleados con marco legal colombiano
   static async getAllEmpleados() {
@@ -104,5 +122,4 @@ export class EmpleadosColombiaApi {
 }
 
 // Exportaciones para compatibilidad hacia atrás
-export const EmpleadosApi = EmpleadosColombiaApi;
 export const empleadosApi = new EmpleadosColombiaApi();
