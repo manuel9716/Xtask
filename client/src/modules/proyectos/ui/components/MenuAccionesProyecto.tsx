@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MoreVertical, CheckCircle2, ClockIcon, PauseCircle, ExternalLink, Edit, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { CambiarEstadoProyectoDialog } from "./CambiarEstadoProyectoDialog";
 import { proyectosApi } from "../../infrastructure/api/proyectosApi";
 import * as Schema from '@shared/schema';
@@ -43,6 +44,7 @@ export function MenuAccionesProyecto({
   const [dialogoEliminarAbierto, setDialogoEliminarAbierto] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Función para cambiar estados directamente
   const cambiarEstado = async (estado: string, mensaje: string) => {

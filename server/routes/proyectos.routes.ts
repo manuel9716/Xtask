@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { projects, employees, users } from '../../shared/schema';
+import { projects, employees, users, employeeProjects, transactions, budgets } from '../../shared/schema';
 import { eq, sql } from 'drizzle-orm';
 import { EstadoProyecto } from '@shared/schema';
 
@@ -442,14 +442,19 @@ proyectosRouter.delete('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Proyecto no encontrado' });
     }
     
-    // Eliminar proyecto (o marcar como inactivo)
-    // Opción 1: Eliminación física
-    await db.delete(projects).where(eq(projects.id, id));
+    // Eliminar en el orden correcto para evitar violaciones de clave foránea
     
-    // Opción 2: Eliminación lógica (como alternativa, marcar como archivado)
-    // await db.update(projects)
-    //   .set({ status: 'archived' })
-    //   .where(eq(projects.id, id));
+    // 1. Eliminar todas las relaciones empleado-proyecto
+    await db.delete(employeeProjects).where(eq(employeeProjects.projectId, id));
+    
+    // 2. Eliminar todas las transacciones relacionadas con el proyecto
+    await db.delete(transactions).where(eq(transactions.projectId, id));
+    
+    // 3. Eliminar todos los presupuestos relacionados con el proyecto
+    await db.delete(budgets).where(eq(budgets.projectId, id));
+    
+    // 4. Finalmente eliminar el proyecto
+    await db.delete(projects).where(eq(projects.id, id));
     
     res.status(204).send();
   } catch (error: any) {
