@@ -13,6 +13,8 @@ import { Project, EstadoProyecto } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ProyectoEstadoBadge } from "@/modules/proyectos/ui/components/ProyectoEstadoBadge";
+import { MenuAccionesProyecto } from "@/modules/proyectos/ui/components/MenuAccionesProyecto";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 const iconMap: Record<string, any> = {
@@ -39,6 +41,7 @@ interface ProjectsTableProps {
 export function ProjectsTable({ limit, className, showPagination = false }: ProjectsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const projectsPerPage = 10;
+  const queryClient = useQueryClient();
   
   const { data: projects, isLoading } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
@@ -84,7 +87,7 @@ export function ProjectsTable({ limit, className, showPagination = false }: Proj
               <TableHead className="font-medium">Presupuesto</TableHead>
               <TableHead className="font-medium">Cronograma</TableHead>
               <TableHead className="font-medium">Estado</TableHead>
-              <TableHead className="sr-only">Actions</TableHead>
+              <TableHead className="font-medium">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -205,9 +208,32 @@ export function ProjectsTable({ limit, className, showPagination = false }: Proj
                       })()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      <MenuAccionesProyecto 
+                        proyectoId={project.id}
+                        estadoActual={(() => {
+                          switch (project.status) {
+                            case 'active':
+                              return EstadoProyecto.ACTIVO;
+                            case 'paused':
+                              return EstadoProyecto.PAUSADO;
+                            case 'delayed':
+                              return EstadoProyecto.RETRASADO;
+                            case 'completed':
+                              return EstadoProyecto.FINALIZADO;
+                            case 'cancelled':
+                            case 'canceled':
+                              return EstadoProyecto.CANCELADO;
+                            case 'archived':
+                              return EstadoProyecto.ARCHIVADO;
+                            default:
+                              return EstadoProyecto.ACTIVO;
+                          }
+                        })()} 
+                        onEstadoCambiado={() => {
+                          // Invalidar la caché para refrescar la tabla
+                          queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+                        }}
+                      />
                     </TableCell>
                   </TableRow>
                 );
