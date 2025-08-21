@@ -49,6 +49,7 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
         estado_contrato: "activo",
         tipo_contrato: "indefinido",
         telefono: "",
+        email: "",
         direccion: "",
         contacto_emergencia: "",
       },
@@ -255,6 +256,20 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
                         {...form.register("empleado.telefono")}
                         placeholder="+57 300 123 4567"
                       />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Correo Electrónico</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        {...form.register("empleado.email")}
+                        placeholder="ejemplo@empresa.com"
+                      />
+                      {form.formState.errors.empleado?.email && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {form.formState.errors.empleado.email.message}
+                        </p>
+                      )}
                     </div>
                   </div>
 

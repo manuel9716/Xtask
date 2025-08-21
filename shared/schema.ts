@@ -297,6 +297,7 @@ export const empleados = pgTable("empleados", {
   retencion_fuente: decimal("retencion_fuente", { precision: 5, scale: 4 }), // % retención para prestación de servicios
   requiere_seguridad_social: boolean("requiere_seguridad_social").default(false), // Para prestación de servicios
   telefono: text("telefono"),
+  email: text("email"),
   direccion: text("direccion"),
   contacto_emergencia: text("contacto_emergencia"),
   activo: boolean("activo").default(true).notNull(),

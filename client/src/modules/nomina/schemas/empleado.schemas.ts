@@ -10,6 +10,7 @@ export const empleadoSchema = z.object({
   estado_contrato: z.enum(["activo", "inactivo", "suspendido"]),
   tipo_contrato: z.enum(["indefinido", "fijo", "prestacion_servicios", "por_horas"]),
   telefono: z.string().optional(),
+  email: z.string().email("Formato de email inválido").optional().or(z.literal("")),
   direccion: z.string().optional(),
   contacto_emergencia: z.string().optional(),
   // Campos específicos por tipo de contrato
