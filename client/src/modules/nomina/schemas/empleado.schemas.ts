@@ -8,10 +8,18 @@ export const empleadoSchema = z.object({
   cargo: z.string().min(1, "El cargo es obligatorio"),
   fecha_ingreso: z.string().min(1, "La fecha de ingreso es obligatoria"),
   estado_contrato: z.enum(["activo", "inactivo", "suspendido"]),
-  tipo_contrato: z.enum(["indefinido", "fijo", "obra_labor", "prestacion_servicios"]),
+  tipo_contrato: z.enum(["indefinido", "fijo", "prestacion_servicios", "por_horas"]),
   telefono: z.string().optional(),
   direccion: z.string().optional(),
   contacto_emergencia: z.string().optional(),
+  // Campos específicos por tipo de contrato
+  fecha_fin_contrato: z.string().optional(),
+  clase_riesgo_arl: z.enum(["I", "II", "III", "IV", "V"]).optional(),
+  horas_por_semana: z.number().min(1).max(48).optional(),
+  salario_por_hora: z.number().min(0).optional(),
+  honorarios: z.number().min(0).optional(),
+  retencion_fuente: z.number().min(0).max(1).optional(),
+  requiere_seguridad_social: z.boolean().optional(),
 });
 
 export const empleadoNominaSchema = z.object({

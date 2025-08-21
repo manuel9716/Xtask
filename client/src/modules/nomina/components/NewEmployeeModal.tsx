@@ -31,6 +31,7 @@ interface NewEmployeeModalProps {
 export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewEmployeeModalProps) {
   const [currentTab, setCurrentTab] = useState("personal");
   const [contratoFile, setContratoFile] = useState<File | null>(null);
+  const [tipoContratoSeleccionado, setTipoContratoSeleccionado] = useState<string>("indefinido");
   const { toast } = useToast();
   const { reloadDashboard } = useNominaStore();
 
@@ -331,16 +332,19 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
                       <Label htmlFor="tipo_contrato">Tipo de Contrato</Label>
                       <Select 
                         value={form.watch("empleado.tipo_contrato")} 
-                        onValueChange={(value: any) => form.setValue("empleado.tipo_contrato", value)}
+                        onValueChange={(value: any) => {
+                          form.setValue("empleado.tipo_contrato", value);
+                          setTipoContratoSeleccionado(value);
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Tipo de contrato" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="indefinido">Indefinido</SelectItem>
-                          <SelectItem value="fijo">Término Fijo</SelectItem>
-                          <SelectItem value="obra_labor">Obra o Labor</SelectItem>
-                          <SelectItem value="prestacion_servicios">Prestación de Servicios</SelectItem>
+                          <SelectItem value="indefinido">Contrato a término indefinido</SelectItem>
+                          <SelectItem value="fijo">Contrato a término fijo</SelectItem>
+                          <SelectItem value="prestacion_servicios">Contrato de prestación de servicios</SelectItem>
+                          <SelectItem value="por_horas">Contrato por horas</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -490,6 +494,104 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
                       </p>
                     )}
                   </div>
+
+                  {/* Campos específicos según tipo de contrato */}
+                  {tipoContratoSeleccionado === 'fijo' && (
+                    <>
+                      <div className="border-t pt-4">
+                        <h4 className="font-medium mb-3 text-blue-600">⏰ Campos específicos - Contrato a término fijo</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="fecha_fin_contrato">Fecha de Finalización *</Label>
+                            <Input
+                              id="fecha_fin_contrato"
+                              type="date"
+                              {...form.register("empleado.fecha_fin_contrato")}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="clase_riesgo_arl">Clase de Riesgo ARL *</Label>
+                            <Select 
+                              value={form.watch("empleado.clase_riesgo_arl")} 
+                              onValueChange={(value: any) => form.setValue("empleado.clase_riesgo_arl", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar clase" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="I">Clase I - Riesgo mínimo</SelectItem>
+                                <SelectItem value="II">Clase II - Riesgo bajo</SelectItem>
+                                <SelectItem value="III">Clase III - Riesgo medio</SelectItem>
+                                <SelectItem value="IV">Clase IV - Riesgo alto</SelectItem>
+                                <SelectItem value="V">Clase V - Riesgo máximo</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {tipoContratoSeleccionado === 'prestacion_servicios' && (
+                    <>
+                      <div className="border-t pt-4">
+                        <h4 className="font-medium mb-3 text-green-600">💼 Campos específicos - Prestación de servicios</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="honorarios">Honorarios *</Label>
+                            <Input
+                              id="honorarios"
+                              type="number"
+                              {...form.register("empleado.honorarios", { valueAsNumber: true })}
+                              placeholder="Monto de honorarios"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="retencion_fuente">Retención en la Fuente *</Label>
+                            <Input
+                              id="retencion_fuente"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max="1"
+                              {...form.register("empleado.retencion_fuente", { valueAsNumber: true })}
+                              placeholder="Ej: 0.11 (11%)"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {tipoContratoSeleccionado === 'por_horas' && (
+                    <>
+                      <div className="border-t pt-4">
+                        <h4 className="font-medium mb-3 text-purple-600">⏰ Campos específicos - Contrato por horas</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="salario_por_hora">Salario por Hora *</Label>
+                            <Input
+                              id="salario_por_hora"
+                              type="number"
+                              {...form.register("empleado.salario_por_hora", { valueAsNumber: true })}
+                              placeholder="Valor por hora"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="horas_por_semana">Horas por Semana *</Label>
+                            <Input
+                              id="horas_por_semana"
+                              type="number"
+                              min="1"
+                              max="48"
+                              {...form.register("empleado.horas_por_semana", { valueAsNumber: true })}
+                              placeholder="Máximo 48 horas"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
