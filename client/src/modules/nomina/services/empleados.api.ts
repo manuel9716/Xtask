@@ -24,27 +24,37 @@ export class EmpleadosApi {
   }
 
   static async getProyectos() {
-    const response = await apiRequest("GET", "/api/proyectos");
-    const data = await response.json();
-    
-    // Transformar el formato de la respuesta para que coincida con lo esperado
-    if (data.data && Array.isArray(data.data)) {
-      return data.data.map((proyecto: any) => ({
-        id: proyecto.id,
-        nombre: proyecto.nombre || proyecto.name,
-      }));
+    try {
+      // Solicitar todos los proyectos sin paginación y solo activos
+      const response = await apiRequest("GET", "/api/proyectos?pageSize=1000&estado=ACTIVO");
+      const data = await response.json();
+      
+      // Transformar el formato de la respuesta para que coincida con lo esperado
+      if (data.data && Array.isArray(data.data)) {
+        return data.data.map((proyecto: any) => ({
+          id: proyecto.id,
+          nombre: proyecto.nombre || proyecto.name,
+          estado: proyecto.estado,
+          descripcion: proyecto.descripcion || proyecto.description
+        }));
+      }
+      
+      // Si ya es un array directamente
+      if (Array.isArray(data)) {
+        return data.map((proyecto: any) => ({
+          id: proyecto.id,
+          nombre: proyecto.nombre || proyecto.name,
+          estado: proyecto.estado,
+          descripcion: proyecto.descripcion || proyecto.description
+        }));
+      }
+      
+      // Valor por defecto si no hay datos válidos
+      return [];
+    } catch (error) {
+      console.error('Error al obtener proyectos:', error);
+      return [];
     }
-    
-    // Si ya es un array directamente
-    if (Array.isArray(data)) {
-      return data.map((proyecto: any) => ({
-        id: proyecto.id,
-        nombre: proyecto.nombre || proyecto.name,
-      }));
-    }
-    
-    // Valor por defecto si no hay datos válidos
-    return [];
   }
 
   static async getEmpleados(filtros: { proyectoId?: number; q?: string } = {}) {

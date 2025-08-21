@@ -21,6 +21,7 @@ import { Upload, User, DollarSign, FileText } from "lucide-react";
 import { NewEmpleado, newEmpleadoSchema } from "../schemas/empleado.schemas";
 import { EmpleadosApi } from "../services/empleados.api";
 import { useNominaStore } from "../state/nomina.store";
+import { queryClient } from "@/lib/queryClient";
 
 interface NewEmployeeModalProps {
   open: boolean;
@@ -73,6 +74,9 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
   const { data: proyectos } = useQuery({
     queryKey: ['/api/proyectos'],
     queryFn: () => EmpleadosApi.getProyectos(),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnMount: true, // Siempre recargar al montar
+    refetchOnWindowFocus: true, // Recargar cuando se enfoque la ventana
   });
 
   const createEmpleadoMutation = useMutation({
@@ -100,6 +104,9 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
         }
       }
 
+      // Invalidar cache de proyectos para que se actualice la lista
+      await queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
+      
       reloadDashboard();
       onEmployeeCreated?.(); // Callback para notificar al dashboard
       onOpenChange(false);
@@ -613,11 +620,23 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
                         <SelectValue placeholder="Seleccionar proyecto" />
                       </SelectTrigger>
                       <SelectContent>
-                        {proyectos?.map((proyecto) => (
-                          <SelectItem key={proyecto.id} value={proyecto.id.toString()}>
-                            {proyecto.nombre}
-                          </SelectItem>
-                        ))}
+                        {proyectos?.length === 0 ? (
+                          <div className="px-2 py-4 text-sm text-gray-500">
+                            No hay proyectos disponibles
+                          </div>
+                        ) : (
+                          proyectos
+                            ?.filter((proyecto) => 
+                              // Solo mostrar proyectos activos y que tengan nombre
+                              proyecto.nombre && 
+                              (!proyecto.estado || proyecto.estado === 'ACTIVO' || proyecto.estado === 'active')
+                            )
+                            ?.map((proyecto) => (
+                              <SelectItem key={proyecto.id} value={proyecto.id.toString()}>
+                                {proyecto.nombre}
+                              </SelectItem>
+                            ))
+                        )}
                       </SelectContent>
                     </Select>
                     {form.formState.errors.proyecto?.proyecto_id && (
