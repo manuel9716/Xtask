@@ -189,10 +189,10 @@ function Router() {
           <NominaRoutes />
         </ProtectedRoute>
       </Route>
-      <Route path="/admin/proyectos/*">
+      <Route path="/admin/proyectos">
         <ProtectedRoute>
           <MainLayout>
-            <ProyectosRoutes />
+            <Projects />
           </MainLayout>
         </ProtectedRoute>
       </Route>
