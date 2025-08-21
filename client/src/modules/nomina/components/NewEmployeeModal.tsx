@@ -70,8 +70,14 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
   });
 
   const { data: proyectos } = useQuery({
-    queryKey: ['/api/proyectos'],
-    queryFn: () => EmpleadosApi.getProyectos(),
+    queryKey: ['/api/projects'],
+    queryFn: async () => {
+      const response = await fetch('/api/projects');
+      if (!response.ok) {
+        throw new Error('Error al obtener proyectos');
+      }
+      return response.json();
+    },
   });
 
   const createEmpleadoMutation = useMutation({
@@ -513,7 +519,7 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
                       <SelectContent>
                         {proyectos?.map((proyecto) => (
                           <SelectItem key={proyecto.id} value={proyecto.id.toString()}>
-                            {proyecto.nombre}
+                            {proyecto.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
