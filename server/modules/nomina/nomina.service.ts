@@ -51,27 +51,29 @@ interface NominaProcess {
 
 export class NominaService {
   static async previewNomina(data: NominaPreview) {
-    // Obtener empleados seleccionados con sus datos de nómina
-    const empleadosData = await db
-      .select({
-        id: empleados.id,
-        nombre: empleados.nombre,
-        apellido: empleados.apellido,
-        sueldo_base: empleado_nomina.sueldo_base,
-        bonificacion: empleado_nomina.bonificacion,
-        tasa_impuestos: empleado_nomina.tasa_impuestos,
-        base_deduccion: empleado_nomina.base_deduccion,
-      })
-      .from(empleados)
-      .innerJoin(empleado_nomina, eq(empleados.id, empleado_nomina.empleado_id))
-      .where(eq(empleados.id, data.empleados_seleccionados[0])); // Simplificado para el primer empleado
+    // Si no se especifican empleados seleccionados, incluir todos los empleados activos
+    let empleadosSeleccionados = data.empleados_seleccionados;
+    
+    if (!empleadosSeleccionados || empleadosSeleccionados.length === 0) {
+      // Obtener todos los empleados activos que tengan datos de nómina
+      const empleadosActivos = await db
+        .select({ id: empleados.id })
+        .from(empleados)
+        .innerJoin(empleado_nomina, eq(empleados.id, empleado_nomina.empleado_id))
+        .where(and(
+          eq(empleados.estado_contrato, 'activo'),
+          isNull(empleados.deleted_at)
+        ));
+      
+      empleadosSeleccionados = empleadosActivos.map(e => e.id);
+    }
 
     const items: NominaItem[] = [];
     let totalSueldos = 0;
     let totalBonos = 0;
     let totalDeducciones = 0;
 
-    for (const empleadoId of data.empleados_seleccionados) {
+    for (const empleadoId of empleadosSeleccionados) {
       // Buscar datos del empleado
       const [empleadoData] = await db
         .select({
