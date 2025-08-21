@@ -1,0 +1,78 @@
+Cambios solicitados:
+
+Tipos de contrato que deben soportarse:
+
+Contrato a término indefinido
+
+Contrato a término fijo (por obra o labor)
+
+Contrato de prestación de servicios
+
+Contrato por horas
+
+Campos necesarios según el tipo de contrato:
+
+Indefinido/Fijo: Salario base, bonificaciones, clase de riesgo (ARL).
+
+Por horas: Horas por semana, salario por hora proporcional al mínimo legal.
+
+Prestación de servicios: Honorarios, retención en la fuente, seguridad social.
+
+Historial de cambios en contratos:
+
+Fecha de inicio y fin del contrato, tipo de contrato, salario, cambios de salario, horas, bonificaciones.
+
+Instrucciones para implementar la Gestión de Contratos:
+1) Crear Campos para el Tipo de Contrato:
+
+En el formulario de creación de empleado, debe haber un campo desplegable o selección para tipo de contrato:
+
+Contrato a término indefinido
+
+Contrato a término fijo
+
+Prestación de servicios
+
+Por horas
+
+Según el tipo de contrato seleccionado, deben mostrarse los siguientes campos:
+
+Para contratos indefinidos y fijos:
+
+Salario base: Campo obligatorio.
+
+Bonificaciones: Campo opcional.
+
+Clase de riesgo ARL: Campo obligatorio si el contrato es indefinido o fijo.
+
+Para contratos por horas:
+
+Horas por semana: Campo obligatorio.
+
+Salario por hora: Campo calculado basado en el salario mínimo proporcional.
+
+Para contratos de prestación de servicios:
+
+Honorarios: Campo obligatorio.
+
+Retención en la fuente: Campo opcional.
+
+Comprobante de seguridad social: Opción para generar y adjuntar.
+
+2) Registro de Cambios en el Contrato:
+
+Implementar un historial de cambios de contrato en el sistema para cada empleado, incluyendo:
+
+Fecha de modificación: Registrar cuándo se realizó el cambio.
+
+Tipo de cambio: Por ejemplo, cambio de salario, cambio de tipo de contrato, horas trabajadas.
+
+Detalles del cambio: Qué datos fueron modificados.
+
+Criterios de Aceptación:
+
+Al crear un empleado, se debe poder seleccionar el tipo de contrato y mostrar los campos correspondientes.
+
+El tipo de contrato seleccionado debe afectar los cálculos y las prestaciones sociales asociadas al empleado.
+
+El sistema debe registrar todos los cambios en el contrato, como cambios de salario, bonificaciones, y tipo de contrato.

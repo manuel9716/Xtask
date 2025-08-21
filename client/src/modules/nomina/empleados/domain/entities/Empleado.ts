@@ -32,9 +32,37 @@ export interface ResultadoPaginadoEmpleados {
 }
 
 /**
- * Interfaz para los parámetros de creación de un empleado
+ * Interfaz para los parámetros de creación de un empleado (nueva versión con tipos de contrato colombianos)
  */
 export interface CrearEmpleadoParams {
+  // Campos básicos
+  user_id?: number;
+  nombre: string;
+  apellido: string;
+  identificacion: string;
+  depto: string;
+  cargo: string;
+  fecha_ingreso: Date;
+  estado_contrato: "activo" | "inactivo" | "suspendido";
+  telefono?: string;
+  direccion?: string;
+  contacto_emergencia?: string;
+  // Tipo de contrato según la ley colombiana
+  tipo_contrato: "indefinido" | "fijo" | "prestacion_servicios" | "por_horas";
+  // Campos condicionales según tipo de contrato
+  fecha_fin_contrato?: Date;
+  clase_riesgo_arl?: "I" | "II" | "III" | "IV" | "V";
+  horas_por_semana?: number;
+  salario_por_hora?: number;
+  honorarios?: number;
+  retencion_fuente?: number;
+  requiere_seguridad_social?: boolean;
+}
+
+/**
+ * Interfaz legacy para compatibilidad
+ */
+export interface CrearEmpleadoLegacyParams {
   userId: number;
   firstName: string;     // Nombre del empleado
   lastName: string;      // Apellido del empleado
@@ -67,7 +95,51 @@ export interface CrearEmpleadoParams {
 /**
  * Esquema de validación para la creación de un empleado
  */
+// Nuevo esquema para empleados con tipos de contrato según la ley colombiana
 export const CrearEmpleadoDTO = z.object({
+  // Campos básicos
+  user_id: z.number().optional(),
+  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(50),
+  apellido: z.string().min(2, "El apellido debe tener al menos 2 caracteres").max(50),
+  identificacion: z.string().min(5, "La identificación debe tener al menos 5 caracteres").max(20),
+  depto: z.string().min(2, "El departamento es requerido"),
+  cargo: z.string().min(2, "El cargo es requerido"),
+  fecha_ingreso: z.date(),
+  estado_contrato: z.enum(["activo", "inactivo", "suspendido"]).default("activo"),
+  telefono: z.string().optional(),
+  direccion: z.string().optional(),
+  contacto_emergencia: z.string().optional(),
+  // Tipo de contrato según la ley colombiana
+  tipo_contrato: z.enum(["indefinido", "fijo", "prestacion_servicios", "por_horas"]),
+  // Campos condicionales según tipo de contrato
+  fecha_fin_contrato: z.date().optional(),
+  clase_riesgo_arl: z.enum(["I", "II", "III", "IV", "V"]).optional(),
+  horas_por_semana: z.number().min(1).max(48).optional(),
+  salario_por_hora: z.number().min(0).optional(),
+  honorarios: z.number().min(0).optional(),
+  retencion_fuente: z.number().min(0).max(1).optional(),
+  requiere_seguridad_social: z.boolean().optional(),
+}).refine((data) => {
+  // Validaciones específicas por tipo de contrato
+  if (data.tipo_contrato === "fijo") {
+    return data.fecha_fin_contrato !== undefined && data.clase_riesgo_arl !== undefined;
+  }
+  if (data.tipo_contrato === "indefinido") {
+    return data.clase_riesgo_arl !== undefined;
+  }
+  if (data.tipo_contrato === "por_horas") {
+    return data.horas_por_semana !== undefined && data.salario_por_hora !== undefined;
+  }
+  if (data.tipo_contrato === "prestacion_servicios") {
+    return data.honorarios !== undefined;
+  }
+  return true;
+}, {
+  message: "Faltan campos requeridos para el tipo de contrato seleccionado"
+});
+
+// Esquema legacy mantenido para compatibilidad
+export const CrearEmpleadoLegacyDTO = z.object({
   userId: z.number({ 
     required_error: "El usuario es requerido",
     invalid_type_error: "El usuario debe ser un número"

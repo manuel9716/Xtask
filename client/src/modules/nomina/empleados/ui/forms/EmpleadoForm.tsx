@@ -1,10 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, CheckSquare, Upload, AlertCircle, FileText } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Calendar as CalendarIcon, AlertCircle, Briefcase, Clock, FileText, Calculator } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,17 +13,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 import { CrearEmpleadoParams, CrearEmpleadoDTO } from '../../domain/entities/Empleado';
 import { useCrearEmpleado, useObtenerUsuarios } from '../../application/useCrearEmpleado';
 import { useEditarEmpleado } from '../../application/useEditarEmpleado';
-import { validarFormatoContrato, validarTamanoContrato, subirContrato } from '../../infrastructure/storage/contratoUploader';
 
 interface EmpleadoFormProps {
   onSuccess: () => void;
@@ -32,11 +29,34 @@ interface EmpleadoFormProps {
   isEditing?: boolean; // Indica si estamos en modo edición
 }
 
-interface Proyecto {
-  id: number;
-  name: string;
-  description: string;
-}
+// Opciones para tipos de contrato según ley colombiana
+const TIPOS_CONTRATO = [
+  { value: "indefinido", label: "Contrato a término indefinido" },
+  { value: "fijo", label: "Contrato a término fijo" },
+  { value: "prestacion_servicios", label: "Contrato de prestación de servicios" },
+  { value: "por_horas", label: "Contrato por horas" },
+];
+
+const CLASES_RIESGO_ARL = [
+  { value: "I", label: "Clase I - Riesgo mínimo" },
+  { value: "II", label: "Clase II - Riesgo bajo" },
+  { value: "III", label: "Clase III - Riesgo medio" },
+  { value: "IV", label: "Clase IV - Riesgo alto" },
+  { value: "V", label: "Clase V - Riesgo máximo" },
+];
+
+const DEPARTAMENTOS = [
+  "Administración",
+  "Recursos Humanos", 
+  "Finanzas",
+  "Tecnología",
+  "Ventas",
+  "Marketing",
+  "Operaciones",
+  "Legal",
+  "Compras",
+  "Otro"
+];
 
 export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: EmpleadoFormProps) {
   const crearEmpleadoMutation = useCrearEmpleado();
@@ -44,85 +64,53 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
   const { toast } = useToast();
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [cargandoUsuarios, setCargandoUsuarios] = useState(true);
-  const [selectedProjects, setSelectedProjects] = useState<number[]>(
-    empleadoData?.projectIds || []
+  const [tipoContratoSeleccionado, setTipoContratoSeleccionado] = useState<string>(
+    empleadoData?.tipo_contrato || "indefinido"
   );
-  const [contrato, setContrato] = useState<File | null>(null);
-  const [contratoError, setContratoError] = useState<string | null>(null);
-  const [contratoUrl, setContratoUrl] = useState<string | null>(
-    empleadoData?.contratoUrl || null
-  );
-  const [subiendoContrato, setSubiendoContrato] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // Cargar proyectos
-  const { data: proyectos = [], isLoading: cargandoProyectos } = useQuery<Proyecto[]>({
-    queryKey: ['/api/projects'],
-    queryFn: async () => {
-      const res = await fetch('/api/projects');
-      if (!res.ok) throw new Error('Error al cargar proyectos');
-      return res.json();
-    }
-  });
-  
+
+  // Cargar usuarios para el selector
+  const { usuarios: usuariosData, isLoading: cargandoUsuariosData, error: errorUsuarios } = useObtenerUsuarios();
+
   // Crear defaultValues basado en si estamos en modo edición o no
-  const getDefaultValues = () => {
+  const getDefaultValues = (): CrearEmpleadoParams => {
     if (isEditing && empleadoData) {
-      // Si estamos editando, usar los datos del empleado
       return {
-        userId: empleadoData.userId,
-        firstName: empleadoData.firstName || '',
-        lastName: empleadoData.lastName || '',
-        skills: empleadoData.skills || '',
-        department: empleadoData.department || '',
-        position: empleadoData.position || '',
-        contractStatus: empleadoData.contractStatus || 'active',
-        contractType: empleadoData.contractType || 'fulltime',
-        identification: empleadoData.identification || '',
-        salary: empleadoData.salary || '',
-        hireDate: empleadoData.hireDate ? new Date(empleadoData.hireDate) : new Date(),
-        phoneNumber: empleadoData.phoneNumber || '',
-        address: empleadoData.address || '',
-        emergencyContact: empleadoData.emergencyContact || '',
-        baseBenefits: empleadoData.baseBenefits || '0',
-        baseDeductions: empleadoData.baseDeductions || '0',
-        taxRate: empleadoData.taxRate || '0',
-        bankAccount: empleadoData.bankAccount || '',
-        paymentMethod: empleadoData.paymentMethod || 'transferencia',
-        healthInsurance: empleadoData.healthInsurance || '',
-        vacationDays: empleadoData.vacationDays || 15,
-        projectIds: empleadoData.projectIds || [],
-        tipoPago: empleadoData.tipoPago || 'mensual',
-        fechaInicioNomina: empleadoData.fechaInicioNomina ? new Date(empleadoData.fechaInicioNomina) : new Date(),
-        contratoUrl: empleadoData.contratoUrl || '',
+        user_id: empleadoData.user_id,
+        nombre: empleadoData.nombre || '',
+        apellido: empleadoData.apellido || '',
+        identificacion: empleadoData.identificacion || '',
+        depto: empleadoData.depto || '',
+        cargo: empleadoData.cargo || '',
+        fecha_ingreso: empleadoData.fecha_ingreso ? new Date(empleadoData.fecha_ingreso) : new Date(),
+        estado_contrato: empleadoData.estado_contrato || 'activo',
+        tipo_contrato: empleadoData.tipo_contrato || 'indefinido',
+        telefono: empleadoData.telefono || '',
+        direccion: empleadoData.direccion || '',
+        contacto_emergencia: empleadoData.contacto_emergencia || '',
+        // Campos condicionales
+        fecha_fin_contrato: empleadoData.fecha_fin_contrato ? new Date(empleadoData.fecha_fin_contrato) : undefined,
+        clase_riesgo_arl: empleadoData.clase_riesgo_arl || undefined,
+        horas_por_semana: empleadoData.horas_por_semana || undefined,
+        salario_por_hora: empleadoData.salario_por_hora || undefined,
+        honorarios: empleadoData.honorarios || undefined,
+        retencion_fuente: empleadoData.retencion_fuente || undefined,
+        requiere_seguridad_social: empleadoData.requiere_seguridad_social || false,
       };
     } else {
-      // Si estamos creando, usar valores por defecto
       return {
-        userId: undefined,
-        firstName: '',
-        lastName: '',
-        skills: '',
-        department: '',
-        position: '',
-        contractStatus: 'active',
-        contractType: 'fulltime',
-        identification: '',
-        salary: '',
-        hireDate: new Date(),
-        phoneNumber: '',
-        address: '',
-        emergencyContact: '',
-        baseBenefits: '0',
-        baseDeductions: '0',
-        taxRate: '0',
-        bankAccount: '',
-        paymentMethod: 'transferencia',
-        healthInsurance: '',
-        vacationDays: 15,
-        projectIds: [],
-        tipoPago: 'mensual',
-        fechaInicioNomina: new Date(),
+        user_id: undefined,
+        nombre: '',
+        apellido: '',
+        identificacion: '',
+        depto: '',
+        cargo: '',
+        fecha_ingreso: new Date(),
+        estado_contrato: 'activo',
+        tipo_contrato: 'indefinido',
+        telefono: '',
+        direccion: '',
+        contacto_emergencia: '',
+        requiere_seguridad_social: false,
       };
     }
   };
@@ -130,12 +118,9 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
   const form = useForm<CrearEmpleadoParams>({
     resolver: zodResolver(CrearEmpleadoDTO),
     defaultValues: getDefaultValues(),
-    mode: 'onChange', // Validar al cambiar los campos
+    mode: 'onChange',
   });
-  
-  // Cargar los usuarios para el selector usando el hook useObtenerUsuarios
-  const { usuarios: usuariosData, isLoading: cargandoUsuariosData, error: errorUsuarios } = useObtenerUsuarios();
-  
+
   // Actualizar el estado local cuando los datos del hook cambian
   useEffect(() => {
     setUsuarios(usuariosData);
@@ -151,85 +136,40 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
     }
     
     // Si tenemos usuarios y no hay uno seleccionado, establecer el primer usuario como valor por defecto
-    if (usuariosData.length > 0 && !form.getValues('userId')) {
-      form.setValue('userId', usuariosData[0].id);
+    if (usuariosData.length > 0 && !form.getValues('user_id')) {
+      form.setValue('user_id', usuariosData[0].id);
     }
   }, [usuariosData, cargandoUsuariosData, errorUsuarios, toast, form]);
-  
-  // Gestionar cambios en proyectos seleccionados
-  const toggleProjectSelection = (projectId: number) => {
-    setSelectedProjects(prev => {
-      const isSelected = prev.includes(projectId);
-      const newSelection = isSelected
-        ? prev.filter(id => id !== projectId)
-        : [...prev, projectId];
-      
-      // Actualizar el formulario
-      form.setValue('projectIds', newSelection);
-      return newSelection;
-    });
-  };
-  
-  // Manejar selección de archivo de contrato
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setContrato(file);
-    setContratoError(null);
+
+  // Observar cambios en el tipo de contrato
+  const tipoContrato = form.watch('tipo_contrato');
+  useEffect(() => {
+    setTipoContratoSeleccionado(tipoContrato);
     
-    if (file) {
-      // Validar formato
-      if (!validarFormatoContrato(file)) {
-        setContratoError('Formato de archivo no válido. Solo se permiten PDF o DOCX.');
-        return;
-      }
-      
-      // Validar tamaño
-      if (!validarTamanoContrato(file)) {
-        setContratoError('El tamaño del archivo excede los 5MB permitidos.');
-        return;
-      }
-      
-      // Actualizar el formulario con el archivo seleccionado
-      form.setValue('contratoFile', file);
+    // Limpiar campos que no aplican al tipo de contrato seleccionado
+    if (tipoContrato !== 'fijo') {
+      form.setValue('fecha_fin_contrato', undefined);
     }
-  };
-  
-  // Función para subir el contrato
-  const handleUploadContrato = async () => {
-    if (!contrato) {
-      setContratoError('Seleccione un archivo para subir.');
-      return;
+    if (!['indefinido', 'fijo'].includes(tipoContrato)) {
+      form.setValue('clase_riesgo_arl', undefined);
     }
-    
-    try {
-      setSubiendoContrato(true);
-      const url = await subirContrato(contrato);
-      setContratoUrl(url);
-      form.setValue('contratoUrl', url);
-      
-      toast({
-        title: "Contrato subido",
-        description: "El contrato ha sido subido exitosamente",
-      });
-    } catch (error) {
-      setContratoError(error instanceof Error ? error.message : 'Error al subir el contrato');
-      toast({
-        title: "Error",
-        description: "No se pudo subir el contrato",
-        variant: "destructive",
-      });
-    } finally {
-      setSubiendoContrato(false);
+    if (tipoContrato !== 'por_horas') {
+      form.setValue('horas_por_semana', undefined);
+      form.setValue('salario_por_hora', undefined);
     }
-  };
-  
+    if (tipoContrato !== 'prestacion_servicios') {
+      form.setValue('honorarios', undefined);
+      form.setValue('retencion_fuente', undefined);
+      form.setValue('requiere_seguridad_social', false);
+    }
+  }, [tipoContrato, form]);
+
   const onSubmit = async (datos: CrearEmpleadoParams) => {
     try {
-      // Verificar explícitamente que userId tenga un valor válido
-      if (!datos.userId) {
-        // Si no hay usuarios disponibles pero tenemos al menos uno en la lista, usar el primero
+      // Verificar que user_id tenga un valor válido
+      if (!datos.user_id) {
         if (usuarios.length > 0) {
-          datos.userId = usuarios[0].id;
+          datos.user_id = usuarios[0].id;
         } else {
           toast({
             title: "Error",
@@ -240,32 +180,7 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
         }
       }
       
-      // Asegurar que los projectIds estén incluidos
-      datos.projectIds = selectedProjects;
-      
-      // Si hay un contrato seleccionado pero no se ha subido aún, subirlo
-      if (contrato && !contratoUrl) {
-        try {
-          const url = await subirContrato(contrato);
-          datos.contratoUrl = url;
-        } catch (error) {
-          toast({
-            title: "Error",
-            description: "No se pudo subir el contrato. Verifique el archivo e intente nuevamente.",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-      
-      // Si el contrato ya se subió, asignar la URL
-      if (contratoUrl) {
-        datos.contratoUrl = contratoUrl;
-      }
-      
-      // Procesar según el modo (creación o edición)
       if (isEditing && empleadoData) {
-        // Modo edición: actualizar empleado existente
         await editarEmpleadoMutation.mutateAsync({
           id: empleadoData.id,
           data: datos
@@ -276,7 +191,6 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
           description: "Los datos del empleado han sido actualizados exitosamente",
         });
       } else {
-        // Modo creación: crear nuevo empleado
         await crearEmpleadoMutation.mutateAsync(datos);
         
         toast({
@@ -285,16 +199,7 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
         });
       }
       
-      // Éxito: limpiar y resetear el formulario
       form.reset();
-      setSelectedProjects([]);
-      setContrato(null);
-      setContratoUrl(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      
-      // Ejecutar callback de éxito
       onSuccess();
     } catch (error) {
       console.error(`Error al ${isEditing ? 'actualizar' : 'crear'} empleado:`, error);
@@ -307,7 +212,7 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
       });
     }
   };
-  
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -315,175 +220,123 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
           {/* Usuario Asociado */}
           <FormField
             control={form.control}
-            name="userId"
+            name="user_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Usuario <span className="text-destructive">*</span></FormLabel>
                 <Select 
                   disabled={cargandoUsuarios} 
                   onValueChange={(value) => field.onChange(parseInt(value))}
-                  value={field.value?.toString() || (usuarios[0]?.id.toString() || "")}
-                  defaultValue={usuarios[0]?.id.toString()}
+                  value={field.value?.toString()}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue 
-                        placeholder={cargandoUsuarios ? "Cargando usuarios..." : "Seleccione un usuario"} 
-                      />
+                      <SelectValue placeholder="Seleccionar usuario..." />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {usuarios.length > 0 ? (
-                      usuarios.map((usuario) => (
-                        <SelectItem key={usuario.id} value={usuario.id.toString()}>
-                          {usuario.fullName} ({usuario.email})
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-users">No hay usuarios disponibles</SelectItem>
-                    )}
+                    {usuarios.map((usuario) => (
+                      <SelectItem key={usuario.id} value={usuario.id.toString()}>
+                        {usuario.name} ({usuario.email})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <FormDescription>
-                  Asocie este empleado con un usuario de la plataforma
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
+
           {/* Nombre */}
           <FormField
             control={form.control}
-            name="firstName"
+            name="nombre"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nombre</FormLabel>
+                <FormLabel>Nombre <span className="text-destructive">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej. Juan Carlos" {...field} />
+                  <Input placeholder="Nombre del empleado" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Nombre del empleado
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
+
           {/* Apellido */}
           <FormField
             control={form.control}
-            name="lastName"
+            name="apellido"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Apellido</FormLabel>
+                <FormLabel>Apellido <span className="text-destructive">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej. Pérez González" {...field} />
+                  <Input placeholder="Apellido del empleado" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Apellido del empleado
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
-          {/* Habilidades */}
-          <FormField
-            control={form.control}
-            name="skills"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Habilidades</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Ej. React, TypeScript, Node.js, SQL, Gestión de Proyectos" 
-                    className="min-h-[80px]"
-                    {...field} 
-                  />
-                </FormControl>
-                <FormDescription>
-                  Habilidades, tecnologías y competencias del empleado
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
+
           {/* Identificación */}
           <FormField
             control={form.control}
-            name="identification"
+            name="identificacion"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Identificación <span className="text-destructive">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej. 12345678-9" {...field} />
+                  <Input placeholder="Número de cédula o documento" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Número de identificación nacional/fiscal
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
-          {/* Cargo */}
-          <FormField
-            control={form.control}
-            name="position"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cargo <span className="text-destructive">*</span></FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej. Desarrollador Senior" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Cargo o puesto que ocupa en la empresa
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
+
           {/* Departamento */}
           <FormField
             control={form.control}
-            name="department"
+            name="depto"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Departamento <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un departamento" />
+                      <SelectValue placeholder="Seleccionar departamento" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Administración">Administración</SelectItem>
-                    <SelectItem value="Finanzas">Finanzas</SelectItem>
-                    <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
-                    <SelectItem value="Tecnología">Tecnología</SelectItem>
-                    <SelectItem value="Ventas">Ventas</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem>
-                    <SelectItem value="Operaciones">Operaciones</SelectItem>
-                    <SelectItem value="Logística">Logística</SelectItem>
-                    <SelectItem value="Producción">Producción</SelectItem>
-                    <SelectItem value="Legal">Legal</SelectItem>
+                    {DEPARTAMENTOS.map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <FormDescription>
-                  Departamento al que pertenece
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
-          {/* Fecha de Contratación */}
+
+          {/* Cargo */}
           <FormField
             control={form.control}
-            name="hireDate"
+            name="cargo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cargo <span className="text-destructive">*</span></FormLabel>
+                <FormControl>
+                  <Input placeholder="Cargo o posición" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Fecha de Ingreso */}
+          <FormField
+            control={form.control}
+            name="fecha_ingreso"
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Fecha de Ingreso <span className="text-destructive">*</span></FormLabel>
@@ -492,12 +345,15 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
                     <FormControl>
                       <Button
                         variant={"outline"}
-                        className="w-full pl-3 text-left font-normal"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
                       >
                         {field.value ? (
-                          format(field.value, "dd/MM/yyyy", { locale: es })
+                          format(field.value, "PPP", { locale: es })
                         ) : (
-                          <span>Seleccione una fecha</span>
+                          <span>Seleccionar fecha</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
@@ -506,506 +362,420 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date || new Date())}
-                      locale={es}
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
-                <FormDescription>
-                  Fecha en que comenzó a trabajar
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
-          {/* Salario */}
-          <FormField
-            control={form.control}
-            name="salary"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Salario Base <span className="text-destructive">*</span></FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="Ej. 3500.00" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Salario mensual base en la moneda local
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Tipo de Contrato */}
-          <FormField
-            control={form.control}
-            name="contractType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo de Contrato <span className="text-destructive">*</span></FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value || "fulltime"} // Valor por defecto para evitar valor vacío
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un tipo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="fulltime">Tiempo Completo</SelectItem>
-                    <SelectItem value="parttime">Tiempo Parcial</SelectItem>
-                    <SelectItem value="contractor">Contratista</SelectItem>
-                    <SelectItem value="temporary">Temporal</SelectItem>
-                    <SelectItem value="internship">Práctica/Pasantía</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Tipo de contrato laboral
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Estado del Contrato */}
-          <FormField
-            control={form.control}
-            name="contractStatus"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Estado del Contrato <span className="text-destructive">*</span></FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value || "active"} // Valor por defecto para evitar valor vacío
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un estado" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="active">Activo</SelectItem>
-                    <SelectItem value="inactive">Inactivo</SelectItem>
-                    <SelectItem value="on_leave">Permiso</SelectItem>
-                    <SelectItem value="terminated">Terminado</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Estado actual del contrato
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
+
           {/* Teléfono */}
           <FormField
             control={form.control}
-            name="phoneNumber"
+            name="telefono"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Teléfono</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej. +1234567890" {...field} />
+                  <Input placeholder="Número de teléfono" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Número de contacto del empleado
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Dirección */}
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Dirección</FormLabel>
-                <FormControl>
-                  <Input placeholder="Dirección completa" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Dirección residencial
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Contacto de Emergencia */}
-          <FormField
-            control={form.control}
-            name="emergencyContact"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contacto de Emergencia</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nombre y teléfono" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Persona a contactar en caso de emergencia
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        
-        <Separator className="my-6" />
-        
-        <h3 className="text-lg font-semibold mb-4">Documento de Contrato</h3>
-        
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="flex flex-col space-y-2">
-                <FormLabel htmlFor="contrato">Documento de Contrato (PDF o DOCX)</FormLabel>
-                <Input
-                  id="contrato"
-                  type="file"
-                  accept=".pdf,.docx"
-                  onChange={handleFileChange}
-                  ref={fileInputRef}
-                  className="cursor-pointer"
-                />
-                <FormDescription>
-                  Suba el contrato laboral del empleado (máximo 5MB)
-                </FormDescription>
-              </div>
-              
-              {contratoError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{contratoError}</AlertDescription>
-                </Alert>
-              )}
-              
-              {contrato && !contratoError && (
-                <div className="flex items-center justify-between border p-3 rounded-md">
-                  <div className="flex items-center">
-                    <FileText className="h-5 w-5 mr-2 text-primary" />
-                    <span className="text-sm font-medium">{contrato.name}</span>
-                  </div>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUploadContrato}
-                    disabled={subiendoContrato || !!contratoUrl}
-                  >
-                    {subiendoContrato ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Subiendo...
-                      </>
-                    ) : contratoUrl ? (
-                      <>
-                        <CheckSquare className="mr-2 h-4 w-4" />
-                        Archivo Subido
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Subir Contrato
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-              
-              {contratoUrl && (
-                <Alert className="bg-green-50 border-green-200">
-                  <CheckSquare className="h-4 w-4 text-green-600" />
-                  <AlertTitle className="text-green-800">Contrato Subido Exitosamente</AlertTitle>
-                  <AlertDescription className="text-green-700">
-                    El contrato ha sido subido correctamente y será asociado al empleado.
+
+        <Separator />
+
+        {/* Sección de Tipo de Contrato */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Briefcase className="h-5 w-5" />
+              Información del Contrato
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Tipo de Contrato */}
+              <FormField
+                control={form.control}
+                name="tipo_contrato"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Contrato <span className="text-destructive">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar tipo de contrato" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {TIPOS_CONTRATO.map((tipo) => (
+                          <SelectItem key={tipo.value} value={tipo.value}>
+                            {tipo.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Estado del Contrato */}
+              <FormField
+                control={form.control}
+                name="estado_contrato"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estado del Contrato <span className="text-destructive">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar estado" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="activo">Activo</SelectItem>
+                        <SelectItem value="inactivo">Inactivo</SelectItem>
+                        <SelectItem value="suspendido">Suspendido</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Campos específicos según tipo de contrato */}
+            {tipoContratoSeleccionado === 'fijo' && (
+              <>
+                <Alert>
+                  <FileText className="h-4 w-4" />
+                  <AlertTitle>Contrato a Término Fijo</AlertTitle>
+                  <AlertDescription>
+                    Complete la fecha de finalización y la clase de riesgo ARL para este tipo de contrato.
                   </AlertDescription>
                 </Alert>
-              )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="fecha_fin_contrato"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Fecha de Finalización <span className="text-destructive">*</span></FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP", { locale: es })
+                                ) : (
+                                  <span>Seleccionar fecha</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date <= new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="clase_riesgo_arl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Clase de Riesgo ARL <span className="text-destructive">*</span></FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar clase de riesgo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CLASES_RIESGO_ARL.map((clase) => (
+                              <SelectItem key={clase.value} value={clase.value}>
+                                {clase.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
+
+            {tipoContratoSeleccionado === 'indefinido' && (
+              <>
+                <Alert>
+                  <Briefcase className="h-4 w-4" />
+                  <AlertTitle>Contrato a Término Indefinido</AlertTitle>
+                  <AlertDescription>
+                    Seleccione la clase de riesgo ARL según las actividades del empleado.
+                  </AlertDescription>
+                </Alert>
+                
+                <FormField
+                  control={form.control}
+                  name="clase_riesgo_arl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Clase de Riesgo ARL <span className="text-destructive">*</span></FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar clase de riesgo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {CLASES_RIESGO_ARL.map((clase) => (
+                            <SelectItem key={clase.value} value={clase.value}>
+                              {clase.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+
+            {tipoContratoSeleccionado === 'por_horas' && (
+              <>
+                <Alert>
+                  <Clock className="h-4 w-4" />
+                  <AlertTitle>Contrato por Horas</AlertTitle>
+                  <AlertDescription>
+                    Complete las horas semanales y el salario por hora. El salario por hora debe ser proporcional al salario mínimo legal.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="horas_por_semana"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Horas por Semana <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            max="48" 
+                            placeholder="Máximo 48 horas" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Máximo 48 horas semanales según ley colombiana
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="salario_por_hora"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Salario por Hora <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            min="0" 
+                            placeholder="Valor por hora" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Debe ser proporcional al salario mínimo legal vigente
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
+
+            {tipoContratoSeleccionado === 'prestacion_servicios' && (
+              <>
+                <Alert>
+                  <Calculator className="h-4 w-4" />
+                  <AlertTitle>Contrato de Prestación de Servicios</AlertTitle>
+                  <AlertDescription>
+                    Configure los honorarios, retención en la fuente y si requiere seguridad social.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="honorarios"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Honorarios Mensuales <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            min="0" 
+                            placeholder="Valor mensual de honorarios" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="retencion_fuente"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Retención en la Fuente (%)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            min="0" 
+                            max="100" 
+                            placeholder="Porcentaje de retención" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) / 100 || 0)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Porcentaje de retención según tabla DIAN
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="requiere_seguridad_social"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Requiere afiliación a seguridad social
+                        </FormLabel>
+                        <FormDescription>
+                          Marque si el contratista debe estar afiliado a EPS, pensión y ARL
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Separator />
+
+        {/* Información de Contacto */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Información de Contacto</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="direccion"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dirección</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Dirección de residencia" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="contacto_emergencia"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contacto de Emergencia</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nombre y teléfono de contacto" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </CardContent>
         </Card>
-        
-        <Separator className="my-6" />
-        
-        <h3 className="text-lg font-semibold mb-4">Información de Nómina</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Tipo de Pago */}
-          <FormField
-            control={form.control}
-            name="tipoPago"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo de Pago</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value || "mensual"} // Valor por defecto para evitar valor vacío
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un tipo de pago" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="mensual">Mensual</SelectItem>
-                    <SelectItem value="quincenal">Quincenal</SelectItem>
-                    <SelectItem value="semanal">Semanal</SelectItem>
-                    <SelectItem value="por_hora">Por Hora</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Frecuencia con la que se procesa la nómina
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Fecha de Inicio de Nómina */}
-          <FormField
-            control={form.control}
-            name="fechaInicioNomina"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Fecha de Inicio de Nómina</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className="w-full pl-3 text-left font-normal"
-                      >
-                        {field.value ? (
-                          format(field.value, "dd/MM/yyyy", { locale: es })
-                        ) : (
-                          <span>Seleccione una fecha</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date || new Date())}
-                      locale={es}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormDescription>
-                  Fecha en que empieza a recibir pagos de nómina
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Tasa de Impuestos */}
-          <FormField
-            control={form.control}
-            name="taxRate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tasa de Impuestos (%)</FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="Ej. 20" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Porcentaje para cálculo de impuestos
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Beneficios Base */}
-          <FormField
-            control={form.control}
-            name="baseBenefits"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Beneficios Base</FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="Ej. 100.00" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Beneficios fijos mensuales
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Deducciones Base */}
-          <FormField
-            control={form.control}
-            name="baseDeductions"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Deducciones Base</FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="Ej. 50.00" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Deducciones fijas mensuales
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Cuenta Bancaria */}
-          <FormField
-            control={form.control}
-            name="bankAccount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cuenta Bancaria</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej. 123456789" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Cuenta para depósitos y transferencias
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Método de Pago */}
-          <FormField
-            control={form.control}
-            name="paymentMethod"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Método de Pago</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value || "transferencia"} // Valor por defecto para evitar valor vacío
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un método" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="transferencia">Transferencia Bancaria</SelectItem>
-                    <SelectItem value="cheque">Cheque</SelectItem>
-                    <SelectItem value="efectivo">Efectivo</SelectItem>
-                    <SelectItem value="otro">Otro</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Método utilizado para pagar la nómina
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Seguro de Salud */}
-          <FormField
-            control={form.control}
-            name="healthInsurance"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Seguro de Salud</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej. Plan Corporativo Premium" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Plan de seguro médico asignado
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Días de Vacaciones */}
-          <FormField
-            control={form.control}
-            name="vacationDays"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Días de Vacaciones Anuales</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="Ej. 15" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} 
-                  />
-                </FormControl>
-                <FormDescription>
-                  Días de vacaciones por año
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <Separator className="my-6" />
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Asignación a Proyectos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {cargandoProyectos ? (
-              <div className="flex items-center justify-center p-4">
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                <span>Cargando proyectos...</span>
-              </div>
-            ) : proyectos.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {proyectos.map((proyecto) => (
-                  <div key={proyecto.id} className="flex items-start space-x-2">
-                    <Checkbox 
-                      id={`project-${proyecto.id}`} 
-                      checked={selectedProjects.includes(proyecto.id)}
-                      onCheckedChange={() => toggleProjectSelection(proyecto.id)}
-                    />
-                    <div className="grid gap-1.5">
-                      <label
-                        htmlFor={`project-${proyecto.id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {proyecto.name}
-                      </label>
-                      <p className="text-sm text-muted-foreground">
-                        {proyecto.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground">No hay proyectos disponibles para asignar</p>
-            )}
-          </CardContent>
-        </Card>
-        
-        <div className="flex justify-end mt-6">
+
+        {/* Botones de acción */}
+        <div className="flex justify-end space-x-4">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => form.reset()}
+          >
+            Cancelar
+          </Button>
           <Button 
             type="submit" 
-            disabled={isEditing ? editarEmpleadoMutation.isPending : crearEmpleadoMutation.isPending}
+            disabled={crearEmpleadoMutation.isPending || editarEmpleadoMutation.isPending}
           >
-            {(isEditing ? editarEmpleadoMutation.isPending : crearEmpleadoMutation.isPending) && 
+            {crearEmpleadoMutation.isPending || editarEmpleadoMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            }
-            {isEditing ? 'Actualizar Empleado' : 'Guardar Empleado'}
+            )}
+            {isEditing ? 'Actualizar Empleado' : 'Crear Empleado'}
           </Button>
         </div>
       </form>

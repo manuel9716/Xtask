@@ -174,7 +174,7 @@ function Router() {
           <NominaRoutes />
         </ProtectedRoute>
       </Route>
-      <Route path="/empleados/*">
+      <Route path="/admin/nomina/empleados/*">
         <ProtectedRoute>
           <EmpleadosRoutes />
         </ProtectedRoute>

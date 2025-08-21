@@ -287,7 +287,15 @@ export const empleados = pgTable("empleados", {
   cargo: text("cargo").notNull(),
   fecha_ingreso: date("fecha_ingreso").notNull(),
   estado_contrato: text("estado_contrato").notNull().default("activo"), // activo, inactivo, suspendido
-  tipo_contrato: text("tipo_contrato").notNull(), // indefinido, fijo, obra_labor, prestacion_servicios
+  tipo_contrato: text("tipo_contrato").notNull(), // indefinido, fijo, prestacion_servicios, por_horas
+  // Campos específicos por tipo de contrato
+  fecha_fin_contrato: date("fecha_fin_contrato"), // Solo para contratos fijos
+  clase_riesgo_arl: text("clase_riesgo_arl"), // Clase I, II, III, IV, V para indefinido/fijo
+  horas_por_semana: integer("horas_por_semana"), // Solo para contrato por horas
+  salario_por_hora: decimal("salario_por_hora", { precision: 12, scale: 2 }), // Solo para contrato por horas
+  honorarios: decimal("honorarios", { precision: 12, scale: 2 }), // Solo para prestación de servicios
+  retencion_fuente: decimal("retencion_fuente", { precision: 5, scale: 4 }), // % retención para prestación de servicios
+  requiere_seguridad_social: boolean("requiere_seguridad_social").default(false), // Para prestación de servicios
   telefono: text("telefono"),
   direccion: text("direccion"),
   contacto_emergencia: text("contacto_emergencia"),
@@ -372,6 +380,20 @@ export const payments_log = pgTable("payments_log", {
   estado: text("estado").notNull(), // pagada, parcial
   nota: text("nota"),
   creado_at: timestamp("creado_at").defaultNow().notNull(),
+});
+
+// Historial de cambios en contratos de empleados
+export const historial_contratos = pgTable("historial_contratos", {
+  id: serial("id").primaryKey(),
+  empleado_id: integer("empleado_id").references(() => empleados.id).notNull(),
+  fecha_cambio: timestamp("fecha_cambio").defaultNow().notNull(),
+  tipo_cambio: text("tipo_cambio").notNull(), // salario, tipo_contrato, bonificaciones, horas, arl, otros
+  campo_modificado: text("campo_modificado").notNull(), // nombre del campo que se modificó
+  valor_anterior: text("valor_anterior"), // valor previo (serializado como string)
+  valor_nuevo: text("valor_nuevo").notNull(), // nuevo valor (serializado como string)
+  motivo: text("motivo"), // razón del cambio
+  modificado_por: integer("modificado_por").references(() => users.id).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Tabla de nóminas grupales (cabecera) - MANTENER POR COMPATIBILIDAD
@@ -1139,6 +1161,68 @@ export type InsertEvaluacion = z.infer<typeof insertEvaluacionSchema>;
 
 export type Capacitacion = typeof capacitaciones.$inferSelect;
 export type InsertCapacitacion = z.infer<typeof insertCapacitacionSchema>;
+
+// ========== ESQUEMAS DE VALIDACIÓN PARA EMPLEADOS CON TIPOS DE CONTRATO ==========
+
+// Esquemas de validación dinámicos según tipo de contrato
+export const insertEmpleadoBaseSchema = createInsertSchema(empleados).omit({
+  id: true,
+  created_at: true,
+  deleted_at: true,
+  // Omitir campos específicos por tipo de contrato para validación condicional
+  fecha_fin_contrato: true,
+  clase_riesgo_arl: true,
+  horas_por_semana: true,
+  salario_por_hora: true,
+  honorarios: true,
+  retencion_fuente: true,
+  requiere_seguridad_social: true,
+});
+
+export const insertEmpleadoSchema = insertEmpleadoBaseSchema.extend({
+  tipo_contrato: z.enum(["indefinido", "fijo", "prestacion_servicios", "por_horas"]),
+  // Campos condicionales según tipo de contrato
+  fecha_fin_contrato: z.string().optional().refine((val) => !val || new Date(val) > new Date(), {
+    message: "La fecha de fin debe ser futura"
+  }),
+  clase_riesgo_arl: z.enum(["I", "II", "III", "IV", "V"]).optional(),
+  horas_por_semana: z.number().min(1).max(48).optional(),
+  salario_por_hora: z.number().min(0).optional(),
+  honorarios: z.number().min(0).optional(),
+  retencion_fuente: z.number().min(0).max(1).optional(),
+  requiere_seguridad_social: z.boolean().optional(),
+}).refine((data) => {
+  // Validaciones específicas por tipo de contrato
+  if (data.tipo_contrato === "fijo") {
+    return data.fecha_fin_contrato !== undefined && data.clase_riesgo_arl !== undefined;
+  }
+  if (data.tipo_contrato === "indefinido") {
+    return data.clase_riesgo_arl !== undefined;
+  }
+  if (data.tipo_contrato === "por_horas") {
+    return data.horas_por_semana !== undefined && data.salario_por_hora !== undefined;
+  }
+  if (data.tipo_contrato === "prestacion_servicios") {
+    return data.honorarios !== undefined;
+  }
+  return true;
+}, {
+  message: "Faltan campos requeridos para el tipo de contrato seleccionado"
+});
+
+// Esquema para historial de cambios de contrato
+export const insertHistorialContratoSchema = createInsertSchema(historial_contratos).omit({
+  id: true,
+  fecha_cambio: true,
+  created_at: true,
+});
+
+// Tipos para empleados y historial
+export type Empleado = typeof empleados.$inferSelect;
+export type InsertEmpleado = z.infer<typeof insertEmpleadoSchema>;
+
+export type HistorialContrato = typeof historial_contratos.$inferSelect;
+export type InsertHistorialContrato = z.infer<typeof insertHistorialContratoSchema>;
 
 export type EmpleadoCapacitacion = typeof empleadoCapacitaciones.$inferSelect;
 export type InsertEmpleadoCapacitacion = z.infer<typeof insertEmpleadoCapacitacionSchema>;

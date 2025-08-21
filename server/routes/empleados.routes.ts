@@ -1,13 +1,39 @@
 import { Request, Response, Router } from 'express';
 import { db } from '../db';
-import { empleados, empleado_nomina, empleado_proyecto, nominas_nuevas, nomina_items, projects } from '@shared/schema';
+import { empleados, empleado_nomina, empleado_proyecto, nominas_nuevas, nomina_items, projects, historial_contratos, users, insertEmpleadoSchema } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 const router = Router();
 
-// Schema para validación
+// Schema para validación de empleados con tipos de contrato colombianos
+const crearEmpleadoNuevoSchema = insertEmpleadoSchema;
+
+// Schema para actualización (campos opcionales) sin .refine para permitir .partial
 const updateEmpleadoSchema = z.object({
+  user_id: z.number().optional(),
+  nombre: z.string().min(2).optional(),
+  apellido: z.string().min(2).optional(),
+  identificacion: z.string().min(5).optional(),
+  depto: z.string().min(2).optional(),
+  cargo: z.string().min(2).optional(),
+  fecha_ingreso: z.date().optional(),
+  estado_contrato: z.enum(["activo", "inactivo", "suspendido"]).optional(),
+  telefono: z.string().optional(),
+  direccion: z.string().optional(),
+  contacto_emergencia: z.string().optional(),
+  tipo_contrato: z.enum(["indefinido", "fijo", "prestacion_servicios", "por_horas"]).optional(),
+  fecha_fin_contrato: z.date().optional(),
+  clase_riesgo_arl: z.enum(["I", "II", "III", "IV", "V"]).optional(),
+  horas_por_semana: z.number().min(1).max(48).optional(),
+  salario_por_hora: z.number().min(0).optional(),
+  honorarios: z.number().min(0).optional(),
+  retencion_fuente: z.number().min(0).max(1).optional(),
+  requiere_seguridad_social: z.boolean().optional(),
+});
+
+// Schema legacy para compatibilidad
+const updateEmpleadoLegacySchema = z.object({
   empleado: z.object({
     nombre: z.string().min(2),
     apellido: z.string().min(2),
@@ -16,10 +42,18 @@ const updateEmpleadoSchema = z.object({
     cargo: z.string().min(1),
     fecha_ingreso: z.string(),
     estado_contrato: z.enum(['activo', 'inactivo', 'suspendido']),
-    tipo_contrato: z.enum(['indefinido', 'fijo', 'obra_labor', 'prestacion_servicios']),
+    tipo_contrato: z.enum(['indefinido', 'fijo', 'prestacion_servicios', 'por_horas']),
     telefono: z.string().optional(),
     direccion: z.string().optional(),
     contacto_emergencia: z.string().optional(),
+    // Nuevos campos según tipo de contrato
+    fecha_fin_contrato: z.string().optional(),
+    clase_riesgo_arl: z.enum(['I', 'II', 'III', 'IV', 'V']).optional(),
+    horas_por_semana: z.number().min(1).max(48).optional(),
+    salario_por_hora: z.number().min(0).optional(),
+    honorarios: z.number().min(0).optional(),
+    retencion_fuente: z.number().min(0).max(1).optional(),
+    requiere_seguridad_social: z.boolean().optional(),
   }),
   nomina: z.object({
     sueldo_base: z.number().min(0),
@@ -32,7 +66,7 @@ const updateEmpleadoSchema = z.object({
     seguro_salud: z.string().optional(),
     dias_vacaciones: z.number().min(0),
     frecuencia_pago: z.enum(['quincenal', 'mensual']),
-  }),
+  }).optional(),
 });
 
 // GET /api/empleados/:id - Obtener empleado con proyectos y nóminas
@@ -240,6 +274,85 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/empleados - Crear nuevo empleado
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    // Validar los datos usando el nuevo esquema
+    const validation = crearEmpleadoNuevoSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return res.status(400).json({ 
+        message: 'Datos inválidos',
+        errors: validation.error.issues 
+      });
+    }
+
+    const empleadoData = validation.data;
+
+    // Verificar que el usuario existe si se proporciona user_id
+    if (empleadoData.user_id) {
+      const [usuario] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, empleadoData.user_id));
+      
+      if (!usuario) {
+        return res.status(400).json({ message: 'Usuario no encontrado' });
+      }
+    }
+
+    // Verificar que no exista otro empleado con la misma identificación
+    const [empleadoExistente] = await db
+      .select()
+      .from(empleados)
+      .where(eq(empleados.identificacion, empleadoData.identificacion));
+    
+    if (empleadoExistente) {
+      return res.status(400).json({ 
+        message: `Ya existe un empleado con la identificación ${empleadoData.identificacion}` 
+      });
+    }
+
+    // Transformar fecha_ingreso a string si es necesario
+    const empleadoDataTransformed = {
+      ...empleadoData,
+      fecha_ingreso: empleadoData.fecha_ingreso instanceof Date 
+        ? empleadoData.fecha_ingreso.toISOString().split('T')[0] 
+        : empleadoData.fecha_ingreso,
+      fecha_fin_contrato: empleadoData.fecha_fin_contrato 
+        ? (empleadoData.fecha_fin_contrato instanceof Date 
+          ? empleadoData.fecha_fin_contrato.toISOString().split('T')[0] 
+          : empleadoData.fecha_fin_contrato)
+        : undefined
+    };
+
+    // Crear el nuevo empleado
+    const [nuevoEmpleado] = await db
+      .insert(empleados)
+      .values(empleadoDataTransformed)
+      .returning();
+
+    // Crear entrada en historial de cambios
+    await db.insert(historial_contratos).values({
+      empleado_id: nuevoEmpleado.id,
+      tipo_cambio: 'alta',
+      campo_modificado: 'empleado',
+      valor_anterior: null,
+      valor_nuevo: `Empleado creado: ${nuevoEmpleado.nombre} ${nuevoEmpleado.apellido}`,
+      motivo: 'Alta de empleado en el sistema',
+      modificado_por: 1 // TODO: obtener ID del usuario actual
+    });
+
+    res.status(201).json({
+      message: 'Empleado creado exitosamente',
+      empleado: nuevoEmpleado
+    });
+  } catch (error) {
+    console.error('Error al crear empleado:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 // PATCH /api/empleados/:id - Actualizar empleado
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
@@ -253,37 +366,56 @@ router.patch('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    const { empleado: empleadoData, nomina: nominaData } = validation.data;
+    const empleadoData = validation.data;
+
+    // Verificar que el empleado existe
+    const [empleadoExistente] = await db
+      .select()
+      .from(empleados)
+      .where(eq(empleados.id, empleadoId));
+
+    if (!empleadoExistente) {
+      return res.status(404).json({ message: 'Empleado no encontrado' });
+    }
+
+    // Crear entrada en historial de cambios si hay modificaciones
+    const cambios = [];
+    if (empleadoData.tipo_contrato && empleadoData.tipo_contrato !== empleadoExistente.tipo_contrato) {
+      cambios.push({
+        empleado_id: empleadoId,
+        tipo_cambio: 'tipo_contrato',
+        campo_modificado: 'tipo_contrato',
+        valor_anterior: empleadoExistente.tipo_contrato,
+        valor_nuevo: empleadoData.tipo_contrato,
+        motivo: 'Actualización de tipo de contrato',
+        modificado_por: 1 // TODO: obtener ID del usuario actual
+      });
+    }
+
+    // Transformar fechas a strings si es necesario
+    const empleadoDataTransformed = {
+      ...empleadoData,
+      fecha_ingreso: empleadoData.fecha_ingreso instanceof Date 
+        ? empleadoData.fecha_ingreso.toISOString().split('T')[0] 
+        : empleadoData.fecha_ingreso,
+      fecha_fin_contrato: empleadoData.fecha_fin_contrato 
+        ? (empleadoData.fecha_fin_contrato instanceof Date 
+          ? empleadoData.fecha_fin_contrato.toISOString().split('T')[0] 
+          : empleadoData.fecha_fin_contrato)
+        : undefined
+    };
 
     // Actualizar empleado
     const [updatedEmpleado] = await db
       .update(empleados)
-      .set(empleadoData)
+      .set(empleadoDataTransformed)
       .where(eq(empleados.id, empleadoId))
       .returning();
 
-    if (!updatedEmpleado) {
-      return res.status(404).json({ message: 'Empleado no encontrado' });
+    // Insertar cambios en el historial si los hay
+    if (cambios.length > 0) {
+      await db.insert(historial_contratos).values(cambios);
     }
-
-    // Actualizar datos de nómina (convirtiendo números a strings donde sea necesario)
-    const nominaUpdate = {
-      sueldo_base: nominaData.sueldo_base.toString(),
-      bonificacion: nominaData.bonificacion.toString(),
-      tasa_impuestos: nominaData.tasa_impuestos.toString(),
-      base_deduccion: nominaData.base_deduccion.toString(),
-      beneficios_base: nominaData.beneficios_base.toString(),
-      metodo_pago: nominaData.metodo_pago,
-      cuenta_bancaria: nominaData.cuenta_bancaria,
-      seguro_salud: nominaData.seguro_salud,
-      dias_vacaciones: nominaData.dias_vacaciones,
-      frecuencia_pago: nominaData.frecuencia_pago,
-    };
-
-    await db
-      .update(empleado_nomina)
-      .set(nominaUpdate)
-      .where(eq(empleado_nomina.empleado_id, empleadoId));
 
     res.json({ message: 'Empleado actualizado correctamente' });
   } catch (error) {

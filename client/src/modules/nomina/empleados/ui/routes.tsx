@@ -20,21 +20,21 @@ export const EmpleadosRoutes = () => {
   return (
     <>
       {/* Listado de empleados */}
-      <Route path="/admin/nomina/empleados">
+      <Route path="/">
         <MainLayout>
           <EmpleadosPage />
         </MainLayout>
       </Route>
       
       {/* Detalle de empleado */}
-      <Route path="/admin/nomina/empleados/:id">
+      <Route path="/:id">
         <MainLayout>
           <EmpleadoDetalleRoute />
         </MainLayout>
       </Route>
       
       {/* Edición de empleado */}
-      <Route path="/admin/nomina/empleados/:id/editar">
+      <Route path="/:id/editar">
         <MainLayout>
           <EditarEmpleadoRoute />
         </MainLayout>
