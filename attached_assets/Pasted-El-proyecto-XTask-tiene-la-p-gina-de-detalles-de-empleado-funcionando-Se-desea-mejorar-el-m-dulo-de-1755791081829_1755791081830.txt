@@ -1,0 +1,143 @@
+El proyecto XTask tiene la página de detalles de empleado funcionando. Se desea mejorar el módulo de Nómina para que cumpla con el marco legal colombiano, soportando contratos indefinidos, por prestación de servicios y por horas, con cálculos automáticos y la posibilidad de generar reportes. Los datos deben ser reales y asignados al empleado, sin incluir datos de ejemplo o de relleno.
+
+1) Gestión de contratos
+
+Incluir un campo obligatorio de tipo de contrato en la ficha de empleado:
+
+Indefinido
+
+Fijo por obra o labor
+
+Prestación de servicios
+
+Por horas
+
+Según el tipo de contrato, mostrar campos dinámicos:
+
+Indefinido/fijo: salario base, bonificaciones, ARL (clase de riesgo).
+
+Por horas: horas por semana, salario por hora proporcional al mínimo legal, bonificaciones proporcionales.
+
+Prestación de servicios: honorarios, retención en la fuente, seguridad social.
+
+Registrar historial de cambios en los contratos: fecha, tipo de contrato, cambios salariales, horas y bonificaciones.
+
+2) Cálculo de nómina según tipo de contrato
+
+Contratos indefinidos/fijos:
+
+Salario base + horas extras + bonificaciones.
+
+Deducciones obligatorias: salud, pensión, retención en la fuente, préstamos.
+
+Prestaciones sociales acumuladas: prima, cesantías, intereses de cesantías, vacaciones.
+
+Contratos por horas:
+
+Calcular el valor proporcional al salario mínimo por hora.
+
+Incluir recargos, prestaciones y aportes proporcionales.
+
+Prestación de servicios:
+
+Manejar honorarios.
+
+Aplicar retención en la fuente según reglamentación.
+
+Generar comprobante de pago de seguridad social.
+
+3) Flujo de nómina
+
+Definir estados del ciclo de pago:
+
+Borrador → Calculada → Aprobada → Pagada → Cerrada
+
+Permitir registrar un historial de cambios por nómina, incluyendo modificaciones de pagos, bonificaciones, deducciones o estado.
+
+4) Interfaz de usuario
+
+Creación de empleados:
+
+Campos dinámicos según tipo de contrato.
+
+Validaciones legales en tiempo real: salario mínimo, auxilio de transporte, ingresos base de cotización.
+
+Creación de nómina:
+
+Permitir asignar novedades: incapacidades, licencias, horas extras, bonos.
+
+Desglose claro de la nómina en vista previa:
+
+Devengados: sueldo, horas extras, bonificaciones.
+
+Deducciones: salud, pensión, retención en la fuente, préstamos.
+
+Prestaciones sociales: prima, cesantías, intereses, vacaciones acumuladas.
+
+Neto a pagar.
+
+Costo total para el empleador.
+
+Detalle de nómina:
+
+Separar visualmente las secciones: devengados, deducciones, impuestos, prestaciones.
+
+Historial de nóminas:
+
+Incluir columna de tipo de contrato y estados detallados (calculada, aprobada, pagada).
+
+5) Reportes y exportaciones
+
+Generar reportes por empleado:
+
+Prestaciones acumuladas.
+
+Comparativos de sueldos vs bonificaciones.
+
+Generar reportes por proyecto y por periodo:
+
+Costos de nómina totales.
+
+Exportación de datos:
+
+Para planilla de pagos.
+
+Validación de comprobantes de contratistas por servicios.
+
+6) Validaciones legales
+
+Valor de hora ≥ proporcional del salario mínimo.
+
+Ingresos base de cotización ≥ 1 SMLV y ≤ 25 SMLV.
+
+Aplicar auxilio de transporte cuando corresponda.
+
+Retención en la fuente parametrizable según UVT.
+
+7) Componentes interactivos y visuales
+
+Cronograma de pagos: Mostrar proyectos asociados con fechas de pago.
+
+Distribución de pagos: Gráfico de barras o donut con el desglose de pagos por proyecto.
+
+Calendario: Mostrar días de pago y otros eventos importantes (vencimientos, ausencias).
+
+Nóminas recientes: Tabla con historial de nóminas, con opción de cambiar estado de la nómina de Pendiente a Pagada.
+
+8) Criterios de aceptación
+
+Ver detalles de un empleado abre la ficha con todos los datos reales (nombre, apellido, tipo de contrato, salario, bonificaciones, etc.).
+
+Modificar información personal o de nómina del empleado se guarda correctamente en tiempo real.
+
+Eliminar un empleado marca su estado como inactivo (soft delete) y desaparece de la lista de empleados activos.
+
+Mostrar cronograma de pagos con proyectos asociados y fechas reales de pago.
+
+Distribución de pagos: Gráfico que muestra sueldos y bonificaciones por proyecto.
+
+Calendario: Mostrar días de pago y eventos importantes.
+
+Historial de nóminas: Tabla con estado (pendiente/pagada) y posibilidad de cambiar el estado a Pagada.
+
+Exportar la nómina en formatos PDF y XLSX para validación de planillas y contratistas.

@@ -28,6 +28,7 @@ import { KpisRoutes } from "@/modules/kpis/ui/routes";
 import { ThemeProvider } from "@/hooks/use-theme";
 import EmployeeDetailPage from "@/modules/nomina/pages/EmployeeDetailPage";
 import PayrollDetailPage from "@/modules/nomina/pages/PayrollDetailPage";
+import { EmpleadosColombiaPage } from "@/modules/nomina/pages/EmpleadosColombiaPage";
 
 // Importaciones para el módulo de autenticación
 import { AuthProvider } from "@/modules/auth/ui/context/AuthContext";
@@ -159,6 +160,15 @@ function Router() {
         <ProtectedRoute>
           <MainLayout>
             <KpisDashboard />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      {/* Empleados con Marco Legal Colombiano - Protegida */}
+      <Route path="/empleados-colombia">
+        <ProtectedRoute>
+          <MainLayout>
+            <EmpleadosColombiaPage />
           </MainLayout>
         </ProtectedRoute>
       </Route>
