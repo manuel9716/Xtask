@@ -191,7 +191,9 @@ function Router() {
       </Route>
       <Route path="/admin/proyectos/*">
         <ProtectedRoute>
-          <ProyectosRoutes />
+          <MainLayout>
+            <ProyectosRoutes />
+          </MainLayout>
         </ProtectedRoute>
       </Route>
       <Route path="/kpis/*">
