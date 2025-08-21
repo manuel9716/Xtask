@@ -48,9 +48,24 @@ export function ProjectsTable({ limit, className, showPagination = false }: Proj
   });
 
   const handleEliminarProyecto = () => {
-    // Invalidar y actualizar la caché inmediatamente después de eliminar
-    queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
-    queryClient.refetchQueries({ queryKey: ["/api/projects"] });
+    // Invalidar TODAS las cachés relacionadas con proyectos en todos los módulos
+    // Dashboard
+    queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+    // Proyectos principales  
+    queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
+    // Nómina - proyectos con recursos
+    queryClient.invalidateQueries({ queryKey: ['/api/nomina/proyectos'] });
+    // Nómina - recursos específicos (invalidar todos los proyectos de nómina)
+    queryClient.invalidateQueries({ queryKey: ['/api/nomina'] });
+    // Nómina - métricas
+    queryClient.invalidateQueries({ queryKey: ['/api/nomina/metricas'] });
+    // Finanzas - presupuestos (pueden estar relacionados con proyectos)
+    queryClient.invalidateQueries({ queryKey: ['/api/presupuestos'] });
+    
+    // Forzar refetch inmediato de las consultas principales
+    queryClient.refetchQueries({ queryKey: ['/api/projects'] });
+    queryClient.refetchQueries({ queryKey: ['/api/proyectos'] });
+    queryClient.refetchQueries({ queryKey: ['/api/nomina/proyectos'] });
   };
 
   const projectCount = projects?.length || 0;

@@ -72,6 +72,29 @@ export function MenuAccionesProyecto({
         title: "Proyecto eliminado",
         description: "El proyecto ha sido eliminado correctamente",
       });
+      
+      // Invalidar TODAS las cachés relacionadas con proyectos en todos los módulos
+      // Dashboard
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      // Proyectos principales  
+      queryClient.invalidateQueries({ queryKey: ['/api/proyectos'] });
+      // Nómina - proyectos con recursos
+      queryClient.invalidateQueries({ queryKey: ['/api/nomina/proyectos'] });
+      // Nómina - recursos específicos del proyecto eliminado
+      queryClient.invalidateQueries({ queryKey: ['/api/nomina', proyectoId] });
+      // Nómina - resumen del proyecto eliminado
+      queryClient.invalidateQueries({ queryKey: ['/api/nomina', proyectoId, 'resumen'] });
+      // Nómina - métricas del proyecto eliminado
+      queryClient.invalidateQueries({ queryKey: ['/api/nomina/metricas', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/nomina/metricas'] });
+      // Finanzas - presupuestos (pueden estar relacionados con proyectos)
+      queryClient.invalidateQueries({ queryKey: ['/api/presupuestos'] });
+      
+      // Forzar refetch inmediato de las consultas principales
+      queryClient.refetchQueries({ queryKey: ['/api/projects'] });
+      queryClient.refetchQueries({ queryKey: ['/api/proyectos'] });
+      queryClient.refetchQueries({ queryKey: ['/api/nomina/proyectos'] });
+      
       if (onEliminar) onEliminar(proyectoId);
     } catch (error) {
       console.error("Error al eliminar proyecto:", error);
