@@ -230,8 +230,9 @@ export function ProjectsTable({ limit, className, showPagination = false }: Proj
                           }
                         })()} 
                         onEstadoCambiado={() => {
-                          // Invalidar la caché para refrescar la tabla
+                          // Invalidar la caché para refrescar la tabla inmediatamente
                           queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+                          queryClient.refetchQueries({ queryKey: ["/api/projects"] });
                         }}
                       />
                     </TableCell>

@@ -196,6 +196,22 @@ function Router() {
           </MainLayout>
         </ProtectedRoute>
       </Route>
+      
+      <Route path="/admin/proyectos/:id">
+        <ProtectedRoute>
+          <MainLayout>
+            <ProyectosRoutes />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/admin/proyectos/:id/editar">
+        <ProtectedRoute>
+          <MainLayout>
+            <ProyectosRoutes />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
       <Route path="/kpis/*">
         <ProtectedRoute>
           <KpisRoutes />
