@@ -253,6 +253,7 @@ export const nominasNuevas = pgTable("nominas_nuevas", {
   rangoFin: timestamp("rango_fin").notNull(),
   proyectoId: integer("proyecto_id").references(() => projects.id), // NULL para nómina general
   estado: text("estado").notNull().default("PENDIENTE"), // PENDIENTE, PROCESADA, PAGADA, CANCELADA
+  soportesSeguridadSocial: text("soportes_seguridad_social"), // URL del archivo de soportes
   totalSueldos: decimal("total_sueldos", { precision: 15, scale: 2 }).default("0"),
   totalBonos: decimal("total_bonos", { precision: 15, scale: 2 }).default("0"),
   totalDeducciones: decimal("total_deducciones", { precision: 15, scale: 2 }).default("0"),

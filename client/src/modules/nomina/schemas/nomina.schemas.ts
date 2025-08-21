@@ -5,12 +5,14 @@ export const nominaPreviewSchema = z.object({
   rango_fin: z.string().min(1, "La fecha de fin es obligatoria"),
   proyecto_id: z.number().optional(),
   empleados_seleccionados: z.array(z.number()).min(1, "Debe seleccionar al menos un empleado"),
+  soportes_seguridad_social: z.string().optional(),
 });
 
 export const nominaCreateSchema = z.object({
   rango_inicio: z.string().min(1, "La fecha de inicio es obligatoria"),
   rango_fin: z.string().min(1, "La fecha de fin es obligatoria"),
   proyecto_id: z.number().optional(),
+  soportes_seguridad_social: z.string().optional(),
   items: z.array(z.object({
     empleado_id: z.number(),
     sueldo: z.number().min(0),

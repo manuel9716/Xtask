@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Users, Calculator, CheckCircle, Loader2 } from "lucide-react";
+import { Calendar, Users, Calculator, CheckCircle, Loader2, Upload, FileText } from "lucide-react";
 import { NominaPreview, NominaCreate, nominaPreviewSchema, NominaItem } from "../schemas/nomina.schemas";
 import { NominaApi, NominaPreviewResponse } from "../services/nomina.api";
 import { EmpleadosApi } from "../services/empleados.api";
@@ -33,6 +33,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
   const [currentStep, setCurrentStep] = useState(1);
   const [previewData, setPreviewData] = useState<NominaPreviewResponse | null>(null);
   const [selectedItems, setSelectedItems] = useState<NominaItem[]>([]);
+  const [soportesFile, setSoportesFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { reloadDashboard } = useNominaStore();
 
@@ -43,6 +44,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
       rango_fin: "",
       proyecto_id: undefined,
       empleados_seleccionados: [],
+      soportes_seguridad_social: "",
     },
   });
 
@@ -96,6 +98,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
     setCurrentStep(1);
     setPreviewData(null);
     setSelectedItems([]);
+    setSoportesFile(null);
     form.reset();
   };
 
@@ -120,6 +123,7 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
       rango_inicio: formData.rango_inicio,
       rango_fin: formData.rango_fin,
       proyecto_id: formData.proyecto_id,
+      soportes_seguridad_social: formData.soportes_seguridad_social,
       items: selectedItemsFiltered.map(item => ({
         empleado_id: item.empleado_id,
         sueldo: item.sueldo,
@@ -246,6 +250,40 @@ export function CreatePayrollWizard({ open, onOpenChange }: CreatePayrollWizardP
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="soportes_seguridad_social">Soportes de Seguridad Social (Opcional)</Label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                      <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                      <div className="space-y-2">
+                        <Label htmlFor="soportes-upload" className="cursor-pointer text-blue-600 hover:text-blue-500">
+                          Subir documentos de seguridad social
+                        </Label>
+                        <Input
+                          id="soportes-upload"
+                          type="file"
+                          accept=".pdf,.doc,.docx,.xlsx,.xls"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setSoportesFile(file);
+                              form.setValue("soportes_seguridad_social", file.name);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                        <p className="text-sm text-gray-500">
+                          PDF, DOC, DOCX, XLS, XLSX hasta 10MB
+                        </p>
+                        {soportesFile && (
+                          <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+                            <FileText className="h-4 w-4" />
+                            <span>Archivo seleccionado: {soportesFile.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex justify-end pt-4">
