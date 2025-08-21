@@ -83,8 +83,34 @@ export class EmpleadosController {
       res.status(201).json(empleado);
     } catch (error: any) {
       console.error("Error creating empleado:", error);
+      
+      // Manejar errores específicos de base de datos
+      if (error.code === '23505') {
+        if (error.constraint === 'empleados_identificacion_key') {
+          return res.status(409).json({ 
+            error: "Ya existe un empleado con esta identificación",
+            type: "duplicate_identification",
+            field: "identificacion"
+          });
+        }
+        return res.status(409).json({ 
+          error: "Ya existe un registro con estos datos",
+          type: "duplicate_constraint"
+        });
+      }
+      
+      // Errores de validación de Zod
+      if (error.name === 'ZodError') {
+        return res.status(422).json({
+          error: "Error de validación",
+          type: "validation_error",
+          details: error.errors
+        });
+      }
+      
       res.status(400).json({ 
-        error: error.message || "Error al crear empleado" 
+        error: error.message || "Error al crear empleado",
+        type: "general_error"
       });
     }
   }

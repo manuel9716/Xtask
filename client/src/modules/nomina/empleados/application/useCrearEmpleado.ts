@@ -59,32 +59,68 @@ export const useCrearEmpleado = (onSuccess?: () => void) => {
         onSuccess();
       }
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      // Intentar parsear la respuesta del servidor
       try {
-        // Intentar parsear los errores de validación
-        const errores = JSON.parse(error.message);
+        const errorData = JSON.parse(error.message);
         
-        // Crear un mensaje de error legible
-        const mensajesError = Object.entries(errores)
-          .filter(([_, value]) => value && typeof value === 'object' && '_errors' in value)
-          .map(([campo, value]) => {
-            // @ts-ignore
-            const errores = value._errors.join(', ');
-            return `${campo}: ${errores}`;
+        // Manejar errores específicos del servidor
+        if (errorData.type === 'duplicate_identification') {
+          toast({
+            title: 'Identificación duplicada',
+            description: 'Ya existe un empleado registrado con este número de identificación. Por favor, verifique los datos.',
+            variant: 'destructive',
           });
+          return;
+        }
         
-        toast({
-          title: 'Error de validación',
-          description: mensajesError.join('\n'),
-          variant: 'destructive',
-        });
-      } catch {
-        // Si no es un error de validación, mostrar el mensaje original
+        if (errorData.type === 'validation_error') {
+          const mensajesError = errorData.details?.map((detail: any) => 
+            `${detail.path.join('.')}: ${detail.message}`
+          ).join('\n') || 'Error de validación';
+          
+          toast({
+            title: 'Error de validación',
+            description: mensajesError,
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        // Error genérico del servidor
         toast({
           title: 'Error',
-          description: error.message || 'Ha ocurrido un error al crear el empleado',
+          description: errorData.error || 'Ha ocurrido un error al crear el empleado',
           variant: 'destructive',
         });
+        
+      } catch {
+        // Si no se puede parsear, intentar manejar errores de validación de Zod
+        try {
+          const errores = JSON.parse(error.message);
+          
+          // Crear un mensaje de error legible
+          const mensajesError = Object.entries(errores)
+            .filter(([_, value]) => value && typeof value === 'object' && '_errors' in value)
+            .map(([campo, value]) => {
+              // @ts-ignore
+              const errores = value._errors.join(', ');
+              return `${campo}: ${errores}`;
+            });
+          
+          toast({
+            title: 'Error de validación',
+            description: mensajesError.join('\n'),
+            variant: 'destructive',
+          });
+        } catch {
+          // Si no es un error de validación, mostrar el mensaje original
+          toast({
+            title: 'Error',
+            description: error.message || 'Ha ocurrido un error al crear el empleado',
+            variant: 'destructive',
+          });
+        }
       }
     }
   });
