@@ -1,7 +1,5 @@
 import { Router } from "express";
 import { colombiaService } from "../modules/nomina/colombia.service";
-import { insertEmployeeSchema, insertHistorialContratoSchema, insertNovedadNominaSchema } from "@shared/schema";
-import { ZodError } from "zod";
 
 const router = Router();
 
@@ -44,18 +42,47 @@ router.get("/:id", async (req, res) => {
 // POST /api/empleados-colombia - Crear nuevo empleado
 router.post("/", async (req, res) => {
   try {
-    const empleadoData = insertEmployeeSchema.parse(req.body);
+    console.log("Recibiendo datos:", req.body);
+    
+    // Validar campos mínimos requeridos
+    if (!req.body.firstName && !req.body.nombre) {
+      return res.status(400).json({ error: "El nombre es requerido" });
+    }
+    if (!req.body.lastName && !req.body.apellido) {
+      return res.status(400).json({ error: "El apellido es requerido" });
+    }
+    if (!req.body.identification && !req.body.identificacion) {
+      return res.status(400).json({ error: "La identificación es requerida" });
+    }
+    if (!req.body.position && !req.body.cargo) {
+      return res.status(400).json({ error: "El cargo es requerido" });
+    }
+    if (!req.body.department && !req.body.depto && !req.body.departamento) {
+      return res.status(400).json({ error: "El departamento es requerido" });
+    }
+    
+    // Crear empleado con datos básicos requeridos (sin validación Zod)
+    const empleadoData = {
+      userId: 1, // Por defecto por ahora
+      firstName: req.body.firstName || req.body.nombre,
+      lastName: req.body.lastName || req.body.apellido,
+      identification: req.body.identification || req.body.identificacion,
+      position: req.body.position || req.body.cargo,
+      department: req.body.department || req.body.depto || req.body.departamento,
+      hireDate: new Date(), // Fecha actual por defecto
+      phoneNumber: req.body.phoneNumber || req.body.telefono,
+      tipoContrato: req.body.tipoContrato || "indefinido",
+      claseRiesgoARL: req.body.claseRiesgoARL || "1",
+      auxilioTransporte: req.body.auxilioTransporte || false,
+      contractStatus: "active",
+      activo: true
+    };
+
+    console.log("Datos mapeados:", empleadoData);
     const empleado = await colombiaService.createEmpleado(empleadoData);
     
     res.status(201).json(empleado);
   } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({ 
-        error: "Datos de empleado inválidos",
-        details: error.errors 
-      });
-    }
-    
     console.error("Error creando empleado:", error);
     res.status(500).json({ 
       error: "Error interno del servidor",

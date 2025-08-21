@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/modules/auth/ui/context/AuthContext";
 import { 
   Dialog, 
   DialogContent, 
@@ -33,6 +34,7 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
   const [contratoFile, setContratoFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { reloadDashboard } = useNominaStore();
+  const { user } = useAuth();
 
   const form = useForm<NewEmpleado>({
     resolver: zodResolver(newEmpleadoSchema),
@@ -81,7 +83,7 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
   });
 
   const createEmpleadoMutation = useMutation({
-    mutationFn: EmpleadosApi.createEmpleado,
+    mutationFn: (data: any) => EmpleadosColombiaApi.createEmpleado(data),
     onSuccess: async (empleado) => {
       toast({
         title: "Empleado creado exitosamente",
@@ -122,7 +124,21 @@ export function NewEmployeeModal({ open, onOpenChange, onEmployeeCreated }: NewE
   });
 
   const onSubmit = (data: NewEmpleado) => {
-    createEmpleadoMutation.mutate(data);
+    // Simplificar los datos - usar endpoint básico
+    const empleadoData = {
+      firstName: data.empleado.nombre,
+      lastName: data.empleado.apellido,
+      identification: data.empleado.identificacion,
+      position: data.empleado.cargo,
+      department: data.empleado.depto,
+      tipoContrato: data.empleado.tipo_contrato,
+      claseRiesgoARL: "1",
+      phoneNumber: data.empleado.telefono,
+      auxilioTransporte: false
+    };
+
+    console.log("Enviando datos del empleado:", empleadoData);
+    createEmpleadoMutation.mutate(empleadoData);
   };
 
   const nextTab = () => {

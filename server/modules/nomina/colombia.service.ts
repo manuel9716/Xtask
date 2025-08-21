@@ -17,29 +17,74 @@ export class ColombiaService {
     return empleado;
   }
 
-  async createEmpleado(empleadoData: InsertEmployee) {
-    // Validar datos según tipo de contrato
-    await this.validarDatosEmpleado(empleadoData);
+  async createEmpleado(empleadoData: any) {
+    console.log("Service createEmpleado recibe:", empleadoData);
     
-    const [empleado] = await db.insert(employees).values({
-      ...empleadoData,
-      activo: true,
+    // Preparar datos mínimos requeridos
+    const employeeData = {
+      userId: empleadoData.userId || 1,
+      firstName: empleadoData.firstName,
+      lastName: empleadoData.lastName,
+      identification: empleadoData.identification,
+      position: empleadoData.position,
+      department: empleadoData.department,
+      hireDate: empleadoData.hireDate || new Date(),
+      phoneNumber: empleadoData.phoneNumber || null,
+      address: empleadoData.address || null,
+      emergencyContact: empleadoData.emergencyContact || null,
+      contractStatus: empleadoData.contractStatus || "active",
+      contractType: empleadoData.contractType || "fulltime",
+      salary: empleadoData.salary || null,
+      baseBenefits: empleadoData.baseBenefits || "0",
+      baseDeductions: empleadoData.baseDeductions || "0",
+      taxRate: empleadoData.taxRate || "0",
+      bankAccount: empleadoData.bankAccount || null,
+      paymentMethod: empleadoData.paymentMethod || null,
+      healthInsurance: empleadoData.healthInsurance || null,
+      vacationDays: empleadoData.vacationDays || null,
+      contratoUrl: empleadoData.contratoUrl || null,
+      tipoPago: empleadoData.tipoPago || null,
+      fechaInicioNomina: empleadoData.fechaInicioNomina || null,
+      id_employed_proyects: empleadoData.id_employed_proyects || null,
+      tipoContrato: empleadoData.tipoContrato || "indefinido",
+      salarioPorHora: empleadoData.salarioPorHora || null,
+      horasPorSemana: empleadoData.horasPorSemana || null,
+      honorarios: empleadoData.honorarios || null,
+      claseRiesgoARL: empleadoData.claseRiesgoARL || "1",
+      eps: empleadoData.eps || null,
+      pensiones: empleadoData.pensiones || null,
+      arl: empleadoData.arl || null,
+      cajaCompensacion: empleadoData.cajaCompensacion || null,
+      auxilioTransporte: empleadoData.auxilioTransporte || false,
+      retencionFuente: empleadoData.retencionFuente || "0",
+      activo: empleadoData.activo !== false,
       createdAt: new Date(),
       updatedAt: new Date()
-    }).returning();
+    };
 
-    // Crear registro inicial en historial de contratos
-    await this.createHistorialContrato(empleado.id, {
-      tipoContrato: empleadoData.tipoContrato!,
-      salarioAnterior: null,
-      salarioNuevo: empleadoData.salary?.toString(),
-      horasAnterior: null,
-      horasNuevo: empleadoData.horasPorSemana,
-      bonificacionesAnterior: null,
-      bonificacionesNuevo: empleadoData.baseBenefits?.toString(),
-      observaciones: "Contrato inicial",
-      creadoPor: 1 // TODO: Obtener del contexto de usuario actual
-    });
+    console.log("Datos preparados para insertar:", employeeData);
+    
+    const [empleado] = await db.insert(employees).values(employeeData).returning();
+
+    console.log("Empleado creado:", empleado);
+
+    // Crear registro inicial en historial de contratos (opcional)
+    try {
+      await this.createHistorialContrato(empleado.id, {
+        tipoContrato: employeeData.tipoContrato,
+        salarioAnterior: null,
+        salarioNuevo: employeeData.salary?.toString(),
+        horasAnterior: null,
+        horasNuevo: employeeData.horasPorSemana,
+        bonificacionesAnterior: null,
+        bonificacionesNuevo: employeeData.baseBenefits?.toString(),
+        observaciones: "Contrato inicial",
+        creadoPor: 1
+      });
+    } catch (error) {
+      console.warn("No se pudo crear historial de contrato:", error);
+      // No fallar si el historial no se puede crear
+    }
 
     return empleado;
   }

@@ -802,6 +802,10 @@ export const insertEmployeeSchema = createInsertSchema(employees).omit({
     required_error: "La clase de riesgo ARL es requerida"
   }),
   identification: z.string().min(5, "La identificación debe tener al menos 5 caracteres").max(20),
+  hireDate: z.preprocess((val) => {
+    if (typeof val === "string") return new Date(val);
+    return val;
+  }, z.date()),
 });
 export const insertEmployeeProjectSchema = createInsertSchema(employeeProjects).omit({ id: true, assignedAt: true });
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({ id: true, createdAt: true });
