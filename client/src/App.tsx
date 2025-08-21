@@ -23,6 +23,7 @@ import { MainLayout } from "@/layouts/main-layout";
 import { FinanzasRoutes } from "@/modules/finanzas/ui/routes";
 import { NominaRoutes } from "@/modules/nomina/ui/routes";
 import { EmpleadosRoutes } from "@/modules/nomina/empleados/ui/routes";
+import { default as EmpleadosPage } from "@/modules/nomina/empleados/ui/pages/EmpleadosPage";
 import { ProyectosRoutes } from "@/modules/proyectos/ui/routes";
 import { KpisRoutes } from "@/modules/kpis/ui/routes";
 import { ThemeProvider } from "@/hooks/use-theme";
@@ -163,20 +164,29 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
+      {/* Ruta directa de prueba para empleados */}
+      <Route path="/admin/nomina/empleados">
+        <ProtectedRoute>
+          <MainLayout>
+            <EmpleadosPage />
+          </MainLayout>
+        </ProtectedRoute>
+      </Route>
+      
       {/* Rutas de los módulos específicos - Protegidas */}
       <Route path="/finanzas/*">
         <ProtectedRoute>
           <FinanzasRoutes />
         </ProtectedRoute>
       </Route>
-      <Route path="/nomina/*">
-        <ProtectedRoute>
-          <NominaRoutes />
-        </ProtectedRoute>
-      </Route>
       <Route path="/admin/nomina/empleados/*">
         <ProtectedRoute>
           <EmpleadosRoutes />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/nomina/*">
+        <ProtectedRoute>
+          <NominaRoutes />
         </ProtectedRoute>
       </Route>
       <Route path="/proyectos/*">

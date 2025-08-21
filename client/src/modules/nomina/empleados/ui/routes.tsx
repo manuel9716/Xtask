@@ -19,8 +19,15 @@ function EditarEmpleadoRoute() {
 export const EmpleadosRoutes = () => {
   return (
     <>
-      {/* Listado de empleados */}
+      {/* Listado de empleados - ruta principal */}
       <Route path="/">
+        <MainLayout>
+          <EmpleadosPage />
+        </MainLayout>
+      </Route>
+      
+      {/* Ruta explícita para /empleados */}
+      <Route path="/empleados">
         <MainLayout>
           <EmpleadosPage />
         </MainLayout>
