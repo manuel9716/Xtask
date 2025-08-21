@@ -7,7 +7,7 @@ const nominaPreviewSchema = z.object({
   rango_inicio: z.string().min(1),
   rango_fin: z.string().min(1),
   proyecto_id: z.number().optional(),
-  empleados_seleccionados: z.array(z.number()).optional(),
+  empleados_seleccionados: z.array(z.number()).optional().default([]),
 });
 
 const nominaCreateSchema = z.object({

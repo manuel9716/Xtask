@@ -61,6 +61,7 @@ export class NominaService {
         .from(empleados)
         .innerJoin(empleado_nomina, eq(empleados.id, empleado_nomina.empleado_id))
         .where(and(
+          eq(empleados.activo, true),
           eq(empleados.estado_contrato, 'activo'),
           isNull(empleados.deleted_at)
         ));

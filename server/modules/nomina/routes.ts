@@ -69,7 +69,9 @@ router.get('/empleados', async (req, res) => {
     const result = await db.execute(`
       SELECT id, nombre, apellido, cargo, depto 
       FROM empleados 
-      WHERE activo = true
+      WHERE activo = true 
+        AND estado_contrato = 'activo' 
+        AND deleted_at IS NULL
     `);
     
     console.log('Empleados SQL result:', result);
