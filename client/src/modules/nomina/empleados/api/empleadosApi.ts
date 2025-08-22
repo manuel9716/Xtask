@@ -72,6 +72,9 @@ export async function obtenerEmpleados(
   // Aplicar filtros en el cliente (por ahora, luego se puede mover al servidor)
   let empleadosFiltrados = Array.isArray(empleados) ? empleados : [];
   
+  // Filtrar empleados activos como medida de seguridad adicional
+  empleadosFiltrados = empleadosFiltrados.filter(emp => emp.activo !== false);
+  
   if (filtros.search) {
     const searchLower = filtros.search.toLowerCase();
     empleadosFiltrados = empleadosFiltrados.filter(emp => 

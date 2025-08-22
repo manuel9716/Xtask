@@ -142,11 +142,24 @@ export default function EmpleadosPage() {
       
       // Actualizar el caché inmediatamente
       queryClient.setQueryData(queryKey, (oldData: any) => {
-        if (!oldData?.data) return oldData;
-        return {
-          ...oldData,
-          data: oldData.data.filter((emp: any) => emp.id !== id)
-        };
+        if (!oldData) return oldData;
+        
+        // Si oldData es un array (respuesta directa de la API)
+        if (Array.isArray(oldData)) {
+          return oldData.filter((emp: any) => emp.id !== id);
+        }
+        
+        // Si oldData es un objeto con empleados
+        if (oldData.empleados) {
+          const nuevosEmpleados = oldData.empleados.filter((emp: any) => emp.id !== id);
+          return {
+            ...oldData,
+            empleados: nuevosEmpleados,
+            total: nuevosEmpleados.length
+          };
+        }
+        
+        return oldData;
       });
 
       // Realizar la eliminación en el backend
