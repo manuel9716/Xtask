@@ -108,7 +108,9 @@ export class PostgresNominaRepository implements INominaRepository {
         COALESCE(SUM(en.sueldo_base), 0) as nomina_mensual
       FROM empleados e
       INNER JOIN empleado_nomina en ON e.id = en.empleado_id
-      WHERE e.estado_contrato = 'activo'
+      WHERE e.estado_contrato = 'activo' 
+        AND e.activo = true 
+        AND e.deleted_at IS NULL
     `);
 
     const bonificacionesResult = await db.execute(sql`
@@ -158,6 +160,8 @@ export class PostgresNominaRepository implements INominaRepository {
         LEFT JOIN empleado_proyecto ep ON e.id = ep.empleado_id
         LEFT JOIN projects p ON ep.proyecto_id = p.id
         WHERE e.created_at >= NOW() - INTERVAL '30 days'
+          AND e.activo = true 
+          AND e.deleted_at IS NULL
       )
       UNION ALL
       (
@@ -268,6 +272,8 @@ export class PostgresNominaRepository implements INominaRepository {
       FROM empleados e
       LEFT JOIN empleado_nomina en ON e.id = en.empleado_id
       WHERE e.estado_contrato = 'activo'
+        AND e.activo = true 
+        AND e.deleted_at IS NULL
       ORDER BY e.nombre ASC
     `);
 
