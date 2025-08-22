@@ -412,9 +412,9 @@ export default function EmployeeDetailPage() {
                   {/* Usar datos reales de pagos */}
                   {empleado.pagos && empleado.pagos.length > 0 ? (
                     empleado.pagos.slice(0, 6).map((pago: any, index: number) => {
-                      const maxMonto = Math.max(...empleado.pagos.slice(0, 6).map((p: any) => Number(p.neto || 0)));
-                      const porcentaje = maxMonto > 0 ? (Number(pago.neto || 0) / maxMonto) * 100 : 0;
-                      const fechaPago = new Date(pago.fecha_pago || pago.fecha_fin);
+                      const maxMonto = Math.max(...empleado.pagos.slice(0, 6).map((p: any) => Number(p.valor_neto || 0)));
+                      const porcentaje = maxMonto > 0 ? (Number(pago.valor_neto || 0) / maxMonto) * 100 : 0;
+                      const fechaPago = new Date(pago.fecha_pago || pago.fecha);
                       const fechaFormateada = fechaPago.toLocaleDateString('es-ES', { 
                         day: '2-digit', 
                         month: 'short' 
@@ -431,7 +431,7 @@ export default function EmployeeDetailPage() {
                                 {pago.proyecto_nombre || 'Sin proyecto'}
                               </span>
                               <span className="text-sm font-semibold">
-                                ${Number(pago.neto || 0).toLocaleString('es-ES')}
+                                ${Number(pago.valor_neto || 0).toLocaleString('es-ES')}
                               </span>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-2">
@@ -467,16 +467,17 @@ export default function EmployeeDetailPage() {
                 {empleado.pagos && empleado.pagos.length > 0 ? (() => {
                   // Calcular totales de datos reales
                   const totalSueldos = empleado.pagos.reduce((sum: number, pago: any) => 
-                    sum + Number(pago.sueldo || 0), 0);
+                    sum + Number(pago.valor_bruto || 0), 0);
                   const totalBonificaciones = empleado.pagos.reduce((sum: number, pago: any) => 
                     sum + Number(pago.bonificaciones || 0), 0);
                   const totalDescuentos = empleado.pagos.reduce((sum: number, pago: any) => 
-                    sum + Number(pago.descuentos || 0), 0);
-                  const totalGeneral = totalSueldos + totalBonificaciones + totalDescuentos;
+                    sum + Number(pago.deducciones || 0) + Number(pago.impuestos || 0), 0);
+                  const totalGeneral = totalSueldos + totalBonificaciones;
                   
                   const porcentajeSueldos = totalGeneral > 0 ? (totalSueldos / totalGeneral * 100) : 0;
                   const porcentajeBonificaciones = totalGeneral > 0 ? (totalBonificaciones / totalGeneral * 100) : 0;
-                  const porcentajeDescuentos = totalGeneral > 0 ? (totalDescuentos / totalGeneral * 100) : 0;
+                  // Mostrar descuentos como información separada pero no en el total
+                  const porcentajeDescuentos = totalSueldos > 0 ? (totalDescuentos / totalSueldos * 100) : 0;
                   
                   return (
                     <>

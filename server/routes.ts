@@ -1820,7 +1820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .innerJoin(nominas_nuevas, eq(nomina_items.nomina_id, nominas_nuevas.id))
         .leftJoin(projects, eq(nominas_nuevas.proyecto_id, projects.id))
         .where(eq(nomina_items.empleado_id, id))
-        .orderBy(sql`${nominas_nuevas.rango_inicio} DESC`)
+        .orderBy(sql`${nominas_nuevas.creado_at} DESC`)
         .limit(10);
 
       // 2. Proyectos asignados
@@ -1857,7 +1857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, []);
 
-      // 5. Último pago
+      // 5. Último pago (el más reciente por fecha de pago)
       const ultimoPago = historialNominas.length > 0 ? {
         monto: historialNominas[0].valor_neto,
         fecha: historialNominas[0].fecha_pago,
