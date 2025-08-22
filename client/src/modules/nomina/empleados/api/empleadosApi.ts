@@ -171,7 +171,7 @@ export async function actualizarEmpleado(id: number, datos: Partial<EmpleadoNuev
 export async function eliminarEmpleado(id: number): Promise<void> {
   const response = await apiRequest(
     'DELETE',
-    `/api/nomina/empleados/${id}`
+    `/api/empleados-nuevos/${id}`
   );
   
   if (!response.ok) {
@@ -339,10 +339,10 @@ export async function descargarContratoEmpleado(id: number, nombreEmpleado?: str
  * @param estado Nuevo estado (true para activo, false para inactivo)
  * @returns Promesa con el empleado actualizado
  */
-export async function cambiarEstadoEmpleado(id: number, estado: boolean): Promise<Employee> {
+export async function cambiarEstadoEmpleado(id: number, estado: boolean): Promise<EmpleadoNuevo> {
   const response = await apiRequest(
-    'PATCH',
-    `/api/nomina/empleados/${id}/estado`,
+    'PUT',
+    `/api/empleados-nuevos/${id}`,
     { activo: estado }
   );
   

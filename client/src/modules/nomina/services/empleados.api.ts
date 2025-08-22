@@ -67,37 +67,37 @@ export class EmpleadosApi {
   }
 
   static async getEmpleado(id: number) {
-    const response = await apiRequest('GET', `/api/empleados/${id}?include=proyectos,nominas`);
+    const response = await apiRequest('GET', `/api/empleados-nuevos/${id}?include=proyectos,nominas`);
     return response.json();
   }
 
   static async getEmpleadoCompleto(id: number) {
-    const response = await apiRequest('GET', `/api/empleados/${id}?include=nomina,proyectos,pagos,historial`);
+    const response = await apiRequest('GET', `/api/empleados-nuevos/${id}?include=nomina,proyectos,pagos,historial`);
     return response.json();
   }
 
   static async updateEmpleado(id: number, data: any) {
-    const response = await apiRequest('PATCH', `/api/empleados/${id}`, data);
+    const response = await apiRequest('PUT', `/api/empleados-nuevos/${id}`, data);
     return response.json();
   }
 
   static async updateEmpleadoProyectos(id: number, proyectosIds: number[]) {
-    const response = await apiRequest('PUT', `/api/empleados/${id}/proyectos`, { proyectosIds });
+    const response = await apiRequest('PUT', `/api/empleados-nuevos/${id}/proyectos`, { proyectosIds });
     return response.json();
   }
 
   static async deleteEmpleado(id: number) {
-    const response = await apiRequest('DELETE', `/api/empleados/${id}`);
+    const response = await apiRequest('DELETE', `/api/empleados-nuevos/${id}`);
     return response.json();
   }
 
   static async getHistorialNomina(empleadoId: number) {
-    const response = await apiRequest('GET', `/api/empleados/${empleadoId}/historial-nomina`);
+    const response = await apiRequest('GET', `/api/empleados-nuevos/${empleadoId}/historial-nomina`);
     return response.json();
   }
 
   static async updateEstadoNomina(empleadoId: number, nominaId: number, estado: string) {
-    const response = await apiRequest('PATCH', `/api/empleados/${empleadoId}/historial-nomina/${nominaId}/estado`, {
+    const response = await apiRequest('PATCH', `/api/empleados-nuevos/${empleadoId}/historial-nomina/${nominaId}/estado`, {
       estado
     });
     return response.json();

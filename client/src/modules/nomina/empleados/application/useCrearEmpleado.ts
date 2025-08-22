@@ -31,9 +31,9 @@ export const useCrearEmpleado = () => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (datosEmpleado: InsertEmpleadoNuevo) => {
+    mutationFn: async (datosEmpleado: CrearEmpleadoParams) => {
       // Validar los datos del empleado con Zod
-      const validacion = insertEmpleadoNuevoSchema.safeParse(datosEmpleado);
+      const validacion = CrearEmpleadoDTO.safeParse(datosEmpleado);
       
       if (!validacion.success) {
         // Formatear los errores de validación
@@ -41,16 +41,19 @@ export const useCrearEmpleado = () => {
         throw new Error(JSON.stringify(errores));
       }
       
-      // Convertir la fecha a string antes de enviar
-      const empleadoConFecha = {
+      // Convertir las fechas a string antes de enviar
+      const empleadoConFechas = {
         ...validacion.data,
         fecha_ingreso: validacion.data.fecha_ingreso instanceof Date 
           ? validacion.data.fecha_ingreso.toISOString().split('T')[0]
-          : validacion.data.fecha_ingreso
+          : validacion.data.fecha_ingreso,
+        fecha_fin_contrato: validacion.data.fecha_fin_contrato instanceof Date 
+          ? validacion.data.fecha_fin_contrato.toISOString().split('T')[0]
+          : validacion.data.fecha_fin_contrato
       };
       
       // Si los datos son válidos, enviar la petición
-      return await crearEmpleado(empleadoConFecha);
+      return await crearEmpleado(empleadoConFechas);
     },
     onSuccess: () => {
       toast({
