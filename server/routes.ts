@@ -1798,7 +1798,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!empleado) {
         return res.status(404).json({ error: "Empleado no encontrado" });
       }
-      res.json(empleado);
+
+      // Obtener información adicional para el resumen
+      // 1. Historial de nóminas para el cronograma de pagos
+      const historialNominas = await db
+        .select({
+          id: nominas_nuevas.id,
+          fecha: nominas_nuevas.rango_inicio,
+          periodo_inicio: nominas_nuevas.rango_inicio,
+          periodo_fin: nominas_nuevas.rango_fin,
+          estado: nominas_nuevas.estado,
+          valor_bruto: nomina_items.sueldo,
+          valor_neto: nomina_items.neto,
+          bonificaciones: nomina_items.bono,
+          deducciones: nomina_items.deduccion,
+          impuestos: nomina_items.impuestos,
+          proyecto_nombre: projects.name,
+          fecha_pago: nominas_nuevas.creado_at,
+        })
+        .from(nomina_items)
+        .innerJoin(nominas_nuevas, eq(nomina_items.nomina_id, nominas_nuevas.id))
+        .leftJoin(projects, eq(nominas_nuevas.proyecto_id, projects.id))
+        .where(eq(nomina_items.empleado_id, id))
+        .orderBy(sql`${nominas_nuevas.rango_inicio} DESC`)
+        .limit(10);
+
+      // 2. Proyectos asignados
+      const proyectosAsignados = await db
+        .select({
+          id: projects.id,
+          nombre: projects.name,
+          descripcion: projects.description,
+        })
+        .from(empleado_proyecto)
+        .innerJoin(projects, eq(empleado_proyecto.proyecto_id, projects.id))
+        .where(eq(empleado_proyecto.empleado_id, id));
+
+      // 3. Datos de nómina (sueldo base y bonificaciones)
+      const datosNomina = await db
+        .select()
+        .from(empleado_nomina)
+        .where(eq(empleado_nomina.empleado_id, id))
+        .limit(1);
+
+      // 4. Calcular gasto por proyecto basado en historial
+      const gastoPorProyecto = historialNominas.reduce((acc: any[], nomina: any) => {
+        const proyectoExistente = acc.find(p => p.proyecto_nombre === nomina.proyecto_nombre);
+        const valorNeto = Number(nomina.valor_neto || 0);
+        
+        if (proyectoExistente) {
+          proyectoExistente.total_gastado += valorNeto;
+        } else if (nomina.proyecto_nombre) {
+          acc.push({
+            proyecto_nombre: nomina.proyecto_nombre,
+            total_gastado: valorNeto
+          });
+        }
+        return acc;
+      }, []);
+
+      // 5. Último pago
+      const ultimoPago = historialNominas.length > 0 ? {
+        monto: historialNominas[0].valor_neto,
+        fecha: historialNominas[0].fecha_pago,
+        estado: historialNominas[0].estado
+      } : null;
+
+      // Combinar toda la información
+      const empleadoCompleto = {
+        ...empleado,
+        proyectos: proyectosAsignados,
+        pagos: historialNominas,
+        gastoPorProyecto,
+        ultimoPago,
+        nomina: datosNomina.length > 0 ? datosNomina[0] : null
+      };
+
+      res.json(empleadoCompleto);
     } catch (error) {
       console.error("Error al obtener empleado:", error);
       res.status(500).json({ error: "Error interno del servidor" });
