@@ -1899,7 +1899,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/empleados-nuevos/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      const validatedData = insertEmpleadoNuevoSchema.partial().parse(req.body);
+      
+      // Limpiar fechas inválidas antes de la validación
+      const cleanedBody = { ...req.body };
+      if (cleanedBody.fecha_ingreso && cleanedBody.fecha_ingreso.trim() === '') {
+        delete cleanedBody.fecha_ingreso;
+      }
+      if (cleanedBody.fecha_fin_contrato && cleanedBody.fecha_fin_contrato.trim() === '') {
+        delete cleanedBody.fecha_fin_contrato;
+      }
+      
+      // Validar fechas
+      if (cleanedBody.fecha_ingreso && isNaN(Date.parse(cleanedBody.fecha_ingreso))) {
+        return res.status(400).json({ error: "Formato de fecha de ingreso inválido" });
+      }
+      if (cleanedBody.fecha_fin_contrato && isNaN(Date.parse(cleanedBody.fecha_fin_contrato))) {
+        return res.status(400).json({ error: "Formato de fecha de fin de contrato inválido" });
+      }
+      
+      const validatedData = insertEmpleadoNuevoSchema.partial().parse(cleanedBody);
       const empleado = await storage.updateEmpleadoNuevo(id, validatedData);
       if (!empleado) {
         return res.status(404).json({ error: "Empleado no encontrado" });
