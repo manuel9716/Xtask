@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { projects, employees, users, employeeProjects, transactions, budgets } from '../../shared/schema';
+import { projects, employees, users, employeeProjects, transactions, budgets, tasks, empleadoProyecto, facturasProyecto } from '../../shared/schema';
 import { eq, sql } from 'drizzle-orm';
 import { EstadoProyecto } from '@shared/schema';
 
@@ -444,16 +444,25 @@ proyectosRouter.delete('/:id', async (req: Request, res: Response) => {
     
     // Eliminar en el orden correcto para evitar violaciones de clave foránea
     
-    // 1. Eliminar todas las relaciones empleado-proyecto
+    // 1. Eliminar todas las tareas del proyecto
+    await db.delete(tasks).where(eq(tasks.projectId, id));
+    
+    // 2. Eliminar todas las facturas del proyecto
+    await db.delete(facturasProyecto).where(eq(facturasProyecto.proyectoId, id));
+    
+    // 3. Eliminar todas las relaciones empleado-proyecto (tabla empleadoProyecto)
+    await db.delete(empleadoProyecto).where(eq(empleadoProyecto.proyectoId, id));
+    
+    // 4. Eliminar todas las relaciones employeeProjects (si existe)
     await db.delete(employeeProjects).where(eq(employeeProjects.projectId, id));
     
-    // 2. Eliminar todas las transacciones relacionadas con el proyecto
+    // 5. Eliminar todas las transacciones relacionadas con el proyecto
     await db.delete(transactions).where(eq(transactions.projectId, id));
     
-    // 3. Eliminar todos los presupuestos relacionados con el proyecto
+    // 6. Eliminar todos los presupuestos relacionados con el proyecto
     await db.delete(budgets).where(eq(budgets.projectId, id));
     
-    // 4. Finalmente eliminar el proyecto
+    // 7. Finalmente eliminar el proyecto
     await db.delete(projects).where(eq(projects.id, id));
     
     res.status(204).send();
