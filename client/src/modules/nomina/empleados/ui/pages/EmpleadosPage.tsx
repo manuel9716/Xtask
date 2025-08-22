@@ -61,6 +61,7 @@ import { EmpleadoForm } from '../forms/EmpleadoForm';
 import { FiltrosEmpleado } from '../../domain/entities/Empleado';
 import { obtenerEmpleados, cambiarEstadoEmpleado, eliminarEmpleado, descargarContratoEmpleado } from '../../api/empleadosApi';
 import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
 import ProyectosEmpleado from '../components/ProyectosEmpleado';
 
 export default function EmpleadosPage() {
@@ -82,7 +83,7 @@ export default function EmpleadosPage() {
     isError, 
     refetch 
   } = useQuery({
-    queryKey: ['/api/nomina/empleados', filtros],
+    queryKey: ['/api/empleados-nomina', filtros],
     queryFn: () => obtenerEmpleados(filtros),
   });
   
@@ -136,6 +137,11 @@ export default function EmpleadosPage() {
   const handleEliminarEmpleado = async (id: number) => {
     try {
       await eliminarEmpleado(id);
+      // Invalidar múltiples cachés para asegurar actualización
+      await queryClient.invalidateQueries({ queryKey: ['/api/nomina/empleados'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/empleados-nomina'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/nomina-modulo/empleados'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/nomina-modulo/dashboard'] });
       refetch();
       toast({
         title: 'Empleado eliminado',
