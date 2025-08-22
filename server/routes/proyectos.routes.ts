@@ -444,25 +444,30 @@ proyectosRouter.delete('/:id', async (req: Request, res: Response) => {
     
     // Eliminar en el orden correcto para evitar violaciones de clave foránea
     
-    // 1. Eliminar todas las tareas del proyecto
+    // 1. Actualizar empleados que tienen este proyecto asignado (establecer a null)
+    await db.update(employees)
+      .set({ id_employed_proyects: null })
+      .where(eq(employees.id_employed_proyects, id));
+    
+    // 2. Eliminar todas las tareas del proyecto
     await db.delete(tasks).where(eq(tasks.projectId, id));
     
-    // 2. Eliminar todas las facturas del proyecto
+    // 3. Eliminar todas las facturas del proyecto
     await db.delete(facturasProyecto).where(eq(facturasProyecto.proyectoId, id));
     
-    // 3. Eliminar todas las relaciones empleado-proyecto (tabla empleadoProyecto)
+    // 4. Eliminar todas las relaciones empleado-proyecto (tabla empleadoProyecto)
     await db.delete(empleadoProyecto).where(eq(empleadoProyecto.proyectoId, id));
     
-    // 4. Eliminar todas las relaciones employeeProjects (si existe)
+    // 5. Eliminar todas las relaciones employeeProjects (si existe)
     await db.delete(employeeProjects).where(eq(employeeProjects.projectId, id));
     
-    // 5. Eliminar todas las transacciones relacionadas con el proyecto
+    // 6. Eliminar todas las transacciones relacionadas con el proyecto
     await db.delete(transactions).where(eq(transactions.projectId, id));
     
-    // 6. Eliminar todos los presupuestos relacionados con el proyecto
+    // 7. Eliminar todos los presupuestos relacionados con el proyecto
     await db.delete(budgets).where(eq(budgets.projectId, id));
     
-    // 7. Finalmente eliminar el proyecto
+    // 8. Finalmente eliminar el proyecto
     await db.delete(projects).where(eq(projects.id, id));
     
     res.status(204).send();
