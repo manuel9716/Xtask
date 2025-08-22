@@ -1,5 +1,5 @@
 import { pgTable, text, serial, integer, decimal, timestamp, boolean, uniqueIndex, date } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Exportar esquema de microlearning
@@ -68,6 +68,29 @@ export enum NivelHabilidad {
   INTERMEDIO = "intermedio",
   AVANZADO = "avanzado",
   EXPERTO = "experto"
+}
+
+// Enums para el módulo de nómina (ley colombiana)
+export enum TipoContrato {
+  INDEFINIDO = "INDEFINIDO",
+  FIJO = "FIJO",
+  OBRA_O_LABOR = "OBRA_O_LABOR",
+  PRESTACION_SERVICIOS = "PRESTACION_SERVICIOS",
+  POR_HORAS = "POR_HORAS"
+}
+
+export enum ClaseRiesgoARL {
+  I = "I",    // Riesgo mínimo (oficinas)
+  II = "II",  // Riesgo bajo (comercio)
+  III = "III", // Riesgo medio (manufactura)
+  IV = "IV",  // Riesgo alto (construcción)
+  V = "V"     // Riesgo máximo (minería)
+}
+
+export enum EstadoNomina {
+  APROBADA = "APROBADA",
+  PAGADA = "PAGADA", 
+  CERRADA = "CERRADA"
 }
 
 // Interfaces
@@ -192,7 +215,18 @@ export const empleadosNomina = pgTable("empleados_nomina", {
   cargo: text("cargo").notNull(),
   fechaIngreso: timestamp("fecha_ingreso").notNull(),
   estadoContrato: text("estado_contrato").notNull().default("ACTIVO"), // ACTIVO, SUSPENDIDO, TERMINADO
-  tipoContrato: text("tipo_contrato").notNull().default("INDEFINIDO"), // INDEFINIDO, FIJO, FREELANCE
+  tipoContrato: text("tipo_contrato").notNull().default("INDEFINIDO"), // INDEFINIDO, FIJO, OBRA_O_LABOR, PRESTACION_SERVICIOS, POR_HORAS
+  // Campos específicos según tipo de contrato
+  fechaFinContrato: timestamp("fecha_fin_contrato"),
+  claseRiesgoArl: text("clase_riesgo_arl"), // I, II, III, IV, V
+  horasPorSemana: integer("horas_por_semana"),
+  salarioPorHora: decimal("salario_por_hora", { precision: 12, scale: 2 }),
+  salarioBase: decimal("salario_base", { precision: 12, scale: 2 }),
+  honorarios: decimal("honorarios", { precision: 12, scale: 2 }),
+  requiereSeguridadSocial: boolean("requiere_seguridad_social").default(true),
+  // Datos adicionales para cálculos
+  auxilioTransporte: boolean("auxilio_transporte").default(true),
+  bonificaciones: decimal("bonificaciones", { precision: 12, scale: 2 }).default("0"),
   telefono: text("telefono"),
   direccion: text("direccion"),
   contactoEmergencia: text("contacto_emergencia"),
@@ -295,16 +329,31 @@ export const empleados = pgTable("empleados", {
   horas_por_semana: integer("horas_por_semana"), // Solo para contrato por horas
   salario_por_hora: decimal("salario_por_hora", { precision: 12, scale: 2 }), // Solo para contrato por horas
   honorarios: decimal("honorarios", { precision: 12, scale: 2 }), // Solo para prestación de servicios
-  retencion_fuente: decimal("retencion_fuente", { precision: 5, scale: 4 }), // % retención para prestación de servicios
-  requiere_seguridad_social: boolean("requiere_seguridad_social").default(false), // Para prestación de servicios
+  salario_base: decimal("salario_base", { precision: 12, scale: 2 }), // Para indefinido, fijo, obra o labor
+  bonificaciones: decimal("bonificaciones", { precision: 12, scale: 2 }).default("0"), // Bonificaciones mensuales
+  auxilio_transporte: boolean("auxilio_transporte").default(true), // Auxilio de transporte
+  requiere_seguridad_social: boolean("requiere_seguridad_social").default(true), // Para prestación de servicios
   telefono: text("telefono"),
-  email: text("email"),
   direccion: text("direccion"),
   contacto_emergencia: text("contacto_emergencia"),
   activo: boolean("activo").default(true).notNull(),
   deleted_at: timestamp("deleted_at"),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Tipos para empleados nuevos
+export type EmpleadoNuevo = typeof empleados.$inferSelect;
+export type InsertEmpleadoNuevo = typeof empleados.$inferInsert;
+
+// Esquemas de validación para empleados
+export const insertEmpleadoNuevoSchema = createInsertSchema(empleados).omit({
+  id: true,
+  activo: true,
+  deleted_at: true,
+  created_at: true,
+});
+
+export const selectEmpleadoNuevoSchema = createSelectSchema(empleados);
 
 // Datos de nómina por empleado
 export const empleado_nomina = pgTable("empleado_nomina", {

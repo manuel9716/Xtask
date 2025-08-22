@@ -52,7 +52,7 @@ export const useCrearEmpleado = (onSuccess?: () => void) => {
       });
       
       // Invalidar consultas para recargar la lista de empleados
-      queryClient.invalidateQueries({ queryKey: ['/api/nomina/empleados'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/empleados-nuevos'] });
       
       // Llamar al callback de éxito si existe
       if (onSuccess) {

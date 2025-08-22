@@ -148,7 +148,7 @@ export async function obtenerEmpleado(id: number): Promise<Employee> {
 export async function crearEmpleado(empleado: Partial<Employee>): Promise<Employee> {
   const response = await apiRequest(
     'POST',
-    '/api/nomina/empleados',
+    '/api/empleados-nuevos',
     empleado
   );
   

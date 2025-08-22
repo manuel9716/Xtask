@@ -4,6 +4,7 @@ import {
   transactions, Transaction, InsertTransaction,
   tasks, Task, InsertTask,
   employees, Employee, InsertEmployee,
+  empleados, EmpleadoNuevo, InsertEmpleadoNuevo, insertEmpleadoNuevoSchema,
   suppliers, Supplier, InsertSupplier,
   products, Product, InsertProduct,
   purchaseOrders, PurchaseOrder, InsertPurchaseOrder,
@@ -72,6 +73,13 @@ export interface IStorage {
   getBudget(id: number): Promise<Budget | undefined>;
   createBudget(budget: InsertBudget): Promise<Budget>;
   updateBudget(id: number, budget: Partial<Budget>): Promise<Budget>;
+  
+  // Empleados nuevos (Ley Colombiana)
+  getAllEmpleadosNuevos(): Promise<EmpleadoNuevo[]>;
+  getEmpleadoNuevo(id: number): Promise<EmpleadoNuevo | undefined>;
+  createEmpleadoNuevo(empleado: InsertEmpleadoNuevo): Promise<EmpleadoNuevo>;
+  updateEmpleadoNuevo(id: number, empleado: Partial<InsertEmpleadoNuevo>): Promise<EmpleadoNuevo | undefined>;
+  deleteEmpleadoNuevo(id: number): Promise<boolean>;
   
   // Session store for authentication
   sessionStore: session.SessionStore;
@@ -879,6 +887,41 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedBudget;
+  }
+
+  // Implementación para empleados nuevos (Ley Colombiana)
+  async getAllEmpleadosNuevos(): Promise<EmpleadoNuevo[]> {
+    const empleadosResult = await db.select().from(empleados).where(eq(empleados.activo, true));
+    return empleadosResult;
+  }
+
+  async getEmpleadoNuevo(id: number): Promise<EmpleadoNuevo | undefined> {
+    const [empleado] = await db.select().from(empleados).where(eq(empleados.id, id));
+    return empleado;
+  }
+
+  async createEmpleadoNuevo(empleadoData: InsertEmpleadoNuevo): Promise<EmpleadoNuevo> {
+    const [empleado] = await db.insert(empleados).values(empleadoData).returning();
+    return empleado;
+  }
+
+  async updateEmpleadoNuevo(id: number, empleadoData: Partial<InsertEmpleadoNuevo>): Promise<EmpleadoNuevo | undefined> {
+    const [empleado] = await db
+      .update(empleados)
+      .set(empleadoData)
+      .where(eq(empleados.id, id))
+      .returning();
+    return empleado;
+  }
+
+  async deleteEmpleadoNuevo(id: number): Promise<boolean> {
+    // Soft delete - solo marcamos como inactivo
+    const [empleado] = await db
+      .update(empleados)
+      .set({ activo: false, deleted_at: new Date() })
+      .where(eq(empleados.id, id))
+      .returning();
+    return !!empleado;
   }
 }
 

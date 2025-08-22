@@ -1,0 +1,132 @@
+Crea o actualiza el módulo de Nómina en la aplicación Xtask considerando el marco legal colombiano y los siguientes requerimientos:
+
+1. Gestión de contratos
+
+Cada empleado debe tener asignado un tipo de contrato: Indefinido, Fijo, Obra o Labor, Prestación de Servicios, Por Horas.
+
+Los campos de empleado deben incluir:
+
+Nombre, Apellido
+
+Número de documento
+
+Cargo o rol
+
+Proyectos asignados (puede pertenecer a varios)
+
+Tipo de contrato
+
+Salario base o valor hora (según contrato)
+
+Bonificaciones
+
+Horas por semana (si es contrato por horas)
+
+Clase de riesgo (ARL)
+
+La interfaz debe mostrar campos dinámicos según el tipo de contrato seleccionado al crear o editar el empleado.
+
+2. Cálculo de nómina
+
+Implementa funciones backend que calculen automáticamente el devengado, deducciones y prestaciones según el tipo de contrato:
+
+A. Contratos indefinidos/fijos:
+
+Devengado: salario base + horas extras + bonificaciones
+
+Horas extras según ley: diurnas 1.25×, nocturnas 1.75×, dominical/festivo 2×
+
+Prestaciones sociales: prima, cesantías, intereses sobre cesantías, vacaciones
+
+Deducciones: salud 4%, pensión 4%, retención en la fuente según tablas UVT
+
+Neto a pagar = Devengado – Deducciones
+
+B. Contratos por horas:
+
+Valor hora ≥ proporcional SMLV
+
+Devengado proporcional a horas trabajadas + recargos
+
+Prestaciones proporcionales: prima, cesantías, vacaciones
+
+Deducciones proporcionales: salud 4%, pensión 4%
+
+C. Prestación de servicios:
+
+Honorarios según contrato
+
+Retención en la fuente según UVT
+
+Pagos de seguridad social (salud y pensión) según porcentaje legal
+
+Neto a pagar = Honorarios – Retención – Seguridad social
+
+3. Flujo de nómina
+
+Ciclo de nómina: Borrador → Calculada → Aprobada → Pagada → Cerrada
+
+Registrar historial de cambios y modificaciones en cada nómina
+
+Mostrar indicadores visuales de estado (colores o iconos)
+
+4. Interfaz de usuario
+
+Crear nómina:
+
+Selección de empleados por proyecto
+
+Aplicación de novedades: incapacidades, licencias, horas extras, bonos
+
+Vista previa con desglose de:
+
+Devengados
+
+Deducciones
+
+Prestaciones sociales
+
+Neto a pagar
+
+Costo total para el empleador
+
+Detalle de nómina:
+
+Cronograma de pagos por proyecto
+
+Historial de nóminas anteriores
+
+Botón para exportar nómina a PDF o Excel
+
+Posibilidad de cambiar estado de pago (Pendiente → Pagado)
+
+5. Reportes y métricas
+
+Generar reportes por empleado y por proyecto:
+
+Prestaciones acumuladas
+
+Comparativo de sueldos vs bonificaciones
+
+Costos totales de nómina por periodo
+
+6. Validaciones legales
+
+Salario por hora ≥ proporcional SMLV
+
+Ingreso base de cotización: mínimo 1 SMLV, máximo 25 SMLV
+
+Aplicar auxilio de transporte cuando corresponda
+
+Parametrizar retención en la fuente según UVT
+
+7. Datos reales
+
+Al iniciar, el módulo no debe contener datos de ejemplo ni empleados ficticios.
+
+Los campos de nómina deben llenarse únicamente cuando se agreguen empleados reales.
+
+Los historiales, cronogramas y gráficos se deben actualizar en tiempo real al agregar, editar o eliminar empleados.
+
+Objetivo final:
+El módulo de Nómina debe ser legalmente correcto, funcional, dinámico, interactivo y visualmente atractivo, mostrando información detallada del empleado, historial de nóminas, cronogramas de pago y reportes, todo basado en datos reales y adaptándose a cada tipo de contrato.

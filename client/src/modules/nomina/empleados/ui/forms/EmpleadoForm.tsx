@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { CrearEmpleadoParams, CrearEmpleadoDTO } from '../../domain/entities/Empleado';
 import { useCrearEmpleado, useObtenerUsuarios } from '../../application/useCrearEmpleado';
 import { useEditarEmpleado } from '../../application/useEditarEmpleado';
+import { insertEmpleadoNuevoSchema } from '@shared/schema';
 
 interface EmpleadoFormProps {
   onSuccess: () => void;
@@ -33,6 +34,7 @@ interface EmpleadoFormProps {
 const TIPOS_CONTRATO = [
   { value: "indefinido", label: "Contrato a término indefinido" },
   { value: "fijo", label: "Contrato a término fijo" },
+  { value: "obra_o_labor", label: "Contrato de obra o labor" },
   { value: "prestacion_servicios", label: "Contrato de prestación de servicios" },
   { value: "por_horas", label: "Contrato por horas" },
 ];
@@ -92,9 +94,11 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
         clase_riesgo_arl: empleadoData.clase_riesgo_arl || undefined,
         horas_por_semana: empleadoData.horas_por_semana || undefined,
         salario_por_hora: empleadoData.salario_por_hora || undefined,
+        salario_base: empleadoData.salario_base || undefined,
         honorarios: empleadoData.honorarios || undefined,
-        retencion_fuente: empleadoData.retencion_fuente || undefined,
-        requiere_seguridad_social: empleadoData.requiere_seguridad_social || false,
+        bonificaciones: empleadoData.bonificaciones || 0,
+        auxilio_transporte: empleadoData.auxilio_transporte || true,
+        requiere_seguridad_social: empleadoData.requiere_seguridad_social !== undefined ? empleadoData.requiere_seguridad_social : true,
       };
     } else {
       return {
@@ -110,7 +114,9 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
         telefono: '',
         direccion: '',
         contacto_emergencia: '',
-        requiere_seguridad_social: false,
+        auxilio_transporte: true,
+        bonificaciones: 0,
+        requiere_seguridad_social: true,
       };
     }
   };
@@ -147,11 +153,13 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
     setTipoContratoSeleccionado(tipoContrato);
     
     // Limpiar campos que no aplican al tipo de contrato seleccionado
-    if (tipoContrato !== 'fijo') {
+    if (!['fijo', 'obra_o_labor'].includes(tipoContrato)) {
       form.setValue('fecha_fin_contrato', undefined);
     }
-    if (!['indefinido', 'fijo'].includes(tipoContrato)) {
+    if (!['indefinido', 'fijo', 'obra_o_labor'].includes(tipoContrato)) {
       form.setValue('clase_riesgo_arl', undefined);
+      form.setValue('salario_base', undefined);
+      form.setValue('auxilio_transporte', false);
     }
     if (tipoContrato !== 'por_horas') {
       form.setValue('horas_por_semana', undefined);
@@ -159,8 +167,15 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
     }
     if (tipoContrato !== 'prestacion_servicios') {
       form.setValue('honorarios', undefined);
-      form.setValue('retencion_fuente', undefined);
+    }
+    
+    // Configurar valores por defecto según tipo de contrato
+    if (['indefinido', 'fijo', 'obra_o_labor'].includes(tipoContrato)) {
+      form.setValue('requiere_seguridad_social', true);
+      form.setValue('auxilio_transporte', true);
+    } else if (tipoContrato === 'prestacion_servicios') {
       form.setValue('requiere_seguridad_social', false);
+      form.setValue('auxilio_transporte', false);
     }
   }, [tipoContrato, form]);
 
@@ -535,40 +550,264 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
               </>
             )}
 
-            {tipoContratoSeleccionado === 'indefinido' && (
+            {tipoContratoSeleccionado === 'fijo' && (
               <>
                 <Alert>
                   <Briefcase className="h-4 w-4" />
-                  <AlertTitle>Contrato a Término Indefinido</AlertTitle>
+                  <AlertTitle>Contrato a Término Fijo</AlertTitle>
                   <AlertDescription>
-                    Seleccione la clase de riesgo ARL según las actividades del empleado.
+                    Complete el salario base, fecha de finalización y clase de riesgo ARL.
                   </AlertDescription>
                 </Alert>
                 
-                <FormField
-                  control={form.control}
-                  name="clase_riesgo_arl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Clase de Riesgo ARL <span className="text-destructive">*</span></FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="salario_base"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Salario Base <span className="text-destructive">*</span></FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar clase de riesgo" />
-                          </SelectTrigger>
+                          <Input 
+                            type="number" 
+                            min="1300000" 
+                            placeholder="Salario base mensual" 
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {CLASES_RIESGO_ARL.map((clase) => (
-                            <SelectItem key={clase.value} value={clase.value}>
-                              {clase.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormDescription>
+                          Mínimo: $1,300,000 (SMLV 2025)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="fecha_fin_contrato"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Fecha Fin del Contrato <span className="text-destructive">*</span></FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP", { locale: es })
+                                ) : (
+                                  <span>Seleccionar fecha</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription>
+                          Fecha cuando termina el contrato
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="clase_riesgo_arl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Clase de Riesgo ARL <span className="text-destructive">*</span></FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar clase de riesgo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CLASES_RIESGO_ARL.map((clase) => (
+                              <SelectItem key={clase.value} value={clase.value}>
+                                {clase.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="bonificaciones"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bonificaciones Mensuales</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0" 
+                            placeholder="Bonificaciones adicionales" 
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Bonificaciones fijas mensuales (opcional)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="auxilio_transporte"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Auxilio de Transporte
+                          </FormLabel>
+                          <FormDescription>
+                            $162,000 mensuales (solo para salarios ≤ $2,600,000)
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
+
+            {['indefinido', 'obra_o_labor'].includes(tipoContratoSeleccionado) && (
+              <>
+                <Alert>
+                  <Briefcase className="h-4 w-4" />
+                  <AlertTitle>
+                    {tipoContratoSeleccionado === 'indefinido' ? 'Contrato a Término Indefinido' : 'Contrato de Obra o Labor'}
+                  </AlertTitle>
+                  <AlertDescription>
+                    Complete el salario base, clase de riesgo ARL y configure las bonificaciones.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="salario_base"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Salario Base <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1300000" 
+                            placeholder="Salario base mensual" 
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Mínimo: $1,300,000 (SMLV 2025)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="clase_riesgo_arl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Clase de Riesgo ARL <span className="text-destructive">*</span></FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar clase de riesgo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CLASES_RIESGO_ARL.map((clase) => (
+                              <SelectItem key={clase.value} value={clase.value}>
+                                {clase.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="bonificaciones"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bonificaciones Mensuales</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0" 
+                            placeholder="Bonificaciones adicionales" 
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Bonificaciones fijas mensuales (opcional)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="auxilio_transporte"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Auxilio de Transporte
+                          </FormLabel>
+                          <FormDescription>
+                            $162,000 mensuales (solo para salarios ≤ $2,600,000)
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </>
             )}
 
@@ -637,10 +876,10 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
             {tipoContratoSeleccionado === 'prestacion_servicios' && (
               <>
                 <Alert>
-                  <Calculator className="h-4 w-4" />
+                  <FileText className="h-4 w-4" />
                   <AlertTitle>Contrato de Prestación de Servicios</AlertTitle>
                   <AlertDescription>
-                    Configure los honorarios, retención en la fuente y si requiere seguridad social.
+                    Complete los honorarios. La retención en la fuente se calculará automáticamente según tablas UVT.
                   </AlertDescription>
                 </Alert>
                 
@@ -654,13 +893,15 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
                         <FormControl>
                           <Input 
                             type="number" 
-                            step="0.01" 
                             min="0" 
-                            placeholder="Valor mensual de honorarios" 
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            placeholder="Valor de honorarios mensuales" 
+                            value={field.value || ""}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                           />
                         </FormControl>
+                        <FormDescription>
+                          Valor total de honorarios según contrato
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -668,52 +909,37 @@ export function EmpleadoForm({ onSuccess, empleadoData, isEditing = false }: Emp
 
                   <FormField
                     control={form.control}
-                    name="retencion_fuente"
+                    name="requiere_seguridad_social"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Retención en la Fuente (%)</FormLabel>
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-lg">
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01" 
-                            min="0" 
-                            max="100" 
-                            placeholder="Porcentaje de retención" 
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) / 100 || 0)}
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
                           />
                         </FormControl>
-                        <FormDescription>
-                          Porcentaje de retención según tabla DIAN
-                        </FormDescription>
-                        <FormMessage />
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Requiere Seguridad Social
+                          </FormLabel>
+                          <FormDescription>
+                            El contratista debe pagar salud (12.5%) y pensión (16%) como independiente.
+                          </FormDescription>
+                        </div>
                       </FormItem>
                     )}
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="requiere_seguridad_social"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          Requiere afiliación a seguridad social
-                        </FormLabel>
-                        <FormDescription>
-                          Marque si el contratista debe estar afiliado a EPS, pensión y ARL
-                        </FormDescription>
-                      </div>
-                    </FormItem>
-                  )}
-                />
+                
+                <Alert className="bg-blue-50 border-blue-200">
+                  <Calculator className="h-4 w-4" />
+                  <AlertTitle>Información Fiscal</AlertTitle>
+                  <AlertDescription>
+                    • Retención en la fuente: 10-11% según valor UVT<br/>
+                    • Seguridad social independiente: 28.5% (si aplica)<br/>
+                    • No aplican prestaciones sociales ni parafiscales
+                  </AlertDescription>
+                </Alert>
               </>
             )}
           </CardContent>

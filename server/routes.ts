@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema, facturasProyecto } from "@shared/schema";
+import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema, facturasProyecto, insertEmpleadoNuevoSchema } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "./db";
 import express from "express";
@@ -651,7 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         empleados = empleados.filter(emp => 
           emp.firstName?.toLowerCase().includes(searchLower) || 
           emp.lastName?.toLowerCase().includes(searchLower) ||
-          emp.documentId?.toLowerCase().includes(searchLower) ||
+          emp.id?.toString().includes(searchLower) ||
           `${emp.firstName || ''} ${emp.lastName || ''}`.toLowerCase().includes(searchLower)
         );
       }
@@ -1777,6 +1777,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: errorMessage,
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
+    }
+  });
+
+  // Rutas para empleados nuevos (Ley Colombiana)
+  app.get("/api/empleados-nuevos", async (req: Request, res: Response) => {
+    try {
+      const empleados = await storage.getAllEmpleadosNuevos();
+      res.json(empleados);
+    } catch (error) {
+      console.error("Error al obtener empleados nuevos:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
+  app.get("/api/empleados-nuevos/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const empleado = await storage.getEmpleadoNuevo(id);
+      if (!empleado) {
+        return res.status(404).json({ error: "Empleado no encontrado" });
+      }
+      res.json(empleado);
+    } catch (error) {
+      console.error("Error al obtener empleado:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
+  app.post("/api/empleados-nuevos", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertEmpleadoNuevoSchema.parse(req.body);
+      const empleado = await storage.createEmpleadoNuevo(validatedData);
+      res.status(201).json(empleado);
+    } catch (error) {
+      console.error("Error al crear empleado:", error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        res.status(400).json({ error: "Datos de empleado inválidos", details: error.message });
+      } else {
+        res.status(500).json({ error: "Error interno del servidor" });
+      }
+    }
+  });
+
+  app.put("/api/empleados-nuevos/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertEmpleadoNuevoSchema.partial().parse(req.body);
+      const empleado = await storage.updateEmpleadoNuevo(id, validatedData);
+      if (!empleado) {
+        return res.status(404).json({ error: "Empleado no encontrado" });
+      }
+      res.json(empleado);
+    } catch (error) {
+      console.error("Error al actualizar empleado:", error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        res.status(400).json({ error: "Datos de empleado inválidos", details: error.message });
+      } else {
+        res.status(500).json({ error: "Error interno del servidor" });
+      }
+    }
+  });
+
+  app.delete("/api/empleados-nuevos/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteEmpleadoNuevo(id);
+      if (!success) {
+        return res.status(404).json({ error: "Empleado no encontrado" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error al eliminar empleado:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
     }
   });
 

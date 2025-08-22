@@ -48,14 +48,16 @@ export interface CrearEmpleadoParams {
   direccion?: string;
   contacto_emergencia?: string;
   // Tipo de contrato según la ley colombiana
-  tipo_contrato: "indefinido" | "fijo" | "prestacion_servicios" | "por_horas";
+  tipo_contrato: "indefinido" | "fijo" | "obra_o_labor" | "prestacion_servicios" | "por_horas";
   // Campos condicionales según tipo de contrato
   fecha_fin_contrato?: Date;
   clase_riesgo_arl?: "I" | "II" | "III" | "IV" | "V";
   horas_por_semana?: number;
   salario_por_hora?: number;
+  salario_base?: number;
   honorarios?: number;
-  retencion_fuente?: number;
+  bonificaciones?: number;
+  auxilio_transporte?: boolean;
   requiere_seguridad_social?: boolean;
 }
 
@@ -110,22 +112,24 @@ export const CrearEmpleadoDTO = z.object({
   direccion: z.string().optional(),
   contacto_emergencia: z.string().optional(),
   // Tipo de contrato según la ley colombiana
-  tipo_contrato: z.enum(["indefinido", "fijo", "prestacion_servicios", "por_horas"]),
+  tipo_contrato: z.enum(["indefinido", "fijo", "obra_o_labor", "prestacion_servicios", "por_horas"]),
   // Campos condicionales según tipo de contrato
   fecha_fin_contrato: z.date().optional(),
   clase_riesgo_arl: z.enum(["I", "II", "III", "IV", "V"]).optional(),
   horas_por_semana: z.number().min(1).max(48).optional(),
   salario_por_hora: z.number().min(0).optional(),
+  salario_base: z.number().min(1300000, "El salario base debe ser mínimo el SMLV ($1,300,000)").optional(),
   honorarios: z.number().min(0).optional(),
-  retencion_fuente: z.number().min(0).max(1).optional(),
+  bonificaciones: z.number().min(0).optional(),
+  auxilio_transporte: z.boolean().optional(),
   requiere_seguridad_social: z.boolean().optional(),
 }).refine((data) => {
   // Validaciones específicas por tipo de contrato
-  if (data.tipo_contrato === "fijo") {
-    return data.fecha_fin_contrato !== undefined && data.clase_riesgo_arl !== undefined;
+  if (data.tipo_contrato === "fijo" || data.tipo_contrato === "obra_o_labor") {
+    return data.fecha_fin_contrato !== undefined && data.clase_riesgo_arl !== undefined && data.salario_base !== undefined;
   }
   if (data.tipo_contrato === "indefinido") {
-    return data.clase_riesgo_arl !== undefined;
+    return data.clase_riesgo_arl !== undefined && data.salario_base !== undefined;
   }
   if (data.tipo_contrato === "por_horas") {
     return data.horas_por_semana !== undefined && data.salario_por_hora !== undefined;
