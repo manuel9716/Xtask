@@ -120,24 +120,31 @@ export class EmpleadosService {
         direccion: empleados.direccion,
         contacto_emergencia: empleados.contacto_emergencia,
       })
-      .from(empleados);
+      .from(empleados)
+      .where(eq(empleados.activo, true)); // Filtrar solo empleados activos
 
     // Filtro por proyecto
     if (filtros.proyectoId) {
       query = query
         .innerJoin(empleado_proyecto, eq(empleados.id, empleado_proyecto.empleado_id))
-        .where(eq(empleado_proyecto.proyecto_id, filtros.proyectoId));
+        .where(and(
+          eq(empleados.activo, true),
+          eq(empleado_proyecto.proyecto_id, filtros.proyectoId)
+        ));
     }
 
     // Filtro por búsqueda de texto
     if (filtros.q) {
       const searchTerm = `%${filtros.q}%`;
       query = query.where(
-        or(
-          ilike(empleados.nombre, searchTerm),
-          ilike(empleados.apellido, searchTerm),
-          ilike(empleados.identificacion, searchTerm),
-          ilike(empleados.cargo, searchTerm)
+        and(
+          eq(empleados.activo, true),
+          or(
+            ilike(empleados.nombre, searchTerm),
+            ilike(empleados.apellido, searchTerm),
+            ilike(empleados.identificacion, searchTerm),
+            ilike(empleados.cargo, searchTerm)
+          )
         )
       );
     }
