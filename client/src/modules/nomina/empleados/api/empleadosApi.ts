@@ -59,7 +59,7 @@ export async function obtenerEmpleados(
 ): Promise<PaginatedEmployeesResponse> {
   const response = await apiRequest(
     'GET',
-    `/api/empleados-nomina`
+    `/api/empleados-nuevos`
   );
   
   if (!response.ok) {

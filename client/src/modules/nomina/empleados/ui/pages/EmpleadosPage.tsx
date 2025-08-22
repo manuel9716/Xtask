@@ -83,7 +83,7 @@ export default function EmpleadosPage() {
     isError, 
     refetch 
   } = useQuery({
-    queryKey: ['/api/empleados-nomina', filtros],
+    queryKey: ['/api/empleados-nuevos', filtros],
     queryFn: () => obtenerEmpleados(filtros),
   });
   
@@ -138,8 +138,7 @@ export default function EmpleadosPage() {
     try {
       await eliminarEmpleado(id);
       // Invalidar múltiples cachés para asegurar actualización
-      await queryClient.invalidateQueries({ queryKey: ['/api/nomina/empleados'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/empleados-nomina'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/empleados-nuevos'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/nomina-modulo/empleados'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/nomina-modulo/dashboard'] });
       refetch();
