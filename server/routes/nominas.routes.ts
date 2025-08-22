@@ -226,7 +226,7 @@ router.get('/:id/export', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/nominas/:id - Eliminar nómina
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const nominaId = parseInt(req.params.id);
 

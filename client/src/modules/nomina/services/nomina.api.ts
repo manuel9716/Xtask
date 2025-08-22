@@ -69,7 +69,14 @@ export class NominaApi {
     try {
       const response = await apiRequest('DELETE', `/api/nominas/${id}`);
       if (response.ok) {
-        return await response.json();
+        // Verificar si la respuesta tiene contenido para parsear
+        const text = await response.text();
+        try {
+          return text ? JSON.parse(text) : { success: true };
+        } catch {
+          // Si no es JSON válido, devolver confirmación simple
+          return { success: true, message: 'Nómina eliminada correctamente' };
+        }
       } else {
         const errorText = await response.text();
         throw new Error(`Error ${response.status}: ${errorText}`);
