@@ -88,7 +88,19 @@ export class EmpleadosApi {
 
   static async deleteEmpleado(id: number) {
     const response = await apiRequest('DELETE', `/api/empleados-nuevos/${id}`);
-    return response.json();
+    
+    // Si es 204 No Content, no hay JSON para parsear
+    if (response.status === 204) {
+      return { success: true, message: 'Empleado eliminado correctamente' };
+    }
+    
+    // Para otras respuestas, intentar parsear JSON
+    try {
+      const text = await response.text();
+      return text ? JSON.parse(text) : { success: true };
+    } catch {
+      return { success: true, message: 'Empleado eliminado correctamente' };
+    }
   }
 
   static async getHistorialNomina(empleadoId: number) {
