@@ -614,7 +614,8 @@ export class DatabaseStorage implements IStorage {
   // Employees implementation
   async getAllEmployees(): Promise<Employee[]> {
     // Seleccionamos explícitamente todos los campos para incluir los nuevos (firstName, lastName, skills)
-    return db.select({
+    // Filtrar empleados que no tengan nombres de prueba o nombres de proyecto
+    const allEmployees = await db.select({
       id: employees.id,
       userId: employees.userId,
       firstName: employees.firstName,
@@ -641,6 +642,27 @@ export class DatabaseStorage implements IStorage {
       tipoPago: employees.tipoPago,
       fechaInicioNomina: employees.fechaInicioNomina
     }).from(employees);
+    
+    // Filtrar empleados que tengan nombres que parecen ser de proyectos o datos de prueba
+    return allEmployees.filter(employee => {
+      const fullName = `${employee.firstName || ''} ${employee.lastName || ''}`.toLowerCase().trim();
+      const excludeKeywords = [
+        'prueba proyecto',
+        'proyecto principal',
+        'proyecto debug', 
+        'proyecto explícito',
+        'proyectos asignados',
+        'campo proyecto'
+      ];
+      
+      // Excluir si el nombre completo contiene alguna de las palabras clave de proyecto
+      const shouldExclude = excludeKeywords.some(keyword => fullName.includes(keyword));
+      
+      // Solo incluir empleados que tengan firstName válido y no contengan palabras clave de proyecto
+      return employee.firstName && 
+             employee.firstName.trim().length > 0 && 
+             !shouldExclude;
+    });
   }
   
   async getEmployee(id: number): Promise<Employee | undefined> {
