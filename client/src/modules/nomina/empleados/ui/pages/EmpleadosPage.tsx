@@ -137,10 +137,10 @@ export default function EmpleadosPage() {
   const handleEliminarEmpleado = async (id: number) => {
     try {
       await eliminarEmpleado(id);
-      // Invalidar múltiples cachés para asegurar actualización
-      await queryClient.invalidateQueries({ queryKey: ['/api/empleados-nuevos'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/nomina-modulo/empleados'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/nomina-modulo/dashboard'] });
+      // Forzar invalidación completa de caché
+      await queryClient.invalidateQueries();
+      // Esperar un momento para que se procese
+      await new Promise(resolve => setTimeout(resolve, 100));
       refetch();
       toast({
         title: 'Empleado eliminado',
