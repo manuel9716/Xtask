@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema, facturasProyecto, insertEmpleadoNuevoSchema } from "@shared/schema";
+import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema, facturasProyecto, insertEmpleadoNuevoSchema, nominas_nuevas, nomina_items, empleados, empleado_nomina, projects } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "./db";
 import express from "express";
@@ -1850,6 +1850,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error al eliminar empleado:", error);
       res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
+  // GET /api/empleados-nuevos/:id/historial-nomina - Obtener historial de nóminas del empleado
+  app.get("/api/empleados-nuevos/:id/historial-nomina", async (req: Request, res: Response) => {
+    try {
+      const empleadoId = parseInt(req.params.id);
+
+      // Obtener historial de nóminas del empleado
+      const historial = await db
+        .select({
+          id: nominas_nuevas.id,
+          fecha: nominas_nuevas.rango_inicio,
+          periodo_inicio: nominas_nuevas.rango_inicio,
+          periodo_fin: nominas_nuevas.rango_fin,
+          estado: nominas_nuevas.estado,
+          valor_bruto: nomina_items.sueldo,
+          valor_neto: nomina_items.neto,
+          bonificaciones: nomina_items.bono,
+          deducciones: nomina_items.deduccion,
+          impuestos: nomina_items.impuestos,
+          proyecto_nombre: projects.name,
+          fecha_pago: nominas_nuevas.creado_at,
+          metodo_pago: empleado_nomina.metodo_pago,
+        })
+        .from(nomina_items)
+        .innerJoin(nominas_nuevas, eq(nomina_items.nomina_id, nominas_nuevas.id))
+        .innerJoin(empleados, eq(nomina_items.empleado_id, empleados.id))
+        .leftJoin(empleado_nomina, eq(empleados.id, empleado_nomina.empleado_id))
+        .leftJoin(projects, eq(nominas_nuevas.proyecto_id, projects.id))
+        .where(eq(nomina_items.empleado_id, empleadoId))
+        .orderBy(sql`${nominas_nuevas.rango_inicio} DESC`);
+
+      res.json(historial);
+    } catch (error) {
+      console.error('Error al obtener historial de nómina:', error);
+      res.status(500).json({ message: 'Error interno del servidor' });
+    }
+  });
+
+  // PATCH /api/empleados-nuevos/:id/historial-nomina/:nominaId/estado - Cambiar estado de nómina específica
+  app.patch("/api/empleados-nuevos/:id/historial-nomina/:nominaId/estado", async (req: Request, res: Response) => {
+    try {
+      const nominaId = parseInt(req.params.nominaId);
+      const { estado } = req.body as { estado: string };
+
+      if (!['pendiente', 'pagado', 'aprobado', 'rechazado'].includes(estado)) {
+        return res.status(400).json({ message: 'Estado inválido' });
+      }
+
+      await db
+        .update(nominas_nuevas)
+        .set({ estado })
+        .where(eq(nominas_nuevas.id, nominaId));
+
+      res.json({ message: `Nómina marcada como ${estado}` });
+    } catch (error) {
+      console.error('Error al actualizar estado de nómina:', error);
+      res.status(500).json({ message: 'Error interno del servidor' });
     }
   });
 
