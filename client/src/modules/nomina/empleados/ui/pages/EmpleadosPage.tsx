@@ -136,17 +136,35 @@ export default function EmpleadosPage() {
   // Función para eliminar un empleado
   const handleEliminarEmpleado = async (id: number) => {
     try {
+      // Actualización optimista - remover inmediatamente de la UI
+      const queryKey = ['/api/empleados-nuevos', filtros];
+      const previousData = queryClient.getQueryData(queryKey);
+      
+      // Actualizar el caché inmediatamente
+      queryClient.setQueryData(queryKey, (oldData: any) => {
+        if (!oldData?.data) return oldData;
+        return {
+          ...oldData,
+          data: oldData.data.filter((emp: any) => emp.id !== id)
+        };
+      });
+
+      // Realizar la eliminación en el backend
       await eliminarEmpleado(id);
-      // Forzar invalidación completa de caché
+      
+      // Invalidar todos los cachés relacionados
       await queryClient.invalidateQueries();
-      // Esperar un momento para que se procese
-      await new Promise(resolve => setTimeout(resolve, 100));
-      refetch();
+      
       toast({
         title: 'Empleado eliminado',
         description: 'El empleado ha sido marcado como terminado',
       });
     } catch (error) {
+      // En caso de error, restaurar el estado anterior
+      const queryKey = ['/api/empleados-nuevos', filtros];
+      queryClient.setQueryData(queryKey, queryClient.getQueryData(queryKey));
+      await queryClient.invalidateQueries();
+      
       toast({
         title: 'Error',
         description: 'Error al eliminar el empleado',
