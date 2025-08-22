@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema, facturasProyecto, insertEmpleadoNuevoSchema, nominas_nuevas, nomina_items, empleados, empleado_nomina, projects } from "@shared/schema";
+import { insertProjectSchema, insertTaskSchema, insertEmployeeSchema, insertSupplierSchema, insertBudgetSchema, facturasProyecto, insertEmpleadoNuevoSchema, nominas_nuevas, nomina_items, empleados, empleado_nomina, empleado_proyecto, projects, payments_log, users } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "./db";
 import express from "express";
