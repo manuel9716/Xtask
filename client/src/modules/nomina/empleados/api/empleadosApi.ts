@@ -1,5 +1,5 @@
 import { apiRequest } from '@/lib/queryClient';
-import { Employee } from '@shared/schema';
+import { Employee, EmpleadoNuevo } from '@shared/schema';
 import { ResultadoCalculoNomina } from '../domain/services/CalculoNominaEmpleado';
 
 // Interfaz simplificada para datos de usuario
@@ -25,7 +25,7 @@ export interface FiltrosEmpleado {
  * Interfaz para la respuesta paginada de empleados
  */
 export interface PaginatedEmployeesResponse {
-  empleados: Employee[];
+  empleados: EmpleadoNuevo[];
   total: number;
   page: number;
   pageSize: number;
@@ -57,39 +57,9 @@ export interface NominaProcesada {
 export async function obtenerEmpleados(
   filtros: FiltrosEmpleado = {}
 ): Promise<PaginatedEmployeesResponse> {
-  const { 
-    page = 1, 
-    pageSize = 10,
-    search = '',
-    contractStatus = '',
-    department = ''
-  } = filtros;
-  
-  // Creamos un objeto URLSearchParams para construir la cadena de consulta
-  const queryParams = new URLSearchParams();
-  
-  // Agregamos los parámetros de paginación
-  queryParams.append('page', page.toString());
-  queryParams.append('pageSize', pageSize.toString());
-  
-  // Agregamos los filtros solo si tienen valor
-  if (search) {
-    queryParams.append('search', search);
-  }
-  
-  if (contractStatus) {
-    queryParams.append('contractStatus', contractStatus);
-  }
-  
-  if (department) {
-    queryParams.append('department', department);
-  }
-  
-  console.log('Enviando filtros:', Object.fromEntries(queryParams.entries()));
-  
   const response = await apiRequest(
     'GET',
-    `/api/nomina/empleados/listar?${queryParams.toString()}`
+    `/api/empleados-nuevos`
   );
   
   if (!response.ok) {
@@ -97,28 +67,42 @@ export async function obtenerEmpleados(
   }
   
   // Obtener los datos de respuesta
-  const data = await response.json();
+  const empleados = await response.json();
   
-  // Si la respuesta ya viene con formato paginado (estructura correcta)
-  if (data && data.empleados && data.pagination) {
-    return {
-      empleados: data.empleados,
-      total: data.pagination.totalItems,
-      page: data.pagination.page,
-      pageSize: data.pagination.pageSize,
-      totalPages: data.pagination.totalPages
-    };
+  // Aplicar filtros en el cliente (por ahora, luego se puede mover al servidor)
+  let empleadosFiltrados = Array.isArray(empleados) ? empleados : [];
+  
+  if (filtros.search) {
+    const searchLower = filtros.search.toLowerCase();
+    empleadosFiltrados = empleadosFiltrados.filter(emp => 
+      emp.nombre?.toLowerCase().includes(searchLower) || 
+      emp.apellido?.toLowerCase().includes(searchLower) ||
+      emp.identificacion?.toLowerCase().includes(searchLower) ||
+      `${emp.nombre || ''} ${emp.apellido || ''}`.toLowerCase().includes(searchLower)
+    );
   }
   
-  // Fallback por si la respuesta viene en el formato antiguo
-  // Esto es para mantener compatibilidad en caso de que haya otros endpoints que aún no estén actualizados
-  const empleados = Array.isArray(data) ? data : [];
+  if (filtros.contractStatus) {
+    empleadosFiltrados = empleadosFiltrados.filter(emp => emp.estado_contrato === filtros.contractStatus);
+  }
+  
+  if (filtros.department) {
+    empleadosFiltrados = empleadosFiltrados.filter(emp => emp.depto === filtros.department);
+  }
+  
+  // Paginación
+  const page = filtros.page || 1;
+  const pageSize = filtros.pageSize || 10;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const empleadosPaginados = empleadosFiltrados.slice(startIndex, endIndex);
+  
   return {
-    empleados,
-    total: empleados.length,
+    empleados: empleadosPaginados,
+    total: empleadosFiltrados.length,
     page,
     pageSize,
-    totalPages: Math.ceil(empleados.length / pageSize)
+    totalPages: Math.ceil(empleadosFiltrados.length / pageSize)
   };
 }
 
@@ -127,10 +111,10 @@ export async function obtenerEmpleados(
  * @param id ID del empleado
  * @returns Promesa con los datos del empleado
  */
-export async function obtenerEmpleado(id: number): Promise<Employee> {
+export async function obtenerEmpleado(id: number): Promise<EmpleadoNuevo> {
   const response = await apiRequest(
     'GET',
-    `/api/nomina/empleados/${id}`
+    `/api/empleados-nuevos/${id}`
   );
   
   if (!response.ok) {
@@ -145,7 +129,7 @@ export async function obtenerEmpleado(id: number): Promise<Employee> {
  * @param empleado Datos del empleado a crear
  * @returns Promesa con el empleado creado
  */
-export async function crearEmpleado(empleado: Partial<Employee>): Promise<Employee> {
+export async function crearEmpleado(empleado: Partial<EmpleadoNuevo>): Promise<EmpleadoNuevo> {
   const response = await apiRequest(
     'POST',
     '/api/empleados-nuevos',
@@ -165,10 +149,10 @@ export async function crearEmpleado(empleado: Partial<Employee>): Promise<Employ
  * @param datos Datos a actualizar
  * @returns Promesa con el empleado actualizado
  */
-export async function actualizarEmpleado(id: number, datos: Partial<Employee>): Promise<Employee> {
+export async function actualizarEmpleado(id: number, datos: Partial<EmpleadoNuevo>): Promise<EmpleadoNuevo> {
   const response = await apiRequest(
-    'PATCH',
-    `/api/nomina/empleados/${id}`,
+    'PUT',
+    `/api/empleados-nuevos/${id}`,
     datos
   );
   

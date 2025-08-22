@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { actualizarEmpleado } from '../api/empleadosApi';
-import { Employee } from '@shared/schema';
+import { EmpleadoNuevo } from '@shared/schema';
 
 /**
  * Interface para los parámetros necesarios para editar un empleado
  */
 export interface EditarEmpleadoParams {
   id: number;
-  data: Partial<Employee>;
+  data: Partial<EmpleadoNuevo>;
 }
 
 /**
@@ -23,8 +23,8 @@ export const useEditarEmpleado = () => {
     
     onSuccess: (_, variables) => {
       // Invalidar consultas relacionadas
-      queryClient.invalidateQueries({ queryKey: ['/api/nomina/empleados'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/nomina/empleados', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/empleados-nuevos'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/empleados-nuevos', variables.id] });
     }
   });
 };

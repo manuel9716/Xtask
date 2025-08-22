@@ -26,14 +26,14 @@ export const useObtenerUsuarios = () => {
 /**
  * Hook para la creación de empleados
  */
-export const useCrearEmpleado = (onSuccess?: () => void) => {
+export const useCrearEmpleado = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (datosEmpleado: CrearEmpleadoParams) => {
+    mutationFn: async (datosEmpleado: InsertEmpleadoNuevo) => {
       // Validar los datos del empleado con Zod
-      const validacion = CrearEmpleadoDTO.safeParse(datosEmpleado);
+      const validacion = insertEmpleadoNuevoSchema.safeParse(datosEmpleado);
       
       if (!validacion.success) {
         // Formatear los errores de validación
@@ -41,8 +41,16 @@ export const useCrearEmpleado = (onSuccess?: () => void) => {
         throw new Error(JSON.stringify(errores));
       }
       
+      // Convertir la fecha a string antes de enviar
+      const empleadoConFecha = {
+        ...validacion.data,
+        fecha_ingreso: validacion.data.fecha_ingreso instanceof Date 
+          ? validacion.data.fecha_ingreso.toISOString().split('T')[0]
+          : validacion.data.fecha_ingreso
+      };
+      
       // Si los datos son válidos, enviar la petición
-      return await crearEmpleado(validacion.data);
+      return await crearEmpleado(empleadoConFecha);
     },
     onSuccess: () => {
       toast({
@@ -53,11 +61,6 @@ export const useCrearEmpleado = (onSuccess?: () => void) => {
       
       // Invalidar consultas para recargar la lista de empleados
       queryClient.invalidateQueries({ queryKey: ['/api/empleados-nuevos'] });
-      
-      // Llamar al callback de éxito si existe
-      if (onSuccess) {
-        onSuccess();
-      }
     },
     onError: (error: any) => {
       // Intentar parsear la respuesta del servidor
