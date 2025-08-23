@@ -74,7 +74,7 @@ export const useCrearEmpleado = () => {
         if (errorData.type === 'duplicate_identification') {
           toast({
             title: 'Identificación duplicada',
-            description: 'Ya existe un empleado registrado con este número de identificación. Por favor, verifique los datos.',
+            description: `Ya existe un empleado registrado con el número de identificación que ingresaste. Por favor, verifica el documento y asegúrate de que sea correcto.`,
             variant: 'destructive',
           });
           return;

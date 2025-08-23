@@ -1918,6 +1918,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const validatedData = insertEmpleadoNuevoSchema.partial().parse(cleanedBody);
+      
+      // Verificar que hay datos para actualizar
+      if (Object.keys(validatedData).length === 0) {
+        return res.status(400).json({ error: "No se proporcionaron datos para actualizar" });
+      }
+      
       const empleado = await storage.updateEmpleadoNuevo(id, validatedData);
       if (!empleado) {
         return res.status(404).json({ error: "Empleado no encontrado" });

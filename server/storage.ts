@@ -915,10 +915,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEmpleadoNuevo(id: number): Promise<boolean> {
-    // Soft delete - solo marcamos como inactivo
+    // Soft delete - marcamos como inactivo y liberamos la identificación
+    const timestamp = Math.floor(Date.now() / 1000);
     const [empleado] = await db
       .update(empleados)
-      .set({ activo: false, deleted_at: new Date() })
+      .set({ 
+        activo: false, 
+        deleted_at: new Date(),
+        identificacion: sql`${empleados.identificacion} || '_deleted_' || ${timestamp}`
+      })
       .where(eq(empleados.id, id))
       .returning();
     return !!empleado;
