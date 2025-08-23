@@ -10,13 +10,14 @@ import {
   purchaseOrders, PurchaseOrder, InsertPurchaseOrder,
   budgets, Budget, InsertBudget,
   recursosFinancieros,
-  facturasProyecto, FacturaProyecto, InsertFacturaProyecto
+  facturasProyecto, FacturaProyecto, InsertFacturaProyecto,
+  empleado_proyecto, empleado_nomina, nomina_items, nominas_nuevas
 } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
 import { db, pool } from "./db";
-import { eq, asc, desc, and, gte, lte, isNull } from "drizzle-orm";
+import { eq, asc, desc, and, gte, lte, isNull, sql } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -915,18 +916,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEmpleadoNuevo(id: number): Promise<boolean> {
-    // Soft delete - marcamos como inactivo y liberamos la identificación
-    const timestamp = Math.floor(Date.now() / 1000);
-    const [empleado] = await db
-      .update(empleados)
-      .set({ 
-        activo: false, 
-        deleted_at: new Date(),
-        identificacion: sql`${empleados.identificacion} || '_deleted_' || ${timestamp}`
-      })
-      .where(eq(empleados.id, id))
-      .returning();
-    return !!empleado;
+    try {
+      // Verificar que el empleado existe
+      const [empleadoExistente] = await db
+        .select()
+        .from(empleados)
+        .where(eq(empleados.id, id));
+
+      if (!empleadoExistente) {
+        return false;
+      }
+
+      // Eliminar datos relacionados - Hard delete para nóminas y proyectos
+      // Eliminar elementos de nómina
+      await db
+        .delete(nomina_items)
+        .where(eq(nomina_items.empleado_id, id));
+
+      // Eliminar relaciones de proyectos
+      await db
+        .delete(empleado_proyecto)
+        .where(eq(empleado_proyecto.empleado_id, id));
+
+      // Eliminar datos de nómina del empleado
+      await db
+        .delete(empleado_nomina)
+        .where(eq(empleado_nomina.empleado_id, id));
+
+      // Soft delete del empleado - marcamos como inactivo y liberamos la identificación
+      const timestamp = Math.floor(Date.now() / 1000);
+      const [empleado] = await db
+        .update(empleados)
+        .set({ 
+          activo: false, 
+          deleted_at: new Date(),
+          estado_contrato: 'inactivo',
+          identificacion: sql`${empleados.identificacion} || '_deleted_' || ${timestamp}`
+        })
+        .where(eq(empleados.id, id))
+        .returning();
+
+      return !!empleado;
+    } catch (error) {
+      console.error('Error al eliminar empleado:', error);
+      return false;
+    }
   }
 }
 
