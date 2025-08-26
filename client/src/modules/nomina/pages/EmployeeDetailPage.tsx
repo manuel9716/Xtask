@@ -93,6 +93,14 @@ export default function EmployeeDetailPage() {
     }
   };
 
+  const handleEditarNomina = (nominaId: number) => {
+    // Por ahora mostrar un mensaje, se puede implementar navegación a página de edición más adelante
+    toast({
+      title: "Editar nómina",
+      description: `Funcionalidad de edición para nómina ID: ${nominaId}`,
+    });
+  };
+
   const handleExportarNomina = async (nominaId: number) => {
     try {
       const blob = await nominaApi.exportNomina(nominaId);
@@ -686,6 +694,7 @@ export default function EmployeeDetailPage() {
             onChangeEstado={handleChangeNominaEstado}
             onEliminar={handleEliminarNomina}
             onExportar={handleExportarNomina}
+            onEditar={handleEditarNomina}
           />
         </TabsContent>
 

@@ -25,6 +25,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -38,7 +44,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Eye, Calendar, Trash2, Download, DollarSign, CreditCard, Calendar as CalendarIcon } from 'lucide-react';
+import { Eye, Calendar, Trash2, Download, DollarSign, CreditCard, Calendar as CalendarIcon, Edit, MoreHorizontal } from 'lucide-react';
 import { EstadoNomina } from '../domain/entities/Nomina';
 
 interface HistorialNominaItem {
@@ -63,6 +69,7 @@ interface HistorialNominaTableProps {
   onChangeEstado: (nominaId: number, nuevoEstado: string) => void;
   onEliminar?: (nominaId: number) => void;
   onExportar?: (nominaId: number) => void;
+  onEditar?: (nominaId: number) => void;
 }
 
 export function HistorialNominaTable({
@@ -70,7 +77,8 @@ export function HistorialNominaTable({
   isLoading,
   onChangeEstado,
   onEliminar,
-  onExportar
+  onExportar,
+  onEditar
 }: HistorialNominaTableProps) {
   const [selectedNomina, setSelectedNomina] = useState<HistorialNominaItem | null>(null);
   
@@ -162,7 +170,7 @@ export function HistorialNominaTable({
                   <TableHead>Valor Neto</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Fecha Pago</TableHead>
-                  <TableHead className="text-center">Vista</TableHead>
+                  <TableHead className="text-center">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -188,17 +196,18 @@ export function HistorialNominaTable({
                       {item.fecha_pago ? formatFecha(item.fecha_pago) : '-'}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => setSelectedNomina(item)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
+                      <div className="flex items-center justify-center gap-1">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => setSelectedNomina(item)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
                         <DialogContent className="max-w-md">
                           <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
@@ -326,6 +335,43 @@ export function HistorialNominaTable({
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
+                      
+                      {onEditar && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => onEditar(item.id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {onExportar && (
+                            <DropdownMenuItem onClick={() => onExportar(item.id)}>
+                              <Download className="mr-2 h-4 w-4" />
+                              Exportar PDF
+                            </DropdownMenuItem>
+                          )}
+                          {onEliminar && (
+                            <DropdownMenuItem 
+                              onClick={() => onEliminar(item.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
