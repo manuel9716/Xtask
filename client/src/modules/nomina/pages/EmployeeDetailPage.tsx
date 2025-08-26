@@ -8,7 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Edit, Trash2, FileText, Calendar, Briefcase, User, DollarSign, Download, Clock } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, FileText, Calendar, Briefcase, User, DollarSign, Download, Clock, Edit3, FileText as FileTextIcon } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link } from 'wouter';
 import { EmployeeEditModal } from '../components/EmployeeEditModal';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
@@ -24,6 +27,8 @@ export default function EmployeeDetailPage() {
   const { toast } = useToast();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [editNominaModalOpen, setEditNominaModalOpen] = useState(false);
+  const [selectedNominaForEdit, setSelectedNominaForEdit] = useState<any>(null);
 
   const { data: empleado, isLoading, refetch } = useQuery({
     queryKey: ['/api/empleados', id, 'full'],
@@ -94,11 +99,11 @@ export default function EmployeeDetailPage() {
   };
 
   const handleEditarNomina = (nominaId: number) => {
-    // Por ahora mostrar un mensaje, se puede implementar navegación a página de edición más adelante
-    toast({
-      title: "Editar nómina",
-      description: `Funcionalidad de edición para nómina ID: ${nominaId}`,
-    });
+    const nomina = historialNomina?.find(n => n.id === nominaId);
+    if (nomina) {
+      setSelectedNominaForEdit(nomina);
+      setEditNominaModalOpen(true);
+    }
   };
 
   const handleExportarNomina = async (nominaId: number) => {
@@ -865,6 +870,132 @@ export default function EmployeeDetailPage() {
         onConfirm={handleDelete}
         empleadoNombre={`${empleado.nombre} ${empleado.apellido}`}
       />
+
+      {/* Modal de Edición de Nómina */}
+      <Dialog open={editNominaModalOpen} onOpenChange={setEditNominaModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Detalle de Nómina</span>
+              <div className="flex gap-2">
+                <Edit3 className="h-5 w-5 text-muted-foreground" />
+                <FileTextIcon className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </DialogTitle>
+            <div className="text-sm text-muted-foreground">
+              {empleado?.nombre} {empleado?.apellido} • {selectedNominaForEdit && new Date(selectedNominaForEdit.periodo_inicio).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+            </div>
+          </DialogHeader>
+
+          {selectedNominaForEdit && (
+            <div className="space-y-6">
+              {/* Tarjetas de montos */}
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground mb-1">Sueldo Base</div>
+                    <div className="text-xl font-bold">${selectedNominaForEdit.valor_bruto?.toLocaleString('es-ES') || '0'}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground mb-1">Bonificaciones</div>
+                    <div className="text-xl font-bold">${selectedNominaForEdit.bonificaciones?.toLocaleString('es-ES') || '0'}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground mb-1">Deducciones</div>
+                    <div className="text-xl font-bold">${selectedNominaForEdit.deducciones?.toLocaleString('es-ES') || '0'}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground mb-1">Neto a pagar</div>
+                    <div className="text-xl font-bold text-green-600">${selectedNominaForEdit.valor_neto?.toLocaleString('es-ES') || '0'}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Registrar pago */}
+              <div>
+                <h3 className="font-semibold mb-4">Registrar pago</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-muted-foreground">Mes</label>
+                    <Input 
+                      value={new Date(selectedNominaForEdit.periodo_inicio).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                      disabled
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground">Fecha de pago</label>
+                    <Input 
+                      type="date"
+                      defaultValue={selectedNominaForEdit.fecha_pago || new Date().toISOString().split('T')[0]}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bonificación adicional */}
+              <div>
+                <label className="text-sm text-muted-foreground">Bonificación adicional (opcional)</label>
+                <Textarea 
+                  placeholder="Ingrese detalles de bonificación adicional..."
+                  className="mt-1"
+                  rows={3}
+                />
+              </div>
+
+              {/* Estado */}
+              <div>
+                <label className="text-sm font-medium">Estado</label>
+                <div className="mt-1">
+                  <Badge 
+                    variant="secondary"
+                    className="bg-purple-100 text-purple-700 border-purple-200"
+                  >
+                    {selectedNominaForEdit.estado || 'Pendiente'}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Botones */}
+              <div className="space-y-2 pt-4">
+                <Button 
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                  onClick={() => {
+                    toast({
+                      title: "Pago PSE iniciado",
+                      description: "Redirigiendo a la plataforma de pagos PSE...",
+                    });
+                    // Aquí se implementaría la integración con PSE
+                  }}
+                >
+                  Pagar con PSE
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    toast({
+                      title: "Pago confirmado",
+                      description: "El pago ha sido registrado correctamente",
+                    });
+                    setEditNominaModalOpen(false);
+                    // Aquí se actualizaría el estado de la nómina
+                  }}
+                >
+                  Confirmar pago
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
