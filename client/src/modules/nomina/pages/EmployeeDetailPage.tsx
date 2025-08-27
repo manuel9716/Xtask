@@ -875,13 +875,7 @@ export default function EmployeeDetailPage() {
       <Dialog open={editNominaModalOpen} onOpenChange={setEditNominaModalOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Detalle de Nómina</span>
-              <div className="flex gap-2">
-                <Edit3 className="h-5 w-5 text-muted-foreground" />
-                <FileTextIcon className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </DialogTitle>
+            <DialogTitle>Detalle de Nómina</DialogTitle>
             <div className="text-sm text-muted-foreground">
               {empleado?.nombre} {empleado?.apellido} • {selectedNominaForEdit && new Date(selectedNominaForEdit.periodo_inicio).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </div>
