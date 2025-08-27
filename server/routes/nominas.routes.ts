@@ -229,6 +229,7 @@ router.get('/:id/export', async (req: Request, res: Response) => {
 router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const nominaId = parseInt(req.params.id);
+    console.log(`🗑️ Eliminando nómina ID: ${nominaId}`);
 
     // Verificar que la nómina existe
     const [nomina] = await db
@@ -237,27 +238,34 @@ router.delete('/:id', verifyToken, async (req: Request, res: Response) => {
       .where(eq(nominas_nuevas.id, nominaId));
 
     if (!nomina) {
+      console.log(`❌ Nómina ${nominaId} no encontrada`);
       return res.status(404).json({ message: 'Nómina no encontrada' });
     }
 
+    console.log(`✅ Nómina ${nominaId} encontrada, procediendo a eliminar`);
+
     // Eliminar items de la nómina primero (por restricción de FK)
-    await db
+    const deleteItemsResult = await db
       .delete(nomina_items)
       .where(eq(nomina_items.nomina_id, nominaId));
+    console.log(`🔹 Items eliminados:`, deleteItemsResult);
 
     // Eliminar registros de payments_log relacionados
-    await db
+    const deletePaymentsResult = await db
       .delete(payments_log)
       .where(eq(payments_log.nomina_id, nominaId));
+    console.log(`🔹 Payments eliminados:`, deletePaymentsResult);
 
     // Eliminar la nómina principal
-    await db
+    const deleteNominaResult = await db
       .delete(nominas_nuevas)
       .where(eq(nominas_nuevas.id, nominaId));
+    console.log(`🔹 Nómina principal eliminada:`, deleteNominaResult);
 
+    console.log(`✅ Nómina ${nominaId} eliminada exitosamente`);
     res.json({ message: 'Nómina eliminada exitosamente' });
   } catch (error) {
-    console.error('Error al eliminar nómina:', error);
+    console.error('❌ Error al eliminar nómina:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
