@@ -30,6 +30,7 @@ export default function EmployeeDetailPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [editNominaModalOpen, setEditNominaModalOpen] = useState(false);
   const [selectedNominaForEdit, setSelectedNominaForEdit] = useState<any>(null);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
   const { data: empleado, isLoading, refetch } = useQuery({
     queryKey: ['/api/empleados', id, 'full'],
@@ -959,16 +960,60 @@ export default function EmployeeDetailPage() {
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => {
-                    toast({
-                      title: "Pago confirmado",
-                      description: "El pago ha sido registrado correctamente",
-                    });
-                    setEditNominaModalOpen(false);
-                    // Aquí se actualizaría el estado de la nómina
+                  onClick={async () => {
+                    if (!selectedNominaForEdit) return;
+                    
+                    setIsConfirmingPayment(true);
+                    try {
+                      // Usar el endpoint que realmente actualiza la base de datos
+                      const response = await fetch(`/api/empleados-nuevos/${id}/historial-nomina/${selectedNominaForEdit.id}/estado`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ estado: 'pagada' }),
+                      });
+                      
+                      if (!response.ok) {
+                        throw new Error('Error al actualizar estado de nómina');
+                      }
+                      
+                      const result = await response.json();
+                      
+                      toast({
+                        title: "Pago confirmado",
+                        description: "El pago ha sido registrado correctamente",
+                      });
+                      
+                      // Invalidar cache para actualizar la vista
+                      await Promise.all([
+                        queryClient.invalidateQueries({ queryKey: ['/api/empleados', id, 'historial-nomina'] }),
+                        queryClient.invalidateQueries({ queryKey: ['/api/empleados', id, 'full'] }),
+                        queryClient.invalidateQueries({ queryKey: ['/api/nomina-modulo/dashboard'] })
+                      ]);
+                      
+                      setEditNominaModalOpen(false);
+                    } catch (error) {
+                      console.error('Error al confirmar pago:', error);
+                      toast({
+                        title: "Error",
+                        description: "No se pudo confirmar el pago",
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setIsConfirmingPayment(false);
+                    }
                   }}
+                  disabled={isConfirmingPayment}
                 >
-                  Confirmar pago
+                  {isConfirmingPayment ? (
+                    <>
+                      <div className="animate-spin w-4 h-4 mr-2 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+                      Procesando...
+                    </>
+                  ) : (
+                    'Confirmar pago'
+                  )}
                 </Button>
               </div>
             </div>
