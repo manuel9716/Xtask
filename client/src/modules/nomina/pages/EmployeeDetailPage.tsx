@@ -971,7 +971,7 @@ export default function EmployeeDetailPage() {
                         headers: {
                           'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ estado: 'pagada' }),
+                        body: JSON.stringify({ estado: 'pagado' }),
                       });
                       
                       if (!response.ok) {
