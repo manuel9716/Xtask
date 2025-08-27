@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,7 @@ export default function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [editNominaModalOpen, setEditNominaModalOpen] = useState(false);
@@ -62,8 +63,15 @@ export default function EmployeeDetailPage() {
   const handleChangeNominaEstado = async (nominaId: number, nuevoEstado: string) => {
     try {
       await empleadosApi.updateEstadoNomina(parseInt(id!), nominaId, nuevoEstado);
-      refetch();
-      refetchHistorial();
+      
+      // Invalidar caches relacionadas
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/empleados', id, 'historial-nomina'] 
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/empleados', id, 'full'] 
+      });
+      
       toast({
         title: "Estado actualizado",
         description: `La nómina ha sido marcada como ${nuevoEstado}`,
@@ -83,7 +91,17 @@ export default function EmployeeDetailPage() {
       const result = await nominaApi.eliminarNomina(nominaId);
       console.log('Resultado:', result);
       
-      refetchHistorial();
+      // Invalidar múltiples caches relacionadas
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/empleados', id, 'historial-nomina'] 
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/empleados', id, 'full'] 
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['/api/nomina-modulo/dashboard'] 
+      });
+      
       toast({
         title: "Nómina eliminada",
         description: "La nómina ha sido eliminada correctamente",
@@ -99,7 +117,7 @@ export default function EmployeeDetailPage() {
   };
 
   const handleEditarNomina = (nominaId: number) => {
-    const nomina = historialNomina?.find(n => n.id === nominaId);
+    const nomina = historialNomina?.find((n: any) => n.id === nominaId);
     if (nomina) {
       setSelectedNominaForEdit(nomina);
       setEditNominaModalOpen(true);
@@ -149,39 +167,6 @@ export default function EmployeeDetailPage() {
     }
   };
 
-  const handleExportNomina = async (nominaId: number) => {
-    try {
-      const response = await fetch(`/api/nominas/${nominaId}/export`, {
-        method: 'GET',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Error al exportar nómina');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `nomina-${nominaId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Exportación exitosa",
-        description: "La nómina se ha descargado correctamente",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error al exportar",
-        description: error.message || "Error al exportar la nómina",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -827,7 +812,7 @@ export default function EmployeeDetailPage() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleExportNomina(evento.nominaId)}
+                                    onClick={() => handleExportarNomina(evento.nominaId)}
                                     className="ml-4"
                                   >
                                     <Download className="w-3 h-3 mr-1" />
