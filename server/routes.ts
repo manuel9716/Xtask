@@ -1902,8 +1902,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Datos recibidos para actualizar empleado:", JSON.stringify(req.body, null, 2));
       
+      // Extraer solo los datos del empleado (no incluir datos de nómina)
+      const empleadoData = req.body.empleado || req.body;
+      
       // Limpiar fechas inválidas antes de la validación
-      const cleanedBody = { ...req.body };
+      const cleanedBody = { ...empleadoData };
       
       // Convertir fechas de Date objects a strings si es necesario
       if (cleanedBody.fecha_ingreso && typeof cleanedBody.fecha_ingreso === 'object') {
