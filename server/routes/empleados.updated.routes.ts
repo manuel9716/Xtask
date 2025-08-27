@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { and, count, eq, like, sql } from 'drizzle-orm';
-import { users, employees, projects, tasks } from '@shared/schema';
+import { users, employees, projects, tasks, employeeProjects } from '@shared/schema';
 import { z } from 'zod';
 import multer from 'multer';
 import path from 'path';
@@ -585,8 +585,7 @@ empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Empleado no encontrado' });
     }
     
-    // Obtener proyectos asignados a través de las tareas
-    // Asumimos que un empleado está asignado a un proyecto si tiene tareas en ese proyecto
+    // Obtener proyectos asignados a través de la tabla employeeProjects
     const proyectosAsignados = await db.select({
       id: projects.id,
       name: projects.name,
@@ -595,11 +594,12 @@ empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
       startDate: projects.startDate,
       endDate: projects.endDate,
       category: projects.category,
+      role: employeeProjects.role,
+      assignedAt: employeeProjects.assignedAt,
     })
-    .from(projects)
-    .innerJoin(tasks, eq(tasks.projectId, projects.id))
-    .where(eq(tasks.assigneeId, empleado.userId))
-    .groupBy(projects.id);
+    .from(employeeProjects)
+    .innerJoin(projects, eq(employeeProjects.projectId, projects.id))
+    .where(and(eq(employeeProjects.employeeId, parseInt(id)), eq(employeeProjects.isActive, true)));
     
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({
@@ -611,6 +611,68 @@ empleadosRouter.get('/:id/proyectos', async (req: Request, res: Response) => {
     console.error(`Error al obtener proyectos del empleado con ID ${req.params.id}:`, error);
     res.setHeader('Content-Type', 'application/json');
     return res.status(500).json({ error: 'Error al obtener los proyectos del empleado' });
+  }
+});
+
+// Actualizar los proyectos asignados a un empleado
+empleadosRouter.put('/:id/proyectos', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { proyectosIds } = req.body;
+    
+    // Validar los datos recibidos
+    if (!Array.isArray(proyectosIds)) {
+      return res.status(400).json({ error: 'proyectosIds debe ser un array' });
+    }
+    
+    // Verificar que el empleado existe
+    const [empleado] = await db.select()
+      .from(employees)
+      .where(eq(employees.id, parseInt(id)));
+    
+    if (!empleado) {
+      return res.status(404).json({ error: 'Empleado no encontrado' });
+    }
+    
+    // Validar que todos los proyectos existen
+    if (proyectosIds.length > 0) {
+      const proyectosExistentes = await db.select({ id: projects.id })
+        .from(projects)
+        .where(sql`${projects.id} IN (${proyectosIds.join(',')})`);
+      
+      if (proyectosExistentes.length !== proyectosIds.length) {
+        return res.status(400).json({ error: 'Uno o más proyectos no existen' });
+      }
+    }
+    
+    // Desactivar asignaciones existentes
+    await db.update(employeeProjects)
+      .set({ isActive: false })
+      .where(eq(employeeProjects.employeeId, parseInt(id)));
+    
+    // Crear nuevas asignaciones para cada proyecto
+    if (proyectosIds.length > 0) {
+      const nuevasAsignaciones = proyectosIds.map((proyectoId: number) => ({
+        employeeId: parseInt(id),
+        projectId: proyectoId,
+        role: 'member',
+        assignedBy: 1, // TODO: usar el usuario autenticado actual
+        isActive: true
+      }));
+      
+      await db.insert(employeeProjects).values(nuevasAsignaciones);
+    }
+    
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).json({
+      message: 'Proyectos actualizados correctamente',
+      empleadoId: parseInt(id),
+      proyectosAsignados: proyectosIds.length
+    });
+  } catch (error) {
+    console.error(`Error al actualizar proyectos del empleado con ID ${req.params.id}:`, error);
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ error: 'Error al actualizar los proyectos del empleado' });
   }
 });
 
