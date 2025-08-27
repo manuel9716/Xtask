@@ -948,11 +948,23 @@ export default function EmployeeDetailPage() {
                 <Button 
                   className="w-full bg-purple-600 hover:bg-purple-700"
                   onClick={() => {
+                    if (!selectedNominaForEdit) return;
+                    
+                    const referencePSE = `PSE-${selectedNominaForEdit.id}-${Date.now()}`;
+                    const amount = selectedNominaForEdit.valor_neto || 0;
+                    
                     toast({
                       title: "Pago PSE iniciado",
                       description: "Redirigiendo a la plataforma de pagos PSE...",
                     });
-                    // Aquí se implementaría la integración con PSE
+                    
+                    // Redirigir a la página de PSE con los parámetros de pago
+                    setTimeout(() => {
+                      window.open(
+                        `https://www.psepagos.com.co/PSEHostingUI/ShowTicketOffice.aspx?ref=${referencePSE}&amount=${amount}&concept=Nomina-${selectedNominaForEdit.empleado_nombre}`,
+                        '_blank'
+                      );
+                    }, 1000);
                   }}
                 >
                   Pagar con PSE

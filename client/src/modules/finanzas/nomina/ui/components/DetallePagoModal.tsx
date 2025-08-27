@@ -152,8 +152,11 @@ export function DetallePagoModal({
     
     // Mostrar mensaje de confirmación PSE
     if (window.confirm(`¿Confirmar pago PSE por ${formatCOP(totalPagar)}?\n\nSe abrirá el portal bancario para completar la transacción.`)) {
-      // Simular redirección a PSE
-      window.open(`https://www.pse.com.co/pago?ref=${pagoData.referenciaPSE}&amount=${totalPagar}`, '_blank');
+      // Redirigir a PSE con parámetros reales
+      window.open(
+        `https://www.psepagos.com.co/PSEHostingUI/ShowTicketOffice.aspx?ref=${pagoData.referenciaPSE}&amount=${totalPagar}&concept=Nomina-${nomina?.recurso?.perfil || 'Empleado'}`,
+        '_blank'
+      );
       
       // Confirmar el pago como procesando
       onConfirmar(pagoData);
