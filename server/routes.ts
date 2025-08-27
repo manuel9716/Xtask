@@ -1900,8 +1900,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
+      console.log("Datos recibidos para actualizar empleado:", JSON.stringify(req.body, null, 2));
+      
       // Limpiar fechas inválidas antes de la validación
       const cleanedBody = { ...req.body };
+      
+      // Convertir fechas de Date objects a strings si es necesario
+      if (cleanedBody.fecha_ingreso && typeof cleanedBody.fecha_ingreso === 'object') {
+        cleanedBody.fecha_ingreso = cleanedBody.fecha_ingreso.toISOString().split('T')[0];
+      }
+      if (cleanedBody.fecha_fin_contrato && typeof cleanedBody.fecha_fin_contrato === 'object') {
+        cleanedBody.fecha_fin_contrato = cleanedBody.fecha_fin_contrato.toISOString().split('T')[0];
+      }
+      
       if (cleanedBody.fecha_ingreso && cleanedBody.fecha_ingreso.trim() === '') {
         delete cleanedBody.fecha_ingreso;
       }
@@ -1917,10 +1928,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Formato de fecha de fin de contrato inválido" });
       }
       
+      console.log("Datos después de limpieza:", JSON.stringify(cleanedBody, null, 2));
+      
       const validatedData = insertEmpleadoNuevoSchema.partial().parse(cleanedBody);
+      
+      console.log("Datos después de validación:", JSON.stringify(validatedData, null, 2));
       
       // Verificar que hay datos para actualizar
       if (Object.keys(validatedData).length === 0) {
+        console.log("Error: No hay datos válidos después de la validación");
         return res.status(400).json({ error: "No se proporcionaron datos para actualizar" });
       }
       
