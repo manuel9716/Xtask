@@ -93,8 +93,9 @@ export function HistorialNominaTable({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="pendiente">Pendiente</SelectItem>
-          <SelectItem value="pagada">Pagada</SelectItem>
-          <SelectItem value="cancelada">Cancelada</SelectItem>
+          <SelectItem value="pagado">Pagado</SelectItem>
+          <SelectItem value="aprobado">Aprobado</SelectItem>
+          <SelectItem value="rechazado">Rechazado</SelectItem>
         </SelectContent>
       </Select>
     );
