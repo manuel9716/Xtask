@@ -29,6 +29,7 @@ import { KpisRoutes } from "@/modules/kpis/ui/routes";
 import { ThemeProvider } from "@/hooks/use-theme";
 import EmployeeDetailPage from "@/modules/nomina/pages/EmployeeDetailPage";
 import PayrollDetailPage from "@/modules/nomina/pages/PayrollDetailPage";
+import { PSEPage } from "@/pages/PSEPage";
 
 // Importaciones para el módulo de autenticación
 import { AuthProvider } from "@/modules/auth/ui/context/AuthContext";
@@ -217,6 +218,9 @@ function Router() {
           <KpisRoutes />
         </ProtectedRoute>
       </Route>
+      
+      {/* Página de PSE */}
+      <Route path="/pse" component={PSEPage} />
       
       <Route component={NotFound} />
     </Switch>

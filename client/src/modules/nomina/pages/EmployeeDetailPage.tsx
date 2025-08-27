@@ -958,10 +958,10 @@ export default function EmployeeDetailPage() {
                       description: "Redirigiendo a la plataforma de pagos PSE...",
                     });
                     
-                    // Redirigir a la página de PSE con los parámetros de pago
+                    // Redirigir a la página de PSE local con los parámetros de pago
                     setTimeout(() => {
                       window.open(
-                        `https://www.psepagos.com.co/PSEHostingUI/ShowTicketOffice.aspx?ref=${referencePSE}&amount=${amount}&concept=Nomina-${selectedNominaForEdit.empleado_nombre}`,
+                        `/pse?ref=${referencePSE}&amount=${amount}&concept=Nomina-${selectedNominaForEdit.empleado_nombre || 'Empleado'}`,
                         '_blank'
                       );
                     }, 1000);
