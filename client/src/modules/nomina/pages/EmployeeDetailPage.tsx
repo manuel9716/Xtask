@@ -958,10 +958,10 @@ export default function EmployeeDetailPage() {
                       description: "Redirigiendo a la plataforma de pagos PSE...",
                     });
                     
-                    // Redirigir a la página de PSE local con los parámetros de pago
+                    // Redirigir a la página oficial de PSE Colombia
                     setTimeout(() => {
                       window.open(
-                        `/pse?ref=${referencePSE}&amount=${amount}&concept=Nomina-${selectedNominaForEdit.empleado_nombre || 'Empleado'}`,
+                        `https://www.pse.com.co/`,
                         '_blank'
                       );
                     }, 1000);

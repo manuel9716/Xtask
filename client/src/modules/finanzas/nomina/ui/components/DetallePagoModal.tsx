@@ -151,10 +151,10 @@ export function DetallePagoModal({
     };
     
     // Mostrar mensaje de confirmación PSE
-    if (window.confirm(`¿Confirmar pago PSE por ${formatCOP(totalPagar)}?\n\nSe abrirá el portal bancario para completar la transacción.`)) {
-      // Redirigir a la página PSE local con parámetros
+    if (window.confirm(`¿Confirmar pago PSE por ${formatCOP(totalPagar)}?\n\nSe abrirá el portal bancario oficial de PSE para completar la transacción.`)) {
+      // Redirigir a la página oficial de PSE Colombia
       window.open(
-        `/pse?ref=${pagoData.referenciaPSE}&amount=${totalPagar}&concept=Nomina-${nomina?.recurso?.perfil || 'Empleado'}`,
+        `https://www.pse.com.co/`,
         '_blank'
       );
       
