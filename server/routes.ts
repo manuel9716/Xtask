@@ -1900,8 +1900,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      console.log("Datos recibidos para actualizar empleado:", JSON.stringify(req.body, null, 2));
-      
       // Extraer solo los datos del empleado (no incluir datos de nómina)
       const empleadoData = req.body.empleado || req.body;
       
@@ -1931,15 +1929,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Formato de fecha de fin de contrato inválido" });
       }
       
-      console.log("Datos después de limpieza:", JSON.stringify(cleanedBody, null, 2));
-      
       const validatedData = insertEmpleadoNuevoSchema.partial().parse(cleanedBody);
-      
-      console.log("Datos después de validación:", JSON.stringify(validatedData, null, 2));
       
       // Verificar que hay datos para actualizar
       if (Object.keys(validatedData).length === 0) {
-        console.log("Error: No hay datos válidos después de la validación");
         return res.status(400).json({ error: "No se proporcionaron datos para actualizar" });
       }
       
@@ -1955,6 +1948,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ error: "Error interno del servidor" });
       }
+    }
+  });
+
+  // Endpoint para actualizar proyectos asignados a un empleado
+  app.put("/api/empleados-nuevos/:id/proyectos", async (req: Request, res: Response) => {
+    try {
+      const empleadoId = parseInt(req.params.id);
+      const { proyectosIds } = req.body;
+
+      console.log(`Actualizando proyectos para empleado ${empleadoId}:`, proyectosIds);
+
+      // Validar que el empleado existe
+      const empleado = await storage.getEmpleadoNuevo(empleadoId);
+      if (!empleado) {
+        return res.status(404).json({ error: "Empleado no encontrado" });
+      }
+
+      // Validar que proyectosIds es un array
+      if (!Array.isArray(proyectosIds)) {
+        return res.status(400).json({ error: "proyectosIds debe ser un array" });
+      }
+
+      // Eliminar todas las asignaciones actuales del empleado
+      await db
+        .delete(empleado_proyecto)
+        .where(eq(empleado_proyecto.empleado_id, empleadoId));
+
+      // Crear nuevas asignaciones
+      if (proyectosIds.length > 0) {
+        const nuevasAsignaciones = proyectosIds.map((proyectoId: number) => ({
+          empleado_id: empleadoId,
+          proyecto_id: proyectoId,
+          activo: true
+        }));
+
+        await db
+          .insert(empleado_proyecto)
+          .values(nuevasAsignaciones);
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Proyectos actualizados correctamente",
+        proyectosAsignados: proyectosIds.length
+      });
+
+    } catch (error) {
+      console.error("Error al actualizar proyectos del empleado:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
     }
   });
 
