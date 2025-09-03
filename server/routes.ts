@@ -1857,12 +1857,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, []);
 
-      // 5. Último pago (el más reciente por fecha de pago)
-      const ultimoPago = historialNominas.length > 0 ? {
-        monto: historialNominas[0].valor_neto,
-        fecha: historialNominas[0].fecha_pago,
-        estado: historialNominas[0].estado
-      } : null;
+      // 5. Último pago (el más reciente que esté pagado)
+      const ultimoPago = (() => {
+        const nominaPagada = historialNominas.find(nomina => nomina.estado === 'pagado');
+        return nominaPagada ? {
+          monto: nominaPagada.valor_neto,
+          fecha: nominaPagada.fecha_pago,
+          estado: nominaPagada.estado
+        } : null;
+      })();
 
       // Combinar toda la información
       const empleadoCompleto = {
@@ -2044,7 +2047,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(nomina_items.empleado_id, empleadoId))
         .orderBy(sql`${nominas_nuevas.rango_inicio} DESC`);
 
-      res.json(historial);
+      // Procesar el historial para manejar fechas de pago según el estado
+      const historialProcesado = historial.map(nomina => ({
+        ...nomina,
+        // Solo mostrar fecha de pago si la nómina está pagada
+        fecha_pago: nomina.estado === 'pagado' ? nomina.fecha_pago : null
+      }));
+
+      res.json(historialProcesado);
     } catch (error) {
       console.error('Error al obtener historial de nómina:', error);
       res.status(500).json({ message: 'Error interno del servidor' });
