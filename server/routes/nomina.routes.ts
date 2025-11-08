@@ -1,7 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db';
-import { recursosFinancieros, budgets, employees } from '@shared/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { getSqlServerPool } from '../db';
 
 const nominaRouter = Router();
 
@@ -11,8 +9,10 @@ const nominaRouter = Router();
  */
 nominaRouter.get('/proyectos', async (req: Request, res: Response) => {
   try {
+    const pool = await getSqlServerPool();
+    
     // Obtener todos los proyectos
-    const result = await db.execute(sql`
+    const result = await pool.request().query(`
       SELECT 
         b.id,
         b.name as nombre,
@@ -23,17 +23,17 @@ nominaRouter.get('/proyectos', async (req: Request, res: Response) => {
 
     const proyectosConMetricas = [];
     
-    for (const row of result.rows) {
+    for (const row of result.recordset) {
       // Contar recursos y calcular costo total para cada proyecto
-      const recursosResult = await db.execute(sql`
+      const recursosResult = await pool.request().query(`
         SELECT 
-          COUNT(*)::int as total_recursos,
-          COALESCE(SUM(total_estimado), 0)::numeric as costo_total
+          COUNT(*) as total_recursos,
+          COALESCE(SUM(total_estimado), 0) as costo_total
         FROM recursos_financieros 
         WHERE presupuesto_id = ${row.id}
       `);
 
-      const metrics = recursosResult.rows[0];
+      const metrics = recursosResult.recordset[0];
       
       proyectosConMetricas.push({
         id: row.id,
@@ -47,6 +47,50 @@ nominaRouter.get('/proyectos', async (req: Request, res: Response) => {
     res.json(proyectosConMetricas);
   } catch (error) {
     console.error('Error al obtener proyectos con recursos:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * GET /api/nomina/metricas
+ */
+nominaRouter.get('/metricas', async (req: Request, res: Response) => {
+  try {
+    const { proyectoId } = req.query;
+    const pool = await getSqlServerPool();
+
+    let result;
+    if (proyectoId && typeof proyectoId === 'string' && !isNaN(Number(proyectoId))) {
+      const projectIdNum = Number(proyectoId);
+      result = await pool.request().query(`
+        SELECT 
+          COUNT(*) as recursos_activos,
+          COALESCE(SUM(salario_mensual), 0) as total_mensual
+        FROM recursos_financieros 
+        WHERE presupuesto_id = ${projectIdNum}
+      `);
+    } else {
+      result = await pool.request().query(`
+        SELECT 
+          COUNT(*) as recursos_activos,
+          COALESCE(SUM(salario_mensual), 0) as total_mensual
+        FROM recursos_financieros
+      `);
+    }
+
+    const metrics = result.recordset[0];
+    const totalMensual = Number(metrics.total_mensual || 0);
+
+    const resultado = {
+      totalMensual: totalMensual,
+      pendientePago: totalMensual, // Simulado - todos pendientes
+      pagadoMes: 0, // Simulado
+      recursosActivos: Number(metrics.recursos_activos || 0),
+    };
+
+    res.json(resultado);
+  } catch (error) {
+    console.error('Error al obtener métricas:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
@@ -67,28 +111,26 @@ nominaRouter.get('/:proyectoId', async (req: Request, res: Response) => {
 
     const projectId = Number(proyectoId);
     const mesActual = (mes as string) || new Date().toISOString().slice(0, 7);
+    const pool = await getSqlServerPool();
 
     // Obtener recursos del proyecto
-    const allRecursos = await db
-      .select()
-      .from(recursosFinancieros);
-
-    let recursos = allRecursos.filter(r => r.presupuestoId === projectId);
+    let query = `SELECT * FROM recursos_financieros WHERE presupuesto_id = ${projectId}`;
     
     if (perfil) {
-      recursos = recursos.filter(r => r.perfil === perfil);
+      query += ` AND perfil = '${perfil}'`;
     }
-
-    recursos.sort((a, b) => a.perfil.localeCompare(b.perfil));
+    
+    query += ` ORDER BY perfil`;
+    
+    const recursosResult = await pool.request().query(query);
+    const recursos = recursosResult.recordset;
 
     // Obtener datos del proyecto
-    const proyecto = await db
-      .select()
-      .from(budgets)
-      .where(eq(budgets.id, projectId))
-      .limit(1);
+    const proyectoResult = await pool.request().query(`
+      SELECT TOP 1 * FROM budgets WHERE id = ${projectId}
+    `);
 
-    const proyectoData = proyecto[0];
+    const proyectoData = proyectoResult.recordset[0];
 
     // Transformar recursos a formato de nómina
     const resultado = recursos.map(recurso => {
@@ -284,49 +326,6 @@ nominaRouter.get('/empleados/:id', async (req: Request, res: Response) => {
     res.json(empleado);
   } catch (error) {
     console.error('Error al obtener empleado:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
-
-/**
- * GET /api/nomina/metricas
- */
-nominaRouter.get('/metricas', async (req: Request, res: Response) => {
-  try {
-    const { proyectoId } = req.query;
-
-    let result;
-    if (proyectoId && typeof proyectoId === 'string' && !isNaN(Number(proyectoId))) {
-      const projectIdNum = Number(proyectoId);
-      result = await db.execute(sql`
-        SELECT 
-          COUNT(*)::int as recursos_activos,
-          COALESCE(SUM(salario_mensual), 0)::numeric as total_mensual
-        FROM recursos_financieros 
-        WHERE presupuesto_id = ${projectIdNum}
-      `);
-    } else {
-      result = await db.execute(sql`
-        SELECT 
-          COUNT(*)::int as recursos_activos,
-          COALESCE(SUM(salario_mensual), 0)::numeric as total_mensual
-        FROM recursos_financieros
-      `);
-    }
-
-    const metrics = result.rows[0];
-    const totalMensual = Number(metrics.total_mensual || 0);
-
-    const resultado = {
-      totalMensual: totalMensual,
-      pendientePago: totalMensual, // Simulado - todos pendientes
-      pagadoMes: 0, // Simulado
-      recursosActivos: Number(metrics.recursos_activos || 0),
-    };
-
-    res.json(resultado);
-  } catch (error) {
-    console.error('Error al obtener métricas:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
