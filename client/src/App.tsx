@@ -151,7 +151,7 @@ function Router() {
       <Route path="/nomina">
         <ProtectedRoute>
           <MainLayout>
-            <NominaDashboard />
+            <NominaPage />
           </MainLayout>
         </ProtectedRoute>
       </Route>
