@@ -1328,54 +1328,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         estado: req.query.estado as string
       };
       
-      // Consultar datos reales de la base de datos
-      const { db } = await import("./db");
-      const { nominas, nominaDetalles } = await import("@shared/schema");
-      const { eq, and, sql, desc } = await import("drizzle-orm");
+      // Usar SQL Server directamente
+      const { getSqlServerPool } = await import("./db");
+      const sqlPool = await getSqlServerPool();
       
-      // Usar consulta simple de Drizzle ORM sin filtros complejos
-      const nominasDB = await db.select().from(nominas).orderBy(desc(nominas.id));
+      // Consultar nóminas desde SQL Server
+      let query = `
+        SELECT 
+          n.id,
+          n.titulo,
+          n.periodo_inicio as periodoInicio,
+          n.periodo_fin as periodoFin,
+          n.total as total,
+          n.estado,
+          n.fecha_creacion as fechaCreacion,
+          n.fecha_actualizacion as fechaActualizacion,
+          COUNT(nd.id) as totalEmpleados
+        FROM nominas n
+        LEFT JOIN nomina_detalles nd ON n.id = nd.nomina_id
+      `;
       
-      console.log('Nóminas obtenidas de la BD:', nominasDB);
-      
-      // Si hay filtro por empleado, necesitamos filtrar después de obtener los datos
-      let nominasFiltradas = [...nominasDB];
+      const conditions: string[] = [];
       
       if (filtros.empleadoId) {
-        // Obtener IDs de nóminas donde el empleado está incluido
-        const nominasDetalleEmpleado = await db
-          .select({ nominaId: nominaDetalles.nominaId })
-          .from(nominaDetalles)
-          .where(eq(nominaDetalles.empleadoId, filtros.empleadoId));
-        
-        const nominasIdsConEmpleado = nominasDetalleEmpleado.map(det => det.nominaId);
-        
-        // Filtrar nóminas por IDs
-        nominasFiltradas = nominasFiltradas.filter(nomina => 
-          nominasIdsConEmpleado.includes(nomina.id)
-        );
+        conditions.push(`nd.empleado_id = ${filtros.empleadoId}`);
       }
       
-      // Obtener el total de empleados por nómina
-      const nominasConTotalEmpleados = await Promise.all(
-        nominasFiltradas.map(async (nomina) => {
-          const detalles = await db
-            .select()
-            .from(nominaDetalles)
-            .where(eq(nominaDetalles.nominaId, nomina.id));
-          
-          return {
-            ...nomina,
-            totalEmpleados: detalles.length
-          };
-        })
-      );
+      if (filtros.estado) {
+        conditions.push(`n.estado = '${filtros.estado}'`);
+      }
       
-      // Paginación simple
-      const totalItems = nominasConTotalEmpleados.length;
+      if (conditions.length > 0) {
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+      
+      query += ` GROUP BY n.id, n.titulo, n.periodo_inicio, n.periodo_fin, n.total, n.estado, n.fecha_creacion, n.fecha_actualizacion`;
+      query += ` ORDER BY n.id DESC`;
+      
+      const result = await sqlPool.request().query(query);
+      const nominasDB = result.recordset;
+      
+      console.log('Nóminas obtenidas de SQL Server:', nominasDB.length);
+      
+      // Paginación
+      const totalItems = nominasDB.length;
       const totalPages = Math.ceil(totalItems / filtros.pageSize);
       const startIndex = (filtros.page - 1) * filtros.pageSize;
-      const paginatedNominas = nominasConTotalEmpleados.slice(startIndex, startIndex + filtros.pageSize);
+      const paginatedNominas = nominasDB.slice(startIndex, startIndex + filtros.pageSize);
       
       // Construir respuesta
       const response = {
@@ -1391,7 +1390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json(response);
     } catch (error: any) {
       console.error('Error al listar nóminas:', error);
-      res.status(500).json({ error: 'Error al obtener nóminas' });
+      res.status(500).json({ error: 'Error al obtener nóminas', details: error.message });
     }
   });
   
