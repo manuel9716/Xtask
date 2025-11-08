@@ -1,13 +1,17 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db";
-import { userSkills, users } from "@shared/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { getSqlServerPool } from "../db";
 import jwt from 'jsonwebtoken';
 
 const habilidadesRouter = Router();
 
 // Middleware de autenticación
 function isAuthenticated(req: Request, res: Response, next: Function) {
+  // Primero verificar si hay sesión de Passport
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return next();
+  }
+
+  // Si no hay sesión, verificar JWT
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -31,21 +35,25 @@ function isAuthenticated(req: Request, res: Response, next: Function) {
 habilidadesRouter.get("/mis-habilidades", isAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
+    const pool = await getSqlServerPool();
 
-    const habilidades = await db
-      .select()
-      .from(userSkills)
-      .where(eq(userSkills.userId, userId as number));
+    const result = await pool.request().query(`
+      SELECT * FROM user_skills
+      WHERE user_id = ${userId}
+      ORDER BY skill_name
+    `);
+
+    const habilidades = result.recordset;
 
     // Agrupar habilidades por tipo
-    const habilidadesAgrupadas = habilidades.reduce((acc, habilidad) => {
-      const tipo = habilidad.tipo;
+    const habilidadesAgrupadas = habilidades.reduce((acc: any, habilidad: any) => {
+      const tipo = habilidad.tipo || 'general';
       if (!acc[tipo]) {
         acc[tipo] = [];
       }
       acc[tipo].push(habilidad);
       return acc;
-    }, {} as Record<string, typeof habilidades>);
+    }, {});
 
     res.json(habilidadesAgrupadas);
   } catch (error: any) {
