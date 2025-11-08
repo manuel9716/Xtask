@@ -22,10 +22,18 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  // Detectar si es bcrypt (empieza con $2b$) o scrypt (contiene punto)
+  if (stored.startsWith('$2b$') || stored.startsWith('$2a$')) {
+    // Es bcrypt - importar bcrypt dinámicamente
+    const bcrypt = await import('bcrypt');
+    return await bcrypt.compare(supplied, stored);
+  } else {
+    // Es scrypt
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -47,18 +55,35 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false);
-        } else {
+    new LocalStrategy(
+      { usernameField: 'identifier' }, // Cambiar de 'username' a 'identifier'
+      async (identifier, password, done) => {
+        try {
+          console.log('🔐 Login attempt:', { identifier });
+          const user = await storage.getUserByUsername(identifier);
+          console.log('👤 User found:', user ? 'YES' : 'NO');
+          
+          if (!user) {
+            console.log('❌ User not found');
+            return done(null, false);
+          }
+          
+          const passwordValid = await comparePasswords(password, user.password);
+          console.log('🔑 Password valid:', passwordValid ? 'YES' : 'NO');
+          
+          if (!passwordValid) {
+            console.log('❌ Invalid password');
+            return done(null, false);
+          }
+          
+          console.log('✅ Login successful');
           return done(null, user);
+        } catch (error) {
+          console.error('❌ Login error:', error);
+          return done(error);
         }
-      } catch (error) {
-        return done(error);
       }
-    }),
+    ),
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
@@ -71,7 +96,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/register", async (req, res, next) => {
+  app.post("/api/auth/register", async (req, res, next) => {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
@@ -94,7 +119,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/auth/login", (req, res, next) => {
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) return res.status(400).json({ message: "Invalid credentials" });
@@ -103,19 +128,20 @@ export function setupAuth(app: Express) {
         if (loginErr) return next(loginErr);
         const userWithoutPassword = { ...user };
         delete (userWithoutPassword as any).password;
-        res.status(200).json(userWithoutPassword);
+        // Retornar en el formato esperado por el frontend
+        res.status(200).json({ user: userWithoutPassword });
       });
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res, next) => {
+  app.post("/api/auth/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
       res.sendStatus(200);
     });
   });
 
-  app.get("/api/user", (req, res) => {
+  app.get("/api/auth/me", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const userWithoutPassword = { ...req.user };
     delete (userWithoutPassword as any).password;

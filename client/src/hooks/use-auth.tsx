@@ -36,12 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/auth/login", credentials);
       const data = await res.json();
       
-      // Guardar el token en localStorage
+      // Guardar el token en localStorage (si existe)
       if (data.token) {
         localStorage.setItem('auth_token', data.token);
       }
       
-      return data.user;
+      // El backend retorna el usuario directamente, no dentro de data.user
+      return data;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/auth/me"], user);

@@ -966,4 +966,7 @@ export class DatabaseStorage implements IStorage {
 
 // Export a singleton instance
 // En producción, usamos la implementación con base de datos
-export const storage = new DatabaseStorage();
+import { isSqlServer } from "./db";
+import { sqlServerStorage } from "./storage-sqlserver";
+
+export const storage = isSqlServer ? sqlServerStorage as any : new DatabaseStorage();

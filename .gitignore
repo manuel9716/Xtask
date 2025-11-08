@@ -1,6 +1,72 @@
+# Dependencies
 node_modules
+package-lock.json
+
+# Build output
 dist
-.DS_Store
 server/public
-vite.config.ts.*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Uploads and user data
+uploads/
+attached_assets/
 *.tar.gz
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+
+# Vite
+vite.config.ts.*
+
+# Replit specific (legacy)
+.replit
+.config/
+.local/
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+response.json
+cookies.txt

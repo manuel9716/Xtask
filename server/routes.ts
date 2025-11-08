@@ -16,9 +16,11 @@ import evaluacionesRouter from "./routes/evaluaciones.routes";
 import capacitacionesRouter from "./routes/capacitaciones.routes";
 import microLearningRouter from "./routes/microlearning.routes";
 import authRouter from "./routes/auth.routes";
+import { setupAuth } from "./auth";
 import kpiRouter from "./routes/kpi.routes";
 import habilidadesRouter from "./routes/habilidades.routes";
 import recursosRouter from "./routes/recursos.routes";
+import projectsSqlServerRouter from "./routes/projects.sqlserver.routes";
 import nominaRouter from "./modules/nomina/routes";
 import { empleadosRoutes } from "./modules/empleados/empleados.routes";
 import { nominaRoutes } from "./modules/nomina/nomina.routes";
@@ -29,6 +31,9 @@ import { verifyToken } from "./routes/auth.routes";
 import { MailService } from '@sendgrid/mail';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
+
+// Nueva arquitectura hexagonal
+import { createEmpleadoRoutes } from "./interfaces/http/routes/empleados.routes";
 
 // Initialize SendGrid
 const mailService = new MailService();
@@ -69,6 +74,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Servir archivos estáticos desde uploads
   app.use('/uploads', express.static('uploads'));
 
+  // Configurar autenticación (IMPORTANTE: debe ir antes de las rutas)
+  setupAuth(app);
+
   // Health check endpoint para Kubernetes
   app.get('/api/health', (req, res) => {
     res.status(200).json({ 
@@ -78,8 +86,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Rutas de autenticación
+  // Rutas de autenticación adicionales
   app.use('/api/auth', authRouter);
+  
+  // ========== RUTAS SQL SERVER ==========
+  // Rutas de proyectos (SQL Server compatible)
+  app.use('/api/projects', projectsSqlServerRouter);
+  // ======================================
+  
+  // ========== NUEVA ARQUITECTURA HEXAGONAL ==========
+  // Rutas de empleados con arquitectura hexagonal
+  app.use('/api/v2/empleados', createEmpleadoRoutes());
+  // ==================================================
   
   // Rutas para módulo de KPIs
   app.use('/api/kpis', kpiRouter);
