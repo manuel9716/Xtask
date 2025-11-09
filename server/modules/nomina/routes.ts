@@ -3,15 +3,15 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { NominaService } from './application/services/NominaService';
-import { PostgresNominaRepository } from './infrastructure/PostgresNominaRepository';
-import { insertEmpleadoNominaSchema, insertEmpleadoNominaDataSchema, filtrosNominaSchema, empleados as empleados_table } from '@shared/schema';
-import { db } from '../../db';
-import { eq } from 'drizzle-orm';
+// import { NominaService } from './application/services/NominaService';
+// import { PostgresNominaRepository } from './infrastructure/PostgresNominaRepository';
+import { insertEmpleadoNominaSchema, insertEmpleadoNominaDataSchema, filtrosNominaSchema } from '@shared/schema';
+// import { db } from '../../db';
+// import { eq } from 'drizzle-orm';
 
 const router = Router();
-const nominaRepository = new PostgresNominaRepository();
-const nominaService = new NominaService(nominaRepository);
+// const nominaRepository = new PostgresNominaRepository();
+// const nominaService = new NominaService(nominaRepository);
 
 // Configuración de multer para subida de contratos
 const storage = multer.diskStorage({
@@ -45,14 +45,75 @@ const upload = multer({
 // Dashboard principal
 router.get('/dashboard', async (req, res) => {
   try {
-    const filtros = filtrosNominaSchema.parse({
-      proyectoId: req.query.proyectoId ? Number(req.query.proyectoId) : undefined,
-      empleadoId: req.query.empleadoId ? Number(req.query.empleadoId) : undefined,
-      from: req.query.from ? new Date(req.query.from as string) : undefined,
-      to: req.query.to ? new Date(req.query.to as string) : undefined
-    });
+    const { getSqlServerPool } = require('../../db');
+    const pool = await getSqlServerPool();
+    
+    // Obtener empleados activos
+    const empleadosResult = await pool.request().query(`
+      SELECT 
+        id,
+        first_name,
+        last_name,
+        position,
+        department,
+        identification,
+        hire_date,
+        contract_status,
+        contract_type,
+        salary,
+        phone_number,
+        address,
+        emergency_contact
+      FROM employees
+      WHERE contract_status = 'activo'
+      ORDER BY first_name, last_name
+    `);
 
-    const data = await nominaService.getDashboardData(filtros);
+    const empleados = empleadosResult.recordset.map((emp: any) => ({
+      id: emp.id,
+      nombre: emp.first_name,
+      apellido: emp.last_name,
+      identificacion: emp.identification,
+      depto: emp.department,
+      cargo: emp.position,
+      fecha_ingreso: emp.hire_date,
+      estado_contrato: emp.contract_status,
+      tipo_contrato: emp.contract_type,
+      telefono: emp.phone_number,
+      direccion: emp.address,
+      contacto_emergencia: emp.emergency_contact,
+      nomina: {
+        sueldo_base: emp.salary || 0,
+        frecuencia_pago: 'Mensual',
+        metodo_pago: 'Transferencia Bancaria'
+      },
+      proyectos: []
+    }));
+
+    const totalNominaMensual = empleados.reduce((sum: number, emp: any) => sum + (emp.nomina?.sueldo_base || 0), 0);
+
+    const data = {
+      kpis: {
+        empleadosActivos: empleados.length,
+        nominaMensual: totalNominaMensual,
+        bonificacionesMes: 0,
+        porcentajePagadas: 0,
+        proximaFechaPago: null
+      },
+      timeline: [],
+      charts: {
+        gastoPorProyecto: [],
+        sueldosVsBonos: [
+          { name: 'Sueldos', value: totalNominaMensual },
+          { name: 'Bonos', value: 0 }
+        ],
+        historico6Meses: []
+      },
+      calendar: [],
+      nominasRecientes: [],
+      empleados: empleados
+    };
+
     res.json(data);
   } catch (error) {
     console.error('Error en dashboard de nómina:', error);
