@@ -699,6 +699,57 @@ export class SqlServerStorage {
   }
 
   // ============================================
+  // EMPLOYEES
+  // ============================================
+
+  async getAllEmployees(): Promise<any[]> {
+    try {
+      const pool = await getSqlServerPool();
+      const result = await pool.request().query(`
+        SELECT 
+          id,
+          user_id,
+          first_name,
+          last_name,
+          position,
+          department,
+          identification,
+          phone_number,
+          contract_status,
+          contract_type,
+          salary,
+          skills,
+          hire_date,
+          created_at
+        FROM employees
+        WHERE contract_status = 'activo'
+        ORDER BY first_name, last_name
+      `);
+      
+      return result.recordset.map((emp: any) => ({
+        id: emp.id,
+        userId: emp.user_id,
+        firstName: emp.first_name,
+        lastName: emp.last_name,
+        fullName: `${emp.first_name} ${emp.last_name}`,
+        position: emp.position,
+        department: emp.department,
+        identification: emp.identification,
+        phoneNumber: emp.phone_number,
+        contractStatus: emp.contract_status,
+        contractType: emp.contract_type,
+        salary: emp.salary,
+        skills: emp.skills,
+        hireDate: emp.hire_date,
+        createdAt: emp.created_at,
+      }));
+    } catch (error) {
+      console.error('Error al obtener empleados:', error);
+      return [];
+    }
+  }
+
+  // ============================================
   // MÉTODOS STUB (para implementar después)
   // ============================================
 
