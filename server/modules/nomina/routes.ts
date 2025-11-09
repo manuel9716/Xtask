@@ -3,6 +3,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { getSqlServerPool } from '../../db';
 // import { NominaService } from './application/services/NominaService';
 // import { PostgresNominaRepository } from './infrastructure/PostgresNominaRepository';
 import { insertEmpleadoNominaSchema, insertEmpleadoNominaDataSchema, filtrosNominaSchema } from '@shared/schema';
@@ -45,7 +46,6 @@ const upload = multer({
 // Dashboard principal
 router.get('/dashboard', async (req, res) => {
   try {
-    const { getSqlServerPool } = require('../../db');
     const pool = await getSqlServerPool();
     
     // Obtener empleados activos
@@ -124,7 +124,6 @@ router.get('/dashboard', async (req, res) => {
 // Obtener empleados
 router.get('/empleados', async (req, res) => {
   try {
-    const { getSqlServerPool } = require('../../db');
     const pool = await getSqlServerPool();
     
     // Obtener empleados activos directamente con SQL Server
