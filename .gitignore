@@ -7,7 +7,7 @@ dist
 server/public
 
 # Environment variables
-.env
+config/environment/.env
 .env.local
 .env.*.local
 
@@ -51,6 +51,7 @@ attached_assets/
 *.sqlite3
 
 # Temporary files
+temp/
 *.tmp
 *.temp
 .cache

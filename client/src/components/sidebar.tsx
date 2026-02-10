@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Logo } from "@/components/logo";
 import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,9 @@ import {
   FileJson,
   LineChart,
   TrendingUp,
-  Award
+  Award,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -24,21 +26,24 @@ interface NavItemProps {
   icon: React.ReactNode;
   children: React.ReactNode;
   active?: boolean;
+  collapsed?: boolean;
 }
 
-function NavItem({ href, icon, children, active }: NavItemProps) {
+function NavItem({ href, icon, children, active, collapsed }: NavItemProps) {
   return (
     <Link href={href}>
       <div
         className={cn(
-          "flex items-center space-x-2 px-4 py-2.5 rounded-lg transition-colors",
+          "flex items-center rounded-lg transition-all duration-200",
+          collapsed ? "justify-center px-3 py-2.5" : "space-x-2 px-4 py-2.5",
           active
             ? "bg-secondary text-primary-foreground"
             : "text-gray-200 hover:bg-gray-700"
         )}
+        title={collapsed ? children as string : undefined}
       >
         {icon}
-        <span>{children}</span>
+        {!collapsed && <span>{children}</span>}
       </div>
     </Link>
   );
@@ -53,6 +58,7 @@ interface SidebarProps {
 export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
   const [location] = useLocation();
   const { t } = useTranslation();
+  const [collapsed, setCollapsed] = useState(false);
 
   const NavItems = [
     { href: "/dashboard", label: t("navigation.dashboard"), icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -74,23 +80,31 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col bg-primary text-white",
-        isMobile ? "fixed inset-0 z-50" : "w-64",
+        "flex flex-col bg-primary text-white transition-all duration-300 relative",
+        isMobile ? "fixed inset-0 z-50" : collapsed ? "w-20" : "w-64",
         className
       )}
     >
       {/* Header solo con logo a la izquierda */}
-      <div className="p-4 border-b border-accent/20">
-        <Logo />
+      <div className={cn(
+        "p-4 border-b border-accent/20 transition-all duration-300",
+        collapsed && "px-2"
+      )}>
+        {!collapsed ? <Logo /> : <div className="flex justify-center"><span className="text-2xl font-bold">X</span></div>}
       </div>
 
       {/* Sección principal de navegación */}
-      <nav className="flex-1 p-4 overflow-y-auto scrollbar-hide flex flex-col justify-between">
+      <nav className={cn(
+        "flex-1 overflow-y-auto scrollbar-hide flex flex-col justify-between transition-all duration-300",
+        collapsed ? "p-2" : "p-4"
+      )}>
         {/* Sección MAIN */}
         <div className="space-y-1">
-          <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-2 font-heading">
-            {t("navigation.mainSection")}
-          </p>
+          {!collapsed && (
+            <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-2 font-heading">
+              {t("navigation.mainSection")}
+            </p>
+          )}
 
           {NavItems.map((item) => (
             <NavItem
@@ -98,6 +112,7 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
               href={item.href}
               icon={item.icon}
               active={location === item.href}
+              collapsed={collapsed}
             >
               {item.label}
             </NavItem>
@@ -106,9 +121,11 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
         
         {/* Sección SYSTEM en la parte inferior */}
         <div className="space-y-1 mt-auto pt-4">
-          <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-2 font-heading">
-            {t("navigation.systemSection")}
-          </p>
+          {!collapsed && (
+            <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-2 font-heading">
+              {t("navigation.systemSection")}
+            </p>
+          )}
 
           {SystemItems.map((item) => (
             <NavItem
@@ -116,12 +133,28 @@ export function Sidebar({ className, isMobile, onClose }: SidebarProps) {
               href={item.href}
               icon={item.icon}
               active={location === item.href}
+              collapsed={collapsed}
             >
               {item.label}
             </NavItem>
           ))}
         </div>
       </nav>
+
+      {/* Botón flotante para colapsar/expandir */}
+      {!isMobile && (
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-4 bottom-8 bg-primary hover:bg-primary/90 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110 border-2 border-white/20"
+          aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="h-5 w-5" />
+          ) : (
+            <PanelLeftClose className="h-5 w-5" />
+          )}
+        </button>
+      )}
     </aside>
   );
 }
